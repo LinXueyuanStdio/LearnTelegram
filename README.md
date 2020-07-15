@@ -1,39 +1,37 @@
-## Telegram messenger for Android
+# 学习 Telegram
 
-[Telegram](https://telegram.org) is a messaging app with a focus on speed and security. It’s superfast, simple and free.
-This repo contains the official source code for [Telegram App for Android](https://play.google.com/store/apps/details?id=org.telegram.messenger).
+Telegram 太顺滑了，动画丰富，UI精美。有必要进一步学习。
 
-## Creating your Telegram Application
+但是，刚将项目跑起来，一个 18k 行的 ChatActivity 映入眼帘，直接震撼了我幼小的心灵。
 
-We welcome all developers to use our API and source code to create applications on our platform.
-There are several things we require from **all developers** for the moment.
+这不得不成为一个长期计划。可能中途会断一段时间。因此需要 git 帮我保存进度。
 
-1. [**Obtain your own api_id**](https://core.telegram.org/api/obtaining_api_id) for your application.
-2. Please **do not** use the name Telegram for your app — or make sure your users understand that it is unofficial.
-3. Kindly **do not** use our standard logo (white paper plane in a blue circle) as your app's logo.
-3. Please study our [**security guidelines**](https://core.telegram.org/mtproto/security_guidelines) and take good care of your users' data and privacy.
-4. Please remember to publish **your** code too in order to comply with the licences.
+## 当前目标
 
-### API, Protocol documentation
+- [ ] 理解 Telegram `单 Activity 多 View` 的基本框架
 
-Telegram API manuals: https://core.telegram.org/api
+## 短期目标
 
-MTproto protocol manuals: https://core.telegram.org/mtproto
+1. 理解 Telegram `单 Activity 多 View` 的基本框架
+2. 理解 Telegram 的全局消息分发机制
+3. 理解 Telegram 的设计模式
+4. 理解 Telegram 的架构
+5. 理解 Telegram 如何将动画写得顺滑优雅
 
-### Compilation Guide
+## 长期目标
 
-**Note**: In order to support [reproducible builds](https://core.telegram.org/reproducible-builds), this repo contains dummy release.keystore,  google-services.json and filled variables inside BuildVars.java. Before publishing your own APKs please make sure to replace all these files with your own.
+1. 抽离出一个 `单 Activity 多 View` 的基本框架开源并用于自己的项目
+2. 产出分析原理的文章
 
-You will require Android Studio 3.4, Android NDK rev. 20 and Android SDK 8.1
+## 基本方法
 
-1. Download the Telegram source code from https://github.com/DrKLO/Telegram ( git clone https://github.com/DrKLO/Telegram.git )
-2. Copy your release.keystore into TMessagesProj/config
-3. Fill out RELEASE_KEY_PASSWORD, RELEASE_KEY_ALIAS, RELEASE_STORE_PASSWORD in gradle.properties to access your  release.keystore
-4.  Go to https://console.firebase.google.com/, create two android apps with application IDs org.telegram.messenger and org.telegram.messenger.beta, turn on firebase messaging and download google-services.json, which should be copied to the same folder as TMessagesProj.
-5. Open the project in the Studio (note that it should be opened, NOT imported).
-6. Fill out values in TMessagesProj/src/main/java/org/telegram/messenger/BuildVars.java – there’s a link for each of the variables showing where and which data to obtain.
-7. You are ready to compile Telegram.
+1. 边阅读边写注释，做笔记
+2. 有空则产出一些原理分析的文章（目前深度分析Telegram的文章稀少）
+3. 有空则产出一些好用的库
 
-### Localization
+## 其他资源
 
-We moved all translations to https://translations.telegram.org/en/android/. Please use it.
+[Telegram Android 项目地址](https://github.com/DrKLO/Telegram)
+[Telegram 各个系统客户端地址](https://congcong0806.github.io/2019/01/08/Telegram/)
+[Android Telegram引导页的实现分析](http://blog.qiji.tech/archives/6262)
+[Telegram之导入项目、初步认识](http://www.voycn.com/article/telegramzhidaoruxiangmuchuburenshi)
