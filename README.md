@@ -31,7 +31,7 @@ Telegram 太顺滑了，动画丰富，UI精美。有必要进一步学习。
 
 ## 其他资源
 
-[Telegram Android 项目地址](https://github.com/DrKLO/Telegram)
-[Telegram 各个系统客户端地址](https://congcong0806.github.io/2019/01/08/Telegram/)
-[Android Telegram引导页的实现分析](http://blog.qiji.tech/archives/6262)
-[Telegram之导入项目、初步认识](http://www.voycn.com/article/telegramzhidaoruxiangmuchuburenshi)
+- [Telegram Android 项目地址](https://github.com/DrKLO/Telegram)
+- [Telegram 各个系统客户端地址](https://congcong0806.github.io/2019/01/08/Telegram/)
+- [Android Telegram引导页的实现分析](http://blog.qiji.tech/archives/6262)
+- [Telegram之导入项目、初步认识](http://www.voycn.com/article/telegramzhidaoruxiangmuchuburenshi)
