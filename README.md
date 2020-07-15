@@ -29,6 +29,12 @@ Telegram 太顺滑了，动画丰富，UI精美。有必要进一步学习。
 2. 有空则产出一些原理分析的文章（目前深度分析Telegram的文章稀少）
 3. 有空则产出一些好用的库
 
+## 其他信息
+
+基于 `release-6.2.0_1988` 版本，其 commit 为 `feba57ce`。这是 `2020-7-15` 日所能获取到的最新版。
+
+本项目同样使用 GPL 协议，和原项目保持一致。
+
 ## 其他资源
 
 - [Telegram Android 项目地址](https://github.com/DrKLO/Telegram)
