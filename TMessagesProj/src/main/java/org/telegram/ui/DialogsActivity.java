@@ -156,6 +156,11 @@ import org.telegram.ui.Components.UndoView;
 
 import java.util.ArrayList;
 
+/**
+ * 对话界面，显示所有的对话信息。
+ * 1. 登陆成功后，跳转的页面
+ * 2. 已登录用户，一打开 App 就看见到页面
+ */
 public class DialogsActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
 
     private class ViewPage extends FrameLayout {

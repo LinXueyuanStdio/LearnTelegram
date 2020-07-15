@@ -44,6 +44,9 @@ import java.util.ArrayList;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+/**
+ * 登出界面
+ */
 public class LogoutActivity extends BaseFragment {
 
     private ListAdapter listAdapter;

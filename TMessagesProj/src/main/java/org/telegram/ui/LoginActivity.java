@@ -116,6 +116,9 @@ import java.util.Set;
 import java.util.Timer;
 import java.util.TimerTask;
 
+/**
+ * 登录界面，选择国家，填写手机号
+ */
 @SuppressLint("HardwareIds")
 public class LoginActivity extends BaseFragment {
 

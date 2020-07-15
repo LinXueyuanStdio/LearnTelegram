@@ -36,6 +36,9 @@ import org.telegram.ui.Components.LayoutHelper;
 
 import java.util.ArrayList;
 
+/**
+ * 编辑名称条目Activity
+ */
 public class ChangeNameActivity extends BaseFragment {
 
     private EditTextBoldCursor firstNameField;
