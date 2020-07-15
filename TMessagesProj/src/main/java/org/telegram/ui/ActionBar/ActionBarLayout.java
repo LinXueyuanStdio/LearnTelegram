@@ -59,6 +59,9 @@ public class ActionBarLayout extends FrameLayout {
         void onRebuildAllFragments(ActionBarLayout layout, boolean last);
     }
 
+    /**
+     * 适配软键盘的容器
+     */
     public class LayoutContainer extends AdjustPanFrameLayout {
 
         private Rect rect = new Rect();
@@ -859,8 +862,20 @@ public class ActionBarLayout extends FrameLayout {
         return inPreviewMode || transitionAnimationPreviewMode;
     }
 
+    /**
+     * 显示一个Fragment
+     * @param fragment fragment
+     * @param removeLast 添加前移除最后一个
+     * @param forceWithoutAnimation 强制不用动画
+     * @param check
+     * @param preview 预览模式
+     * @return 是否显示成功
+     */
     public boolean presentFragment(final BaseFragment fragment, final boolean removeLast, boolean forceWithoutAnimation, boolean check, final boolean preview) {
-        if (fragment == null || checkTransitionAnimation() || delegate != null && check && !delegate.needPresentFragment(fragment, removeLast, forceWithoutAnimation, this) || !fragment.onFragmentCreate()) {
+        if (fragment == null
+                || checkTransitionAnimation()
+                || delegate != null && check && !delegate.needPresentFragment(fragment, removeLast, forceWithoutAnimation, this)
+                || !fragment.onFragmentCreate()) {
             return false;
         }
         fragment.setInPreviewMode(preview);
@@ -871,6 +886,7 @@ public class ActionBarLayout extends FrameLayout {
 
         final BaseFragment currentFragment = !fragmentsStack.isEmpty() ? fragmentsStack.get(fragmentsStack.size() - 1) : null;
 
+        //添加到容器 containerViewBack
         fragment.setParentLayout(this);
         View fragmentView = fragment.fragmentView;
         if (fragmentView == null) {
@@ -912,6 +928,7 @@ public class ActionBarLayout extends FrameLayout {
             fragmentView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         }
 
+        //侧滑返回功能：双指针沿栈顶移动
         LayoutContainer temp = containerView;
         containerView = containerViewBack;
         containerViewBack = temp;
@@ -946,6 +963,7 @@ public class ActionBarLayout extends FrameLayout {
             }
         }
 
+        //动画
         if (themeAnimatorSet != null) {
             presentingFragmentDescriptions = fragment.getThemeDescriptions();
         }
