@@ -25,6 +25,9 @@ import java.util.LinkedList;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
+/**
+ * 文件上传和下载服务
+ */
 public class FileLoader extends BaseController {
 
     public interface FileLoaderDelegate {
@@ -217,6 +220,10 @@ public class FileLoader extends BaseController {
         });
     }
 
+    /**
+     * 是否网速变慢，拥堵
+     * @param slow
+     */
     public void onNetworkChanged(final boolean slow) {
         fileLoaderQueue.postRunnable(() -> {
             for (ConcurrentHashMap.Entry<String, FileUploadOperation> entry : uploadOperationPaths.entrySet()) {

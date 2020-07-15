@@ -39,6 +39,9 @@ import java.io.File;
 
 import androidx.multidex.MultiDex;
 
+/**
+ * Application
+ */
 public class ApplicationLoader extends Application {
 
     @SuppressLint("StaticFieldLeak")
@@ -81,6 +84,10 @@ public class ApplicationLoader extends Application {
         return new File("/data/data/org.telegram.messenger/files");
     }
 
+    /**
+     * 应用初始化后（加载native和监听生命周期）
+     * 延迟初始化的东西都放在这里
+     */
     public static void postInitApplication() {
         if (applicationInited) {
             return;
@@ -88,12 +95,14 @@ public class ApplicationLoader extends Application {
 
         applicationInited = true;
 
+        //多语言支持
         try {
             LocaleController.getInstance();
         } catch (Exception e) {
             e.printStackTrace();
         }
 
+        //监听网络连接
         try {
             connectivityManager = (ConnectivityManager) ApplicationLoader.applicationContext.getSystemService(Context.CONNECTIVITY_SERVICE);
             BroadcastReceiver networkStateReceiver = new BroadcastReceiver() {
@@ -118,6 +127,7 @@ public class ApplicationLoader extends Application {
             e.printStackTrace();
         }
 
+        //监听锁屏
         try {
             final IntentFilter filter = new IntentFilter(Intent.ACTION_SCREEN_ON);
             filter.addAction(Intent.ACTION_SCREEN_OFF);
@@ -127,6 +137,7 @@ public class ApplicationLoader extends Application {
             e.printStackTrace();
         }
 
+        //监听是否屏幕打开
         try {
             PowerManager pm = (PowerManager) ApplicationLoader.applicationContext.getSystemService(Context.POWER_SERVICE);
             isScreenOn = pm.isScreenOn();
@@ -137,14 +148,15 @@ public class ApplicationLoader extends Application {
             FileLog.e(e);
         }
 
-        SharedConfig.loadConfig();
+        //用户偏好设置
+        SharedConfig.loadConfig();//公共设置
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            UserConfig.getInstance(a).loadConfig();
-            MessagesController.getInstance(a);
+            UserConfig.getInstance(a).loadConfig();//每个用户的设置
+            MessagesController.getInstance(a);//每个用户的消息
             if (a == 0) {
                 SharedConfig.pushStringStatus = "__FIREBASE_GENERATING_SINCE_" + ConnectionsManager.getInstance(a).getCurrentTime() + "__";
             } else {
-                ConnectionsManager.getInstance(a);
+                ConnectionsManager.getInstance(a);//每个用户的连接
             }
             TLRPC.User user = UserConfig.getInstance(a).getCurrentUser();
             if (user != null) {
@@ -153,18 +165,21 @@ public class ApplicationLoader extends Application {
             }
         }
 
+        //谷歌Play服务
         ApplicationLoader app = (ApplicationLoader) ApplicationLoader.applicationContext;
         app.initPlayServices();
         if (BuildVars.LOGS_ENABLED) {
             FileLog.d("app initied");
         }
 
+        //多媒体
         MediaController.getInstance();
         for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
             ContactsController.getInstance(a).checkAppAccount();
             DownloadController.getInstance(a);
         }
 
+        //可穿戴设备
         WearDataLayerListenerService.updateWatchConnectionState();
     }
 
@@ -174,6 +189,7 @@ public class ApplicationLoader extends Application {
 
     @Override
     public void onCreate() {
+        //region
         try {
             applicationContext = getApplicationContext();
         } catch (Throwable ignore) {
@@ -185,7 +201,9 @@ public class ApplicationLoader extends Application {
         if (applicationContext == null) {
             applicationContext = getApplicationContext();
         }
+        //endregion
 
+        //加载 so 库
         NativeLoader.initNativeLibs(ApplicationLoader.applicationContext);
         ConnectionsManager.native_setJava(false);
         new ForegroundDetector(this) {
@@ -204,6 +222,9 @@ public class ApplicationLoader extends Application {
         AndroidUtilities.runOnUIThread(ApplicationLoader::startPushService);
     }
 
+    /**
+     * 开启推送服务
+     */
     public static void startPushService() {
         SharedPreferences preferences = MessagesController.getGlobalNotificationsSettings();
         boolean enabled;
@@ -237,7 +258,9 @@ public class ApplicationLoader extends Application {
             e.printStackTrace();
         }
     }
-
+    /**
+     * 谷歌Play服务
+     */
     private void initPlayServices() {
         AndroidUtilities.runOnUIThread(() -> {
             if (hasPlayServices = checkPlayServices()) {
@@ -289,6 +312,10 @@ public class ApplicationLoader extends Application {
         return true;
     }
 
+    /**
+     * 网络
+     * @param force
+     */
     private static void ensureCurrentNetworkGet(boolean force) {
         if (force || currentNetworkInfo == null) {
             try {

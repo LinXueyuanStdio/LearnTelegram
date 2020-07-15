@@ -13696,14 +13696,14 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     }
 
     @Override
-    public void dismissCurrentDialig() {
+    public void dismissCurrentDialog() {
         if (chatAttachAlert != null && visibleDialog == chatAttachAlert) {
             chatAttachAlert.getPhotoLayout().closeCamera(false);
             chatAttachAlert.dismissInternal();
             chatAttachAlert.getPhotoLayout().hideCamera(true);
             return;
         }
-        super.dismissCurrentDialig();
+        super.dismissCurrentDialog();
     }
 
     @Override

@@ -862,7 +862,7 @@ public class AlertsCreator {
             span = new URLSpanNoUnderline(span.getURL()) {
                 @Override
                 public void onClick(View widget) {
-                    fragment.dismissCurrentDialig();
+                    fragment.dismissCurrentDialog();
                     super.onClick(widget);
                 }
             };

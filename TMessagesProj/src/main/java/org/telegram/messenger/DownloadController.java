@@ -23,6 +23,9 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+/**
+ * 下载控制器
+ */
 public class DownloadController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
 
     public interface FileDownloadProgressListener {
@@ -863,6 +866,11 @@ public class DownloadController extends BaseController implements NotificationCe
         return lastTag++;
     }
 
+    /**
+     * 观察者模式，监听文件的下载
+     * @param fileName
+     * @param observer
+     */
     public void addLoadingFileObserver(String fileName, FileDownloadProgressListener observer) {
         addLoadingFileObserver(fileName, null, observer);
     }
@@ -930,6 +938,7 @@ public class DownloadController extends BaseController implements NotificationCe
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.fileDidFailToLoad || id == NotificationCenter.httpFileDidFailedLoad) {
+            //文件下载失败，移除下载监听
             String fileName = (String) args[0];
             Integer canceled = (Integer) args[1];
             listenerInProgress = true;
@@ -952,6 +961,7 @@ public class DownloadController extends BaseController implements NotificationCe
             processLaterArrays();
             checkDownloadFinished(fileName, canceled);
         } else if (id == NotificationCenter.fileDidLoad || id == NotificationCenter.httpFileDidLoad) {
+            //文件下载成功，移除下载监听
             listenerInProgress = true;
             String fileName = (String) args[0];
             ArrayList<MessageObject> messageObjects = loadingFileMessagesObservers.get(fileName);
@@ -977,6 +987,7 @@ public class DownloadController extends BaseController implements NotificationCe
             processLaterArrays();
             checkDownloadFinished(fileName, 0);
         } else if (id == NotificationCenter.FileLoadProgressChanged) {
+            //文件下载中
             listenerInProgress = true;
             String fileName = (String) args[0];
             ArrayList<WeakReference<FileDownloadProgressListener>> arrayList = loadingFileObservers.get(fileName);
@@ -993,6 +1004,7 @@ public class DownloadController extends BaseController implements NotificationCe
             listenerInProgress = false;
             processLaterArrays();
         } else if (id == NotificationCenter.FileUploadProgressChanged) {
+            //文件上传中
             listenerInProgress = true;
             String fileName = (String) args[0];
             ArrayList<WeakReference<FileDownloadProgressListener>> arrayList = loadingFileObservers.get(fileName);

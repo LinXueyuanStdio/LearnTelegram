@@ -55,6 +55,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
+/**
+ * 消息控制器
+ */
 public class MessagesController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
 
     private ConcurrentHashMap<Integer, TLRPC.Chat> chats = new ConcurrentHashMap<>(100, 1.0f, 2);

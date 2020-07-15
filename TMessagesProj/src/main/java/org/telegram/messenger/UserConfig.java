@@ -20,9 +20,18 @@ import org.telegram.tgnet.TLRPC;
 import java.io.File;
 import java.util.Arrays;
 
+/**
+ * 特定于一个账户的用户设置
+ */
 public class UserConfig extends BaseController {
 
+    /**
+     * 当前选中的账户的下标
+     */
     public static int selectedAccount;
+    /**
+     * 可同时登录的最大账户数为3
+     */
     public final static int MAX_ACCOUNT_COUNT = 3;
 
     private final Object sync = new Object();

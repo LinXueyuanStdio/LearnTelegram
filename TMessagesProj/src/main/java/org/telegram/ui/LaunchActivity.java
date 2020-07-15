@@ -115,8 +115,16 @@ import java.util.Map;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
 
+/**
+ * 启动器
+ *
+ * "单Activity多View" 架构的那个 "单Activity"
+ *
+ *
+ */
 public class LaunchActivity extends Activity implements ActionBarLayout.ActionBarLayoutDelegate, NotificationCenter.NotificationCenterDelegate, DialogsActivity.DialogsActivityDelegate {
 
+    //region field
     private boolean finished;
     private String videoPath;
     private String sendingText;
@@ -176,9 +184,31 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
     private Runnable lockRunnable;
 
     private static final int PLAY_SERVICES_REQUEST_CHECK_SETTINGS = 140;
+    //endregion
 
+    /**
+     * 总结：初始化主题、布局，注册通知中心，设置contentView
+     *
+     * 重点在于contentView
+     * 使用LayoutInspector结合代码可以有如下布局
+     *
+     * DecorView
+     *   - statusBarBackground(View)
+     *   - LinearLayout
+     *     - action_mode_bar_stub(ViewStub)
+     *     - content(FrameLayout)
+     *       - FrameLayout(从这里开始就是硬核的自定义布局)
+     *         - themeSwitchImageView  : ImageView(主题壁纸)
+     *         - drawerLayoutContainer : DrawerLayoutContainer(抽屉布局容器)
+     *           - passcodeView   : PasscodeView(指纹、密码校验)
+     *           - sideMenu       : RecyclerListView(抽屉，即侧滑栏)
+     *           - actionBarLayout: ActionBarLayout(主要布局容器)
+     *             - LoginActivity(未登录) 或 DialogsActivity(已登录)
+     * @param savedInstanceState savedInstanceState
+     */
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        //region onCreate前
         ApplicationLoader.postInitApplication();
         AndroidUtilities.checkDisplaySize(this, getResources().getConfiguration());
         currentAccount = UserConfig.selectedAccount;
@@ -265,9 +295,13 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                 FileLog.e(e);
             }
         }
+        //endregion
 
         super.onCreate(savedInstanceState);
+
+        //region onCreate后
         if (Build.VERSION.SDK_INT >= 24) {
+            //适配分屏
             AndroidUtilities.isInMultiwindow = isInMultiWindowMode();
         }
         Theme.createChatResources(this, false);
@@ -303,6 +337,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
         frameLayout.addView(drawerLayoutContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
         if (AndroidUtilities.isTablet()) {
+            //适配平板
             getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE);
 
             RelativeLayout launchLayout = new RelativeLayout(this) {
@@ -430,9 +465,11 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
             layersActionBarLayout.setVisibility(layerFragmentsStack.isEmpty() ? View.GONE : View.VISIBLE);
             launchLayout.addView(layersActionBarLayout);
         } else {
+            //手机
             drawerLayoutContainer.addView(actionBarLayout, new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         }
 
+        //侧滑栏
         sideMenu = new RecyclerListView(this) {
             @Override
             public boolean drawChild(Canvas canvas, View child, long drawingTime) {
@@ -531,19 +568,23 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
             }
         });
 
+        //双向绑定
         drawerLayoutContainer.setParentActionBarLayout(actionBarLayout);
         actionBarLayout.setDrawerLayoutContainer(drawerLayoutContainer);
-        actionBarLayout.init(mainFragmentsStack);
-        actionBarLayout.setDelegate(this);
+        actionBarLayout.init(mainFragmentsStack);//使用 main fragment 栈
+        actionBarLayout.setDelegate(this);//代理，监听生命周期
 
+        //应用的壁纸
         Theme.loadWallpaper();
 
+        //指纹和密码解锁
         passcodeView = new PasscodeView(this);
         drawerLayoutContainer.addView(passcodeView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
         checkCurrentAccount();
         updateCurrentConnectionState(currentAccount);
 
+        //注册通知中心，使用观察者模式处理应用内部的通知（消息）
         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.closeOtherAppActivities, this);
 
         currentConnectionState = ConnectionsManager.getInstance(currentAccount).getConnectionState();
@@ -562,22 +603,25 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
 
         if (actionBarLayout.fragmentsStack.isEmpty()) {
             if (!UserConfig.getInstance(currentAccount).isClientActivated()) {
+                //未登录
                 actionBarLayout.addFragmentToStack(new LoginActivity());
                 drawerLayoutContainer.setAllowOpenDrawer(false, false);
             } else {
+                //已登录
                 DialogsActivity dialogsActivity = new DialogsActivity(null);
                 dialogsActivity.setSideMenu(sideMenu);
                 actionBarLayout.addFragmentToStack(dialogsActivity);
                 drawerLayoutContainer.setAllowOpenDrawer(true, false);
             }
 
+            //恢复上一次的应用状态
             try {
                 if (savedInstanceState != null) {
                     String fragmentName = savedInstanceState.getString("fragment");
                     if (fragmentName != null) {
                         Bundle args = savedInstanceState.getBundle("args");
                         switch (fragmentName) {
-                            case "chat":
+                            case "chat"://聊天
                                 if (args != null) {
                                     ChatActivity chat = new ChatActivity(args);
                                     if (actionBarLayout.addFragmentToStack(chat)) {
@@ -585,13 +629,13 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                                     }
                                 }
                                 break;
-                            case "settings": {
+                            case "settings": {//设置
                                 SettingsActivity settings = new SettingsActivity();
                                 actionBarLayout.addFragmentToStack(settings);
                                 settings.restoreSelfArgs(savedInstanceState);
                                 break;
                             }
-                            case "group":
+                            case "group"://群
                                 if (args != null) {
                                     GroupCreateFinalActivity group = new GroupCreateFinalActivity(args);
                                     if (actionBarLayout.addFragmentToStack(group)) {
@@ -599,7 +643,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                                     }
                                 }
                                 break;
-                            case "channel":
+                            case "channel"://通道
                                 if (args != null) {
                                     ChannelCreateActivity channel = new ChannelCreateActivity(args);
                                     if (actionBarLayout.addFragmentToStack(channel)) {
@@ -607,7 +651,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                                     }
                                 }
                                 break;
-                            case "chat_profile":
+                            case "chat_profile"://聊天身份
                                 if (args != null) {
                                     ProfileActivity profile = new ProfileActivity(args);
                                     if (actionBarLayout.addFragmentToStack(profile)) {
@@ -615,7 +659,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                                     }
                                 }
                                 break;
-                            case "wallpapers": {
+                            case "wallpapers": {//壁纸
                                 WallpapersListActivity settings = new WallpapersListActivity(WallpapersListActivity.TYPE_ALL);
                                 actionBarLayout.addFragmentToStack(settings);
                                 settings.restoreSelfArgs(savedInstanceState);
@@ -628,6 +672,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                 FileLog.e(e);
             }
         } else {
+            //任务栈非空，直接从栈中恢复第一个fragment，清空其他fragment
             BaseFragment fragment = actionBarLayout.fragmentsStack.get(0);
             if (fragment instanceof DialogsActivity) {
                 ((DialogsActivity) fragment).setSideMenu(sideMenu);
@@ -647,8 +692,10 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
         checkLayout();
         checkSystemBarColors();
 
+        //处理外部 intent
         handleIntent(getIntent(), false, savedInstanceState != null, false);
 
+        //适配各种国产 ROM
         try {
             String os1 = Build.DISPLAY;
             String os2 = Build.USER;
@@ -687,6 +734,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
         }
         MediaController.getInstance().setBaseActivity(this, true);
         AndroidUtilities.startAppCenter(this);
+        //endregion
     }
 
     private void checkSystemBarColors() {
@@ -818,6 +866,11 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.fileDidFailToLoad);
     }
 
+    /**
+     * 检查布局
+     *
+     * 只是为了适配平板布局
+     */
     private void checkLayout() {
         if (!AndroidUtilities.isTablet() || rightActionBarLayout == null) {
             return;

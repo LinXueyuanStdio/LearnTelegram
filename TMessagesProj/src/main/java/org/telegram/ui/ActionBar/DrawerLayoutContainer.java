@@ -20,8 +20,6 @@ import android.graphics.Paint;
 import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import androidx.annotation.Keep;
-
 import android.view.DisplayCutout;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -40,11 +38,14 @@ import org.telegram.messenger.FileLog;
 import org.telegram.messenger.R;
 import org.telegram.messenger.SharedConfig;
 
+import androidx.annotation.Keep;
+
 public class DrawerLayoutContainer extends FrameLayout {
 
     private static final int MIN_DRAWER_MARGIN = 64;
 
     private ViewGroup drawerLayout;
+    //ActionBarLayout是其他view的父容器，但不是DrawerLayoutContainer的父容器
     private ActionBarLayout parentActionBarLayout;
 
     private boolean maybeStartTracking;
@@ -84,6 +85,7 @@ public class DrawerLayoutContainer extends FrameLayout {
     public DrawerLayoutContainer(Context context) {
         super(context);
 
+        //适配软键盘
         adjustPanLayoutHelper = new AdjustPanLayoutHelper(this);
 
         minDrawerMargin = (int) (MIN_DRAWER_MARGIN * AndroidUtilities.density + 0.5f);

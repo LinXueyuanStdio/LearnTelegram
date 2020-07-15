@@ -29,6 +29,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Iterator;
 
+/**
+ * 用户偏好设置
+ *
+ * 所有已登录的用户共用的设置
+ */
 public class SharedConfig {
 
     public static String pushString = "";

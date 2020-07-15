@@ -28,6 +28,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+/**
+ * 可穿戴设备
+ */
 public class WearDataLayerListenerService extends WearableListenerService {
 
 	private int currentAccount = UserConfig.selectedAccount;

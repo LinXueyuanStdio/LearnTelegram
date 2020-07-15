@@ -39,6 +39,16 @@ import java.util.HashMap;
 import java.util.Locale;
 import java.util.TimeZone;
 
+/**
+ * 本地化，多语言
+ *
+ * 如何使用：
+ * 1. 一个新语言的增加和删除
+ *
+ * 2. 使用
+ *   LocaleController.getString("PaymentShippingName", R.string.PaymentShippingName)
+ *
+ */
 public class LocaleController {
 
     static final int QUANTITY_OTHER = 0x0000;
@@ -82,6 +92,9 @@ public class LocaleController {
     private HashMap<String, String> translitChars;
     private HashMap<String, String> ruTranslitChars;
 
+    /**
+     * 时区
+     */
     private class TimeZoneChangedReceiver extends BroadcastReceiver {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -93,6 +106,9 @@ public class LocaleController {
         }
     }
 
+    /**
+     * 需要控制语言版本所需的所有配置项都在这里了
+     */
     public static class LocaleInfo {
 
         public String name;
@@ -104,7 +120,7 @@ public class LocaleController {
         public boolean isRtl;
         public int version;
         public int baseVersion;
-        public boolean builtIn;
+        public boolean builtIn;//是否是内置支持的语言
         public int serverIndex;
 
         public String getSaveString() {
@@ -204,14 +220,27 @@ public class LocaleController {
 
     private boolean loadingRemoteLanguages;
 
+    /**
+     * 当前可用的语言
+     */
     public ArrayList<LocaleInfo> languages = new ArrayList<>();
+    /**
+     * 非官方语言
+     */
     public ArrayList<LocaleInfo> unofficialLanguages = new ArrayList<>();
+    /**
+     * 远程语言支持
+     */
     public ArrayList<LocaleInfo> remoteLanguages = new ArrayList<>();
     public HashMap<String, LocaleInfo> remoteLanguagesDict = new HashMap<>();
     public HashMap<String, LocaleInfo> languagesDict = new HashMap<>();
 
+    /**
+     * 除了内置的语言之外的语言，即您自己安装的语言
+     */
     private ArrayList<LocaleInfo> otherLanguages = new ArrayList<>();
 
+    //双重校验锁的单例模式模式
     private static volatile LocaleController Instance = null;
     public static LocaleController getInstance() {
         LocaleController localInstance = Instance;
@@ -573,10 +602,17 @@ public class LocaleController {
         return null;
     }
 
+    /**
+     * 解析翻译文件并应用
+     * @param file 语言文件
+     * @param currentAccount 当前用户
+     * @return 是否应用成功
+     */
     public boolean applyLanguageFile(File file, int currentAccount) {
         try {
             HashMap<String, String> stringMap = getLocaleFileStrings(file);
 
+            //翻译文件的版本控制
             String languageName = stringMap.get("LanguageName");
             String languageNameInEnglish = stringMap.get("LanguageNameInEnglish");
             String languageCode = stringMap.get("LanguageCode");
@@ -595,6 +631,7 @@ public class LocaleController {
                     return false;
                 }
 
+                //将当前需要应用的翻译文件复制到内部目录
                 File finalFile = new File(ApplicationLoader.getFilesDirFixed(), languageCode + ".xml");
                 if (!AndroidUtilities.copyFile(file, finalFile)) {
                     return false;
@@ -742,6 +779,14 @@ public class LocaleController {
         return getLocaleFileStrings(file, false);
     }
 
+    /**
+     * 翻译文件是一个xml格式的文件
+     * 可以知道Telegram自定义了一套翻译文件的规范
+     * 使用了Android系统自带的xml解释器来解析
+     * @param file xml格式
+     * @param preserveEscapes
+     * @return stringMap.put(attrName, value);
+     */
     private HashMap<String, String> getLocaleFileStrings(File file, boolean preserveEscapes) {
         FileInputStream stream = null;
         reloadLastFile = false;
@@ -927,7 +972,14 @@ public class LocaleController {
         return localeInfo == null || TextUtils.isEmpty(localeInfo.name) ? getString("LanguageName", R.string.LanguageName) : localeInfo.name;
     }
 
+    /**
+     * 多语言动态化的核心方法
+     * @param key
+     * @param res
+     * @return
+     */
     private String getStringInternal(String key, int res) {
+        //如果是云端的字符串，直接从 localeValues 拿，否则使用系统的 getString 拿
         String value = BuildVars.USE_CLOUD_STRINGS ? localeValues.get(key) : null;
         if (value == null) {
             try {
@@ -1230,6 +1282,11 @@ public class LocaleController {
         }
     }
 
+    /**
+     * 设备的语言设置发生改变
+     * 用户在手机设置里改了默认语言，我们要跟着系统变
+     * @param newConfig Configuration
+     */
     public void onDeviceConfigurationChange(Configuration newConfig) {
         if (changingConfiguration) {
             return;
@@ -2509,6 +2566,11 @@ public class LocaleController {
         return dst.toString();
     }
 
+    /**
+     * 对复数的处理
+     *
+     * 比如英语中，复数要加s等
+     */
     abstract public static class PluralRules {
         abstract int quantityForNumber(int n);
     }

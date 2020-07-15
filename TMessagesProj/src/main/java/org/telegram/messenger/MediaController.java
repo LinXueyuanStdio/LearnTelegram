@@ -86,6 +86,14 @@ import java.util.Locale;
 import java.util.Timer;
 import java.util.TimerTask;
 
+/**
+ * 多媒体
+ *
+ * - 音频
+ * - 视频
+ * - 照片
+ *
+ */
 public class MediaController implements AudioManager.OnAudioFocusChangeListener, NotificationCenter.NotificationCenterDelegate, SensorEventListener {
 
     private native int startRecord(String path, int sampleRate);

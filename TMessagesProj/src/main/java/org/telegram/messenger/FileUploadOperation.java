@@ -116,6 +116,10 @@ public class FileUploadOperation {
         });
     }
 
+    /**
+     * 控制上传文件的速度
+     * @param slow
+     */
     protected void onNetworkChanged(final boolean slow) {
         if (state != 1) {
             return;
@@ -232,6 +236,11 @@ public class FileUploadOperation {
         }
     }
 
+    /**
+     * 上传文件
+     *
+     * 一个函数 400 行？？？？
+     */
     private void startUploadRequest() {
         if (state != 1) {
             return;

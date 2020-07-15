@@ -62,6 +62,9 @@ import java.util.HashMap;
 
 import androidx.viewpager.widget.ViewPager;
 
+/**
+ * 主题描述
+ */
 public class ThemeDescription {
 
     public static int FLAG_BACKGROUND                   = 0x00000001;

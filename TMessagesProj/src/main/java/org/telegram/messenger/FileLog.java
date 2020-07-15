@@ -17,6 +17,9 @@ import java.io.FileOutputStream;
 import java.io.OutputStreamWriter;
 import java.util.Locale;
 
+/**
+ * 将日志保持到文件
+ */
 public class FileLog {
     private OutputStreamWriter streamWriter = null;
     private FastDateFormat dateFormat = null;

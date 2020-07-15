@@ -6498,6 +6498,10 @@ public class Theme {
         dialogs_unarchiveDrawable.commitApplyLayerColors();
     }
 
+    /**
+     * 对话列表的UI资源
+     * @param context 上下文
+     */
     public static void createDialogsResources(Context context) {
         createCommonResources(context);
         if (dialogs_namePaint == null) {
@@ -6632,6 +6636,11 @@ public class Theme {
         }
     }
 
+    /**
+     * 聊天的UI资源
+     * @param context 上下文
+     * @param fontsOnly 是否仅加载字体
+     */
     public static void createChatResources(Context context, boolean fontsOnly) {
         synchronized (sync) {
             if (chat_msgTextPaint == null) {
@@ -7224,6 +7233,10 @@ public class Theme {
         }
     }
 
+    /**
+     * 身份的UI资源
+     * @param context 上下文
+     */
     public static void createProfileResources(Context context) {
         if (profile_verifiedDrawable == null) {
             profile_aboutTextPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);

@@ -24,7 +24,6 @@ import android.graphics.Rect;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
-import androidx.annotation.Keep;
 import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.KeyEvent;
@@ -47,6 +46,8 @@ import org.telegram.ui.Components.CubicBezierInterpolator;
 import org.telegram.ui.Components.LayoutHelper;
 
 import java.util.ArrayList;
+
+import androidx.annotation.Keep;
 
 public class ActionBarLayout extends FrameLayout {
 
@@ -355,7 +356,7 @@ public class ActionBarLayout extends FrameLayout {
     public void dismissDialogs() {
         if (!fragmentsStack.isEmpty()) {
             BaseFragment lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
-            lastFragment.dismissCurrentDialig();
+            lastFragment.dismissCurrentDialog();
         }
     }
 

@@ -56,6 +56,9 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * 网络连接、im长连接？
+ */
 public class ConnectionsManager extends BaseController {
 
     public final static int ConnectionTypeGeneric = 1;

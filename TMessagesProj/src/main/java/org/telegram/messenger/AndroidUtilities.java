@@ -48,10 +48,6 @@ import android.provider.CallLog;
 import android.provider.DocumentsContract;
 import android.provider.MediaStore;
 import android.provider.Settings;
-
-import androidx.core.content.FileProvider;
-import androidx.viewpager.widget.ViewPager;
-
 import android.telephony.TelephonyManager;
 import android.text.Selection;
 import android.text.Spannable;
@@ -67,8 +63,8 @@ import android.util.DisplayMetrics;
 import android.util.StateSet;
 import android.util.TypedValue;
 import android.view.Display;
-import android.view.MotionEvent;
 import android.view.Gravity;
+import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
 import android.view.ViewGroup;
@@ -143,6 +139,9 @@ import java.util.List;
 import java.util.Locale;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import androidx.core.content.FileProvider;
+import androidx.viewpager.widget.ViewPager;
 
 public class AndroidUtilities {
 
@@ -1354,6 +1353,11 @@ public class AndroidUtilities {
         return density * value;
     }
 
+    /**
+     * 适配机械键盘、屏幕密度、平板模式
+     * @param context
+     * @param newConfiguration
+     */
     public static void checkDisplaySize(Context context, Configuration newConfiguration) {
         try {
             float oldDensity = density;
@@ -1367,6 +1371,7 @@ public class AndroidUtilities {
             if (configuration == null) {
                 configuration = context.getResources().getConfiguration();
             }
+            //是否使用 机械键盘
             usingHardwareInput = configuration.keyboard != Configuration.KEYBOARD_NOKEYS && configuration.hardKeyboardHidden == Configuration.HARDKEYBOARDHIDDEN_NO;
             WindowManager manager = (WindowManager) context.getSystemService(Context.WINDOW_SERVICE);
             if (manager != null) {

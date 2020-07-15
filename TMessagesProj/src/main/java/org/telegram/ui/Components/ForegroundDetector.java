@@ -19,6 +19,9 @@ import org.telegram.messenger.FileLog;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * 监听应用的生命周期
+ */
 public class ForegroundDetector implements Application.ActivityLifecycleCallbacks {
 
     public interface Listener {
@@ -49,6 +52,11 @@ public class ForegroundDetector implements Application.ActivityLifecycleCallback
         return refs == 0;
     }
 
+    /**
+     * 观察者模式
+     * 这个函数没有使用，这是挖了个坑
+     * @param listener
+     */
     public void addListener(Listener listener) {
         listeners.add(listener);
     }

@@ -8,12 +8,16 @@
 
 package org.telegram.messenger;
 
-import androidx.annotation.UiThread;
 import android.util.SparseArray;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import androidx.annotation.UiThread;
+
+/**
+ * 通知中心
+ */
 public class NotificationCenter {
 
     private static int totalEvents = 1;
@@ -202,6 +206,11 @@ public class NotificationCenter {
 
     private final HashMap<Integer, int[]> allowedNotifications = new HashMap<>();
 
+    /**
+     * 通知接口
+     *
+     * 观察者模式。发生事件后会调用此接口
+     */
     public interface NotificationCenterDelegate {
         void didReceivedNotification(int id, int account, Object... args);
     }

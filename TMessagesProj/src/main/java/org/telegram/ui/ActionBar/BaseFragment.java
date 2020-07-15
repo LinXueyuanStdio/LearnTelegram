@@ -43,6 +43,23 @@ import org.telegram.tgnet.ConnectionsManager;
 
 import java.util.ArrayList;
 
+/**
+ * 介绍：
+ *     传说中拳打官方Activity脚踢官方Fragment的神之class
+ *     因为它 extends nothing
+ *     比 ChatActivity extends BaseFragment 更为蛋疼
+ *     这个类，有毒
+ * 职责：
+ *     封装fragmentView
+ *     规定了fragmentView的生命周期
+ *     控制Dialog的显示
+ *     支持BaseFragment的嵌套
+ *     支持和官方Activity通信
+ *
+ * 生命周期：
+ * <init>()
+ * finishFragment
+ */
 public class BaseFragment {
 
     private boolean isFinished;
@@ -50,10 +67,15 @@ public class BaseFragment {
     protected Dialog visibleDialog;
     protected int currentAccount = UserConfig.selectedAccount;
 
-    protected View fragmentView;
-    protected ActionBarLayout parentLayout;
+    protected View fragmentView;//子类的 View，将这个 View 添加到 parentLayout (ActionBarLayout)
+    protected ActionBarLayout parentLayout;//ActionBarLayout 是所有 Fragment 的容器
     protected ActionBar actionBar;
     protected boolean inPreviewMode;
+    /**
+     * 类uid，本质是一个单调递增的计数器 [0,+∞)
+     *
+     * 每实例化一个BaseFragment类，下一个实例化类的uid自动+1
+     */
     protected int classGuid;
     protected Bundle arguments;
     protected boolean hasOwnBackground = false;
@@ -83,6 +105,11 @@ public class BaseFragment {
         return fragmentView;
     }
 
+    /**
+     * 需要重写这个方法提供View，以装载进ActionBarLayout
+     * @param context 上下文
+     * @return View
+     */
     public View createView(Context context) {
         return null;
     }
@@ -118,6 +145,9 @@ public class BaseFragment {
         return true;
     }
 
+    /**
+     * 给ActionBarLayout用的，不要重写
+     */
     protected void clearViews() {
         if (fragmentView != null) {
             ViewGroup parent = (ViewGroup) fragmentView.getParent();
@@ -149,11 +179,19 @@ public class BaseFragment {
 
     }
 
+    /**
+     * 需要绑定到父Fragment的容器，才能往容器里添加自己的 ContentView
+     * @param fragment 父Fragment
+     */
     public void setParentFragment(BaseFragment fragment) {
         setParentLayout(fragment.parentLayout);
         fragmentView = createView(parentLayout.getContext());
     }
 
+    /**
+     * 绑定到容器
+     * @param layout ActionBarLayout
+     */
     protected void setParentLayout(ActionBarLayout layout) {
         if (parentLayout != layout) {
             parentLayout = layout;
@@ -345,22 +383,7 @@ public class BaseFragment {
         }
     }
 
-    public void dismissCurrentDialig() {
-        if (visibleDialog == null) {
-            return;
-        }
-        try {
-            visibleDialog.dismiss();
-            visibleDialog = null;
-        } catch (Exception e) {
-            FileLog.e(e);
-        }
-    }
-
-    public boolean dismissDialogOnPause(Dialog dialog) {
-        return true;
-    }
-
+    //region 侧滑返回
     public boolean canBeginSlide() {
         return true;
     }
@@ -392,6 +415,7 @@ public class BaseFragment {
     }
 
     protected void onBecomeFullyVisible() {
+        //兼容辅助模式
         AccessibilityManager mgr = (AccessibilityManager) ApplicationLoader.applicationContext.getSystemService(Context.ACCESSIBILITY_SERVICE);
         if (mgr.isEnabled()) {
             ActionBar actionBar = getActionBar();
@@ -411,11 +435,13 @@ public class BaseFragment {
     protected AnimatorSet onCustomTransitionAnimation(boolean isOpen, final Runnable callback) {
         return null;
     }
+    //endregion
 
     public void onLowMemory() {
 
     }
 
+    //region Dialog 对话框管理。子类只管用，不需要重写
     public Dialog showDialog(Dialog dialog) {
         return showDialog(dialog, false, null);
     }
@@ -456,6 +482,22 @@ public class BaseFragment {
         return null;
     }
 
+    public void dismissCurrentDialog() {
+        if (visibleDialog == null) {
+            return;
+        }
+        try {
+            visibleDialog.dismiss();
+            visibleDialog = null;
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+    }
+
+    public boolean dismissDialogOnPause(Dialog dialog) {
+        return true;
+    }
+
     protected void onDialogDismiss(Dialog dialog) {
 
     }
@@ -483,6 +525,7 @@ public class BaseFragment {
     public void setVisibleDialog(Dialog dialog) {
         visibleDialog = dialog;
     }
+    //endregion
 
     public boolean extendActionMode(Menu menu) {
         return false;
@@ -492,6 +535,7 @@ public class BaseFragment {
         return new ArrayList<>();
     }
 
+    //region 一些控制器。感觉直接使用单例来调用函数也是可以的，这里写成函数方便一点
     public AccountInstance getAccountInstance() {
         return AccountInstance.getInstance(currentAccount);
     }
@@ -555,4 +599,5 @@ public class BaseFragment {
     public UserConfig getUserConfig() {
         return getAccountInstance().getUserConfig();
     }
+    //endregion
 }
