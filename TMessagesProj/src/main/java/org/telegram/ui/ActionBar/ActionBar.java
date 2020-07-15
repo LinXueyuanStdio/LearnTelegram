@@ -38,6 +38,9 @@ import org.telegram.ui.Components.SnowflakesEffect;
 
 import java.util.ArrayList;
 
+/**
+ * 这 ActionBar 是自己写的，不是谷歌官方的 ActionBar....
+ */
 public class ActionBar extends FrameLayout {
 
     public static class ActionBarMenuOnItemClick {

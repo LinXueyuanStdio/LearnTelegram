@@ -1190,6 +1190,10 @@ public class ActionBarLayout extends FrameLayout {
         closeLastFragment(true);
     }
 
+    /**
+     * 关闭最后一个Fragment
+     * @param animated 是否显示动画
+     */
     public void closeLastFragment(boolean animated) {
         if (delegate != null && !delegate.needCloseLastFragment(this) || checkTransitionAnimation() || fragmentsStack.isEmpty()) {
             return;
@@ -1206,6 +1210,7 @@ public class ActionBarLayout extends FrameLayout {
         }
 
         if (previousFragment != null) {
+            //存在前一个Fragment
             LayoutContainer temp = containerView;
             containerView = containerViewBack;
             containerViewBack = temp;
@@ -1311,6 +1316,7 @@ public class ActionBarLayout extends FrameLayout {
                 previousFragment.onBecomeFullyVisible();
             }
         } else {
+            //当前Fragment就是最后一个Fragment
             if (useAlphaAnimations) {
                 transitionAnimationStartTime = System.currentTimeMillis();
                 transitionAnimationInProgress = true;
@@ -1359,6 +1365,9 @@ public class ActionBarLayout extends FrameLayout {
         }
     }
 
+    /**
+     * 显示最后一个Fragment
+     */
     public void showLastFragment() {
         if (fragmentsStack.isEmpty()) {
             return;

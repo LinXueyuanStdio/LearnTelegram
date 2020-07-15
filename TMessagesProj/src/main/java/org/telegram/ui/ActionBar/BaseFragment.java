@@ -58,7 +58,16 @@ import java.util.ArrayList;
  *
  * 生命周期：
  * <init>()
- * finishFragment
+ * |
+ * | presentFragment(this)
+ * |
+ *  ->  onFragmentCreate
+ *      |
+ *      onResume
+ *      |
+ *      onPause ---  finishFragment
+ *      |
+ *      onFragmentDestroy
  */
 public class BaseFragment {
 
@@ -90,11 +99,17 @@ public class BaseFragment {
         classGuid = ConnectionsManager.generateClassGuid();
     }
 
-    public void setCurrentAccount(int account) {
-        if (fragmentView != null) {
-            throw new IllegalStateException("trying to set current account when fragment UI already created");
+    //region 工具方法，不要重写，只管调用
+    //region getter
+    public Activity getParentActivity() {
+        if (parentLayout != null) {
+            return parentLayout.parentActivity;
         }
-        currentAccount = account;
+        return null;
+    }
+
+    public ActionBarLayout getParentLayout() {
+        return parentLayout;
     }
 
     public ActionBar getActionBar() {
@@ -103,15 +118,6 @@ public class BaseFragment {
 
     public View getFragmentView() {
         return fragmentView;
-    }
-
-    /**
-     * 需要重写这个方法提供View，以装载进ActionBarLayout
-     * @param context 上下文
-     * @return View
-     */
-    public View createView(Context context) {
-        return null;
     }
 
     public Bundle getArguments() {
@@ -125,67 +131,14 @@ public class BaseFragment {
     public int getClassGuid() {
         return classGuid;
     }
+    //endregion
 
-    public boolean isSwipeBackEnabled(MotionEvent event) {
-        return true;
-    }
-
-    protected void setInPreviewMode(boolean value) {
-        inPreviewMode = value;
-        if (actionBar != null) {
-            if (inPreviewMode) {
-                actionBar.setOccupyStatusBar(false);
-            } else {
-                actionBar.setOccupyStatusBar(Build.VERSION.SDK_INT >= 21);
-            }
-        }
-    }
-
-    protected boolean hideKeyboardOnShow() {
-        return true;
-    }
-
-    /**
-     * 给ActionBarLayout用的，不要重写
-     */
-    protected void clearViews() {
+    //region setter
+    public void setCurrentAccount(int account) {
         if (fragmentView != null) {
-            ViewGroup parent = (ViewGroup) fragmentView.getParent();
-            if (parent != null) {
-                try {
-                    onRemoveFromParent();
-                    parent.removeViewInLayout(fragmentView);
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
-            }
-            fragmentView = null;
+            throw new IllegalStateException("trying to set current account when fragment UI already created");
         }
-        if (actionBar != null) {
-            ViewGroup parent = (ViewGroup) actionBar.getParent();
-            if (parent != null) {
-                try {
-                    parent.removeViewInLayout(actionBar);
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
-            }
-            actionBar = null;
-        }
-        parentLayout = null;
-    }
-
-    protected void onRemoveFromParent() {
-
-    }
-
-    /**
-     * 需要绑定到父Fragment的容器，才能往容器里添加自己的 ContentView
-     * @param fragment 父Fragment
-     */
-    public void setParentFragment(BaseFragment fragment) {
-        setParentLayout(fragment.parentLayout);
-        fragmentView = createView(parentLayout.getContext());
+        currentAccount = account;
     }
 
     /**
@@ -232,6 +185,140 @@ public class BaseFragment {
         }
     }
 
+    protected void setParentActivityTitle(CharSequence title) {
+        Activity activity = getParentActivity();
+        if (activity != null) {
+            activity.setTitle(title);
+        }
+    }
+    //endregion
+
+    //region 子 Fragment 的控制
+    public void movePreviewFragment(float dy) {
+        parentLayout.movePreviewFragment(dy);
+    }
+
+    public void finishPreviewFragment() {
+        parentLayout.finishPreviewFragment();
+    }
+
+    public BaseFragment getFragmentForAlert(int offset) {
+        if (parentLayout == null || parentLayout.fragmentsStack.size() <= 1 + offset) {
+            return this;
+        }
+        return parentLayout.fragmentsStack.get(parentLayout.fragmentsStack.size() - 2 - offset);
+    }
+
+    /**
+     * 需要绑定到父Fragment的容器，才能往容器里添加自己的 ContentView
+     * @param fragment 父Fragment
+     */
+    public void setParentFragment(BaseFragment fragment) {
+        setParentLayout(fragment.parentLayout);
+        fragmentView = createView(parentLayout.getContext());
+    }
+
+    /**
+     * 显示一个预览模式的子Fragment
+     * @param fragment 预览Fragment
+     * @return 是否显示成功
+     */
+    public boolean presentFragmentAsPreview(BaseFragment fragment) {
+        return parentLayout != null && parentLayout.presentFragmentAsPreview(fragment);
+    }
+
+    /**
+     * 显示一个子Fragment
+     * @param fragment 子Fragment
+     * @return 是否显示成功
+     */
+    public boolean presentFragment(BaseFragment fragment) {
+        return parentLayout != null && parentLayout.presentFragment(fragment);
+    }
+
+    public boolean presentFragment(BaseFragment fragment, boolean removeLast) {
+        return parentLayout != null && parentLayout.presentFragment(fragment, removeLast);
+    }
+
+    public boolean presentFragment(BaseFragment fragment, boolean removeLast, boolean forceWithoutAnimation) {
+        return parentLayout != null && parentLayout.presentFragment(fragment, removeLast, forceWithoutAnimation, true, false);
+    }
+    //endregion
+
+    /**
+     * 给ActionBarLayout用的，不要重写
+     */
+    protected void clearViews() {
+        if (fragmentView != null) {
+            ViewGroup parent = (ViewGroup) fragmentView.getParent();
+            if (parent != null) {
+                try {
+                    onRemoveFromParent();
+                    parent.removeViewInLayout(fragmentView);
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
+            }
+            fragmentView = null;
+        }
+        if (actionBar != null) {
+            ViewGroup parent = (ViewGroup) actionBar.getParent();
+            if (parent != null) {
+                try {
+                    parent.removeViewInLayout(actionBar);
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
+            }
+            actionBar = null;
+        }
+        parentLayout = null;
+    }
+    //endregion
+
+    //region 功能配置
+    /**
+     * 是否需要侧滑返回
+     * @return true：将侧滑返回
+     */
+    public boolean isSwipeBackEnabled(MotionEvent event) {
+        return true;
+    }
+
+    /**
+     * 是否需要延迟播放打开动画
+     * @return true：将延迟播放打开动画
+     */
+    public boolean needDelayOpenAnimation() {
+        return false;
+    }
+
+    /**
+     * 是否需要在显示前隐藏软键盘
+     * @return true：将在显示前隐藏软键盘
+     */
+    protected boolean hideKeyboardOnShow() {
+        return true;
+    }
+    //endregion
+
+    /**
+     * 需要重写这个方法提供View，以装载进ActionBarLayout
+     * @param context 上下文
+     * @return View
+     */
+    public View createView(Context context) {
+        return null;
+    }
+
+    /**
+     * 可以重写这个方法提供 ActionBar
+     *
+     * 注意：ActionBar是自定义的一个View，不是系统提供的 ActionBar
+     *      这个 View 和 BaseFragment 的生命周期绑定在一起，可以优雅地控制其展示
+     * @param context 上下文
+     * @return ActionBar
+     */
     protected ActionBar createActionBar(Context context) {
         ActionBar actionBar = new ActionBar(context);
         actionBar.setBackgroundColor(Theme.getColor(Theme.key_actionBarDefault));
@@ -245,14 +332,33 @@ public class BaseFragment {
         return actionBar;
     }
 
-    public void movePreviewFragment(float dy) {
-        parentLayout.movePreviewFragment(dy);
+    /**
+     * 预览模式（这个方法只有 ChatActivity 用到）
+     * @param value true：处于预览模式，需要重写此方法设置预览模式的UI
+     */
+    protected void setInPreviewMode(boolean value) {
+        inPreviewMode = value;
+        if (actionBar != null) {
+            if (inPreviewMode) {
+                actionBar.setOccupyStatusBar(false);
+            } else {
+                actionBar.setOccupyStatusBar(Build.VERSION.SDK_INT >= 21);
+            }
+        }
     }
 
-    public void finishPreviewFragment() {
-        parentLayout.finishPreviewFragment();
+    //region 生命周期
+
+    /**
+     * fragmentLayout被从ActionBarLayout中移除
+     */
+    protected void onRemoveFromParent() {
+
     }
 
+    /**
+     * 完成、关闭、移除本Fragment
+     */
     public void finishFragment() {
         finishFragment(true);
     }
@@ -289,10 +395,6 @@ public class BaseFragment {
         }
     }
 
-    public boolean needDelayOpenAnimation() {
-        return false;
-    }
-
     public void onResume() {
         isPaused = false;
     }
@@ -311,20 +413,33 @@ public class BaseFragment {
             FileLog.e(e);
         }
     }
-
-    public BaseFragment getFragmentForAlert(int offset) {
-        if (parentLayout == null || parentLayout.fragmentsStack.size() <= 1 + offset) {
-            return this;
-        }
-        return parentLayout.fragmentsStack.get(parentLayout.fragmentsStack.size() - 2 - offset);
-    }
+    //endregion
 
     public void onConfigurationChanged(android.content.res.Configuration newConfig) {
 
     }
 
+    public void onLowMemory() {
+
+    }
+
+    public ArrayList<ThemeDescription> getThemeDescriptions() {
+        return new ArrayList<>();
+    }
+
+    public boolean extendActionMode(Menu menu) {
+        return false;
+    }
+
     public boolean onBackPressed() {
         return true;
+    }
+
+    //region 向其他页面发起请求并获得返回值
+    public void startActivityForResult(final Intent intent, final int requestCode) {
+        if (parentLayout != null) {
+            parentLayout.startActivityForResult(intent, requestCode);
+        }
     }
 
     public void onActivityResultFragment(int requestCode, int resultCode, Intent data) {
@@ -334,7 +449,9 @@ public class BaseFragment {
     public void onRequestPermissionsResultFragment(int requestCode, String[] permissions, int[] grantResults) {
 
     }
+    //endregion
 
+    //region 管理参数
     public void saveSelfArgs(Bundle args) {
 
     }
@@ -342,46 +459,7 @@ public class BaseFragment {
     public void restoreSelfArgs(Bundle args) {
 
     }
-
-    public ActionBarLayout getParentLayout() {
-        return parentLayout;
-    }
-
-    public boolean presentFragmentAsPreview(BaseFragment fragment) {
-        return parentLayout != null && parentLayout.presentFragmentAsPreview(fragment);
-    }
-
-    public boolean presentFragment(BaseFragment fragment) {
-        return parentLayout != null && parentLayout.presentFragment(fragment);
-    }
-
-    public boolean presentFragment(BaseFragment fragment, boolean removeLast) {
-        return parentLayout != null && parentLayout.presentFragment(fragment, removeLast);
-    }
-
-    public boolean presentFragment(BaseFragment fragment, boolean removeLast, boolean forceWithoutAnimation) {
-        return parentLayout != null && parentLayout.presentFragment(fragment, removeLast, forceWithoutAnimation, true, false);
-    }
-
-    public Activity getParentActivity() {
-        if (parentLayout != null) {
-            return parentLayout.parentActivity;
-        }
-        return null;
-    }
-
-    protected void setParentActivityTitle(CharSequence title) {
-        Activity activity = getParentActivity();
-        if (activity != null) {
-            activity.setTitle(title);
-        }
-    }
-
-    public void startActivityForResult(final Intent intent, final int requestCode) {
-        if (parentLayout != null) {
-            parentLayout.startActivityForResult(intent, requestCode);
-        }
-    }
+    //endregion
 
     //region 侧滑返回
     public boolean canBeginSlide() {
@@ -437,11 +515,7 @@ public class BaseFragment {
     }
     //endregion
 
-    public void onLowMemory() {
-
-    }
-
-    //region Dialog 对话框管理。子类只管用，不需要重写
+    //region 对话框管理 Dialog。
     public Dialog showDialog(Dialog dialog) {
         return showDialog(dialog, false, null);
     }
@@ -526,14 +600,6 @@ public class BaseFragment {
         visibleDialog = dialog;
     }
     //endregion
-
-    public boolean extendActionMode(Menu menu) {
-        return false;
-    }
-
-    public ArrayList<ThemeDescription> getThemeDescriptions() {
-        return new ArrayList<>();
-    }
 
     //region 一些控制器。感觉直接使用单例来调用函数也是可以的，这里写成函数方便一点
     public AccountInstance getAccountInstance() {

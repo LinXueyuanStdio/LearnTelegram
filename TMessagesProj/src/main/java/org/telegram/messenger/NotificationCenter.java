@@ -231,6 +231,24 @@ public class NotificationCenter {
     private static volatile NotificationCenter[] Instance = new NotificationCenter[UserConfig.MAX_ACCOUNT_COUNT];
     private static volatile NotificationCenter globalInstance;
 
+    /**
+     * 这种单例模式是采用双重校验锁的线程安全的单例模式。是效率最好的安全性最好的一种写法
+     *
+     * Instance加上了volatile关键字确保了多线程环境下防止重排序，避免在多线程环境下实例化NotificationCenter对象时得到的引用时未初始化的。
+     *
+     * 实例化一个对象其实可以分为三个步骤：
+     * 　　（1）分配内存空间。
+     * 　　（2）初始化对象。
+     * 　　（3）将内存空间的地址赋值给对应的引用。
+     * 但是由于操作系统可以对指令进行重排序，所以上面的过程也可能会变成如下过程：
+     * 　　（1）分配内存空间。
+     * 　　（2）将内存空间的地址赋值给对应的引用。
+     * 　　（3）初始化对象
+     * 　　如果是这个流程，多线程环境下就可能将一个未初始化的对象引用暴露出来，从而导致不可预料的结果。
+     *     因此，为了防止这个过程的重排序，我们需要将变量设置为volatile类型的变量。
+     * @param num AccountId
+     * @return NotificationCenter
+     */
     @UiThread
     public static NotificationCenter getInstance(int num) {
         NotificationCenter localInstance = Instance[num];
