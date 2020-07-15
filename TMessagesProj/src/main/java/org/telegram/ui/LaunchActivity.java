@@ -144,8 +144,17 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
     private ActionMode visibleActionMode;
 
     private ImageView themeSwitchImageView;
+    /**
+     * 主容器
+     */
     private ActionBarLayout actionBarLayout;
+    /**
+     * 适配平板的容器
+     */
     private ActionBarLayout layersActionBarLayout;
+    /**
+     * 适配平板的容器
+     */
     private ActionBarLayout rightActionBarLayout;
     private FrameLayout shadowTablet;
     private FrameLayout shadowTabletSide;
