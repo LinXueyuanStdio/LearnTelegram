@@ -11,6 +11,7 @@ public class AccountInstance {
 
     private int currentAccount;
     private static volatile AccountInstance[] Instance = new AccountInstance[UserConfig.MAX_ACCOUNT_COUNT];
+
     public static AccountInstance getInstance(int num) {
         AccountInstance localInstance = Instance[num];
         if (localInstance == null) {
@@ -27,6 +28,7 @@ public class AccountInstance {
     public AccountInstance(int instance) {
         currentAccount = instance;
     }
+
     //消息管理
     public MessagesController getMessagesController() {
         return MessagesController.getInstance(currentAccount);
@@ -36,6 +38,7 @@ public class AccountInstance {
     public MessagesStorage getMessagesStorage() {
         return MessagesStorage.getInstance(currentAccount);
     }
+
     //联系人
     public ContactsController getContactsController() {
         return ContactsController.getInstance(currentAccount);
