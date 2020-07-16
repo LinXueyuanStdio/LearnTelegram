@@ -17,6 +17,12 @@ import androidx.annotation.UiThread;
 
 /**
  * 通知中心
+ *
+ * 这是一个本地化的EventBus
+ *
+ * 发送消息 postNotificationName
+ * 接收消息 addObserver
+ * 不再接收消息 removeObserver
  */
 public class NotificationCenter {
 

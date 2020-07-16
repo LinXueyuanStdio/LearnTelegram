@@ -54,6 +54,9 @@ import java.util.List;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+/**
+ * 电话记录
+ */
 public class CallLogActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
 
 	private ListAdapter listViewAdapter;

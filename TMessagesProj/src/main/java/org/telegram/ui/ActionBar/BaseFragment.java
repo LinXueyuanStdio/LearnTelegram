@@ -228,7 +228,8 @@ public class BaseFragment {
     }
 
     /**
-     * 显示一个子Fragment
+     * 显示一个子Fragment，同时播放动画、入栈
+     * 用法 presentFragment(new XXActivity());
      * @param fragment 子Fragment
      * @return 是否显示成功
      */

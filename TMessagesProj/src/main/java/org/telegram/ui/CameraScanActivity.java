@@ -69,6 +69,9 @@ import org.telegram.ui.Components.LayoutHelper;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+/**
+ * 扫码
+ */
 @TargetApi(18)
 public class CameraScanActivity extends BaseFragment implements Camera.PreviewCallback {
 

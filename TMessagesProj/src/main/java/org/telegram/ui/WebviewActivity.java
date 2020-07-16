@@ -57,6 +57,9 @@ import org.telegram.ui.Components.ShareAlert;
 import java.net.URLEncoder;
 import java.util.ArrayList;
 
+/**
+ * 内置浏览器
+ */
 public class WebviewActivity extends BaseFragment {
 
     private WebView webView;
