@@ -49,13 +49,20 @@ import java.util.ArrayList;
 
 import androidx.annotation.Keep;
 
+/**
+ * 主容器
+ */
 public class ActionBarLayout extends FrameLayout {
 
     public interface ActionBarLayoutDelegate {
         boolean onPreIme();
+
         boolean needPresentFragment(BaseFragment fragment, boolean removeLast, boolean forceWithoutAnimation, ActionBarLayout layout);
+
         boolean needAddFragmentToStack(BaseFragment fragment, ActionBarLayout layout);
+
         boolean needCloseLastFragment(ActionBarLayout layout);
+
         void onRebuildAllFragments(ActionBarLayout layout, boolean last);
     }
 
@@ -212,6 +219,7 @@ public class ActionBarLayout extends FrameLayout {
         }
     }
 
+    //region field
     private static Drawable headerShadowDrawable;
     private static Drawable layerShadowDrawable;
     private static Paint scrimPaint;
@@ -225,7 +233,7 @@ public class ActionBarLayout extends FrameLayout {
 
     private LayoutContainer containerView;
     private LayoutContainer containerViewBack;
-    private DrawerLayoutContainer drawerLayoutContainer;
+    private DrawerLayoutContainer drawerLayoutContainer;//持有但不addView
     private ActionBar currentActionBar;
 
     private BaseFragment newFragment;
@@ -283,7 +291,11 @@ public class ActionBarLayout extends FrameLayout {
     private ActionBarLayoutDelegate delegate;
     protected Activity parentActivity;
 
+    /**
+     * fragment 栈
+     */
     public ArrayList<BaseFragment> fragmentsStack;
+    //endregion
 
     public ActionBarLayout(Context context) {
         super(context);
@@ -296,6 +308,12 @@ public class ActionBarLayout extends FrameLayout {
         }
     }
 
+    /**
+     * ActionBarLayout
+     *   - containerViewBack(LayoutContainer)
+     *   - containerView(LayoutContainer)
+     * @param stack fragment 栈
+     */
     public void init(ArrayList<BaseFragment> stack) {
         fragmentsStack = stack;
         containerViewBack = new LayoutContainer(parentActivity);
@@ -330,65 +348,6 @@ public class ActionBarLayout extends FrameLayout {
                     ((BottomSheet) fragment.visibleDialog).onConfigurationChanged(newConfig);
                 }
             }
-        }
-    }
-
-    public void drawHeaderShadow(Canvas canvas, int y) {
-        drawHeaderShadow(canvas, 255, y);
-    }
-
-    public void drawHeaderShadow(Canvas canvas, int alpha, int y) {
-        if (headerShadowDrawable != null) {
-            headerShadowDrawable.setAlpha(alpha);
-            headerShadowDrawable.setBounds(0, y, getMeasuredWidth(), y + headerShadowDrawable.getIntrinsicHeight());
-            headerShadowDrawable.draw(canvas);
-        }
-    }
-
-    @Keep
-    public void setInnerTranslationX(float value) {
-        innerTranslationX = value;
-        invalidate();
-    }
-
-    @Keep
-    public float getInnerTranslationX() {
-        return innerTranslationX;
-    }
-
-    public void dismissDialogs() {
-        if (!fragmentsStack.isEmpty()) {
-            BaseFragment lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
-            lastFragment.dismissCurrentDialog();
-        }
-    }
-
-    public int getCurrentPanTranslationY() {
-        return currentPanTranslationY;
-    }
-
-    public void onResume() {
-        if (transitionAnimationInProgress) {
-            if (currentAnimation != null) {
-                currentAnimation.cancel();
-                currentAnimation = null;
-            }
-            if (onCloseAnimationEndRunnable != null) {
-                onCloseAnimationEnd();
-            } else if (onOpenAnimationEndRunnable != null) {
-                onOpenAnimationEnd();
-            }
-        }
-        if (!fragmentsStack.isEmpty()) {
-            BaseFragment lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
-            lastFragment.onResume();
-        }
-    }
-
-    public void onPause() {
-        if (!fragmentsStack.isEmpty()) {
-            BaseFragment lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
-            lastFragment.onPause();
         }
     }
 
@@ -449,7 +408,7 @@ public class ActionBarLayout extends FrameLayout {
                 layerShadowDrawable.setAlpha((int) (0xff * alpha));
                 layerShadowDrawable.draw(canvas);
             } else if (child == containerViewBack) {
-                float opacity = Math.min(0.8f, (width - translationX) / (float)width);
+                float opacity = Math.min(0.8f, (width - translationX) / (float) width);
                 if (opacity < 0) {
                     opacity = 0;
                 }
@@ -459,60 +418,6 @@ public class ActionBarLayout extends FrameLayout {
         }
 
         return result;
-    }
-
-    public void setDelegate(ActionBarLayoutDelegate actionBarLayoutDelegate) {
-        delegate = actionBarLayoutDelegate;
-    }
-
-    private void onSlideAnimationEnd(final boolean backAnimation) {
-        if (!backAnimation) {
-            if (fragmentsStack.size() < 2) {
-                return;
-            }
-            BaseFragment lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
-            lastFragment.onPause();
-            lastFragment.onFragmentDestroy();
-            lastFragment.setParentLayout(null);
-            fragmentsStack.remove(fragmentsStack.size() - 1);
-
-            LayoutContainer temp = containerView;
-            containerView = containerViewBack;
-            containerViewBack = temp;
-            bringContainerViewToFront();
-
-            lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
-            currentActionBar = lastFragment.actionBar;
-            lastFragment.onResume();
-            lastFragment.onBecomeFullyVisible();
-
-            layoutToIgnore = containerView;
-        } else {
-            if (fragmentsStack.size() >= 2) {
-                BaseFragment lastFragment = fragmentsStack.get(fragmentsStack.size() - 2);
-                lastFragment.onPause();
-                if (lastFragment.fragmentView != null) {
-                    ViewGroup parent = (ViewGroup) lastFragment.fragmentView.getParent();
-                    if (parent != null) {
-                        lastFragment.onRemoveFromParent();
-                        parent.removeViewInLayout(lastFragment.fragmentView);
-                    }
-                }
-                if (lastFragment.actionBar != null && lastFragment.actionBar.shouldAddToContainer()) {
-                    ViewGroup parent = (ViewGroup) lastFragment.actionBar.getParent();
-                    if (parent != null) {
-                        parent.removeViewInLayout(lastFragment.actionBar);
-                    }
-                }
-            }
-            layoutToIgnore = null;
-        }
-        containerViewBack.setVisibility(View.INVISIBLE);
-        startedTracking = false;
-        animationInProgress = false;
-        containerView.setTranslationX(0);
-        containerViewBack.setTranslationX(0);
-        setInnerTranslationX(0);
     }
 
     private void prepareForMoving(MotionEvent ev) {
@@ -674,6 +579,13 @@ public class ActionBarLayout extends FrameLayout {
         return false;
     }
 
+    public boolean onKeyUp(int keyCode, KeyEvent event) {
+        if (keyCode == KeyEvent.KEYCODE_MENU && !checkTransitionAnimation() && !startedTracking && currentActionBar != null) {
+            currentActionBar.onMenuButtonPressed();
+        }
+        return super.onKeyUp(keyCode, event);
+    }
+
     public void onBackPressed() {
         if (transitionAnimationPreviewMode || startedTracking || checkTransitionAnimation() || fragmentsStack.isEmpty()) {
             return;
@@ -694,6 +606,168 @@ public class ActionBarLayout extends FrameLayout {
         for (BaseFragment fragment : fragmentsStack) {
             fragment.onLowMemory();
         }
+    }
+
+    /**
+     * 处理动画，继续调用 BaseFragment.onResume()
+     */
+    public void onResume() {
+        if (transitionAnimationInProgress) {
+            if (currentAnimation != null) {
+                currentAnimation.cancel();
+                currentAnimation = null;
+            }
+            if (onCloseAnimationEndRunnable != null) {
+                onCloseAnimationEnd();
+            } else if (onOpenAnimationEndRunnable != null) {
+                onOpenAnimationEnd();
+            }
+        }
+        if (!fragmentsStack.isEmpty()) {
+            BaseFragment lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
+            lastFragment.onResume();
+        }
+    }
+
+    /**
+     * 继续调用 BaseFragment.onPause()
+     */
+    public void onPause() {
+        if (!fragmentsStack.isEmpty()) {
+            BaseFragment lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
+            lastFragment.onPause();
+        }
+    }
+
+    public void startActivityForResult(final Intent intent, final int requestCode) {
+        if (parentActivity == null) {
+            return;
+        }
+        if (transitionAnimationInProgress) {
+            if (currentAnimation != null) {
+                currentAnimation.cancel();
+                currentAnimation = null;
+            }
+            if (onCloseAnimationEndRunnable != null) {
+                onCloseAnimationEnd();
+            } else if (onOpenAnimationEndRunnable != null) {
+                onOpenAnimationEnd();
+            }
+            containerView.invalidate();
+            if (intent != null) {
+                parentActivity.startActivityForResult(intent, requestCode);
+            }
+        } else {
+            if (intent != null) {
+                parentActivity.startActivityForResult(intent, requestCode);
+            }
+        }
+    }
+
+    //region 工具方法，不要重写，只管调用
+    public void drawHeaderShadow(Canvas canvas, int y) {
+        drawHeaderShadow(canvas, 255, y);
+    }
+
+    public void drawHeaderShadow(Canvas canvas, int alpha, int y) {
+        if (headerShadowDrawable != null) {
+            headerShadowDrawable.setAlpha(alpha);
+            headerShadowDrawable.setBounds(0, y, getMeasuredWidth(), y + headerShadowDrawable.getIntrinsicHeight());
+            headerShadowDrawable.draw(canvas);
+        }
+    }
+
+    public void dismissDialogs() {
+        if (!fragmentsStack.isEmpty()) {
+            BaseFragment lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
+            lastFragment.dismissCurrentDialog();
+        }
+    }
+
+    //region 动画控制
+    private void onCloseAnimationEnd() {
+        if (transitionAnimationInProgress && onCloseAnimationEndRunnable != null) {
+            transitionAnimationInProgress = false;
+            if (currentPanTranslationY == 0) {
+                layoutToIgnore = null;
+            }
+            transitionAnimationPreviewMode = false;
+            transitionAnimationStartTime = 0;
+            newFragment = null;
+            oldFragment = null;
+            Runnable endRunnable = onCloseAnimationEndRunnable;
+            onCloseAnimationEndRunnable = null;
+            endRunnable.run();
+            checkNeedRebuild();
+            checkNeedRebuild();
+        }
+    }
+
+    private void onOpenAnimationEnd() {
+        if (transitionAnimationInProgress && onOpenAnimationEndRunnable != null) {
+            transitionAnimationInProgress = false;
+            if (currentPanTranslationY == 0) {
+                layoutToIgnore = null;
+            }
+            transitionAnimationPreviewMode = false;
+            transitionAnimationStartTime = 0;
+            newFragment = null;
+            oldFragment = null;
+            Runnable endRunnable = onOpenAnimationEndRunnable;
+            onOpenAnimationEndRunnable = null;
+            endRunnable.run();
+            checkNeedRebuild();
+        }
+    }
+
+    private void onSlideAnimationEnd(final boolean backAnimation) {
+        if (!backAnimation) {
+            if (fragmentsStack.size() < 2) {
+                return;
+            }
+            BaseFragment lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
+            lastFragment.onPause();
+            lastFragment.onFragmentDestroy();
+            lastFragment.setParentLayout(null);
+            fragmentsStack.remove(fragmentsStack.size() - 1);
+
+            LayoutContainer temp = containerView;
+            containerView = containerViewBack;
+            containerViewBack = temp;
+            bringContainerViewToFront();
+
+            lastFragment = fragmentsStack.get(fragmentsStack.size() - 1);
+            currentActionBar = lastFragment.actionBar;
+            lastFragment.onResume();
+            lastFragment.onBecomeFullyVisible();
+
+            layoutToIgnore = containerView;
+        } else {
+            if (fragmentsStack.size() >= 2) {
+                BaseFragment lastFragment = fragmentsStack.get(fragmentsStack.size() - 2);
+                lastFragment.onPause();
+                if (lastFragment.fragmentView != null) {
+                    ViewGroup parent = (ViewGroup) lastFragment.fragmentView.getParent();
+                    if (parent != null) {
+                        lastFragment.onRemoveFromParent();
+                        parent.removeViewInLayout(lastFragment.fragmentView);
+                    }
+                }
+                if (lastFragment.actionBar != null && lastFragment.actionBar.shouldAddToContainer()) {
+                    ViewGroup parent = (ViewGroup) lastFragment.actionBar.getParent();
+                    if (parent != null) {
+                        parent.removeViewInLayout(lastFragment.actionBar);
+                    }
+                }
+            }
+            layoutToIgnore = null;
+        }
+        containerViewBack.setVisibility(View.INVISIBLE);
+        startedTracking = false;
+        animationInProgress = false;
+        containerView.setTranslationX(0);
+        containerViewBack.setTranslationX(0);
+        setInnerTranslationX(0);
     }
 
     private void onAnimationEndCheck(boolean byCheck) {
@@ -722,13 +796,6 @@ public class ActionBarLayout extends FrameLayout {
         containerViewBack.setScaleY(1.0f);
     }
 
-    public BaseFragment getLastFragment() {
-        if (fragmentsStack.isEmpty()) {
-            return null;
-        }
-        return fragmentsStack.get(fragmentsStack.size() - 1);
-    }
-
     public boolean checkTransitionAnimation() {
         if (transitionAnimationPreviewMode) {
             return false;
@@ -739,48 +806,13 @@ public class ActionBarLayout extends FrameLayout {
         return transitionAnimationInProgress;
     }
 
-    public boolean isPreviewOpenAnimationInProgress() {
-        return previewOpenAnimationInProgress;
-    }
-
-    private void presentFragmentInternalRemoveOld(boolean removeLast, final BaseFragment fragment) {
-        if (fragment == null) {
+    public void resumeDelayedFragmentAnimation() {
+        if (delayedOpenAnimationRunnable == null) {
             return;
         }
-        fragment.onBecomeFullyHidden();
-        fragment.onPause();
-        if (removeLast) {
-            fragment.onFragmentDestroy();
-            fragment.setParentLayout(null);
-            fragmentsStack.remove(fragment);
-        } else {
-            if (fragment.fragmentView != null) {
-                ViewGroup parent = (ViewGroup) fragment.fragmentView.getParent();
-                if (parent != null) {
-                    fragment.onRemoveFromParent();
-                    parent.removeViewInLayout(fragment.fragmentView);
-                }
-            }
-            if (fragment.actionBar != null && fragment.actionBar.shouldAddToContainer()) {
-                ViewGroup parent = (ViewGroup) fragment.actionBar.getParent();
-                if (parent != null) {
-                    parent.removeViewInLayout(fragment.actionBar);
-                }
-            }
-        }
-        containerViewBack.setVisibility(View.INVISIBLE);
-    }
-
-    public boolean presentFragmentAsPreview(BaseFragment fragment) {
-        return presentFragment(fragment, false, false, true, true);
-    }
-
-    public boolean presentFragment(BaseFragment fragment) {
-        return presentFragment(fragment, false, false, true, false);
-    }
-
-    public boolean presentFragment(BaseFragment fragment, boolean removeLast) {
-        return presentFragment(fragment, removeLast, false, true, false);
+        AndroidUtilities.cancelRunOnUIThread(delayedOpenAnimationRunnable);
+        delayedOpenAnimationRunnable.run();
+        delayedOpenAnimationRunnable = null;
     }
 
     private void startLayoutAnimation(final boolean open, final boolean first, final boolean preview) {
@@ -848,14 +880,65 @@ public class ActionBarLayout extends FrameLayout {
             }
         });
     }
+    //endregion
 
-    public void resumeDelayedFragmentAnimation() {
-        if (delayedOpenAnimationRunnable == null) {
+    //region Fragment控制
+    private void checkNeedRebuild() {
+        if (rebuildAfterAnimation) {
+            rebuildAllFragmentViews(rebuildLastAfterAnimation, showLastAfterAnimation);
+            rebuildAfterAnimation = false;
+        } else if (animateThemeAfterAnimation) {
+            animateThemedValues(animateSetThemeAfterAnimation, animateSetThemeAccentIdAfterAnimation, animateSetThemeNightAfterAnimation, false);
+            animateSetThemeAfterAnimation = null;
+            animateThemeAfterAnimation = false;
+        }
+    }
+
+    public BaseFragment getLastFragment() {
+        if (fragmentsStack.isEmpty()) {
+            return null;
+        }
+        return fragmentsStack.get(fragmentsStack.size() - 1);
+    }
+
+    private void presentFragmentInternalRemoveOld(boolean removeLast, final BaseFragment fragment) {
+        if (fragment == null) {
             return;
         }
-        AndroidUtilities.cancelRunOnUIThread(delayedOpenAnimationRunnable);
-        delayedOpenAnimationRunnable.run();
-        delayedOpenAnimationRunnable = null;
+        fragment.onBecomeFullyHidden();
+        fragment.onPause();
+        if (removeLast) {
+            fragment.onFragmentDestroy();
+            fragment.setParentLayout(null);
+            fragmentsStack.remove(fragment);
+        } else {
+            if (fragment.fragmentView != null) {
+                ViewGroup parent = (ViewGroup) fragment.fragmentView.getParent();
+                if (parent != null) {
+                    fragment.onRemoveFromParent();
+                    parent.removeViewInLayout(fragment.fragmentView);
+                }
+            }
+            if (fragment.actionBar != null && fragment.actionBar.shouldAddToContainer()) {
+                ViewGroup parent = (ViewGroup) fragment.actionBar.getParent();
+                if (parent != null) {
+                    parent.removeViewInLayout(fragment.actionBar);
+                }
+            }
+        }
+        containerViewBack.setVisibility(View.INVISIBLE);
+    }
+
+    public boolean presentFragmentAsPreview(BaseFragment fragment) {
+        return presentFragment(fragment, false, false, true, true);
+    }
+
+    public boolean presentFragment(BaseFragment fragment) {
+        return presentFragment(fragment, false, false, true, false);
+    }
+
+    public boolean presentFragment(BaseFragment fragment, boolean removeLast) {
+        return presentFragment(fragment, removeLast, false, true, false);
     }
 
     public boolean isInPreviewMode() {
@@ -1470,6 +1553,34 @@ public class ActionBarLayout extends FrameLayout {
         }
     }
 
+    public void rebuildAllFragmentViews(boolean last, boolean showLastAfter) {
+        if (transitionAnimationInProgress || startedTracking) {
+            rebuildAfterAnimation = true;
+            rebuildLastAfterAnimation = last;
+            showLastAfterAnimation = showLastAfter;
+            return;
+        }
+        int size = fragmentsStack.size();
+        if (!last) {
+            size--;
+        }
+        if (inPreviewMode) {
+            size--;
+        }
+        for (int a = 0; a < size; a++) {
+            fragmentsStack.get(a).clearViews();
+            fragmentsStack.get(a).setParentLayout(this);
+        }
+        if (delegate != null) {
+            delegate.onRebuildAllFragments(this, last);
+        }
+        if (showLastAfter) {
+            showLastFragment();
+        }
+    }
+    //endregion
+
+    //region 主题控制
     @Keep
     public void setThemeAnimationValue(float value) {
         themeAnimationValue = value;
@@ -1646,40 +1757,9 @@ public class ActionBarLayout extends FrameLayout {
             themeAnimatorSet.start();
         }
     }
+    //endregion
 
-    public void rebuildAllFragmentViews(boolean last, boolean showLastAfter) {
-        if (transitionAnimationInProgress || startedTracking) {
-            rebuildAfterAnimation = true;
-            rebuildLastAfterAnimation = last;
-            showLastAfterAnimation = showLastAfter;
-            return;
-        }
-        int size = fragmentsStack.size();
-        if (!last) {
-            size--;
-        }
-        if (inPreviewMode) {
-            size--;
-        }
-        for (int a = 0; a < size; a++) {
-            fragmentsStack.get(a).clearViews();
-            fragmentsStack.get(a).setParentLayout(this);
-        }
-        if (delegate != null) {
-            delegate.onRebuildAllFragments(this, last);
-        }
-        if (showLastAfter) {
-            showLastFragment();
-        }
-    }
-
-    public boolean onKeyUp(int keyCode, KeyEvent event) {
-        if (keyCode == KeyEvent.KEYCODE_MENU && !checkTransitionAnimation() && !startedTracking && currentActionBar != null) {
-            currentActionBar.onMenuButtonPressed();
-        }
-        return super.onKeyUp(keyCode, event);
-    }
-
+    //region ActionMode控制
     public void onActionModeStarted(Object mode) {
         if (currentActionBar != null) {
             currentActionBar.setVisibility(GONE);
@@ -1693,78 +1773,10 @@ public class ActionBarLayout extends FrameLayout {
         }
         inActionMode = false;
     }
+    //endregion
+    //endregion
 
-    private void onCloseAnimationEnd() {
-        if (transitionAnimationInProgress && onCloseAnimationEndRunnable != null) {
-            transitionAnimationInProgress = false;
-            if (currentPanTranslationY == 0) {
-                layoutToIgnore = null;
-            }
-            transitionAnimationPreviewMode = false;
-            transitionAnimationStartTime = 0;
-            newFragment = null;
-            oldFragment = null;
-            Runnable endRunnable = onCloseAnimationEndRunnable;
-            onCloseAnimationEndRunnable = null;
-            endRunnable.run();
-            checkNeedRebuild();
-            checkNeedRebuild();
-        }
-    }
-
-    private void checkNeedRebuild() {
-        if (rebuildAfterAnimation) {
-            rebuildAllFragmentViews(rebuildLastAfterAnimation, showLastAfterAnimation);
-            rebuildAfterAnimation = false;
-        } else if (animateThemeAfterAnimation) {
-            animateThemedValues(animateSetThemeAfterAnimation, animateSetThemeAccentIdAfterAnimation, animateSetThemeNightAfterAnimation, false);
-            animateSetThemeAfterAnimation = null;
-            animateThemeAfterAnimation = false;
-        }
-    }
-
-    private void onOpenAnimationEnd() {
-        if (transitionAnimationInProgress && onOpenAnimationEndRunnable != null) {
-            transitionAnimationInProgress = false;
-            if (currentPanTranslationY == 0) {
-                layoutToIgnore = null;
-            }
-            transitionAnimationPreviewMode = false;
-            transitionAnimationStartTime = 0;
-            newFragment = null;
-            oldFragment = null;
-            Runnable endRunnable = onOpenAnimationEndRunnable;
-            onOpenAnimationEndRunnable = null;
-            endRunnable.run();
-            checkNeedRebuild();
-        }
-    }
-
-    public void startActivityForResult(final Intent intent, final int requestCode) {
-        if (parentActivity == null) {
-            return;
-        }
-        if (transitionAnimationInProgress) {
-            if (currentAnimation != null) {
-                currentAnimation.cancel();
-                currentAnimation = null;
-            }
-            if (onCloseAnimationEndRunnable != null) {
-                onCloseAnimationEnd();
-            } else if (onOpenAnimationEndRunnable != null) {
-                onOpenAnimationEnd();
-            }
-            containerView.invalidate();
-            if (intent != null) {
-                parentActivity.startActivityForResult(intent, requestCode);
-            }
-        } else {
-            if (intent != null) {
-                parentActivity.startActivityForResult(intent, requestCode);
-            }
-        }
-    }
-
+    //region setter and getter
     public void setUseAlphaAnimations(boolean value) {
         useAlphaAnimations = value;
     }
@@ -1785,6 +1797,29 @@ public class ActionBarLayout extends FrameLayout {
         removeActionBarExtraHeight = value;
     }
 
+    public boolean isPreviewOpenAnimationInProgress() {
+        return previewOpenAnimationInProgress;
+    }
+
+    @Keep
+    public void setInnerTranslationX(float value) {
+        innerTranslationX = value;
+        invalidate();
+    }
+
+    @Keep
+    public float getInnerTranslationX() {
+        return innerTranslationX;
+    }
+
+    public int getCurrentPanTranslationY() {
+        return currentPanTranslationY;
+    }
+
+    public void setDelegate(ActionBarLayoutDelegate actionBarLayoutDelegate) {
+        delegate = actionBarLayoutDelegate;
+    }
+
     public void setTitleOverlayText(String title, int titleId, Runnable action) {
         titleOverlayText = title;
         titleOverlayTextId = titleId;
@@ -1796,7 +1831,9 @@ public class ActionBarLayout extends FrameLayout {
             }
         }
     }
+    //endregion
 
+    //region 功能配置
     public boolean extendActionMode(Menu menu) {
         return !fragmentsStack.isEmpty() && fragmentsStack.get(fragmentsStack.size() - 1).extendActionMode(menu);
     }
@@ -1805,4 +1842,5 @@ public class ActionBarLayout extends FrameLayout {
     public boolean hasOverlappingRendering() {
         return false;
     }
+    //endregion
 }
