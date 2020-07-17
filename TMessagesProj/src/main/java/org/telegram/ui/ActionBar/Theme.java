@@ -106,6 +106,9 @@ import java.util.Locale;
 
 import androidx.annotation.UiThread;
 
+/**
+ * 主题管理
+ */
 public class Theme {
 
     public static final String DEFAULT_BACKGROUND_SLUG = "d";

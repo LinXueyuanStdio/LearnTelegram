@@ -83,15 +83,6 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.core.content.FileProvider;
-import androidx.core.graphics.ColorUtils;
-import androidx.recyclerview.widget.ChatListItemAnimator;
-import androidx.recyclerview.widget.GridLayoutManager;
-import androidx.recyclerview.widget.GridLayoutManagerFixed;
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.LinearSmoothScrollerCustom;
-import androidx.recyclerview.widget.RecyclerView;
-
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 
 import org.telegram.PhoneFormat.PhoneFormat;
@@ -215,12 +206,22 @@ import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import androidx.core.content.FileProvider;
+import androidx.core.graphics.ColorUtils;
+import androidx.recyclerview.widget.ChatListItemAnimator;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.GridLayoutManagerFixed;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.LinearSmoothScrollerCustom;
+import androidx.recyclerview.widget.RecyclerView;
+
 /**
  * 聊天窗口，有按钮监听事件、顶部导航条目界面及监听事件等。
  */
 @SuppressWarnings("unchecked")
 public class ChatActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, DialogsActivity.DialogsActivityDelegate, LocationActivity.LocationActivityDelegate, ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate {
 
+    //region field
     protected TLRPC.Chat currentChat;
     protected TLRPC.User currentUser;
     protected TLRPC.EncryptedChat currentEncryptedChat;
@@ -1006,6 +1007,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
         scheduledOrNoSoundHint.showForView(chatActivityEnterView.getSendButton(), true);
     };
+    //endregion
 
     public ChatActivity(Bundle args) {
         super(args);
@@ -15484,8 +15486,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                         try {
                             android.content.ClipboardManager clipboard = (android.content.ClipboardManager) ApplicationLoader.applicationContext.getSystemService(Context.CLIPBOARD_SERVICE);
                             ClipData clip = ClipData.newPlainText("label", exportedMessageLink.link);
-                            clipboard.setPrimaryClip(clip);
-                            if (exportedMessageLink.link.contains("/c/")) {
+                            clipboard.setPrimaryClip(clip);if (exportedMessageLink.link.contains("/c/")) {
                                 Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("LinkCopiedPrivate", R.string.LinkCopiedPrivate), Toast.LENGTH_SHORT).show();
                             } else {
                                 Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("LinkCopied", R.string.LinkCopied), Toast.LENGTH_SHORT).show();

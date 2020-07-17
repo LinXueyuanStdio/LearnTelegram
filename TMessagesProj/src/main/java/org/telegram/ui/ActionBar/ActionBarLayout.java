@@ -51,6 +51,8 @@ import androidx.annotation.Keep;
 
 /**
  * 主容器
+ *
+ * TODO:或许可以解耦 Activity
  */
 public class ActionBarLayout extends FrameLayout {
 
