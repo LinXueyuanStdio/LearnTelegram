@@ -40725,7 +40725,7 @@ public class TLRPC {
 
     //manually created
 
-	//RichText start
+	//region RichText start
 	public static abstract class RichText extends TLObject {
 		public String url;
 		public long webpage_id;
@@ -40832,9 +40832,9 @@ public class TLRPC {
             }
         }
     }
-	//RichText end
+	//endregion RichText end
 
-	//MessageMedia start
+	//region MessageMedia start
 	public static abstract class MessageMedia extends TLObject {
 		public byte[] bytes;
 		public Audio audio_unused;
@@ -41023,9 +41023,9 @@ public class TLRPC {
 			return result;
 		}
 	}
-	//MessageMedia end
+	//endregion MessageMedia end
 
-	//PageBlock start
+	//region PageBlock start
 	public static class TL_pageBlockAuthorDate_layer60 extends TL_pageBlockAuthorDate {
 		public static int constructor = 0x3d5b64f2;
 
@@ -41268,9 +41268,9 @@ public class TLRPC {
             caption.text.serializeToStream(stream);
         }
     }
-	//PageBlock end
+	//endregion PageBlock end
 
-    //EncryptedChat start
+    //region EncryptedChat start
     public static abstract class EncryptedChat extends TLObject {
         public int id;
         public long access_hash;
@@ -41332,9 +41332,9 @@ public class TLRPC {
             return result;
         }
     }
-    //EncryptedChat end
+    //endregion EncryptedChat end
 
-    //Message start
+    //region Message start
     public static abstract class Message extends TLObject {
         public int id;
         public int from_id;
@@ -43425,9 +43425,9 @@ public class TLRPC {
             writeAttachPath(stream);
 		}
 	}
-    //Message end
+    //endregion Message end
 
-    //TL_dialog start
+    //region TL_dialog start
     public static abstract class Dialog extends TLObject {
 
         public int flags;
@@ -43551,17 +43551,17 @@ public class TLRPC {
             stream.writeInt32(unread_unmuted_messages_count);
         }
     }
-    //TL_dialog end
+    //endregion TL_dialog end
 
-	//ChatParticipant start
+	//region ChatParticipant start
 	public static class TL_chatChannelParticipant extends ChatParticipant {
 		public static int constructor = 0xc8d7493e;
 
 		public ChannelParticipant channelParticipant;
 	}
-	//ChatParticipant end
+	//endregion ChatParticipant end
 
-    //Chat start
+    //region Chat start
     public static class TL_chatEmpty extends Chat {
         public static int constructor = 0x9ba2d800;
 
@@ -43577,9 +43577,9 @@ public class TLRPC {
             stream.writeInt32(id);
         }
     }
-    //Chat end
+    //endregion Chat end
 
-    //functions memory optimize
+    //region functions memory optimize
     public static class TL_upload_saveFilePart extends TLObject {
         public static int constructor = 0xb304a621;
 
@@ -44181,7 +44181,7 @@ public class TLRPC {
         }
     }
 
-    //functions
+    //endregion functions
 
     public static class Vector extends TLObject {
         public static int constructor = 0x1cb5c415;
