@@ -1,0 +1,1 @@
+用于组合以构建 Activity 和 Fragment 的 widget
