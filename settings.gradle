@@ -1,1 +1,1 @@
-include ':TMessagesProj', ':Demo'
+include /*':TMessagesProj', */':Demo'

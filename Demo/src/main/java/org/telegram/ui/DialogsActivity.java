@@ -85,7 +85,6 @@ import org.telegram.messenger.UserConfig;
 import org.telegram.messenger.UserObject;
 import org.telegram.messenger.Utilities;
 import org.telegram.messenger.XiaomiUtilities;
-import org.telegram.tgnet.ConnectionsManager;
 import org.telegram.tgnet.TLObject;
 import org.telegram.tgnet.TLRPC;
 import org.telegram.ui.ActionBar.ActionBar;
@@ -136,7 +135,6 @@ import org.telegram.ui.Components.JoinGroupAlert;
 import org.telegram.ui.Components.LayoutHelper;
 import org.telegram.ui.Components.NumberTextView;
 import org.telegram.ui.Components.PacmanAnimation;
-import org.telegram.ui.Components.ProxyDrawable;
 import org.telegram.ui.Components.PullForegroundDrawable;
 import org.telegram.ui.Components.RLottieDrawable;
 import org.telegram.ui.Components.RadialProgressView;
@@ -1444,7 +1442,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             MessagesController messagesController = getMessagesController();
             messagesController.loadGlobalNotificationsSettings();
             messagesController.loadDialogs(folderId, 0, 100, true);
-            messagesController.loadHintDialogs();
             messagesController.loadUserInfo(UserConfig.getInstance(currentAccount).getCurrentUser(), false, classGuid);
             getContactsController().checkInviteText();
             getMediaDataController().loadRecents(MediaDataController.TYPE_FAVE, false, true, false);
@@ -1550,9 +1547,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
                 if (switchItem != null) {
                     switchItem.setVisibility(View.GONE);
                 }
-                if (proxyItem != null && proxyItemVisible) {
-                    proxyItem.setVisibility(View.GONE);
-                }
                 if (viewPages[0] != null) {
                     if (searchString != null) {
                         viewPages[0].listView.hide();
@@ -1571,9 +1565,6 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
             public boolean canCollapseSearch() {
                 if (switchItem != null) {
                     switchItem.setVisibility(View.VISIBLE);
-                }
-                if (proxyItem != null && proxyItemVisible) {
-                    proxyItem.setVisibility(View.VISIBLE);
                 }
                 if (searchString != null) {
                     finishFragment();

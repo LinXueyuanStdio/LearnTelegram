@@ -25,8 +25,6 @@ import android.util.SparseBooleanArray;
 import android.util.SparseIntArray;
 import android.widget.Toast;
 
-import androidx.core.app.NotificationManagerCompat;
-
 import org.telegram.SQLite.SQLiteCursor;
 import org.telegram.messenger.support.SparseLongArray;
 import org.telegram.messenger.voip.VoIPService;
@@ -54,6 +52,8 @@ import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+
+import androidx.core.app.NotificationManagerCompat;
 
 /**
  * 消息控制器
@@ -5572,10 +5572,25 @@ public class MessagesController extends BaseController implements NotificationCe
         return folderCreated == null ? 0 : (folderCreated[0] ? 2 : 1);
     }
 
+    /**
+     * 加载对话列表
+     * @param folderId 对话文件夹id
+     * @param offset 分页：偏移
+     * @param count 分页：数量
+     * @param fromCache 从缓存中读取
+     */
     public void loadDialogs(final int folderId, final int offset, final int count, boolean fromCache) {
         loadDialogs(folderId, offset, count, fromCache, null);
     }
 
+    /**
+     * 加载对话列表
+     * @param folderId 对话文件夹id
+     * @param offset 分页：偏移
+     * @param count 分页：数量
+     * @param fromCache 从缓存中读取
+     * @param onEmptyCallback 回调
+     */
     public void loadDialogs(final int folderId, final int offset, final int count, boolean fromCache, Runnable onEmptyCallback) {
         if (loadingDialogs.get(folderId) || resetingDialogs) {
             return;
@@ -5588,72 +5603,6 @@ public class MessagesController extends BaseController implements NotificationCe
         if (fromCache) {
             getMessagesStorage().getDialogs(folderId, offset == 0 ? 0 : nextDialogsCacheOffset.get(folderId, 0), count, offset == 0);
         } else {
-            TLRPC.TL_messages_getDialogs req = new TLRPC.TL_messages_getDialogs();
-            req.limit = count;
-            req.exclude_pinned = true;
-            if (folderId != 0) {
-                req.flags |= 2;
-                req.folder_id = folderId;
-            }
-            int[] dialogsLoadOffset = getUserConfig().getDialogLoadOffsets(folderId);
-            if (dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetId] != -1) {
-                if (dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetId] == Integer.MAX_VALUE) {
-                    dialogsEndReached.put(folderId, true);
-                    serverDialogsEndReached.put(folderId, true);
-                    loadingDialogs.put(folderId, false);
-                    getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
-                    return;
-                }
-                req.offset_id = dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetId];
-                req.offset_date = dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetDate];
-                if (req.offset_id == 0) {
-                    req.offset_peer = new TLRPC.TL_inputPeerEmpty();
-                } else {
-                    if (dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetChannelId] != 0) {
-                        req.offset_peer = new TLRPC.TL_inputPeerChannel();
-                        req.offset_peer.channel_id = dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetChannelId];
-                    } else if (dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetUserId] != 0) {
-                        req.offset_peer = new TLRPC.TL_inputPeerUser();
-                        req.offset_peer.user_id = dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetUserId];
-                    } else {
-                        req.offset_peer = new TLRPC.TL_inputPeerChat();
-                        req.offset_peer.chat_id = dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetChatId];
-                    }
-                    req.offset_peer.access_hash = ((long) dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetAccess_1]) | ((long) dialogsLoadOffset[UserConfig.i_dialogsLoadOffsetAccess_1] << 32);
-                }
-            } else {
-                boolean found = false;
-                ArrayList<TLRPC.Dialog> dialogs = getDialogs(folderId);
-                for (int a = dialogs.size() - 1; a >= 0; a--) {
-                    TLRPC.Dialog dialog = dialogs.get(a);
-                    if (dialog.pinned) {
-                        continue;
-                    }
-                    int lower_id = (int) dialog.id;
-                    int high_id = (int) (dialog.id >> 32);
-                    if (lower_id != 0 && high_id != 1 && dialog.top_message > 0) {
-                        MessageObject message = dialogMessage.get(dialog.id);
-                        if (message != null && message.getId() > 0) {
-                            req.offset_date = message.messageOwner.date;
-                            req.offset_id = message.messageOwner.id;
-                            int id;
-                            if (message.messageOwner.to_id.channel_id != 0) {
-                                id = -message.messageOwner.to_id.channel_id;
-                            } else if (message.messageOwner.to_id.chat_id != 0) {
-                                id = -message.messageOwner.to_id.chat_id;
-                            } else {
-                                id = message.messageOwner.to_id.user_id;
-                            }
-                            req.offset_peer = getInputPeer(id);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                if (!found) {
-                    req.offset_peer = new TLRPC.TL_inputPeerEmpty();
-                }
-            }
             getConnectionsManager().sendRequest(req, (response, error) -> {
                 if (error == null) {
                     final TLRPC.messages_Dialogs dialogsRes = (TLRPC.messages_Dialogs) response;
@@ -5694,74 +5643,8 @@ public class MessagesController extends BaseController implements NotificationCe
             if (editor1 != null) {
                 editor1.commit();
             }
-
-            loadingNotificationSettings = 3;
-            for (int a = 0; a < 3; a++) {
-                TLRPC.TL_account_getNotifySettings req = new TLRPC.TL_account_getNotifySettings();
-                if (a == 0) {
-                    req.peer = new TLRPC.TL_inputNotifyChats();
-                } else if (a == 1) {
-                    req.peer = new TLRPC.TL_inputNotifyUsers();
-                } else if (a == 2) {
-                    req.peer = new TLRPC.TL_inputNotifyBroadcasts();
-                }
-                final int type = a;
-                getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                    if (response != null) {
-                        loadingNotificationSettings--;
-                        TLRPC.TL_peerNotifySettings notify_settings = (TLRPC.TL_peerNotifySettings) response;
-                        SharedPreferences.Editor editor = notificationsPreferences.edit();
-                        if (type == 0) {
-                            if ((notify_settings.flags & 1) != 0) {
-                                editor.putBoolean("EnablePreviewGroup", notify_settings.show_previews);
-                            }
-                            if ((notify_settings.flags & 2) != 0) {
-                            /*if (notify_settings.silent) {
-                                editor.putString("GroupSoundPath", "NoSound");
-                            } else {
-                                editor.remove("GroupSoundPath");
-                            }*/
-                            }
-                            if ((notify_settings.flags & 4) != 0) {
-                                editor.putInt("EnableGroup2", notify_settings.mute_until);
-                            }
-                        } else if (type == 1) {
-                            if ((notify_settings.flags & 1) != 0) {
-                                editor.putBoolean("EnablePreviewAll", notify_settings.show_previews);
-                            }
-                            if ((notify_settings.flags & 2) != 0) {
-                            /*if (notify_settings.silent) {
-                                editor.putString("GlobalSoundPath", "NoSound");
-                            } else {
-                                editor.remove("GlobalSoundPath");
-                            }*/
-                            }
-                            if ((notify_settings.flags & 4) != 0) {
-                                editor.putInt("EnableAll2", notify_settings.mute_until);
-                            }
-                        } else if (type == 2) {
-                            if ((notify_settings.flags & 1) != 0) {
-                                editor.putBoolean("EnablePreviewChannel", notify_settings.show_previews);
-                            }
-                            if ((notify_settings.flags & 2) != 0) {
-                            /*if (notify_settings.silent) {
-                                editor.putString("ChannelSoundPath", "NoSound");
-                            } else {
-                                editor.remove("ChannelSoundPath");
-                            }*/
-                            }
-                            if ((notify_settings.flags & 4) != 0) {
-                                editor.putInt("EnableChannel2", notify_settings.mute_until);
-                            }
-                        }
-                        editor.commit();
-                        if (loadingNotificationSettings == 0) {
-                            getUserConfig().notificationsSettingsLoaded = true;
-                            getUserConfig().saveConfig(false);
-                        }
-                    }
-                }));
-            }
+            getUserConfig().notificationsSettingsLoaded = true;
+            getUserConfig().saveConfig(false);
         }
         if (!getUserConfig().notificationsSignUpSettingsLoaded) {
             loadSignUpNotificationsSettings();
@@ -5771,16 +5654,11 @@ public class MessagesController extends BaseController implements NotificationCe
     public void loadSignUpNotificationsSettings() {
         if (!loadingNotificationSignUpSettings) {
             loadingNotificationSignUpSettings = true;
-            TLRPC.TL_account_getContactSignUpNotification req = new TLRPC.TL_account_getContactSignUpNotification();
-            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                loadingNotificationSignUpSettings = false;
-                SharedPreferences.Editor editor = notificationsPreferences.edit();
-                enableJoined = response instanceof TLRPC.TL_boolFalse;
-                editor.putBoolean("EnableContactJoined", enableJoined);
-                editor.commit();
-                getUserConfig().notificationsSignUpSettingsLoaded = true;
-                getUserConfig().saveConfig(false);
-            }));
+            SharedPreferences.Editor editor = notificationsPreferences.edit();
+            editor.putBoolean("EnableContactJoined", true);
+            editor.commit();
+            getUserConfig().notificationsSignUpSettingsLoaded = true;
+            getUserConfig().saveConfig(false);
         }
     }
 
@@ -9269,6 +9147,12 @@ public class MessagesController extends BaseController implements NotificationCe
         return true;
     }
 
+    /**
+     * 加载置顶对话
+     * @param folderId
+     * @param newDialogId
+     * @param order
+     */
     public void loadPinnedDialogs(final int folderId, final long newDialogId, final ArrayList<Long> order) {
         if (loadingPinnedDialogs.indexOfKey(folderId) >= 0 || getUserConfig().isPinnedDialogsLoaded(folderId)) {
             return;
