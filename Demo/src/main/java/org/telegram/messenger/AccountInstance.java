@@ -5,7 +5,7 @@ import android.content.SharedPreferences;
 import org.telegram.tgnet.ConnectionsManager;
 
 /**
- * 账户管理
+ * 账户数据管理
  */
 public class AccountInstance {
 
