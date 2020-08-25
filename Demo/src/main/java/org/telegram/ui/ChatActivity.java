@@ -1015,6 +1015,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     @Override
     public boolean onFragmentCreate() {
+        //region 1.加载参数
         final int chatId = arguments.getInt("chat_id", 0);
         final int userId = arguments.getInt("user_id", 0);
         final int encId = arguments.getInt("enc_id", 0);
@@ -1025,7 +1026,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         int migrated_to = arguments.getInt("migrated_to", 0);
         scrollToTopOnResume = arguments.getBoolean("scrollToTopOnResume", false);
         needRemovePreviousSameChatActivity = arguments.getBoolean("need_remove_previous_same_chat_activity", true);
+        //endregion
 
+        //region 2.加载聊天对象，有3种可能，chat、user、encryptChat
         if (chatId != 0) {
             currentChat = getMessagesController().getChat(chatId);
             if (currentChat == null) {
@@ -1119,7 +1122,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         } else {
             return false;
         }
+        //endregion
 
+        //region 3.加载聊天对象成功，开启媒体观察者和消息观察者
         if (currentUser != null && Build.VERSION.SDK_INT < 23) {
             MediaController.getInstance().startMediaObserver();
         }
@@ -1184,6 +1189,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         getNotificationCenter().addObserver(this, NotificationCenter.videoLoadingStateChanged);
         getNotificationCenter().addObserver(this, NotificationCenter.scheduledMessagesUpdated);
         getNotificationCenter().addObserver(this, NotificationCenter.diceStickersDidLoad);
+        //endregion
 
         super.onFragmentCreate();
 
