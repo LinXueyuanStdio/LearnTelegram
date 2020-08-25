@@ -516,7 +516,7 @@ public class BaseFragment {
     }
     //endregion
 
-    //region 对话框管理 Dialog。
+    //region 对话框管理 Dialog
     public Dialog showDialog(Dialog dialog) {
         return showDialog(dialog, false, null);
     }
