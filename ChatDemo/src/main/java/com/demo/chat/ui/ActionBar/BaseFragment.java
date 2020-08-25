@@ -5,7 +5,6 @@ import android.app.Activity;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.os.Build;
 import android.os.Bundle;
 import android.text.TextUtils;
@@ -17,6 +16,12 @@ import android.view.accessibility.AccessibilityManager;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.controller.AccountInstance;
+import com.demo.chat.controller.ConnectionsManager;
+import com.demo.chat.controller.FileLoader;
+import com.demo.chat.controller.MediaController;
+import com.demo.chat.controller.MediaDataController;
+import com.demo.chat.controller.MessagesController;
+import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
@@ -597,31 +602,31 @@ public class BaseFragment {
     public MessagesController getMessagesController() {
         return getAccountInstance().getMessagesController();
     }
-
-    protected ContactsController getContactsController() {
-        return getAccountInstance().getContactsController();
-    }
-
+//
+//    protected ContactsController getContactsController() {
+//        return getAccountInstance().getContactsController();
+//    }
+//
     public MediaDataController getMediaDataController() {
         return getAccountInstance().getMediaDataController();
     }
-
-    public ConnectionsManager getConnectionsManager() {
-        return getAccountInstance().getConnectionsManager();
-    }
-
-    public LocationController getLocationController() {
-        return getAccountInstance().getLocationController();
-    }
-
-    protected NotificationsController getNotificationsController() {
-        return getAccountInstance().getNotificationsController();
-    }
-
-    public MessagesStorage getMessagesStorage() {
-        return getAccountInstance().getMessagesStorage();
-    }
-
+//
+//    public ConnectionsManager getConnectionsManager() {
+//        return getAccountInstance().getConnectionsManager();
+//    }
+//
+//    public LocationController getLocationController() {
+//        return getAccountInstance().getLocationController();
+//    }
+//
+//    protected NotificationsController getNotificationsController() {
+//        return getAccountInstance().getNotificationsController();
+//    }
+//
+//    public MessagesStorage getMessagesStorage() {
+//        return getAccountInstance().getMessagesStorage();
+//    }
+//
     public SendMessagesHelper getSendMessagesHelper() {
         return getAccountInstance().getSendMessagesHelper();
     }
@@ -630,24 +635,24 @@ public class BaseFragment {
         return getAccountInstance().getFileLoader();
     }
 
-    protected SecretChatHelper getSecretChatHelper() {
-        return getAccountInstance().getSecretChatHelper();
-    }
-
-    protected DownloadController getDownloadController() {
-        return getAccountInstance().getDownloadController();
-    }
-
-    protected SharedPreferences getNotificationsSettings() {
-        return getAccountInstance().getNotificationsSettings();
-    }
-
-    public NotificationCenter getNotificationCenter() {
-        return getAccountInstance().getNotificationCenter();
-    }
+//    protected SecretChatHelper getSecretChatHelper() {
+//        return getAccountInstance().getSecretChatHelper();
+//    }
+//
+//    protected DownloadController getDownloadController() {
+//        return getAccountInstance().getDownloadController();
+//    }
 
     public MediaController getMediaController() {
         return MediaController.getInstance();
+    }
+
+//    protected SharedPreferences getNotificationsSettings() {
+//        return getAccountInstance().getNotificationsSettings();
+//    }
+
+    public NotificationCenter getNotificationCenter() {
+        return getAccountInstance().getNotificationCenter();
     }
 
     public UserConfig getUserConfig() {

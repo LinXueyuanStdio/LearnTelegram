@@ -51,14 +51,21 @@ import android.widget.ImageView;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
+import com.demo.chat.controller.ConnectionsManager;
+import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
+import com.demo.chat.controller.MediaController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.DispatchQueue;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
+import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.messager.camera.CameraController;
+import com.demo.chat.messager.camera.CameraInfo;
+import com.demo.chat.messager.camera.CameraSession;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ChatActivity;
@@ -571,7 +578,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
         animatorSet = new AnimatorSet();
         float toX = 0;
         if (!open) {
-            toX = recordedTime > 300 ?  AndroidUtilities.dp(24) - getMeasuredWidth() / 2f : 0;
+            toX = recordedTime > 300 ? AndroidUtilities.dp(24) - getMeasuredWidth() / 2f : 0;
         }
         ValueAnimator translationYAnimator = ValueAnimator.ofFloat(open ? 1f : 0f, open ? 0 : 1f);
         translationYAnimator.addUpdateListener(animation -> {
@@ -1076,7 +1083,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                 return false;
             }
 
-            int[] attrib_list = { EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE };
+            int[] attrib_list = {EGL_CONTEXT_CLIENT_VERSION, 2, EGL10.EGL_NONE};
             eglContext = egl10.eglCreateContext(eglDisplay, eglConfig, EGL10.EGL_NO_CONTEXT, attrib_list);
             if (eglContext == null) {
                 if (BuildVars.LOGS_ENABLED) {
@@ -1871,8 +1878,8 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && frameCount % 30 == 0) {
                 final TextureView textureViewFinal = textureView;
                 if (textureViewFinal != null) {
-                    Bitmap bitmap = textureViewFinal.getBitmap( AndroidUtilities.dp(56),  AndroidUtilities.dp(56));
-                    if ((bitmap == null || bitmap.getPixel(0,0) == 0) && keyframeThumbs.size() > 1) {
+                    Bitmap bitmap = textureViewFinal.getBitmap(AndroidUtilities.dp(56), AndroidUtilities.dp(56));
+                    if ((bitmap == null || bitmap.getPixel(0, 0) == 0) && keyframeThumbs.size() > 1) {
                         keyframeThumbs.add(keyframeThumbs.get(keyframeThumbs.size() - 1));
                     } else {
                         keyframeThumbs.add(bitmap);

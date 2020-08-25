@@ -1,12 +1,87 @@
 package com.demo.chat.ui.Components;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.animation.StateListAnimator;
+import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
+import android.content.Context;
+import android.database.DataSetObserver;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Outline;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
+import android.graphics.RectF;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.LayerDrawable;
+import android.graphics.drawable.ShapeDrawable;
+import android.os.Build;
+import android.text.Editable;
+import android.text.SpannableStringBuilder;
+import android.text.TextUtils;
+import android.text.TextWatcher;
 import android.util.LongSparseArray;
+import android.util.SparseArray;
+import android.util.SparseIntArray;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.HapticFeedbackConstants;
+import android.view.KeyEvent;
+import android.view.MotionEvent;
+import android.view.VelocityTracker;
 import android.view.View;
+import android.view.ViewConfiguration;
+import android.view.ViewGroup;
+import android.view.ViewOutlineProvider;
+import android.view.ViewTreeObserver;
+import android.view.WindowManager;
+import android.view.inputmethod.EditorInfo;
 import android.widget.FrameLayout;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.PopupWindow;
+import android.widget.TextView;
 
+import com.demo.chat.R;
+import com.demo.chat.controller.ConnectionsManager;
+import com.demo.chat.controller.FileLoader;
+import com.demo.chat.controller.LocaleController;
+import com.demo.chat.controller.MediaDataController;
+import com.demo.chat.controller.MessagesController;
+import com.demo.chat.controller.UserConfig;
+import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.Emoji;
+import com.demo.chat.messager.EmojiData;
+import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.NotificationCenter;
+import com.demo.chat.messager.browser.Browser;
+import com.demo.chat.receiver.ImageReceiver;
+import com.demo.chat.theme.Theme;
+import com.demo.chat.ui.ActionBar.BottomSheet;
+import com.demo.chat.ui.Viewer.ContentPreviewViewer;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 
+import androidx.annotation.IntDef;
+import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
+import androidx.core.view.ViewCompat;
+import androidx.recyclerview.widget.GridLayoutManager;
+import androidx.recyclerview.widget.LinearSmoothScroller;
+import androidx.recyclerview.widget.RecyclerView;
+import androidx.recyclerview.widget.SimpleItemAnimator;
+import androidx.viewpager.widget.PagerAdapter;
+import androidx.viewpager.widget.ViewPager;
 
 /**
  * @author 林学渊
@@ -229,8 +304,11 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
 
     public interface DragListener {
         void onDragStart();
+
         void onDragEnd(float velocity);
+
         void onDragCancel();
+
         void onDrag(int offset);
     }
 
@@ -284,6 +362,7 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
     };
 
     private static final Field superListenerField;
+
     static {
         Field f = null;
         try {
@@ -2506,9 +2585,12 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
 
     private ScrollSlidingTabStrip getTabsForType(@Type int type) {
         switch (type) {
-            case Type.STICKERS: return stickersTab;
-            case Type.EMOJIS: return emojiTabs;
-            case Type.GIFS: return gifTabs;
+            case Type.STICKERS:
+                return stickersTab;
+            case Type.EMOJIS:
+                return emojiTabs;
+            case Type.GIFS:
+                return gifTabs;
             default:
                 throw new IllegalArgumentException("Unexpected argument: " + type);
         }
@@ -2516,9 +2598,12 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
 
     private RecyclerListView getListViewForType(@Type int type) {
         switch (type) {
-            case Type.STICKERS: return stickersGridView;
-            case Type.EMOJIS: return emojiGridView;
-            case Type.GIFS: return gifGridView;
+            case Type.STICKERS:
+                return stickersGridView;
+            case Type.EMOJIS:
+                return emojiGridView;
+            case Type.GIFS:
+                return gifGridView;
             default:
                 throw new IllegalArgumentException("Unexpected argument: " + type);
         }
@@ -2526,9 +2611,12 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
 
     private GridLayoutManager getLayoutManagerForType(@Type int type) {
         switch (type) {
-            case Type.STICKERS: return stickersLayoutManager;
-            case Type.EMOJIS: return emojiLayoutManager;
-            case Type.GIFS: return gifLayoutManager;
+            case Type.STICKERS:
+                return stickersLayoutManager;
+            case Type.EMOJIS:
+                return emojiLayoutManager;
+            case Type.GIFS:
+                return gifLayoutManager;
             default:
                 throw new IllegalArgumentException("Unexpected argument: " + type);
         }
@@ -2536,9 +2624,12 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
 
     private SearchField getSearchFieldForType(@Type int type) {
         switch (type) {
-            case Type.STICKERS: return stickersSearchField;
-            case Type.EMOJIS: return emojiSearchField;
-            case Type.GIFS: return gifSearchField;
+            case Type.STICKERS:
+                return stickersSearchField;
+            case Type.EMOJIS:
+                return emojiSearchField;
+            case Type.GIFS:
+                return gifSearchField;
             default:
                 throw new IllegalArgumentException("Unexpected argument: " + type);
         }
@@ -4172,7 +4263,7 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
         }
 
         public CharSequence getPageTitle(int position) {
-            switch(position) {
+            switch (position) {
                 case 0:
                     return LocaleController.getString("Emoji", R.string.Emoji);
                 case 1:

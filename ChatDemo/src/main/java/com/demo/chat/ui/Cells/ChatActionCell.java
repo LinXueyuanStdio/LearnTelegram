@@ -17,12 +17,16 @@ import android.view.SoundEffectConstants;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import com.demo.chat.R;
+import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.model.MessageObject;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
+import com.demo.chat.ui.Components.AvatarDrawable;
+import com.demo.chat.ui.Viewer.PhotoViewer;
 
 /**
  * @author 林学渊

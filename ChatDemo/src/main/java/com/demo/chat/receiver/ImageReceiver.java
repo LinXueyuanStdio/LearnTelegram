@@ -18,7 +18,11 @@ import android.view.View;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.ImageLoader;
 import com.demo.chat.messager.NotificationCenter;
+import com.demo.chat.model.MessageObject;
+import com.demo.chat.ui.Components.AnimatedFileDrawable;
+import com.demo.chat.ui.Components.RLottieDrawable;
 
 import androidx.annotation.Keep;
 

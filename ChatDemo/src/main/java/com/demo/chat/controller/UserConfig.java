@@ -2,14 +2,14 @@ package com.demo.chat.controller;
 
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.content.pm.PackageInfo;
 import android.os.SystemClock;
 import android.util.Base64;
 
 import com.demo.chat.ApplicationLoader;
-import com.demo.chat.messager.AndroidUtilities;
-import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.SerializedData;
+import com.demo.chat.messager.SharedConfig;
+import com.demo.chat.model.User;
 
 import java.io.File;
 import java.util.Arrays;
@@ -35,7 +35,7 @@ public class UserConfig extends BaseController {
 
     private final Object sync = new Object();
     private boolean configLoaded;
-    private TLRPC.User currentUser;
+    private User currentUser;
     public boolean registeredForPush;
     public int lastSendMessageId = -210000;
     public int lastBroadcastId = -1;
@@ -45,7 +45,6 @@ public class UserConfig extends BaseController {
     public int lastHintsSyncTime;
     public boolean draftsLoaded;
     public boolean unreadDialogsLoaded = true;
-    public TLRPC.TL_account_tmpPassword tmpPassword;
     public int ratingLoadTime;
     public int botRatingLoadTime;
     public boolean contactsReimported;
@@ -67,8 +66,6 @@ public class UserConfig extends BaseController {
     public boolean suggestContacts = true;
     public boolean hasSecureData;
     public int loginTime;
-    public TLRPC.TL_help_termsOfService unacceptedTermsOfService;
-    public TLRPC.TL_help_appUpdate pendingAppUpdate;
     public int pendingAppUpdateBuildVersion;
     public long pendingAppUpdateInstallTime;
     public long lastUpdateCheckTime;
@@ -182,50 +179,15 @@ public class UserConfig extends BaseController {
                     editor.putInt("6migrateOffsetChannelId", migrateOffsetChannelId);
                     editor.putLong("6migrateOffsetAccess", migrateOffsetAccess);
                 }
-
-                if (unacceptedTermsOfService != null) {
-                    try {
-                        SerializedData data = new SerializedData(unacceptedTermsOfService.getObjectSize());
-                        unacceptedTermsOfService.serializeToStream(data);
-                        editor.putString("terms", Base64.encodeToString(data.toByteArray(), Base64.DEFAULT));
-                        data.cleanup();
-                    } catch (Exception ignore) {
-
-                    }
-                } else {
-                    editor.remove("terms");
-                }
+                editor.remove("terms");
 
                 if (currentAccount == 0) {
-                    if (pendingAppUpdate != null) {
-                        try {
-                            SerializedData data = new SerializedData(pendingAppUpdate.getObjectSize());
-                            pendingAppUpdate.serializeToStream(data);
-                            String str = Base64.encodeToString(data.toByteArray(), Base64.DEFAULT);
-                            editor.putString("appUpdate", str);
-                            editor.putInt("appUpdateBuild", pendingAppUpdateBuildVersion);
-                            editor.putLong("appUpdateTime", pendingAppUpdateInstallTime);
-                            editor.putLong("appUpdateCheckTime", lastUpdateCheckTime);
-                            data.cleanup();
-                        } catch (Exception ignore) {
-
-                        }
-                    } else {
-                        editor.remove("appUpdate");
-                    }
+                    editor.remove("appUpdate");
                 }
 
                 SharedConfig.saveConfig();
 
-                if (tmpPassword != null) {
-                    SerializedData data = new SerializedData();
-                    tmpPassword.serializeToStream(data);
-                    String string = Base64.encodeToString(data.toByteArray(), Base64.DEFAULT);
-                    editor.putString("tmpPassword", string);
-                    data.cleanup();
-                } else {
-                    editor.remove("tmpPassword");
-                }
+                editor.remove("tmpPassword");
 
                 if (currentUser != null) {
                     if (withFile) {
@@ -263,17 +225,17 @@ public class UserConfig extends BaseController {
 
     public String getClientPhone() {
         synchronized (sync) {
-            return currentUser != null && currentUser.phone != null ? currentUser.phone : "";
+            return "";
         }
     }
 
-    public TLRPC.User getCurrentUser() {
+    public User getCurrentUser() {
         synchronized (sync) {
             return currentUser;
         }
     }
 
-    public void setCurrentUser(TLRPC.User user) {
+    public void setCurrentUser(User user) {
         synchronized (sync) {
             currentUser = user;
             clientUserId = user.id;
@@ -328,50 +290,8 @@ public class UserConfig extends BaseController {
                 }
             }
 
-            try {
-                String terms = preferences.getString("terms", null);
-                if (terms != null) {
-                    byte[] arr = Base64.decode(terms, Base64.DEFAULT);
-                    if (arr != null) {
-                        SerializedData data = new SerializedData(arr);
-                        unacceptedTermsOfService = TLRPC.TL_help_termsOfService.TLdeserialize(data, data.readInt32(false), false);
-                        data.cleanup();
-                    }
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-
             if (currentAccount == 0) {
                 lastUpdateCheckTime = preferences.getLong("appUpdateCheckTime", System.currentTimeMillis());
-                try {
-                    String update = preferences.getString("appUpdate", null);
-                    if (update != null) {
-                        pendingAppUpdateBuildVersion = preferences.getInt("appUpdateBuild", BuildVars.BUILD_VERSION);
-                        pendingAppUpdateInstallTime = preferences.getLong("appUpdateTime", System.currentTimeMillis());
-                        byte[] arr = Base64.decode(update, Base64.DEFAULT);
-                        if (arr != null) {
-                            SerializedData data = new SerializedData(arr);
-                            pendingAppUpdate = (TLRPC.TL_help_appUpdate) TLRPC.help_AppUpdate.TLdeserialize(data, data.readInt32(false), false);
-                            data.cleanup();
-                        }
-                    }
-                    if (pendingAppUpdate != null) {
-                        long updateTime = 0;
-                        try {
-                            PackageInfo packageInfo = ApplicationLoader.applicationContext.getPackageManager().getPackageInfo(ApplicationLoader.applicationContext.getPackageName(), 0);
-                            updateTime = Math.max(packageInfo.lastUpdateTime, packageInfo.firstInstallTime);
-                        } catch (Exception e) {
-                            FileLog.e(e);
-                        }
-                        if (pendingAppUpdateBuildVersion != BuildVars.BUILD_VERSION || pendingAppUpdateInstallTime < updateTime) {
-                            pendingAppUpdate = null;
-                            AndroidUtilities.runOnUIThread(() -> saveConfig(false));
-                        }
-                    }
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
             }
 
             migrateOffsetId = preferences.getInt("6migrateOffsetId", 0);
@@ -384,21 +304,13 @@ public class UserConfig extends BaseController {
             }
 
             String string = preferences.getString("tmpPassword", null);
-            if (string != null) {
-                byte[] bytes = Base64.decode(string, Base64.DEFAULT);
-                if (bytes != null) {
-                    SerializedData data = new SerializedData(bytes);
-                    tmpPassword = TLRPC.TL_account_tmpPassword.TLdeserialize(data, data.readInt32(false), false);
-                    data.cleanup();
-                }
-            }
 
             string = preferences.getString("user", null);
             if (string != null) {
                 byte[] bytes = Base64.decode(string, Base64.DEFAULT);
                 if (bytes != null) {
                     SerializedData data = new SerializedData(bytes);
-                    currentUser = TLRPC.User.TLdeserialize(data, data.readInt32(false), false);
+                    currentUser = User.TLdeserialize(data, data.readInt32(false), false);
                     data.cleanup();
                 }
             }
@@ -486,9 +398,7 @@ public class UserConfig extends BaseController {
         suggestContacts = true;
         unreadDialogsLoaded = true;
         hasValidDialogLoadIds = true;
-        unacceptedTermsOfService = null;
         filtersLoaded = false;
-        pendingAppUpdate = null;
         hasSecureData = false;
         loginTime = (int) (System.currentTimeMillis() / 1000);
         lastContactsSyncTime = (int) (System.currentTimeMillis() / 1000) - 23 * 60 * 60;

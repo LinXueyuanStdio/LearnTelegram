@@ -14,7 +14,6 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.annotation.TargetApi;
-import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
@@ -56,7 +55,6 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.text.style.ClickableSpan;
 import android.text.style.ForegroundColorSpan;
-import android.text.style.TypefaceSpan;
 import android.text.style.URLSpan;
 import android.util.LongSparseArray;
 import android.util.Property;
@@ -89,15 +87,30 @@ import android.widget.Toast;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
+import com.demo.chat.controller.ConnectionsManager;
+import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
+import com.demo.chat.controller.MediaController;
+import com.demo.chat.controller.MediaDataController;
+import com.demo.chat.controller.MessagesController;
+import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.BuildVars;
+import com.demo.chat.messager.Emoji;
+import com.demo.chat.messager.EmojiData;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
+import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.model.Chat;
+import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.User;
+import com.demo.chat.model.VideoEditedInfo;
+import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
+import com.demo.chat.ui.ActionBar.ActionBar;
 import com.demo.chat.ui.ActionBar.ActionBarLayout;
 import com.demo.chat.ui.ActionBar.ActionBarMenu;
 import com.demo.chat.ui.ActionBar.ActionBarMenuItem;
@@ -107,27 +120,55 @@ import com.demo.chat.ui.ActionBar.BackDrawable;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ActionBar.BottomSheet;
 import com.demo.chat.ui.ActionBar.SimpleTextView;
+import com.demo.chat.ui.Adapters.MentionsAdapter;
+import com.demo.chat.ui.Adapters.MessagesSearchAdapter;
+import com.demo.chat.ui.Adapters.StickersAdapter;
+import com.demo.chat.ui.Cells.BotHelpCell;
 import com.demo.chat.ui.Cells.ChatActionCell;
 import com.demo.chat.ui.Cells.ChatMessageCell;
+import com.demo.chat.ui.Cells.DialogCell;
+import com.demo.chat.ui.Cells.TextSelectionHelper;
+import com.demo.chat.ui.Components.AnimatedFileDrawable;
 import com.demo.chat.ui.Components.AnimationProperties;
 import com.demo.chat.ui.Components.BackupImageView;
+import com.demo.chat.ui.Components.BlurBehindDrawable;
 import com.demo.chat.ui.Components.ChatActivityEnterView;
+import com.demo.chat.ui.Components.ChatAttachAlert;
+import com.demo.chat.ui.Components.ChatAttachAlertDocumentLayout;
+import com.demo.chat.ui.Components.ChatAvatarContainer;
 import com.demo.chat.ui.Components.ChatBigEmptyView;
 import com.demo.chat.ui.Components.ClippingImageView;
 import com.demo.chat.ui.Components.CombinedDrawable;
+import com.demo.chat.ui.Components.CorrectlyMeasuringTextView;
 import com.demo.chat.ui.Components.CubicBezierInterpolator;
 import com.demo.chat.ui.Components.EditTextBoldCursor;
+import com.demo.chat.ui.Components.EditTextCaption;
+import com.demo.chat.ui.Components.EmbedBottomSheet;
+import com.demo.chat.ui.Components.EmojiView;
+import com.demo.chat.ui.Components.ExtendedGridLayoutManager;
+import com.demo.chat.ui.Components.FireworksOverlay;
 import com.demo.chat.ui.Components.FragmentContextView;
 import com.demo.chat.ui.Components.HintView;
 import com.demo.chat.ui.Components.InstantCameraView;
 import com.demo.chat.ui.Components.LayoutHelper;
 import com.demo.chat.ui.Components.MessageBackgroundDrawable;
+import com.demo.chat.ui.Components.NumberTextView;
+import com.demo.chat.ui.Components.PipRoundVideoView;
 import com.demo.chat.ui.Components.RLottieDrawable;
 import com.demo.chat.ui.Components.RadialProgressView;
 import com.demo.chat.ui.Components.RecyclerAnimationScrollHelper;
 import com.demo.chat.ui.Components.RecyclerListView;
 import com.demo.chat.ui.Components.SizeNotifierFrameLayout;
+import com.demo.chat.ui.Components.TextSelectionHint;
+import com.demo.chat.ui.Components.TextStyleSpan;
+import com.demo.chat.ui.Components.TypefaceSpan;
+import com.demo.chat.ui.Components.URLSpanNoUnderline;
+import com.demo.chat.ui.Components.URLSpanReplacement;
 import com.demo.chat.ui.Components.UndoView;
+import com.demo.chat.ui.Viewer.ArticleViewer;
+import com.demo.chat.ui.Viewer.ContentPreviewViewer;
+import com.demo.chat.ui.Viewer.PhotoViewer;
+import com.demo.chat.ui.Viewer.SecretMediaViewer;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
 
 import java.io.BufferedWriter;
@@ -138,7 +179,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.concurrent.CountDownLatch;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -155,11 +195,15 @@ import androidx.recyclerview.widget.RecyclerView;
  * 聊天窗口，有按钮监听事件、顶部导航条目界面及监听事件等。
  */
 @SuppressWarnings("unchecked")
-public class ChatActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate, DialogsActivity.DialogsActivityDelegate, LocationActivity.LocationActivityDelegate, ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate {
+public class ChatActivity extends BaseFragment
+        implements NotificationCenter.NotificationCenterDelegate,
+        DialogsActivity.DialogsActivityDelegate,
+        LocationActivity.LocationActivityDelegate,
+        ChatAttachAlertDocumentLayout.DocumentSelectActivityDelegate {
 
     //region field
-    protected TLRPC.Chat currentChat;
-    protected TLRPC.User currentUser;
+    protected Chat currentChat;
+    protected User currentUser;
     protected TLRPC.EncryptedChat currentEncryptedChat;
     private boolean userBlocked;
 
@@ -282,7 +326,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
     private boolean scrollingChatListView;
     private boolean checkTextureViewPosition;
     private boolean searchingForUser;
-    private TLRPC.User searchingUserMessages;
+    private User searchingUserMessages;
     private UndoView undoView;
     private UndoView topUndoView;
     private boolean openKeyboardOnAttachMenuClose;
@@ -967,48 +1011,12 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         //region 2.加载聊天对象，有3种可能，chat、user、encryptChat
         if (chatId != 0) {
             currentChat = getMessagesController().getChat(chatId);
-            if (currentChat == null) {
-                final CountDownLatch countDownLatch = new CountDownLatch(1);
-                final MessagesStorage messagesStorage = getMessagesStorage();
-                messagesStorage.getStorageQueue().postRunnable(() -> {
-                    currentChat = messagesStorage.getChat(chatId);
-                    countDownLatch.countDown();
-                });
-                try {
-                    countDownLatch.await();
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
-                if (currentChat != null) {
-                    getMessagesController().putChat(currentChat, true);
-                } else {
-                    return false;
-                }
-            }
             dialog_id = -chatId;
             if (ChatObject.isChannel(currentChat)) {
                 getMessagesController().startShortPoll(currentChat, false);
             }
         } else if (userId != 0) {
             currentUser = getMessagesController().getUser(userId);
-            if (currentUser == null) {
-                final MessagesStorage messagesStorage = getMessagesStorage();
-                final CountDownLatch countDownLatch = new CountDownLatch(1);
-                messagesStorage.getStorageQueue().postRunnable(() -> {
-                    currentUser = messagesStorage.getUser(userId);
-                    countDownLatch.countDown();
-                });
-                try {
-                    countDownLatch.await();
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
-                if (currentUser != null) {
-                    getMessagesController().putUser(currentUser, true);
-                } else {
-                    return false;
-                }
-            }
             dialog_id = userId;
             botUser = arguments.getString("botUser");
             if (inlineQuery != null) {
@@ -1017,41 +1025,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         } else if (encId != 0) {
             currentEncryptedChat = getMessagesController().getEncryptedChat(encId);
             final MessagesStorage messagesStorage = getMessagesStorage();
-            if (currentEncryptedChat == null) {
-                final CountDownLatch countDownLatch = new CountDownLatch(1);
-                messagesStorage.getStorageQueue().postRunnable(() -> {
-                    currentEncryptedChat = messagesStorage.getEncryptedChat(encId);
-                    countDownLatch.countDown();
-                });
-                try {
-                    countDownLatch.await();
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
-                if (currentEncryptedChat != null) {
-                    getMessagesController().putEncryptedChat(currentEncryptedChat, true);
-                } else {
-                    return false;
-                }
-            }
             currentUser = getMessagesController().getUser(currentEncryptedChat.user_id);
-            if (currentUser == null) {
-                final CountDownLatch countDownLatch = new CountDownLatch(1);
-                messagesStorage.getStorageQueue().postRunnable(() -> {
-                    currentUser = messagesStorage.getUser(currentEncryptedChat.user_id);
-                    countDownLatch.countDown();
-                });
-                try {
-                    countDownLatch.await();
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
-                if (currentUser != null) {
-                    getMessagesController().putUser(currentUser, true);
-                } else {
-                    return false;
-                }
-            }
             dialog_id = ((long) encId) << 32;
             maxMessageId[0] = maxMessageId[1] = Integer.MIN_VALUE;
             minMessageId[0] = minMessageId[1] = Integer.MAX_VALUE;
@@ -1129,6 +1103,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         super.onFragmentCreate();
 
+        //4. 加载相关联的数据，如机器人、群组成员、消息记录
         loading = true;
         if (!inScheduleMode) {
             if (currentEncryptedChat == null) {
@@ -1188,8 +1163,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         if (!inScheduleMode) {
             if (userId != 0 && currentUser.bot) {
+                //机器人
                 getMediaDataController().loadBotInfo(userId, true, classGuid);
             } else if (chatInfo instanceof TLRPC.TL_chatFull) {
+                //群
                 for (int a = 0; a < chatInfo.participants.participants.size(); a++) {
                     TLRPC.ChatParticipant participant = chatInfo.participants.participants.get(a);
                     TLRPC.User user = getMessagesController().getUser(participant.user_id);
@@ -1203,13 +1180,16 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
 
             if (currentUser != null) {
+                //黑名单
                 userBlocked = getMessagesController().blockedUsers.indexOfKey(currentUser.id) >= 0;
             }
 
             if (currentEncryptedChat != null && AndroidUtilities.getMyLayerVersion(currentEncryptedChat.layer) != SecretChatHelper.CURRENT_SECRET_CHAT_LAYER) {
+                //私聊
                 getSecretChatHelper().sendNotifyLayerMessage(currentEncryptedChat, null);
             }
         }
+        //endregion
 
         return true;
     }
@@ -1334,6 +1314,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     @Override
     public View createView(Context context) {
+        //region 0.初始化资源
         textSelectionHelper = new TextSelectionHelper.ChatListTextSelectionHelper();
 
         if (chatMessageCellsCache.isEmpty()) {
@@ -1370,9 +1351,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             stickersAdapter.onDestroy();
             stickersAdapter = null;
         }
+        //endregion
 
         Theme.createChatResources(context, false);
 
+        //region 1. ActionBar
         actionBar.setAddToContainer(false);
         if (inPreviewMode) {
             actionBar.setBackButtonDrawable(null);
@@ -1592,6 +1575,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
         actionBar.addView(avatarContainer, 0, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT, !inPreviewMode ? 56 : 0, 0, 40, 0));
 
+        //region 1.1 ActionBarMenu
         ActionBarMenu menu = actionBar.createMenu();
 
         if (currentEncryptedChat == null && !inScheduleMode) {
@@ -1827,7 +1811,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             headerItem.setAlpha(0.0f);
             attachItem.setAlpha(0.0f);
         }
+        //endregion
 
+        //region 1.2 ActionMode
         final ActionBarMenu actionMode = actionBar.createActionMode();
 
         selectedMessagesCountTextView = new NumberTextView(actionMode.getContext());
@@ -1854,7 +1840,15 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         actionMode.getItem(star).setVisibility(selectedMessagesCanStarIds[0].size() + selectedMessagesCanStarIds[1].size() != 0 ? View.VISIBLE : View.GONE);
         actionMode.getItem(delete).setVisibility(cantDeleteMessagesCount == 0 ? View.VISIBLE : View.GONE);
         checkActionBarMenu();
+        //endregion
+        //endregion
 
+        //region 2. ContentView
+        /**
+         * fragmentView(SizeNotifierFrameLayout)
+         * - emptyViewContainer(FrameLayout)
+         *   - bigEmptyView(ChatBigEmptyView) 或 emptyView(TextView)
+        */
         scrimPaint = new Paint() {
             @Override
             public void setAlpha(int a) {
@@ -2549,7 +2543,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
             emptyViewContainer.addView(bigEmptyView, new FrameLayout.LayoutParams(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER));
         }
+        //endregion
 
+        //region 初始化
         CharSequence oldMessage;
         if (chatActivityEnterView != null) {
             chatActivityEnterView.onDestroy();
@@ -2564,7 +2560,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         if (mentionsAdapter != null) {
             mentionsAdapter.onDestroy();
         }
+        //endregion
 
+        //region 4. 消息列表
         chatListView = new RecyclerListView(context) {
 
             private int lastWidth;
@@ -3794,11 +3792,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 textSelectionHelper.onParentScrolled();
             }
         });
+        //endregion
 
         animatingImageView = new ClippingImageView(context);
         animatingImageView.setVisibility(View.GONE);
         contentView.addView(animatingImageView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT));
 
+        //region progressView
         progressView = new FrameLayout(context);
         progressView.setVisibility(View.INVISIBLE);
         contentView.addView(progressView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT));
@@ -3812,6 +3812,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         progressBar.setSize(AndroidUtilities.dp(28));
         progressBar.setProgressColor(Theme.getColor(Theme.key_chat_serviceText));
         progressView.addView(progressBar, LayoutHelper.createFrame(32, 32, Gravity.CENTER));
+        //endregion
 
         floatingDateView = new ChatActionCell(context) {
             @Override
@@ -3848,6 +3849,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             jumpToDate((int) (calendar.getTime().getTime() / 1000));
         });
 
+        //region 置顶消息
         if (currentEncryptedChat == null) {
             pinnedMessageView = new FrameLayout(context);
             pinnedMessageView.setTag(1);
@@ -3923,7 +3925,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
             });
         }
+        //endregion
 
+        //region topChatPanelView
         topChatPanelView = new FrameLayout(context) {
 
             private boolean ignoreLayout;
@@ -4024,7 +4028,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             getMessagesController().hidePeerSettingsBar(dialog_id, currentUser, currentChat);
             updateTopPanel(true);
         });
+        //endregion
 
+        //region alertView
         alertView = new FrameLayout(context);
         alertView.setTag(1);
         alertView.setTranslationY(-AndroidUtilities.dp(50));
@@ -4049,7 +4055,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         alertTextView.setEllipsize(TextUtils.TruncateAt.END);
         alertTextView.setMaxLines(1);
         alertView.addView(alertTextView, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.LEFT, 8, 23, 8, 0));
+        //endregion
 
+        //region 下滑到底部 pagedownButton
         pagedownButton = new FrameLayout(context);
         pagedownButton.setVisibility(View.INVISIBLE);
         contentView.addView(pagedownButton, LayoutHelper.createFrame(66, 59, Gravity.RIGHT | Gravity.BOTTOM, 0, 0, -3, 5));
@@ -4064,7 +4072,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 scrollToLastMessage(true);
             }
         });
+        //endregion
 
+        //region 提及的
         mentiondownButton = new FrameLayout(context);
         mentiondownButton.setVisibility(View.INVISIBLE);
         contentView.addView(mentiondownButton, LayoutHelper.createFrame(46, 59, Gravity.RIGHT | Gravity.BOTTOM, 0, 0, 7, 5));
@@ -4126,7 +4136,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 loadLastUnreadMention();
             }
         });
-
         mentiondownButton.setOnLongClickListener(view -> {
             for (int a = 0; a < messages.size(); a++) {
                 MessageObject messageObject = messages.get(a);
@@ -4597,7 +4606,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 chatActivityEnterView.replaceWithText(start, len, code, true);
             }
         });
-
         mentionListView.setOnItemLongClickListener((view, position) -> {
             if (getParentActivity() == null || !mentionsAdapter.isLongClickEnabled()) {
                 return false;
@@ -4623,7 +4631,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
             return false;
         });
-
         mentionListView.setOnScrollListener(new RecyclerView.OnScrollListener() {
 
             @Override
@@ -4646,7 +4653,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 mentionListViewUpdateLayout();
             }
         });
+        //endregion
 
+        //region 下滑到底部
         pagedownButtonImage = new ImageView(context);
         pagedownButtonImage.setImageResource(R.drawable.pagedown);
         pagedownButtonImage.setScaleType(ImageView.ScaleType.CENTER);
@@ -4684,7 +4693,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         pagedownButtonCounter.setMinWidth(AndroidUtilities.dp(23));
         pagedownButtonCounter.setPadding(AndroidUtilities.dp(8), AndroidUtilities.dp(1), AndroidUtilities.dp(8), 0);
         pagedownButton.addView(pagedownButtonCounter, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 23, Gravity.TOP | Gravity.LEFT));
+        //endregion
 
+        //region 提及
         mentiondownButtonImage = new ImageView(context);
         mentiondownButtonImage.setImageResource(R.drawable.mentionbutton);
         mentiondownButtonImage.setScaleType(ImageView.ScaleType.CENTER);
@@ -4707,7 +4718,6 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         combinedDrawable.setIconSize(AndroidUtilities.dp(42), AndroidUtilities.dp(42));
         drawable = combinedDrawable;
         mentiondownButtonImage.setBackgroundDrawable(drawable);
-
         mentiondownButton.addView(mentiondownButtonImage, LayoutHelper.createFrame(46, 46, Gravity.LEFT | Gravity.BOTTOM));
 
         mentiondownButtonCounter = new SimpleTextView(context);
@@ -4721,6 +4731,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         mentiondownButtonCounter.setPadding(AndroidUtilities.dp(8), AndroidUtilities.dp(1), AndroidUtilities.dp(8), 0);
         mentiondownButton.addView(mentiondownButtonCounter, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 23, Gravity.TOP | Gravity.CENTER_HORIZONTAL));
         mentiondownButton.setContentDescription(LocaleController.getString("AccDescrMentionDown", R.string.AccDescrMentionDown));
+        //endregion
 
         if (!AndroidUtilities.isTablet() || AndroidUtilities.isSmallTablet()) {
             contentView.addView(fragmentLocationContextView = new FragmentContextView(context, this, true), LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 39, Gravity.TOP | Gravity.LEFT, 0, -36, 0, 0));
@@ -4729,6 +4740,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             fragmentLocationContextView.setAdditionalContextView(fragmentContextView);
         }
 
+        //region 消息搜索
         messagesSearchListView = new RecyclerListView(context);
         messagesSearchListView.setBackgroundColor(Theme.getColor(Theme.key_windowBackgroundWhite));
         LinearLayoutManager messagesSearchLayoutManager = new LinearLayoutManager(context);
@@ -4752,7 +4764,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
                 }
             }
         });
+        //endregion
 
+        //region 撤销
         topUndoView = new UndoView(context, true) {
             @Override
             public void didPressUrl(CharacterStyle span) {
@@ -4760,7 +4774,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             }
         };
         contentView.addView(topUndoView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.LEFT, 8, 8, 8, 0));
+        //endregion
 
+        //region
         contentView.addView(actionBar);
 
         overlayView = new View(context);
@@ -4791,7 +4807,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         bottomMessagesActionContainer.setPadding(0, AndroidUtilities.dp(2), 0, 0);
         contentView.addView(bottomMessagesActionContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 51, Gravity.BOTTOM));
         bottomMessagesActionContainer.setOnTouchListener((v, event) -> true);
+        //endregion
 
+        //region 输入框
         chatActivityEnterView = new ChatActivityEnterView(getParentActivity(), contentView, this, true) {
 
             int lastContentViewHeight;
@@ -5191,6 +5209,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
         contentView.addView(chatActivityEnterView, contentView.getChildCount() - 1, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.BOTTOM));
 
+        //region 回复
         FrameLayout replyLayout = new FrameLayout(context) {
             @Override
             public void setTranslationY(float translationY) {
@@ -5313,7 +5332,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
         replyImageView = new BackupImageView(context);
         replyLayout.addView(replyImageView, LayoutHelper.createFrame(34, 34, Gravity.TOP | Gravity.LEFT, 52, 6, 0, 0));
+        //endregion
 
+        //region 表情包
         stickersPanel = new FrameLayout(context);
         stickersPanel.setVisibility(View.GONE);
         contentView.addView(stickersPanel, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, 81.5f, Gravity.LEFT | Gravity.BOTTOM, 0, 0, 0, 38));
@@ -5380,6 +5401,7 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         stickersPanelArrow.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_chat_stickersHintPanel), PorterDuff.Mode.MULTIPLY));
         stickersPanel.addView(stickersPanelArrow, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM | Gravity.LEFT, 53, 0, 53, 0));
 
+        //region 搜索表情包
         searchContainer = new FrameLayout(context) {
             @Override
             public void onDraw(Canvas canvas) {
@@ -5524,7 +5546,10 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         searchCountText.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
         searchCountText.setGravity(Gravity.LEFT);
         searchContainer.addView(searchCountText, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.CENTER_VERTICAL, 60f + ((searchUserButton != null) ? 48f : 0), 0, 108, 0));
+        //endregion
+        //endregion
 
+        //region bottomOverlay
         bottomOverlay = new FrameLayout(context) {
             @Override
             public void onDraw(Canvas canvas) {
@@ -5663,7 +5688,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         bottomOverlayProgress.setScaleY(0.1f);
         bottomOverlayProgress.setAlpha(1.0f);
         bottomOverlayChat.addView(bottomOverlayProgress, LayoutHelper.createFrame(30, 30, Gravity.CENTER));
+        //endregion
 
+        //region 回复
         replyButton = new TextView(context);
         replyButton.setText(LocaleController.getString("Reply", R.string.Reply));
         replyButton.setGravity(Gravity.CENTER_VERTICAL);
@@ -5694,7 +5721,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
             updateVisibleRows();
         });
         bottomMessagesActionContainer.addView(replyButton, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP));
+        //endregion
 
+        //region 转发
         forwardButton = new TextView(context);
         forwardButton.setText(LocaleController.getString("Forward", R.string.Forward));
         forwardButton.setGravity(Gravity.CENTER_VERTICAL);
@@ -5709,19 +5738,24 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         forwardButton.setCompoundDrawablesWithIntrinsicBounds(image, null, null, null);
         forwardButton.setOnClickListener(v -> openForward());
         bottomMessagesActionContainer.addView(forwardButton, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.MATCH_PARENT, Gravity.RIGHT | Gravity.TOP));
+        //endregion
 
         contentView.addView(searchContainer, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, 51, Gravity.BOTTOM));
 
+        //region 撤销
         undoView = new UndoView(context);
         undoView.setAdditionalTranslationY(AndroidUtilities.dp(51));
         contentView.addView(undoView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT, Gravity.BOTTOM | Gravity.LEFT, 8, 0, 8, 8));
+        //endregion
 
+        //region 慢速模式
         if (currentChat != null) {
             slowModeHint = new HintView(getParentActivity(), 2);
             slowModeHint.setAlpha(0.0f);
             slowModeHint.setVisibility(View.INVISIBLE);
             contentView.addView(slowModeHint, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.LEFT | Gravity.TOP, 19, 0, 19, 0));
         }
+        //endregion
 
         chatAdapter.updateRowsSafe();
         if (loading && messages.isEmpty()) {
@@ -5908,6 +5942,9 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         }
     }
 
+    /**
+     * 转发
+     */
     private void openForward() {
         int hasPoll = 0;
         for (int a = 0; a < 2; a++) {
@@ -9515,13 +9552,13 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
 
     private void checkAndUpdateAvatar() {
         if (currentUser != null) {
-            TLRPC.User user = getMessagesController().getUser(currentUser.id);
+            User user = getMessagesController().getUser(currentUser.id);
             if (user == null) {
                 return;
             }
             currentUser = user;
         } else if (currentChat != null) {
-            TLRPC.Chat chat = getMessagesController().getChat(currentChat.id);
+            Chat chat = getMessagesController().getChat(currentChat.id);
             if (chat == null) {
                 return;
             }
@@ -15921,11 +15958,11 @@ public class ChatActivity extends BaseFragment implements NotificationCenter.Not
         return inlineReturn;
     }
 
-    public TLRPC.User getCurrentUser() {
+    public User getCurrentUser() {
         return currentUser;
     }
 
-    public TLRPC.Chat getCurrentChat() {
+    public Chat getCurrentChat() {
         return currentChat;
     }
 

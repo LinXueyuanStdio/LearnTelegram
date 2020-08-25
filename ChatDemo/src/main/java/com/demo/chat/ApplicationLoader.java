@@ -25,17 +25,25 @@ import android.net.NetworkInfo;
 import android.os.Handler;
 import android.os.PowerManager;
 import android.telephony.TelephonyManager;
-import android.text.TextUtils;
 
+import com.demo.chat.controller.ConnectionsManager;
+import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
+import com.demo.chat.controller.MediaController;
+import com.demo.chat.controller.MessagesController;
+import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.FileLog;
-import com.demo.chat.messager.Utilities;
+import com.demo.chat.messager.NativeLoader;
+import com.demo.chat.messager.SharedConfig;
+import com.demo.chat.model.User;
+import com.demo.chat.receiver.ScreenReceiver;
+import com.demo.chat.service.NotificationsService;
+import com.demo.chat.ui.Components.ForegroundDetector;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GooglePlayServicesUtil;
-import com.google.firebase.iid.FirebaseInstanceId;
 
 import java.io.File;
 
@@ -118,7 +126,6 @@ public class ApplicationLoader extends Application {
 
                     boolean isSlow = isConnectionSlow();
                     for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-                        ConnectionsManager.getInstance(a).checkConnection();
                         FileLoader.getInstance(a).onNetworkChanged(isSlow);
                     }
                 }
@@ -160,7 +167,7 @@ public class ApplicationLoader extends Application {
             } else {
                 ConnectionsManager.getInstance(a);//每个用户的连接
             }
-            TLRPC.User user = UserConfig.getInstance(a).getCurrentUser();
+            User user = UserConfig.getInstance(a).getCurrentUser();
             if (user != null) {
                 MessagesController.getInstance(a).putUser(user, true);
                 SendMessagesHelper.getInstance(a).checkUnsentMessages();
@@ -180,9 +187,6 @@ public class ApplicationLoader extends Application {
             ContactsController.getInstance(a).checkAppAccount();
             DownloadController.getInstance(a);
         }
-
-        //可穿戴设备
-        WearDataLayerListenerService.updateWatchConnectionState();
     }
 
     public ApplicationLoader() {
@@ -207,7 +211,6 @@ public class ApplicationLoader extends Application {
 
         //加载 so 库
         NativeLoader.initNativeLibs(ApplicationLoader.applicationContext);
-        ConnectionsManager.native_setJava(false);
         new ForegroundDetector(this) {
             @Override
             public void onActivityStarted(Activity activity) {
@@ -264,44 +267,6 @@ public class ApplicationLoader extends Application {
      * 谷歌Play服务
      */
     private void initPlayServices() {
-        AndroidUtilities.runOnUIThread(() -> {
-            if (hasPlayServices = checkPlayServices()) {
-                final String currentPushString = SharedConfig.pushString;
-                if (!TextUtils.isEmpty(currentPushString)) {
-                    if (BuildVars.DEBUG_PRIVATE_VERSION && BuildVars.LOGS_ENABLED) {
-                        FileLog.d("GCM regId = " + currentPushString);
-                    }
-                } else {
-                    if (BuildVars.LOGS_ENABLED) {
-                        FileLog.d("GCM Registration not found.");
-                    }
-                }
-                Utilities.globalQueue.postRunnable(() -> {
-                    try {
-                        FirebaseInstanceId.getInstance().getInstanceId().addOnSuccessListener(instanceIdResult -> {
-                            String token = instanceIdResult.getToken();
-                            if (!TextUtils.isEmpty(token)) {
-                                GcmPushListenerService.sendRegistrationToServer(token);
-                            }
-                        }).addOnFailureListener(e -> {
-                            if (BuildVars.LOGS_ENABLED) {
-                                FileLog.d("Failed to get regid");
-                            }
-                            SharedConfig.pushStringStatus = "__FIREBASE_FAILED__";
-                            GcmPushListenerService.sendRegistrationToServer(null);
-                        });
-                    } catch (Throwable e) {
-                        FileLog.e(e);
-                    }
-                });
-            } else {
-                if (BuildVars.LOGS_ENABLED) {
-                    FileLog.d("No valid Google Play Services APK found.");
-                }
-                SharedConfig.pushStringStatus = "__NO_GOOGLE_PLAY_SERVICES__";
-                GcmPushListenerService.sendRegistrationToServer(null);
-            }
-        }, 1000);
     }
 
     private boolean checkPlayServices() {
@@ -385,38 +350,6 @@ public class ApplicationLoader extends Application {
 
         }
         return false;
-    }
-
-    public static int getAutodownloadNetworkType() {
-        try {
-            ensureCurrentNetworkGet(false);
-            if (currentNetworkInfo == null) {
-                return StatsController.TYPE_MOBILE;
-            }
-            if (currentNetworkInfo.getType() == ConnectivityManager.TYPE_WIFI || currentNetworkInfo.getType() == ConnectivityManager.TYPE_ETHERNET) {
-                if (connectivityManager.isActiveNetworkMetered()) {
-                    return StatsController.TYPE_MOBILE;
-                } else {
-                    return StatsController.TYPE_WIFI;
-                }
-            }
-            if (currentNetworkInfo.isRoaming()) {
-                return StatsController.TYPE_ROAMING;
-            }
-        } catch (Exception e) {
-            FileLog.e(e);
-        }
-        return StatsController.TYPE_MOBILE;
-    }
-
-    public static int getCurrentNetworkType() {
-        if (isConnectedOrConnectingToWiFi()) {
-            return StatsController.TYPE_WIFI;
-        } else if (isRoaming()) {
-            return StatsController.TYPE_ROAMING;
-        } else {
-            return StatsController.TYPE_MOBILE;
-        }
     }
 
     public static boolean isNetworkOnlineFast() {

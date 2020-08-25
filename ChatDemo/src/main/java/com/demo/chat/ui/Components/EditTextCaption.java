@@ -27,6 +27,7 @@ import android.widget.FrameLayout;
 
 import com.demo.chat.R;
 import com.demo.chat.controller.LocaleController;
+import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.theme.Theme;

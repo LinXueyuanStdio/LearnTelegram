@@ -12,7 +12,11 @@ import android.util.Base64;
 import android.util.SparseArray;
 
 import com.demo.chat.ApplicationLoader;
+import com.demo.chat.controller.ConnectionsManager;
+import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
+import com.demo.chat.controller.MediaController;
+import com.demo.chat.controller.MessagesController;
 
 import org.json.JSONObject;
 

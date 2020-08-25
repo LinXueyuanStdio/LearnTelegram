@@ -17,6 +17,7 @@ import android.view.View;
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.DispatchQueuePool;
 import com.demo.chat.messager.FileLog;
 
 import java.io.File;

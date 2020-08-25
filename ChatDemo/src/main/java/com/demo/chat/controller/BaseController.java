@@ -1,5 +1,7 @@
 package com.demo.chat.controller;
 
+import com.demo.chat.messager.NotificationCenter;
+
 /**
  * @author 林学渊
  * @email linxy59@mail2.sysu.edu.cn
@@ -26,10 +28,10 @@ public class BaseController {
     protected final UserConfig getUserConfig() {
         return parentAccountInstance.getUserConfig();
     }
-//    //消息管理
-//    protected final MessagesController getMessagesController() {
-//        return parentAccountInstance.getMessagesController();
-//    }
+    //消息管理
+    protected final MessagesController getMessagesController() {
+        return parentAccountInstance.getMessagesController();
+    }
 //    //联系人
 //    protected final ContactsController getContactsController() {
 //        return parentAccountInstance.getContactsController();
@@ -50,10 +52,10 @@ public class BaseController {
 //    protected final NotificationsController getNotificationsController() {
 //        return parentAccountInstance.getNotificationsController();
 //    }
-//    //通知中心
-//    protected final NotificationCenter getNotificationCenter() {
-//        return parentAccountInstance.getNotificationCenter();
-//    }
+    //通知中心
+    protected final NotificationCenter getNotificationCenter() {
+        return parentAccountInstance.getNotificationCenter();
+    }
 //    //消息存储
 //    protected final MessagesStorage getMessagesStorage() {
 //        return parentAccountInstance.getMessagesStorage();

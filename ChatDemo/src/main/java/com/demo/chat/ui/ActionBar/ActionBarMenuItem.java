@@ -31,8 +31,10 @@ import android.widget.TextView;
 import com.demo.chat.R;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Components.CloseProgressDrawable2;
+import com.demo.chat.ui.Components.EditTextBoldCursor;
 import com.demo.chat.ui.Components.LayoutHelper;
 
 /**

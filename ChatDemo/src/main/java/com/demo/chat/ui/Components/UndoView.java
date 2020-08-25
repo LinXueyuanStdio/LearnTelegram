@@ -34,9 +34,12 @@ import android.widget.TextView;
 
 import com.demo.chat.R;
 import com.demo.chat.controller.LocaleController;
+import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.Emoji;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.theme.Theme;
 
 /**

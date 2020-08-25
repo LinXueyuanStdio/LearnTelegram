@@ -1,5 +1,9 @@
 package com.demo.chat.controller;
 
+import android.content.SharedPreferences;
+
+import com.demo.chat.messager.NotificationCenter;
+
 /**
  * @author 林学渊
  * @email linxy59@mail2.sysu.edu.cn
@@ -34,11 +38,11 @@ public class AccountInstance {
     public UserConfig getUserConfig() {
         return UserConfig.getInstance(currentAccount);
     }
-//
-//    //消息管理
-//    public MessagesController getMessagesController() {
-//        return MessagesController.getInstance(currentAccount);
-//    }
+
+    //消息管理
+    public MessagesController getMessagesController() {
+        return MessagesController.getInstance(currentAccount);
+    }
 //
 //    //消息存储
 //    public MessagesStorage getMessagesStorage() {
@@ -50,10 +54,10 @@ public class AccountInstance {
 //        return ContactsController.getInstance(currentAccount);
 //    }
 //
-//    //媒体数据
-//    public MediaDataController getMediaDataController() {
-//        return MediaDataController.getInstance(currentAccount);
-//    }
+    //媒体数据
+    public MediaDataController getMediaDataController() {
+        return MediaDataController.getInstance(currentAccount);
+    }
 //
 //    //连接管理
 //    public ConnectionsManager getConnectionsManager() {
@@ -65,10 +69,10 @@ public class AccountInstance {
 //        return NotificationsController.getInstance(currentAccount);
 //    }
 //
-//    //通知中心
-//    public NotificationCenter getNotificationCenter() {
-//        return NotificationCenter.getInstance(currentAccount);
-//    }
+    //通知中心
+    public NotificationCenter getNotificationCenter() {
+        return NotificationCenter.getInstance(currentAccount);
+    }
 //
 //    //位置
 //    public LocationController getLocationController() {
@@ -80,11 +84,11 @@ public class AccountInstance {
 //    public DownloadController getDownloadController() {
 //        return DownloadController.getInstance(currentAccount);
 //    }
-//
-//    //发送消息
-//    public SendMessagesHelper getSendMessagesHelper() {
-//        return SendMessagesHelper.getInstance(currentAccount);
-//    }
+
+    //发送消息
+    public SendMessagesHelper getSendMessagesHelper() {
+        return SendMessagesHelper.getInstance(currentAccount);
+    }
 //
 //    //私密聊天
 //    public SecretChatHelper getSecretChatHelper() {
@@ -95,19 +99,19 @@ public class AccountInstance {
 //    public StatsController getStatsController() {
 //        return StatsController.getInstance(currentAccount);
 //    }
-//
-//    //文件加载器
-//    public FileLoader getFileLoader() {
-//        return FileLoader.getInstance(currentAccount);
-//    }
+
+    //文件加载器
+    public FileLoader getFileLoader() {
+        return FileLoader.getInstance(currentAccount);
+    }
 //
 //    //文件转发
 //    public FileRefController getFileRefController() {
 //        return FileRefController.getInstance(currentAccount);
 //    }
 
-//    //通知设置
-//    public SharedPreferences getNotificationsSettings() {
-//        return MessagesController.getNotificationsSettings(currentAccount);
-//    }
+    //通知设置
+    public SharedPreferences getNotificationsSettings() {
+        return MessagesController.getNotificationsSettings(currentAccount);
+    }
 }

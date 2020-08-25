@@ -28,6 +28,7 @@ import com.demo.chat.R;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.SharedConfig;
 
 import androidx.annotation.Keep;
 
