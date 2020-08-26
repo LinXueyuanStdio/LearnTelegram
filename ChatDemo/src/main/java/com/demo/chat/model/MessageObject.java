@@ -32,6 +32,7 @@ import com.demo.chat.messager.SerializedData;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.browser.Browser;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Cells.ChatMessageCell;
 import com.demo.chat.ui.Components.TextStyleSpan;
@@ -102,8 +103,8 @@ public class MessageObject {
     public boolean isDateObject;
     public TLObject photoThumbsObject;
     public TLObject photoThumbsObject2;
-    public ArrayList<TLRPC.PhotoSize> photoThumbs;
-    public ArrayList<TLRPC.PhotoSize> photoThumbs2;
+    public ArrayList<PhotoSize> photoThumbs;
+    public ArrayList<PhotoSize> photoThumbs2;
     public VideoEditedInfo videoEditedInfo;
     public boolean shouldRemoveVideoEditedInfo;
     public boolean viewsReloaded;

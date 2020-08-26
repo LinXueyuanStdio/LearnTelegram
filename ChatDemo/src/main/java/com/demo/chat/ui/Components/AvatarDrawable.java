@@ -13,6 +13,9 @@ import android.text.TextPaint;
 
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.model.Chat;
+import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
 import com.demo.chat.theme.Theme;
 
 /**
@@ -59,15 +62,15 @@ public class AvatarDrawable extends Drawable {
         namePaint.setTextSize(AndroidUtilities.dp(18));
     }
 
-    public AvatarDrawable(TLRPC.User user) {
+    public AvatarDrawable(User user) {
         this(user, false);
     }
 
-    public AvatarDrawable(TLRPC.Chat chat) {
+    public AvatarDrawable(Chat chat) {
         this(chat, false);
     }
 
-    public AvatarDrawable(TLRPC.User user, boolean profile) {
+    public AvatarDrawable(User user, boolean profile) {
         this();
         isProfile = profile;
         if (user != null) {
@@ -76,7 +79,7 @@ public class AvatarDrawable extends Drawable {
         }
     }
 
-    public AvatarDrawable(TLRPC.Chat chat, boolean profile) {
+    public AvatarDrawable(Chat chat, boolean profile) {
         this();
         isProfile = profile;
         if (chat != null) {
@@ -123,7 +126,7 @@ public class AvatarDrawable extends Drawable {
         return Theme.getColor(Theme.keys_avatar_nameInMessage[getColorIndex(id)]);
     }
 
-    public void setInfo(TLRPC.User user) {
+    public void setInfo(User user) {
         if (user != null) {
             setInfo(user.id, user.first_name, user.last_name, null);
             drawDeleted = UserObject.isDeleted(user);
