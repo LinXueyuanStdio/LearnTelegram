@@ -80,6 +80,7 @@ import com.demo.chat.ui.Components.RoundVideoPlayingDrawable;
 import com.demo.chat.ui.Components.SeekBar;
 import com.demo.chat.ui.Components.SeekBarWaveform;
 import com.demo.chat.ui.Components.TextStyleSpan;
+import com.demo.chat.ui.Components.TimerParticles;
 import com.demo.chat.ui.Components.URLSpanBotCommand;
 import com.demo.chat.ui.Viewer.PhotoViewer;
 
@@ -138,9 +139,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
 
         default void didPressReaction(ChatMessageCell cell, TLRPC.TL_reactionCount reaction) {
-        }
-
-        default void didPressVoteButtons(ChatMessageCell cell, ArrayList<TLRPC.TL_pollAnswer> buttons, int showCount, int x, int y) {
         }
 
         default void didPressInstantButton(ChatMessageCell cell, int type) {
@@ -213,23 +211,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         private int angle;
         private float progressAlpha;
         private long lastUpdateTime;
-    }
-
-    public static class PollButton {
-        public int x;
-        public int y;
-        public int height;
-        private int percent;
-        private float decimal;
-        private int prevPercent;
-        private float percentProgress;
-        private float prevPercentProgress;
-        private boolean chosen;
-        private int count;
-        private boolean prevChosen;
-        private boolean correct;
-        private StaticLayout title;
-        private TLRPC.TL_pollAnswer answer;
     }
 
     private boolean pinnedTop;
@@ -456,9 +437,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private boolean voteRisingCircleLength;
     private float voteCurrentProgressTime;
     private int pressedVoteButton;
-    private TLRPC.Poll lastPoll;
     private float timerTransitionProgress;
-    private ArrayList<TLRPC.TL_pollAnswerVoters> lastPollResults;
     private int lastPollResultsVoters;
     private TimerParticles timerParticles;
     private int pollHintX;
@@ -1249,35 +1228,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     }
                     if (currentMessageObject.scheduled) {
                         Toast.makeText(getContext(), LocaleController.getString("MessageScheduledVote", R.string.MessageScheduledVote), Toast.LENGTH_LONG).show();
-                    } else {
-                        PollButton button = pollButtons.get(pressedVoteButton);
-                        TLRPC.TL_pollAnswer answer = button.answer;
-                        if (pollVoted || pollClosed) {
-                            ArrayList<TLRPC.TL_pollAnswer> answers = new ArrayList<>();
-                            answers.add(answer);
-                            delegate.didPressVoteButtons(this, answers, button.count, button.x + AndroidUtilities.dp(50), button.y + namesOffset);
-                        } else {
-                            if (lastPoll.multiple_choice) {
-                                if (currentMessageObject.checkedVotes.contains(answer)) {
-                                    currentMessageObject.checkedVotes.remove(answer);
-                                    pollCheckBox[pressedVoteButton].setChecked(false, true);
-                                } else {
-                                    currentMessageObject.checkedVotes.add(answer);
-                                    pollCheckBox[pressedVoteButton].setChecked(true, true);
-                                }
-                            } else {
-                                pollVoteInProgressNum = pressedVoteButton;
-                                pollVoteInProgress = true;
-                                vibrateOnPollVote = true;
-                                voteCurrentProgressTime = 0.0f;
-                                firstCircleLength = true;
-                                voteCurrentCircleLength = 360;
-                                voteRisingCircleLength = false;
-                                ArrayList<TLRPC.TL_pollAnswer> answers = new ArrayList<>();
-                                answers.add(answer);
-                                delegate.didPressVoteButtons(this, answers, -1, 0, 0);
-                            }
-                        }
                     }
                     pressedVoteButton = -1;
                     invalidate();
@@ -11417,18 +11367,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             } else if (button.reaction != null) {
                                 delegate.didPressReaction(ChatMessageCell.this, button.reaction);
                             }
-                        }
-                        sendAccessibilityEventForVirtualView(virtualViewId, AccessibilityEvent.TYPE_VIEW_CLICKED);
-                    } else if (virtualViewId >= POLL_BUTTONS_START) {
-                        int buttonIndex = virtualViewId - POLL_BUTTONS_START;
-                        if (buttonIndex >= pollButtons.size()) {
-                            return false;
-                        }
-                        PollButton button = pollButtons.get(buttonIndex);
-                        if (delegate != null) {
-                            ArrayList<TLRPC.TL_pollAnswer> answers = new ArrayList<>();
-                            answers.add(button.answer);
-                            delegate.didPressVoteButtons(ChatMessageCell.this, answers, -1, 0, 0);
                         }
                         sendAccessibilityEventForVirtualView(virtualViewId, AccessibilityEvent.TYPE_VIEW_CLICKED);
                     } else if (virtualViewId == INSTANT_VIEW) {

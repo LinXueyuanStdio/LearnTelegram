@@ -43,11 +43,11 @@ public class AccountInstance {
     public MessagesController getMessagesController() {
         return MessagesController.getInstance(currentAccount);
     }
-//
-//    //消息存储
-//    public MessagesStorage getMessagesStorage() {
-//        return MessagesStorage.getInstance(currentAccount);
-//    }
+
+    //消息存储
+    public MessagesStorage getMessagesStorage() {
+        return MessagesStorage.getInstance(currentAccount);
+    }
 //
 //    //联系人
 //    public ContactsController getContactsController() {

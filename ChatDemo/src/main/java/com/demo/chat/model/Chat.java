@@ -39,4 +39,36 @@ public class Chat {
     public boolean scam;
     public boolean has_link;
     public boolean explicit_content;
+
+    public TL_chatAdminRights admin_rights;
+    public TL_chatBannedRights banned_rights;
+    public TL_chatBannedRights default_banned_rights;
+
+    public static class TL_chatAdminRights {
+        public int flags;
+        public boolean change_info;
+        public boolean post_messages;
+        public boolean edit_messages;
+        public boolean delete_messages;
+        public boolean ban_users;
+        public boolean invite_users;
+        public boolean pin_messages;
+        public boolean add_admins;
+    }
+    public static class TL_chatBannedRights {
+        public int flags;
+        public boolean view_messages;
+        public boolean send_messages;
+        public boolean send_media;
+        public boolean send_stickers;
+        public boolean send_gifs;
+        public boolean send_games;
+        public boolean send_inline;
+        public boolean embed_links;
+        public boolean send_polls;
+        public boolean change_info;
+        public boolean invite_users;
+        public boolean pin_messages;
+        public int until_date;
+    }
 }

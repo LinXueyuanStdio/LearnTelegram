@@ -69,11 +69,15 @@ import android.widget.Toast;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
+import com.demo.chat.alerts.AlertsCreator;
 import com.demo.chat.controller.AccountInstance;
 import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
+import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.MessagesController;
+import com.demo.chat.controller.NotificationsController;
+import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Emoji;
@@ -81,7 +85,14 @@ import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.camera.CameraController;
+import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
+import com.demo.chat.model.VideoEditedInfo;
+import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
 import com.demo.chat.ui.ActionBar.ActionBarMenuSubItem;
@@ -5767,11 +5778,6 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             SendMessagesHelper.getInstance(currentAccount).sendMessage(button.text, dialog_id, replyMessageObject, null, false, null, null, null, true, 0);
         } else if (button instanceof TLRPC.TL_keyboardButtonUrl) {
             AlertsCreator.showOpenUrlAlert(parentFragment, button.url, false, true);
-        } else if (button instanceof TLRPC.TL_keyboardButtonRequestPhone) {
-            parentFragment.shareMyContact(2, messageObject);
-        } else if (button instanceof TLRPC.TL_keyboardButtonRequestPoll) {
-            parentFragment.openPollCreate((button.flags & 1) != 0 ? button.quiz : null);
-            return false;
         } else if (button instanceof TLRPC.TL_keyboardButtonRequestGeoLocation) {
             AlertDialog.Builder builder = new AlertDialog.Builder(parentActivity);
             builder.setTitle(LocaleController.getString("ShareYouLocationTitle", R.string.ShareYouLocationTitle));

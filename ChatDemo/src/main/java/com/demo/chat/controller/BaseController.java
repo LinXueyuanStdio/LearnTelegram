@@ -36,10 +36,10 @@ public class BaseController {
 //    protected final ContactsController getContactsController() {
 //        return parentAccountInstance.getContactsController();
 //    }
-//    //媒体数据
-//    protected final MediaDataController getMediaDataController() {
-//        return parentAccountInstance.getMediaDataController();
-//    }
+    //媒体数据
+    protected final MediaDataController getMediaDataController() {
+        return parentAccountInstance.getMediaDataController();
+    }
 //    //连接管理
 //    protected final ConnectionsManager getConnectionsManager() {
 //        return parentAccountInstance.getConnectionsManager();
@@ -56,10 +56,10 @@ public class BaseController {
     protected final NotificationCenter getNotificationCenter() {
         return parentAccountInstance.getNotificationCenter();
     }
-//    //消息存储
-//    protected final MessagesStorage getMessagesStorage() {
-//        return parentAccountInstance.getMessagesStorage();
-//    }
+    //消息存储
+    protected final MessagesStorage getMessagesStorage() {
+        return parentAccountInstance.getMessagesStorage();
+    }
 //    //下载
 //    protected final DownloadController getDownloadController() {
 //        return parentAccountInstance.getDownloadController();

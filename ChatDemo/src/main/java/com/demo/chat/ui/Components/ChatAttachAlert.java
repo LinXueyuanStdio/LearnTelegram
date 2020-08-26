@@ -289,7 +289,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     private ChatAttachAlertPhotoLayout photoLayout;
     private ChatAttachAlertContactsLayout contactsLayout;
     private ChatAttachAlertAudioLayout audioLayout;
-    private ChatAttachAlertPollLayout pollLayout;
     private ChatAttachAlertLocationLayout locationLayout;
     private ChatAttachAlertDocumentLayout documentLayout;
     private AttachAlertLayout[] layouts = new AttachAlertLayout[6];
@@ -758,8 +757,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         float toMove = offset;
                         if (layout == locationLayout) {
                             toMove += AndroidUtilities.dp(11);
-                        } else if (layout == pollLayout) {
-                            toMove -= AndroidUtilities.dp(3);
                         } else {
                             toMove += AndroidUtilities.dp(4);
                         }
@@ -1081,12 +1078,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                         locationLayout.setDelegate((location, live, notify, scheduleDate) -> ((ChatActivity) baseFragment).didSelectLocation(location, live, notify, scheduleDate));
                     }
                     showLayout(locationLayout);
-                } else if (num == 9) {
-                    if (pollLayout == null) {
-                        layouts[1] = pollLayout = new ChatAttachAlertPollLayout(this, getContext());
-                        pollLayout.setDelegate((poll, params, notify, scheduleDate) -> ((ChatActivity) baseFragment).sendPoll(poll, params, notify, scheduleDate));
-                    }
-                    showLayout(pollLayout);
                 } else {
                     delegate.didPressedButton((Integer) view.getTag(), true, true, 0);
                 }
@@ -1404,8 +1395,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             selectedId = 5;
         } else if (layout == locationLayout) {
             selectedId = 6;
-        } else if (layout == pollLayout) {
-            selectedId = 9;
         }
         int count = buttonsRecyclerView.getChildCount();
         for (int a = 0; a < count; a++) {
@@ -1451,9 +1440,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 springAnimation.getSpring().setDampingRatio(0.7f);
                 springAnimation.getSpring().setStiffness(400.0f);
                 springAnimation.addUpdateListener((animation12, value, velocity) -> {
-                    if (nextAttachLayout == pollLayout) {
-                        updateSelectedPosition(1);
-                    }
                     nextAttachLayout.onContainerTranslationUpdated();
                     containerView.invalidate();
                 });
@@ -1513,8 +1499,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 public void didSelectFiles(ArrayList<String> files, String caption, boolean notify, int scheduleDate) {
                     if (baseFragment instanceof ChatActivity) {
                         ((ChatActivity) baseFragment).didSelectFiles(files, caption, notify, scheduleDate);
-                    } else if (baseFragment instanceof PassportActivity) {
-                        ((PassportActivity) baseFragment).didSelectFiles(files, caption, notify, scheduleDate);
                     }
                 }
 
@@ -1847,13 +1831,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         AttachAlertLayout layout = idx == 0 ? currentAttachLayout : nextAttachLayout;
         int t = scrollOffsetY[idx] - backgroundPaddingTop;
         float toMove;
-        if (layout == pollLayout) {
-            t -= AndroidUtilities.dp(13);
-            toMove = AndroidUtilities.dp(11);
-        } else {
-            t -= AndroidUtilities.dp(39);
-            toMove = AndroidUtilities.dp(43);
-        }
+        t -= AndroidUtilities.dp(39);
+        toMove = AndroidUtilities.dp(43);
         if (t + backgroundPaddingTop < ActionBar.getCurrentActionBarHeight()) {
             moveProgress = Math.min(1.0f, (ActionBar.getCurrentActionBarHeight() - t - backgroundPaddingTop) / toMove);
             cornerRadius = 1.0f - moveProgress;
@@ -1879,16 +1858,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
         searchItem.setTranslationY(ActionBar.getCurrentActionBarHeight() - AndroidUtilities.dp(4) - AndroidUtilities.dp(37 + finalMove));
         selectedTextView.setTranslationY(scrollOffsetY[idx] - AndroidUtilities.dp(25 + finalMove * moveProgress) + offset);
-        if (pollLayout != null && layout == pollLayout) {
-            if (AndroidUtilities.isTablet()) {
-                finalMove = 63;
-            } else if (AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y) {
-                finalMove = 53;
-            } else {
-                finalMove = 59;
-            }
-            doneItem.setTranslationY(Math.max(0, pollLayout.getTranslationY() + scrollOffsetY[idx] - AndroidUtilities.dp(7 + finalMove * moveProgress)));
-        }
     }
 
     @SuppressLint("NewApi")
@@ -2336,7 +2305,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
         contactsLayout = null;
         audioLayout = null;
-        pollLayout = null;
         locationLayout = null;
         documentLayout = null;
         for (int a = 1; a < layouts.length; a++) {

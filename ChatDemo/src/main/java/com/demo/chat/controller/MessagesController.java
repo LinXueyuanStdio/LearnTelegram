@@ -287,6 +287,10 @@ public class MessagesController extends BaseController implements NotificationCe
         return chats.get(id);
     }
 
+    public User getUser(Integer id) {
+        return users.get(id);
+    }
+
     public boolean putUser(User user, boolean fromCache) {
         if (user == null) {
             return false;
