@@ -173,7 +173,7 @@ public class AvatarDrawable extends Drawable {
         return avatarType;
     }
 
-    public void setInfo(TLRPC.Chat chat) {
+    public void setInfo(Chat chat) {
         if (chat != null) {
             setInfo(chat.id, chat.title, null, null);
         }

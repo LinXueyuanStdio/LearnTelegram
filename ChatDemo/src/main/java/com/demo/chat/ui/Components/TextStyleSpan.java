@@ -25,7 +25,7 @@ public class TextStyleSpan extends MetricAffectingSpan {
         public int flags;
         public int start;
         public int end;
-        public TLRPC.MessageEntity urlEntity;
+        public MessageEntity urlEntity;
 
         public TextStyleRun() {
 

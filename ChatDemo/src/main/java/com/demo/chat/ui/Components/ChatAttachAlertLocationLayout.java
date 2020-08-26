@@ -38,12 +38,16 @@ import android.widget.TextView;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
+import com.demo.chat.alerts.AlertsCreator;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
+import com.demo.chat.model.Chat;
+import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
 import com.demo.chat.ui.ActionBar.ActionBar;
@@ -175,9 +179,9 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
 
     public static class LiveLocation {
         public int id;
-        public TLRPC.Message object;
-        public TLRPC.User user;
-        public TLRPC.Chat chat;
+        public Message object;
+        public User user;
+        public Chat chat;
         public Marker marker;
     }
 
@@ -351,7 +355,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
     }
 
     public interface LocationActivityDelegate {
-        void didSelectLocation(TLRPC.MessageMedia location, int live, boolean notify, int scheduleDate);
+        void didSelectLocation(MessageMedia location, int live, boolean notify, int scheduleDate);
     }
 
     public ChatAttachAlertLocationLayout(ChatAttachAlert alert, Context context) {
@@ -1108,7 +1112,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         if (delegate == null || getParentActivity() == null || myLocation == null) {
             return;
         }
-        TLRPC.User user = null;
+        User user = null;
         if ((int) dialogId > 0) {
             user = parentAlert.baseFragment.getMessagesController().getUser((int) dialogId);
         }

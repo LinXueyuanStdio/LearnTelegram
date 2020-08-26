@@ -368,7 +368,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
                 }
             }
         } else if (id == NotificationCenter.updateMessageMedia) {
-            TLRPC.Message message = (TLRPC.Message) args[0];
+            Message message = (Message) args[0];
             if (currentMessageObject.getId() == message.id) {
                 if (isVideo && !videoWatchedOneTime) {
                     closeVideoAfterWatch = true;
@@ -740,7 +740,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
         toggleActionBar(true, false);
 
         currentMessageObject = messageObject;
-        TLRPC.Document document = messageObject.getDocument();
+        Document document = messageObject.getDocument();
         if (currentThumb != null) {
             currentThumb.release();
             currentThumb = null;
@@ -779,7 +779,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
             }
         } else {
             actionBar.setTitle(LocaleController.getString("DisappearingPhoto", R.string.DisappearingPhoto));
-            TLRPC.PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, AndroidUtilities.getPhotoSize());
+            PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, AndroidUtilities.getPhotoSize());
             centerImage.setImage(ImageLocation.getForObject(sizeFull, messageObject.photoThumbsObject), null, currentThumb != null ? new BitmapDrawable(currentThumb.bitmap) : null, -1, null, messageObject, 2);
             secretDeleteTimer.setDestroyTime((long) messageObject.messageOwner.destroyTime * 1000, messageObject.messageOwner.ttl, false);
         }

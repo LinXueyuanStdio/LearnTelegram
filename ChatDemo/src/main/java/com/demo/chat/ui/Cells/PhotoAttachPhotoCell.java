@@ -27,10 +27,12 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.demo.chat.R;
+import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Components.BackupImageView;
 import com.demo.chat.ui.Components.CheckBox2;
@@ -234,10 +236,10 @@ public class PhotoAttachPhotoCell extends FrameLayout {
             MessageObject.getDocumentVideoThumb(searchImage.document);
             TLRPC.TL_videoSize videoSize = MessageObject.getDocumentVideoThumb(searchImage.document);
             if (videoSize != null) {
-                TLRPC.PhotoSize currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(searchImage.document.thumbs, 90);
+                PhotoSize currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(searchImage.document.thumbs, 90);
                 imageView.setImage(ImageLocation.getForDocument(videoSize, searchImage.document), null, ImageLocation.getForDocument(currentPhotoObject, searchImage.document), "52_52", null, -1, 1, searchImage);
             } else {
-                TLRPC.PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(searchImage.document.thumbs, 320);
+                PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(searchImage.document.thumbs, 320);
                 imageView.setImage(ImageLocation.getForDocument(photoSize, searchImage.document), null, thumb, searchImage);
             }
         } else {

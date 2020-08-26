@@ -39,6 +39,7 @@ import android.widget.TextView;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
+import com.demo.chat.alerts.AlertsCreator;
 import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
@@ -48,7 +49,14 @@ import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
+import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
+import com.demo.chat.model.VideoEditedInfo;
+import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
@@ -57,6 +65,7 @@ import com.demo.chat.ui.ActionBar.ActionBarMenu;
 import com.demo.chat.ui.ActionBar.ActionBarMenuItem;
 import com.demo.chat.ui.ActionBar.ActionBarMenuSubItem;
 import com.demo.chat.ui.ActionBar.ActionBarPopupWindow;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.Cells.DividerCell;
 import com.demo.chat.ui.Cells.PhotoAttachPhotoCell;
@@ -183,7 +192,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
         }
 
         @Override
-        public PhotoViewer.PlaceProviderObject getPlaceForPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index, boolean needPreview) {
+        public PhotoViewer.PlaceProviderObject getPlaceForPhoto(MessageObject messageObject, FileLocation fileLocation, int index, boolean needPreview) {
             PhotoAttachPhotoCell cell = getCellForIndex(index);
             if (cell != null) {
                 BackupImageView imageView = cell.getImageView();
@@ -234,7 +243,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
         }
 
         @Override
-        public ImageReceiver.BitmapHolder getThumbForPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index) {
+        public ImageReceiver.BitmapHolder getThumbForPhoto(MessageObject messageObject, FileLocation fileLocation, int index) {
             PhotoAttachPhotoCell cell = getCellForIndex(index);
             if (cell != null) {
                 return cell.getImageView().getImageReceiver().getBitmapSafe();
@@ -243,7 +252,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
         }
 
         @Override
-        public void willSwitchFromPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index) {
+        public void willSwitchFromPhoto(MessageObject messageObject, FileLocation fileLocation, int index) {
             int count = listView.getChildCount();
             for (int a = 0; a < count; a++) {
                 View view = listView.getChildAt(a);
@@ -1000,8 +1009,8 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
                 if (chatActivity == null || maxSelectedPhotos == 1) {
                     return false;
                 }
-                TLRPC.Chat chat = chatActivity.getCurrentChat();
-                TLRPC.User user = chatActivity.getCurrentUser();
+                Chat chat = chatActivity.getCurrentChat();
+                User user = chatActivity.getCurrentUser();
                 if (chatActivity.getCurrentEncryptedChat() != null) {
                     return false;
                 }
@@ -1542,13 +1551,13 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
         searching = true;
 
         TLObject object = MessagesController.getInstance(currentAccount).getUserOrChat(gif ? MessagesController.getInstance(currentAccount).gifSearchBot : MessagesController.getInstance(currentAccount).imageSearchBot);
-        if (!(object instanceof TLRPC.User)) {
+        if (!(object instanceof User)) {
             if (searchUser) {
                 searchBotUser(gif);
             }
             return;
         }
-        TLRPC.User user = (TLRPC.User) object;
+        User user = (User) object;
 
         TLRPC.TL_messages_getInlineBotResults req = new TLRPC.TL_messages_getInlineBotResults();
         req.query = query == null ? "" : query;
@@ -1577,7 +1586,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
             int oldCount = searchResult.size();
             if (response != null) {
 
-                TLRPC.messages_BotResults res = (TLRPC.messages_BotResults) response;
+                Messages_BotResults res = (Messages_BotResults) response;
                 nextImagesSearchOffset = res.next_offset;
 
                 for (int a = 0, count = res.results.size(); a < count; a++) {
@@ -1593,7 +1602,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
 
                     if (gif && result.document != null) {
                         for (int b = 0; b < result.document.attributes.size(); b++) {
-                            TLRPC.DocumentAttribute attribute = result.document.attributes.get(b);
+                            DocumentAttribute attribute = result.document.attributes.get(b);
                             if (attribute instanceof TLRPC.TL_documentAttributeImageSize || attribute instanceof TLRPC.TL_documentAttributeVideo) {
                                 image.width = attribute.w;
                                 image.height = attribute.h;
@@ -1603,15 +1612,15 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
                         image.document = result.document;
                         image.size = 0;
                         if (result.photo != null && result.document != null) {
-                            TLRPC.PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, itemSize, true);
+                            PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, itemSize, true);
                             if (size != null) {
                                 result.document.thumbs.add(size);
                                 result.document.flags |= 1;
                             }
                         }
                     } else if (!gif && result.photo != null) {
-                        TLRPC.PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, AndroidUtilities.getPhotoSize());
-                        TLRPC.PhotoSize size2 = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, 320);
+                        PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, AndroidUtilities.getPhotoSize());
+                        PhotoSize size2 = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, 320);
                         if (size == null) {
                             continue;
                         }
@@ -1626,7 +1635,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
                             continue;
                         }
                         for (int b = 0; b < result.content.attributes.size(); b++) {
-                            TLRPC.DocumentAttribute attribute = result.content.attributes.get(b);
+                            DocumentAttribute attribute = result.content.attributes.get(b);
                             if (attribute instanceof TLRPC.TL_documentAttributeImageSize) {
                                 image.width = attribute.w;
                                 image.height = attribute.h;
@@ -1743,7 +1752,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
 
                         private void checkSlowMode() {
                             if (allowOrder && chatActivity != null) {
-                                TLRPC.Chat chat = chatActivity.getCurrentChat();
+                                Chat chat = chatActivity.getCurrentChat();
                                 if (chat != null && !ChatObject.hasAdminRights(chat) && chat.slowmode_enabled) {
                                     if (alertOnlyOnce != 2) {
                                         AlertsCreator.showSimpleAlert(PhotoPickerActivity.this, LocaleController.getString("Slowmode", R.string.Slowmode), LocaleController.getString("SlowmodeSelectSendError", R.string.SlowmodeSelectSendError));

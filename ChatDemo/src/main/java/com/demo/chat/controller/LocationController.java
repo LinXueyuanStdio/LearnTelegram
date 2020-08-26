@@ -17,7 +17,7 @@ import com.google.android.gms.location.LocationServices;
  * @description null
  * @usage null
  */
-class LocationController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
+public class LocationController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
 
     private static volatile LocationController[] Instance = new LocationController[UserConfig.MAX_ACCOUNT_COUNT];
 

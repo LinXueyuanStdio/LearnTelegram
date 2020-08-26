@@ -23,6 +23,7 @@ import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Components.AvatarDrawable;
@@ -160,7 +161,7 @@ public class ChatActionCell extends BaseCell {
             if (currentMessageObject.messageOwner.action instanceof TLRPC.TL_messageActionUserUpdatedPhoto) {
                 imageReceiver.setImage(null, null, avatarDrawable, null, currentMessageObject, 0);
             } else {
-                TLRPC.PhotoSize photo = FileLoader.getClosestPhotoSizeWithSize(currentMessageObject.photoThumbs, AndroidUtilities.dp(64));
+                PhotoSize photo = FileLoader.getClosestPhotoSizeWithSize(currentMessageObject.photoThumbs, AndroidUtilities.dp(64));
                 if (photo != null) {
                     imageReceiver.setImage(ImageLocation.getForObject(photo, currentMessageObject.photoThumbsObject), "50_50", avatarDrawable, null, currentMessageObject, 0);
                 } else {

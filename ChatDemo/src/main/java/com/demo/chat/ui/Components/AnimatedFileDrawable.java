@@ -277,7 +277,7 @@ public class AnimatedFileDrawable extends BitmapDrawable implements Animatable {
         }
     };
 
-    public AnimatedFileDrawable(File file, boolean createDecoder, long streamSize, TLRPC.Document document, Object parentObject, int account, boolean preview) {
+    public AnimatedFileDrawable(File file, boolean createDecoder, long streamSize, Document document, Object parentObject, int account, boolean preview) {
         path = file;
         streamFileSize = streamSize;
         currentAccount = account;

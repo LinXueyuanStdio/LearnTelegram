@@ -422,7 +422,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
             if (solution != null) {
                 poll.results.solution = solution.toString();
                 CharSequence[] message = new CharSequence[]{solution};
-                ArrayList<TLRPC.MessageEntity> entities = MediaDataController.getInstance(parentAlert.currentAccount).getEntities(message, true);
+                ArrayList<MessageEntity> entities = MediaDataController.getInstance(parentAlert.currentAccount).getEntities(message, true);
                 if (entities != null && !entities.isEmpty()) {
                     poll.results.solution_entities = entities;
                 }
@@ -611,7 +611,7 @@ public class ChatAttachAlertPollLayout extends ChatAttachAlert.AttachAlertLayout
         }
         answerSectionRow = rowCount++;
         settingsHeaderRow = rowCount++;
-        TLRPC.Chat chat = ((ChatActivity) parentAlert.baseFragment).getCurrentChat();
+        Chat chat = ((ChatActivity) parentAlert.baseFragment).getCurrentChat();
         if (!ChatObject.isChannel(chat) || chat.megagroup) {
             anonymousRow = rowCount++;
         } else {

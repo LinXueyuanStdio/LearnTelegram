@@ -21,9 +21,15 @@ import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.theme.Theme;
+import com.demo.chat.ui.Cells.BotSwitchCell;
+import com.demo.chat.ui.Cells.ContextLinkCell;
+import com.demo.chat.ui.Cells.MentionCell;
 import com.demo.chat.ui.ChatActivity;
 import com.demo.chat.ui.Components.RecyclerListView;
 
@@ -51,17 +57,17 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
     private int currentAccount = UserConfig.selectedAccount;
     private Context mContext;
     private long dialog_id;
-    private TLRPC.ChatFull info;
+    private ChatFull info;
     private SearchAdapterHelper searchAdapterHelper;
-    private ArrayList<TLRPC.User> searchResultUsernames;
-    private SparseArray<TLRPC.User> searchResultUsernamesMap;
+    private ArrayList<User> searchResultUsernames;
+    private SparseArray<User> searchResultUsernamesMap;
     private Runnable searchGlobalRunnable;
     private ArrayList<String> searchResultHashtags;
     private ArrayList<String> searchResultCommands;
     private ArrayList<String> searchResultCommandsHelp;
     private ArrayList<MediaDataController.KeywordResult> searchResultSuggestions;
     private String[] lastSearchKeyboardLanguage;
-    private ArrayList<TLRPC.User> searchResultCommandsUsers;
+    private ArrayList<User> searchResultCommandsUsers;
     private ArrayList<TLRPC.BotInlineResult> searchResultBotContext;
     private TLRPC.TL_inlineBotSwitchPM searchResultBotContextSwitch;
     private MentionsAdapter.MentionsAdapterDelegate delegate;
@@ -91,7 +97,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
     private int contextUsernameReqid;
     private int contextQueryReqid;
     private boolean noUserName;
-    private TLRPC.User foundContextBot;
+    private User foundContextBot;
     private boolean contextMedia;
     private Runnable contextQueryRunnable;
     private Location lastKnownLocation;
@@ -167,11 +173,11 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
         parentFragment = fragment;
     }
 
-    public void setChatInfo(TLRPC.ChatFull chatInfo) {
+    public void setChatInfo(ChatFull chatInfo) {
         currentAccount = UserConfig.selectedAccount;
         info = chatInfo;
         if (!inlineMediaEnabled && foundContextBot != null && parentFragment != null) {
-            TLRPC.Chat chat = parentFragment.getCurrentChat();
+            Chat chat = parentFragment.getCurrentChat();
             if (chat != null) {
                 inlineMediaEnabled = ChatObject.canSendStickers(chat);
                 if (inlineMediaEnabled) {
@@ -220,7 +226,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
         return foundContextBot != null ? foundContextBot.id : 0;
     }
 
-    public TLRPC.User getContextBotUser() {
+    public User getContextBotUser() {
         return foundContextBot;
     }
 
@@ -228,13 +234,13 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
         return foundContextBot != null ? foundContextBot.username : "";
     }
 
-    private void processFoundUser(TLRPC.User user) {
+    private void processFoundUser(User user) {
         contextUsernameReqid = 0;
         locationProvider.stop();
         if (user != null && user.bot && user.bot_inline_placeholder != null) {
             foundContextBot = user;
             if (parentFragment != null) {
-                TLRPC.Chat chat = parentFragment.getCurrentChat();
+                Chat chat = parentFragment.getCurrentChat();
                 if (chat != null) {
                     inlineMediaEnabled = ChatObject.canSendStickers(chat);
                     if (!inlineMediaEnabled) {
@@ -248,7 +254,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
                 SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
                 boolean allowGeo = preferences.getBoolean("inlinegeo_" + foundContextBot.id, false);
                 if (!allowGeo && parentFragment != null && parentFragment.getParentActivity() != null) {
-                    final TLRPC.User foundContextBotFinal = foundContextBot;
+                    final User foundContextBotFinal = foundContextBot;
                     AlertDialog.Builder builder = new AlertDialog.Builder(parentFragment.getParentActivity());
                     builder.setTitle(LocaleController.getString("ShareYouLocationTitle", R.string.ShareYouLocationTitle));
                     builder.setMessage(LocaleController.getString("ShareYouLocationInline", R.string.ShareYouLocationInline));
@@ -364,8 +370,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
                 } else {
                     searchingContextUsername = username;
                     TLObject object = messagesController.getUserOrChat(searchingContextUsername);
-                    if (object instanceof TLRPC.User) {
-                        processFoundUser((TLRPC.User) object);
+                    if (object instanceof User) {
+                        processFoundUser((User) object);
                     } else {
                         TLRPC.TL_contacts_resolveUsername req = new TLRPC.TL_contacts_resolveUsername();
                         req.username = searchingContextUsername;
@@ -373,7 +379,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
                             if (searchingContextUsername == null || !searchingContextUsername.equals(username)) {
                                 return;
                             }
-                            TLRPC.User user = null;
+                            User user = null;
                             if (error == null) {
                                 TLRPC.TL_contacts_resolvedPeer res = (TLRPC.TL_contacts_resolvedPeer) response;
                                 if (!res.users.isEmpty()) {
@@ -433,7 +439,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
         searchForContextBotResults(true, foundContextBot, searchingContextQuery, nextQueryOffset);
     }
 
-    private void searchForContextBotResults(final boolean cache, final TLRPC.User user, final String query, final String offset) {
+    private void searchForContextBotResults(final boolean cache, final User user, final String query, final String offset) {
         if (contextQueryReqid != 0) {
             ConnectionsManager.getInstance(currentAccount).cancelRequest(contextQueryReqid, true);
             contextQueryReqid = 0;
@@ -671,14 +677,14 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
             }
             final String usernameString = result.toString().toLowerCase();
             boolean hasSpace = usernameString.indexOf(' ') >= 0;
-            ArrayList<TLRPC.User> newResult = new ArrayList<>();
-            final SparseArray<TLRPC.User> newResultsHashMap = new SparseArray<>();
-            final SparseArray<TLRPC.User> newMap = new SparseArray<>();
+            ArrayList<User> newResult = new ArrayList<>();
+            final SparseArray<User> newResultsHashMap = new SparseArray<>();
+            final SparseArray<User> newMap = new SparseArray<>();
             ArrayList<TLRPC.TL_topPeer> inlineBots = MediaDataController.getInstance(currentAccount).inlineBots;
             if (!usernameOnly && needBotContext && dogPostion == 0 && !inlineBots.isEmpty()) {
                 int count = 0;
                 for (int a = 0; a < inlineBots.size(); a++) {
-                    TLRPC.User user = messagesController.getUser(inlineBots.get(a).peer.user_id);
+                    User user = messagesController.getUser(inlineBots.get(a).peer.user_id);
                     if (user == null) {
                         continue;
                     }
@@ -693,7 +699,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
                     }
                 }
             }
-            final TLRPC.Chat chat;
+            final Chat chat;
             if (parentFragment != null) {
                 chat = parentFragment.getCurrentChat();
             } else if (info != null) {
@@ -703,8 +709,8 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
             }
             if (chat != null && info != null && info.participants != null && (!ChatObject.isChannel(chat) || chat.megagroup)) {
                 for (int a = 0; a < info.participants.participants.size(); a++) {
-                    TLRPC.ChatParticipant chatParticipant = info.participants.participants.get(a);
-                    TLRPC.User user = messagesController.getUser(chatParticipant.user_id);
+                    ChatParticipant chatParticipant = info.participants.participants.get(a);
+                    User user = messagesController.getUser(chatParticipant.user_id);
                     if (user == null || !usernameOnly && UserObject.isUserSelf(user) || newResultsHashMap.indexOfKey(user.id) >= 0) {
                         continue;
                     }
@@ -723,7 +729,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
                             } else if (user.last_name != null && user.last_name.length() > 0 && user.last_name.toLowerCase().startsWith(usernameString)) {
                                 newResult.add(user);
                                 newMap.put(user.id, user);
-                            } else if (hasSpace && ContactsController.formatName(user.first_name, user.last_name).toLowerCase().startsWith(usernameString)) {
+                            } else if (hasSpace && UserObject.formatName(user.first_name, user.last_name).toLowerCase().startsWith(usernameString)) {
                                 newResult.add(user);
                                 newMap.put(user.id, user);
                             }
@@ -793,7 +799,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
                                             if (searchResultUsernamesMap.indexOfKey(participant.user_id) >= 0 || !isSearchingMentions && participant.user_id == currentUserId) {
                                                 continue;
                                             }
-                                            TLRPC.User user = messagesController.getUser(participant.user_id);
+                                            User user = messagesController.getUser(participant.user_id);
                                             if (user == null) {
                                                 return;
                                             }
@@ -833,7 +839,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
         } else if (foundType == 2) {
             ArrayList<String> newResult = new ArrayList<>();
             ArrayList<String> newResultHelp = new ArrayList<>();
-            ArrayList<TLRPC.User> newResultUsers = new ArrayList<>();
+            ArrayList<User> newResultUsers = new ArrayList<>();
             String command = result.toString().toLowerCase();
             for (int b = 0; b < botInfo.size(); b++) {
                 TLRPC.BotInfo info = botInfo.valueAt(b);
@@ -875,7 +881,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
         }
     }
 
-    private void showUsersResult(ArrayList<TLRPC.User> newResult, SparseArray<TLRPC.User> newMap, boolean notify) {
+    private void showUsersResult(ArrayList<User> newResult, SparseArray<User> newMap, boolean notify) {
         searchResultUsernames = newResult;
         searchResultUsernamesMap = newMap;
         if (cancelDelayRunnable != null) {
@@ -1044,7 +1050,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         if (holder.getItemViewType() == 3) {
             TextView textView = (TextView) holder.itemView;
-            TLRPC.Chat chat = parentFragment.getCurrentChat();
+            Chat chat = parentFragment.getCurrentChat();
             if (chat != null) {
                 if (!ChatObject.hasAdminRights(chat) && chat.default_banned_rights != null && chat.default_banned_rights.send_inline) {
                     textView.setText(LocaleController.getString("GlobalAttachInlineRestricted", R.string.GlobalAttachInlineRestricted));

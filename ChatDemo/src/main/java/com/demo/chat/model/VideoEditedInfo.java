@@ -1,13 +1,15 @@
 package com.demo.chat.model;
 
 import android.graphics.Bitmap;
-import android.graphics.Point;
 import android.view.View;
 
 import com.demo.chat.controller.MediaController;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.SerializedData;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.ui.Components.PhotoFilterView;
+import com.demo.chat.ui.Components.Point;
 
 import java.util.ArrayList;
 import java.util.Locale;
@@ -71,7 +73,7 @@ public class VideoEditedInfo {
         public float textViewX;
         public float textViewY;
 
-        public TLRPC.Document document;
+        public Document document;
         public Object parentObject;
 
         public int[] metadata;

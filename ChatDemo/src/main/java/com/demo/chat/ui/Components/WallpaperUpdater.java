@@ -11,15 +11,21 @@ import android.os.Build;
 import android.provider.MediaStore;
 
 import com.demo.chat.R;
+import com.demo.chat.BuildConfig;
+import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
+import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.ImageLoader;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ActionBar.BottomSheet;
+import com.demo.chat.ui.PhotoAlbumPickerActivity;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.util.ArrayList;
 
 import androidx.core.content.FileProvider;
 

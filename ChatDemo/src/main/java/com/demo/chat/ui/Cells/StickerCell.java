@@ -16,6 +16,8 @@ import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Components.BackupImageView;
 import com.demo.chat.ui.Components.LayoutHelper;
@@ -30,7 +32,7 @@ import com.demo.chat.ui.Components.LayoutHelper;
 public class StickerCell extends FrameLayout {
 
     private BackupImageView imageView;
-    private TLRPC.Document sticker;
+    private Document sticker;
     private Object parentObject;
     private long lastUpdateTime;
     private boolean scaled;
@@ -71,10 +73,10 @@ public class StickerCell extends FrameLayout {
         return clearsInputField;
     }
 
-    public void setSticker(TLRPC.Document document, Object parent, int side) {
+    public void setSticker(Document document, Object parent, int side) {
         parentObject = parent;
         if (document != null) {
-            TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
+            PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
             if (MessageObject.canAutoplayAnimatedSticker(document)) {
                 if (thumb != null) {
                     imageView.setImage(ImageLocation.getForDocument(document), "80_80", ImageLocation.getForDocument(thumb, document), null, 0, parentObject);
@@ -106,7 +108,7 @@ public class StickerCell extends FrameLayout {
         }
     }
 
-    public TLRPC.Document getSticker() {
+    public Document getSticker() {
         return sticker;
     }
 
@@ -157,7 +159,7 @@ public class StickerCell extends FrameLayout {
             return;
         String emoji = null;
         for (int a = 0; a < sticker.attributes.size(); a++) {
-            TLRPC.DocumentAttribute attribute = sticker.attributes.get(a);
+            DocumentAttribute attribute = sticker.attributes.get(a);
             if (attribute instanceof TLRPC.TL_documentAttributeSticker) {
                 emoji = attribute.alt != null && attribute.alt.length() > 0 ? attribute.alt : null;
             }

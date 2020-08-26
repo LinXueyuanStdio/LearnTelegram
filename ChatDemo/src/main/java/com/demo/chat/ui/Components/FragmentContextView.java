@@ -15,7 +15,6 @@ import android.os.Bundle;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.TextUtils;
-import android.text.style.TypefaceSpan;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
@@ -25,13 +24,24 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.demo.chat.R;
+import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.LocaleController;
+import com.demo.chat.controller.LocationController;
+import com.demo.chat.controller.MediaController;
+import com.demo.chat.controller.MessagesController;
+import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.NotificationCenter;
+import com.demo.chat.model.Chat;
+import com.demo.chat.model.Message;
+import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ChatActivity;
+import com.demo.chat.ui.LaunchActivity;
 
 import java.util.ArrayList;
 
@@ -150,8 +160,8 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                     builder.setMessage(LocaleController.getString("StopLiveLocationAlertAllText", R.string.StopLiveLocationAlertAllText));
                 } else {
                     ChatActivity activity = (ChatActivity) fragment;
-                    TLRPC.Chat chat = activity.getCurrentChat();
-                    TLRPC.User user = activity.getCurrentUser();
+                    Chat chat = activity.getCurrentChat();
+                    User user = activity.getCurrentUser();
                     if (chat != null) {
                         builder.setMessage(AndroidUtilities.replaceTags(LocaleController.formatString("StopLiveLocationAlertToGroupText", R.string.StopLiveLocationAlertToGroupText, chat.title)));
                     } else if (user != null) {
@@ -522,10 +532,10 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                     LocationController.SharingLocationInfo info = infos.get(0);
                     int lower_id = (int) info.messageObject.getDialogId();
                     if (lower_id > 0) {
-                        TLRPC.User user = MessagesController.getInstance(info.messageObject.currentAccount).getUser(lower_id);
+                        User user = MessagesController.getInstance(info.messageObject.currentAccount).getUser(lower_id);
                         param = UserObject.getFirstName(user);
                     } else {
-                        TLRPC.Chat chat = MessagesController.getInstance(info.messageObject.currentAccount).getChat(-lower_id);
+                        Chat chat = MessagesController.getInstance(info.messageObject.currentAccount).getChat(-lower_id);
                         if (chat != null) {
                             param = chat.title;
                         } else {
@@ -556,19 +566,19 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
         ChatActivity chatActivity = (ChatActivity) fragment;
         long dialogId = chatActivity.getDialogId();
         int currentAccount = chatActivity.getCurrentAccount();
-        ArrayList<TLRPC.Message> messages = LocationController.getInstance(currentAccount).locationsCache.get(dialogId);
+        ArrayList<Message> messages = LocationController.getInstance(currentAccount).locationsCache.get(dialogId);
         if (!firstLocationsLoaded) {
             LocationController.getInstance(currentAccount).loadLiveLocations(dialogId);
             firstLocationsLoaded = true;
         }
 
         int locationSharingCount = 0;
-        TLRPC.User notYouUser = null;
+        User notYouUser = null;
         if (messages != null) {
             int currentUserId = UserConfig.getInstance(currentAccount).getClientUserId();
             int date = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
             for (int a = 0; a < messages.size(); a++) {
-                TLRPC.Message message = messages.get(a);
+                Message message = messages.get(a);
                 if (message.media == null) {
                     continue;
                 }

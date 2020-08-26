@@ -169,7 +169,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
     private AspectRatioFrameLayout fullscreenAspectRatioView;
     private WebChromeClient.CustomViewCallback customViewCallback;
 
-    private TLRPC.Chat loadedChannel;
+    private Chat loadedChannel;
     private boolean loadingChannel;
 
     private Object lastInsets;
@@ -2028,7 +2028,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             return spannableStringBuilder;
         } else if (richText instanceof TLRPC.TL_textImage) {
             TLRPC.TL_textImage textImage = (TLRPC.TL_textImage) richText;
-            TLRPC.Document document = adapter.getDocumentWithId(textImage.document_id);
+            Document document = adapter.getDocumentWithId(textImage.document_id);
             if (document != null) {
                 SpannableStringBuilder spannableStringBuilder = new SpannableStringBuilder("*");
                 int w = AndroidUtilities.dp(textImage.w);
@@ -3210,7 +3210,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                     }
                     TLObject object = MessagesController.getInstance(currentAccount).getUserOrChat("previews");
                     if (object instanceof TLRPC.TL_user) {
-                        openPreviewsChat((TLRPC.User) object, webpageAdapter.currentPage.id);
+                        openPreviewsChat((User) object, webpageAdapter.currentPage.id);
                     } else {
                         final int currentAccount = UserConfig.selectedAccount;
                         final long pageId = webpageAdapter.currentPage.id;
@@ -3762,8 +3762,8 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                     }
                 } else if (id == gallery_menu_savegif) {
                     TLObject object = getMedia(photoAdapter, currentIndex);
-                    if (object instanceof TLRPC.Document) {
-                        TLRPC.Document document = (TLRPC.Document) object;
+                    if (object instanceof Document) {
+                        Document document = (Document) object;
                         MediaDataController.getInstance(currentAccount).addRecentGif(document, (int) (System.currentTimeMillis() / 1000));
                         MessagesController.getInstance(currentAccount).saveGif(adapter[0].currentPage, document);
                     }
@@ -4325,7 +4325,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         setCurrentHeaderHeight(currentHeaderHeight - dy);
     }
 
-    private void openPreviewsChat(TLRPC.User user, long wid) {
+    private void openPreviewsChat(User user, long wid) {
         if (user == null || parentActivity == null) {
             return;
         }
@@ -4358,7 +4358,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             webpage = messageObject.messageOwner.media.webpage;
             int index;
             for (int a = 0; a < messageObject.messageOwner.entities.size(); a++) {
-                TLRPC.MessageEntity entity = messageObject.messageOwner.entities.get(a);
+                MessageEntity entity = messageObject.messageOwner.entities.get(a);
                 if (entity instanceof TLRPC.TL_messageEntityUrl) {
                     try {
                         url = messageObject.messageOwner.message.substring(entity.offset, entity.offset + entity.length).toLowerCase();
@@ -4931,7 +4931,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         });
     }
 
-    private void loadChannel(final BlockChannelCell cell, WebpageAdapter adapter, TLRPC.Chat channel) {
+    private void loadChannel(final BlockChannelCell cell, WebpageAdapter adapter, Chat channel) {
         if (loadingChannel || TextUtils.isEmpty(channel.username)) {
             return;
         }
@@ -4965,7 +4965,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         }));
     }
 
-    private void joinChannel(final BlockChannelCell cell, final TLRPC.Chat channel) {
+    private void joinChannel(final BlockChannelCell cell, final Chat channel) {
         final TLRPC.TL_channels_joinChannel req = new TLRPC.TL_channels_joinChannel();
         req.channel = MessagesController.getInputChannel(channel);
         final int currentAccount = UserConfig.selectedAccount;
@@ -5110,7 +5110,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             return null;
         }
 
-        private TLRPC.Document getDocumentWithId(long id) {
+        private Document getDocumentWithId(long id) {
             if (currentPage == null || currentPage.cached_page == null) {
                 return null;
             }
@@ -5118,7 +5118,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 return currentPage.document;
             }
             for (int a = 0; a < currentPage.cached_page.documents.size(); a++) {
-                TLRPC.Document document = currentPage.cached_page.documents.get(a);
+                Document document = currentPage.cached_page.documents.get(a);
                 if (document.id == id) {
                     return document;
                 }
@@ -5365,7 +5365,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 message.media.webpage = currentPage;
                 message.media.flags |= 3;
                 message.media.document = getDocumentWithId(blockAudio.audio_id);
-                message.flags |= TLRPC.MESSAGE_FLAG_HAS_MEDIA | TLRPC.MESSAGE_FLAG_HAS_FROM_ID;
+                message.flags |= Message_FLAG_HAS_MEDIA | Message_FLAG_HAS_FROM_ID;
                 MessageObject messageObject = new MessageObject(UserConfig.selectedAccount, message, false);
                 audioMessages.add(messageObject);
                 audioBlocks.put(blockAudio, messageObject);
@@ -5631,7 +5631,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 }
             } else if (block instanceof TLRPC.TL_pageBlockVideo && isVideoBlock(adapter, block)) {
                 TLRPC.TL_pageBlockVideo pageBlockVideo = (TLRPC.TL_pageBlockVideo) block;
-                TLRPC.Document document = getDocumentWithId(pageBlockVideo.video_id);
+                Document document = getDocumentWithId(pageBlockVideo.video_id);
                 if (document != null) {
                     pageBlockVideo.thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 56, true);
                     pageBlockVideo.thumbObject = document;
@@ -6198,7 +6198,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
         private TLRPC.TL_pageBlockVideo currentBlock;
         private TLRPC.PageBlock parentBlock;
-        private TLRPC.Document currentDocument;
+        private Document currentDocument;
         private boolean isGif;
 
         private boolean autoDownload;
@@ -6311,12 +6311,12 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 }
                 if (currentDocument != null) {
                     int size = AndroidUtilities.dp(48);
-                    TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(currentDocument.thumbs, 48);
+                    PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(currentDocument.thumbs, 48);
                     if (currentType == 0) {
                         float scale;
                         boolean found = false;
                         for (int a = 0, count = currentDocument.attributes.size(); a < count; a++) {
-                            TLRPC.DocumentAttribute attribute = currentDocument.attributes.get(a);
+                            DocumentAttribute attribute = currentDocument.attributes.get(a);
                             if (attribute instanceof TLRPC.TL_documentAttributeVideo) {
                                 scale = photoWidth / (float) attribute.w;
                                 height = (int) (scale * attribute.h);
@@ -6499,7 +6499,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 cancelLoading = false;
                 radialProgress.setProgress(0, false);
                 if (isGif) {
-                    TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(currentDocument.thumbs, 40);
+                    PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(currentDocument.thumbs, 40);
                     imageView.setImage(ImageLocation.getForDocument(currentDocument), null, ImageLocation.getForDocument(thumb, currentDocument), "80_80_b", currentDocument.size, null, parentAdapter.currentPage, 1);
                 } else {
                     FileLoader.getInstance(currentAccount).loadFile(currentDocument, parentAdapter.currentPage, 1, 1);
@@ -6625,7 +6625,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         private int TAG;
 
         private TLRPC.TL_pageBlockAudio currentBlock;
-        private TLRPC.Document currentDocument;
+        private Document currentDocument;
         private MessageObject currentMessageObject;
 
         private WebpageAdapter parentAdapter;
@@ -6845,7 +6845,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 duration = currentMessageObject.audioProgressSec;
             } else {
                 for (int a = 0; a < currentDocument.attributes.size(); a++) {
-                    TLRPC.DocumentAttribute attribute = currentDocument.attributes.get(a);
+                    DocumentAttribute attribute = currentDocument.attributes.get(a);
                     if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
                         duration = attribute.duration;
                         break;
@@ -7052,7 +7052,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                         TLRPC.Photo photo = parentAdapter.getPhotoWithId(currentBlock.author_photo_id);
                         if (avatarVisible = (photo instanceof TLRPC.TL_photo)) {
                             avatarDrawable.setInfo(0, currentBlock.author, null);
-                            TLRPC.PhotoSize image = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.dp(40), true);
+                            PhotoSize image = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.dp(40), true);
                             avatarImageView.setImage(ImageLocation.getForPhoto(image, photo), "40_40", avatarDrawable, 0, null, parentAdapter.currentPage, 1);
                         }
                     }
@@ -8048,7 +8048,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
                 for (int a = 0; a < count; a++) {
 
-                    TLRPC.PhotoSize photoSize;
+                    PhotoSize photoSize;
 
                     TLObject object = currentBlock.items.get(a);
                     if (object instanceof TLRPC.TL_pageBlockPhoto) {
@@ -8060,7 +8060,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                         photoSize = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.getPhotoSize());
                     } else if (object instanceof TLRPC.TL_pageBlockVideo) {
                         TLRPC.TL_pageBlockVideo pageBlockVideo = (TLRPC.TL_pageBlockVideo) object;
-                        TLRPC.Document document = parentAdapter.getDocumentWithId(pageBlockVideo.video_id);
+                        Document document = parentAdapter.getDocumentWithId(pageBlockVideo.video_id);
                         if (document == null) {
                             continue;
                         }
@@ -9555,8 +9555,8 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             TLRPC.Photo photo = item.photo_id != 0 ? parentAdapter.getPhotoWithId(item.photo_id) : null;
             if (photo != null) {
                 drawImage = true;
-                TLRPC.PhotoSize image = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.getPhotoSize());
-                TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, 80, true);
+                PhotoSize image = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.getPhotoSize());
+                PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, 80, true);
                 if (image == thumb) {
                     thumb = null;
                 }
@@ -10061,9 +10061,9 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         private int buttonState;
         private int buttonPressed;
 
-        private TLRPC.PhotoSize currentPhotoObject;
+        private PhotoSize currentPhotoObject;
         private String currentFilter;
-        private TLRPC.PhotoSize currentPhotoObjectThumb;
+        private PhotoSize currentPhotoObjectThumb;
         private String currentThumbFilter;
         private TLRPC.Photo currentPhoto;
 
@@ -10706,7 +10706,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 backgroundPaint.setColor(0x7f000000);
                 imageView.setColorFilter(new PorterDuffColorFilter(0xffffffff, PorterDuff.Mode.MULTIPLY));
             }
-            TLRPC.Chat channel = MessagesController.getInstance(currentAccount).getChat(block.channel.id);
+            Chat channel = MessagesController.getInstance(currentAccount).getChat(block.channel.id);
             if (channel == null || channel.min) {
                 loadChannel(this, parentAdapter, block.channel);
                 setState(1, false);
@@ -12038,13 +12038,13 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         if (block instanceof TLRPC.TL_pageBlockPhoto) {
             TLRPC.Photo photo = adapter.getPhotoWithId(((TLRPC.TL_pageBlockPhoto) block).photo_id);
             if (photo != null) {
-                TLRPC.PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.getPhotoSize());
+                PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.getPhotoSize());
                 if (sizeFull != null) {
                     return FileLoader.getPathToAttach(sizeFull, true);
                 }
             }
         } else if (block instanceof TLRPC.TL_pageBlockVideo) {
-            TLRPC.Document document = adapter.getDocumentWithId(((TLRPC.TL_pageBlockVideo) block).video_id);
+            Document document = adapter.getDocumentWithId(((TLRPC.TL_pageBlockVideo) block).video_id);
             if (document != null) {
                 return FileLoader.getPathToAttach(document, true);
             }
@@ -12054,7 +12054,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
     private boolean isVideoBlock(WebpageAdapter adapter, TLRPC.PageBlock block) {
         if (block instanceof TLRPC.TL_pageBlockVideo) {
-            TLRPC.Document document = adapter.getDocumentWithId(((TLRPC.TL_pageBlockVideo) block).video_id);
+            Document document = adapter.getDocumentWithId(((TLRPC.TL_pageBlockVideo) block).video_id);
             if (document != null) {
                 return MessageObject.isVideoDocument(document);
             }
@@ -12073,7 +12073,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         TLRPC.PageBlock block = imagesArr.get(index);
         if (block instanceof TLRPC.TL_pageBlockVideo) {
             TLRPC.TL_pageBlockVideo pageBlockVideo = (TLRPC.TL_pageBlockVideo) block;
-            TLRPC.Document document = adapter.getDocumentWithId(pageBlockVideo.video_id);
+            Document document = adapter.getDocumentWithId(pageBlockVideo.video_id);
             if (document != null) {
                 return document.mime_type;
             }
@@ -12081,10 +12081,10 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return "image/jpeg";
     }
 
-    private TLRPC.PhotoSize getFileLocation(TLObject media, int[] size) {
+    private PhotoSize getFileLocation(TLObject media, int[] size) {
         if (media instanceof TLRPC.Photo) {
             TLRPC.Photo photo = (TLRPC.Photo) media;
-            TLRPC.PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.getPhotoSize());
+            PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.getPhotoSize());
             if (sizeFull != null) {
                 size[0] = sizeFull.size;
                 if (size[0] == 0) {
@@ -12094,9 +12094,9 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             } else {
                 size[0] = -1;
             }
-        } else if (media instanceof TLRPC.Document) {
-            TLRPC.Document document = (TLRPC.Document) media;
-            TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
+        } else if (media instanceof Document) {
+            Document document = (Document) media;
+            PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
             if (thumb != null) {
                 size[0] = thumb.size;
                 if (size[0] == 0) {
@@ -12408,7 +12408,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
         int[] size = new int[1];
         TLObject media = getMedia(photoAdapter, index);
-        TLRPC.PhotoSize fileLocation = getFileLocation(media, size);
+        PhotoSize fileLocation = getFileLocation(media, size);
 
         if (fileLocation != null) {
             if (media instanceof TLRPC.Photo) {
@@ -12420,7 +12420,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 if (size[0] == 0) {
                     size[0] = -1;
                 }
-                TLRPC.PhotoSize thumbLocation = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, 80);
+                PhotoSize thumbLocation = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, 80);
                 imageReceiver.setImage(ImageLocation.getForPhoto(fileLocation, photo), null, ImageLocation.getForPhoto(thumbLocation, photo), "b", placeHolder != null ? new BitmapDrawable(placeHolder.bitmap) : null, size[0], null, photoAdapter.currentPage, 1);
             } else if (isMediaVideo(photoAdapter, index)) {
                 if (!(fileLocation.location instanceof TLRPC.TL_fileLocationUnavailable)) {
@@ -12428,7 +12428,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                     if (currentThumb != null && imageReceiver == centerImage) {
                         placeHolder = currentThumb;
                     }
-                    imageReceiver.setImage(null, null, ImageLocation.getForDocument(fileLocation, (TLRPC.Document) media), "b", placeHolder != null ? new BitmapDrawable(placeHolder.bitmap) : null, 0, null, photoAdapter.currentPage, 1);
+                    imageReceiver.setImage(null, null, ImageLocation.getForDocument(fileLocation, (Document) media), "b", placeHolder != null ? new BitmapDrawable(placeHolder.bitmap) : null, 0, null, photoAdapter.currentPage, 1);
                 } else {
                     imageReceiver.setImageBitmap(parentActivity.getResources().getDrawable(R.drawable.photoview_placeholder));
                 }
@@ -13393,10 +13393,10 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
     private void onActionClick(boolean download) {
         TLObject media = getMedia(photoAdapter, currentIndex);
-        if (!(media instanceof TLRPC.Document) || currentFileNames[0] == null) {
+        if (!(media instanceof Document) || currentFileNames[0] == null) {
             return;
         }
-        TLRPC.Document document = (TLRPC.Document) media;
+        Document document = (Document) media;
         File file = null;
         if (currentMedia != null) {
             file = getMediaFile(photoAdapter, currentIndex);

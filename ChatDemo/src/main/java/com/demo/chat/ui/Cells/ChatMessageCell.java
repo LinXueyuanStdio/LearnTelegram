@@ -48,17 +48,26 @@ import android.widget.Toast;
 
 import com.demo.chat.R;
 import com.demo.chat.controller.ConnectionsManager;
+import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
 import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.ImageLoader;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
+import com.demo.chat.ui.Components.AnimatedFileDrawable;
 import com.demo.chat.ui.Components.AnimationProperties;
 import com.demo.chat.ui.Components.AvatarDrawable;
 import com.demo.chat.ui.Components.CheckBoxBase;
@@ -69,7 +78,9 @@ import com.demo.chat.ui.Components.MessageBackgroundDrawable;
 import com.demo.chat.ui.Components.RadialProgress2;
 import com.demo.chat.ui.Components.RoundVideoPlayingDrawable;
 import com.demo.chat.ui.Components.SeekBar;
+import com.demo.chat.ui.Components.SeekBarWaveform;
 import com.demo.chat.ui.Components.TextStyleSpan;
+import com.demo.chat.ui.Components.URLSpanBotCommand;
 import com.demo.chat.ui.Viewer.PhotoViewer;
 
 import java.io.File;
@@ -87,7 +98,7 @@ import java.util.HashMap;
 public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate, ImageReceiver.ImageReceiverDelegate, DownloadController.FileDownloadProgressListener, TextSelectionHelper.SelectableView {
 
     public interface ChatMessageCellDelegate {
-        default void didPressUserAvatar(ChatMessageCell cell, TLRPC.User user, float touchX, float touchY) {
+        default void didPressUserAvatar(ChatMessageCell cell, User user, float touchX, float touchY) {
         }
 
         default void didPressHiddenForward(ChatMessageCell cell) {
@@ -96,7 +107,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         default void didPressViaBot(ChatMessageCell cell, String username) {
         }
 
-        default void didPressChannelAvatar(ChatMessageCell cell, TLRPC.Chat chat, int postId, float touchX, float touchY) {
+        default void didPressChannelAvatar(ChatMessageCell cell, Chat chat, int postId, float touchX, float touchY) {
         }
 
         default void didPressCancelSendButton(ChatMessageCell cell) {
@@ -289,7 +300,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private long lastAnimationTime;
     private long lastNamesAnimationTime;
     private int documentAttachType;
-    private TLRPC.Document documentAttach;
+    private Document documentAttach;
     private boolean drawPhotoImage;
     private boolean hasLinkPreview;
     private boolean hasOldCaptionPreview;
@@ -382,8 +393,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private RectF deleteProgressRect = new RectF();
     private RectF rect = new RectF();
     private TLObject photoParentObject;
-    private TLRPC.PhotoSize currentPhotoObject;
-    private TLRPC.PhotoSize currentPhotoObjectThumb;
+    private PhotoSize currentPhotoObject;
+    private PhotoSize currentPhotoObjectThumb;
     private String currentPhotoFilter;
     private String currentPhotoFilterThumb;
     private boolean cancelLoading;
@@ -547,7 +558,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private int replyTextOffset;
     private boolean needReplyImage;
     private boolean replyPressed;
-    private TLRPC.PhotoSize currentReplyPhoto;
+    private PhotoSize currentReplyPhoto;
 
     private boolean drwaShareGoIcon;
     private boolean drawShareButton;
@@ -583,14 +594,14 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private int viewsTextWidth;
     private String currentViewsString;
 
-    private TLRPC.User currentUser;
-    private TLRPC.Chat currentChat;
-    private TLRPC.FileLocation currentPhoto;
+    private User currentUser;
+    private Chat currentChat;
+    private FileLocation currentPhoto;
     private String currentNameString;
 
-    private TLRPC.User currentForwardUser;
-    private TLRPC.User currentViaBotUser;
-    private TLRPC.Chat currentForwardChannel;
+    private User currentForwardUser;
+    private User currentViaBotUser;
+    private Chat currentForwardChannel;
     private String currentForwardName;
     private String currentForwardNameString;
     private boolean replyPanelIsForward;
@@ -1424,7 +1435,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         result = true;
                     }
                     if (currentMessageObject.type == 12) {
-                        TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(currentMessageObject.messageOwner.media.user_id);
+                        User user = MessagesController.getInstance(currentAccount).getUser(currentMessageObject.messageOwner.media.user_id);
                         if (user == null) {
                             imagePressed = false;
                             result = false;
@@ -1997,9 +2008,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
         } else if (currentMessageObject.isRoundVideo()) {
             int duration = 0;
-            TLRPC.Document document = currentMessageObject.getDocument();
+            Document document = currentMessageObject.getDocument();
             for (int a = 0; a < document.attributes.size(); a++) {
-                TLRPC.DocumentAttribute attribute = document.attributes.get(a);
+                DocumentAttribute attribute = document.attributes.get(a);
                 if (attribute instanceof TLRPC.TL_documentAttributeVideo) {
                     duration = attribute.duration;
                     break;
@@ -2031,7 +2042,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             if (documentAttachType == DOCUMENT_ATTACH_TYPE_AUDIO) {
                 if (!MediaController.getInstance().isPlayingMessage(currentMessageObject)) {
                     for (int a = 0; a < documentAttach.attributes.size(); a++) {
-                        TLRPC.DocumentAttribute attribute = documentAttach.attributes.get(a);
+                        DocumentAttribute attribute = documentAttach.attributes.get(a);
                         if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
                             duration = attribute.duration;
                             break;
@@ -2156,7 +2167,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 didPressButton(true, false);
             }
         } else if (currentMessageObject.type == 12) {
-            TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(currentMessageObject.messageOwner.media.user_id);
+            User user = MessagesController.getInstance(currentAccount).getUser(currentMessageObject.messageOwner.media.user_id);
             delegate.didPressUserAvatar(this, user, lastTouchX, lastTouchY);
         } else if (currentMessageObject.type == MessageObject.TYPE_ROUND_VIDEO) {
             if (buttonState != -1) {
@@ -2303,7 +2314,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
 
         updateCurrentUserAndChat();
-        TLRPC.FileLocation newPhoto = null;
+        FileLocation newPhoto = null;
 
         if (isAvatarVisible) {
             if (currentUser != null && currentUser.photo != null) {
@@ -2321,10 +2332,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return true;
         }
 
-        TLRPC.PhotoSize newReplyPhoto = null;
+        PhotoSize newReplyPhoto = null;
 
         if (replyNameLayout != null && currentMessageObject.replyMessageObject != null) {
-            TLRPC.PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(currentMessageObject.replyMessageObject.photoThumbs, 40);
+            PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(currentMessageObject.replyMessageObject.photoThumbs, 40);
             if (photoSize != null && !currentMessageObject.replyMessageObject.isAnyKindOfSticker()) {
                 newReplyPhoto = photoSize;
             }
@@ -2369,7 +2380,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return forwardNameX + forwardNameCenterX;
     }
 
-    public TLRPC.User getCurrentUser() {
+    public User getCurrentUser() {
         return currentUser;
     }
 
@@ -2735,7 +2746,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 boolean slideshow = false;
                 String siteName = hasLinkPreview ? messageObject.messageOwner.media.webpage.site_name : null;
                 String webpageType = hasLinkPreview ? messageObject.messageOwner.media.webpage.type : null;
-                TLRPC.Document androidThemeDocument = null;
+                Document androidThemeDocument = null;
                 TLRPC.TL_themeSettings androidThemeSettings = null;
                 if (!drawInstantView) {
                     if ("telegram_channel".equals(webpageType)) {
@@ -2750,9 +2761,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     } else if ("telegram_theme".equals(webpageType)) {
                         for (int b = 0, N2 = messageObject.messageOwner.media.webpage.attributes.size(); b < N2; b++) {
                             TLRPC.TL_webPageAttributeTheme attribute = messageObject.messageOwner.media.webpage.attributes.get(b);
-                            ArrayList<TLRPC.Document> documents = attribute.documents;
+                            ArrayList<Document> documents = attribute.documents;
                             for (int a = 0, N = documents.size(); a < N; a++) {
-                                TLRPC.Document document = documents.get(a);
+                                Document document = documents.get(a);
                                 if ("application/x-tgtheme-android".equals(document.mime_type)) {
                                     drawInstantView = true;
                                     drawInstantViewType = 7;
@@ -2782,7 +2793,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                                 imageBackgroundGradientRotation = Utilities.parseInt(rotation);
                             }
                             if (TextUtils.isEmpty(bgColor)) {
-                                TLRPC.Document document = messageObject.getDocument();
+                                Document document = messageObject.getDocument();
                                 if (document != null && "image/png".equals(document.mime_type)) {
                                     bgColor = "ffffff";
                                 }
@@ -2895,7 +2906,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     String author;
                     String description;
                     TLRPC.Photo photo;
-                    TLRPC.Document document;
+                    Document document;
                     WebFile webDocument;
                     int duration;
                     boolean smallImage;
@@ -3160,7 +3171,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             photoParentObject = document;
                             if (currentPhotoObject != null && (currentPhotoObject.w == 0 || currentPhotoObject.h == 0)) {
                                 for (int a = 0; a < document.attributes.size(); a++) {
-                                    TLRPC.DocumentAttribute attribute = document.attributes.get(a);
+                                    DocumentAttribute attribute = document.attributes.get(a);
                                     if (attribute instanceof TLRPC.TL_documentAttributeImageSize || attribute instanceof TLRPC.TL_documentAttributeVideo) {
                                         currentPhotoObject.w = attribute.w;
                                         currentPhotoObject.h = attribute.h;
@@ -3194,7 +3205,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             }
                             if (currentPhotoObject != null && (currentPhotoObject.w == 0 || currentPhotoObject.h == 0 || currentPhotoObject instanceof TLRPC.TL_photoStrippedSize)) {
                                 for (int a = 0; a < document.attributes.size(); a++) {
-                                    TLRPC.DocumentAttribute attribute = document.attributes.get(a);
+                                    DocumentAttribute attribute = document.attributes.get(a);
                                     if (attribute instanceof TLRPC.TL_documentAttributeVideo) {
                                         if (currentPhotoObject instanceof TLRPC.TL_photoStrippedSize) {
                                             float scale = Math.max(attribute.w, attribute.w) / 50.0f;
@@ -3217,7 +3228,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             photoParentObject = document;
                             if (currentPhotoObject != null && (currentPhotoObject.w == 0 || currentPhotoObject.h == 0)) {
                                 for (int a = 0; a < document.attributes.size(); a++) {
-                                    TLRPC.DocumentAttribute attribute = document.attributes.get(a);
+                                    DocumentAttribute attribute = document.attributes.get(a);
                                     if (attribute instanceof TLRPC.TL_documentAttributeImageSize) {
                                         currentPhotoObject.w = attribute.w;
                                         currentPhotoObject.h = attribute.h;
@@ -3235,7 +3246,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             photoParentObject = document;
                             if (currentPhotoObject != null && (currentPhotoObject.w == 0 || currentPhotoObject.h == 0)) {
                                 for (int a = 0; a < document.attributes.size(); a++) {
-                                    TLRPC.DocumentAttribute attribute = document.attributes.get(a);
+                                    DocumentAttribute attribute = document.attributes.get(a);
                                     if (attribute instanceof TLRPC.TL_documentAttributeImageSize) {
                                         currentPhotoObject.w = attribute.w;
                                         currentPhotoObject.h = attribute.h;
@@ -3257,7 +3268,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             photoParentObject = document;
                             if (currentPhotoObject != null && (currentPhotoObject.w == 0 || currentPhotoObject.h == 0)) {
                                 for (int a = 0; a < document.attributes.size(); a++) {
-                                    TLRPC.DocumentAttribute attribute = document.attributes.get(a);
+                                    DocumentAttribute attribute = document.attributes.get(a);
                                     if (attribute instanceof TLRPC.TL_documentAttributeImageSize) {
                                         currentPhotoObject.w = attribute.w;
                                         currentPhotoObject.h = attribute.h;
@@ -3639,7 +3650,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 availableTimeWidth = backgroundWidth - AndroidUtilities.dp(31);
 
                 int uid = messageObject.messageOwner.media.user_id;
-                TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(uid);
+                User user = MessagesController.getInstance(currentAccount).getUser(uid);
 
                 int maxWidth = getMaxNameWidth() - AndroidUtilities.dp(80);
                 if (maxWidth < 0) {
@@ -3675,7 +3686,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     }
                 }
 
-                CharSequence currentNameString = ContactsController.formatName(messageObject.messageOwner.media.first_name, messageObject.messageOwner.media.last_name).replace('\n', ' ');
+                CharSequence currentNameString = UserObject.formatName(messageObject.messageOwner.media.first_name, messageObject.messageOwner.media.last_name).replace('\n', ' ');
                 if (currentNameString.length() == 0) {
                     currentNameString = messageObject.messageOwner.media.phone_number;
                     if (currentNameString == null) {
@@ -3833,7 +3844,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         if (!isBot && a < size) {
                             pollAvatarImages[a].setImageCoords(0, 0, AndroidUtilities.dp(16), AndroidUtilities.dp(16));
                             Integer id = media.results.recent_voters.get(a);
-                            TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(id);
+                            User user = MessagesController.getInstance(currentAccount).getUser(id);
                             if (user != null) {
                                 pollAvatarDrawables[a].setInfo(user);
                                 pollAvatarImages[a].setImage(ImageLocation.getForUser(user, false), "50_50", pollAvatarDrawables[a], null, user, 0);
@@ -4255,7 +4266,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     drawBackground = false;
                     boolean isWebpSticker = messageObject.type == MessageObject.TYPE_STICKER;
                     for (int a = 0; a < messageObject.getDocument().attributes.size(); a++) {
-                        TLRPC.DocumentAttribute attribute = messageObject.getDocument().attributes.get(a);
+                        DocumentAttribute attribute = messageObject.getDocument().attributes.get(a);
                         if (attribute instanceof TLRPC.TL_documentAttributeImageSize) {
                             photoWidth = attribute.w;
                             photoHeight = attribute.h;
@@ -4382,7 +4393,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     if (messageObject.type == MessageObject.TYPE_ROUND_VIDEO) {
                         w = h = AndroidUtilities.roundMessageSize;
                     } else {
-                        TLRPC.PhotoSize size = currentPhotoObject != null ? currentPhotoObject : currentPhotoObjectThumb;
+                        PhotoSize size = currentPhotoObject != null ? currentPhotoObject : currentPhotoObjectThumb;
                         int imageW = 0;
                         int imageH = 0;
                         if (size != null && !(size instanceof TLRPC.TL_photoStrippedSize)) {
@@ -4390,7 +4401,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             imageH = size.h;
                         } else if (documentAttach != null) {
                             for (int a = 0, N = documentAttach.attributes.size(); a < N; a++) {
-                                TLRPC.DocumentAttribute attribute = documentAttach.attributes.get(a);
+                                DocumentAttribute attribute = documentAttach.attributes.get(a);
                                 if (attribute instanceof TLRPC.TL_documentAttributeVideo) {
                                     imageW = attribute.w;
                                     imageH = attribute.h;
@@ -4429,7 +4440,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
                     if ((w == 0 || h == 0) && messageObject.type == 8) {
                         for (int a = 0; a < messageObject.getDocument().attributes.size(); a++) {
-                            TLRPC.DocumentAttribute attribute = messageObject.getDocument().attributes.get(a);
+                            DocumentAttribute attribute = messageObject.getDocument().attributes.get(a);
                             if (attribute instanceof TLRPC.TL_documentAttributeImageSize || attribute instanceof TLRPC.TL_documentAttributeVideo) {
                                 float scale = (float) attribute.w / (float) photoWidth;
                                 w = (int) (attribute.w / scale);
@@ -4744,7 +4755,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     if (autoPlayingMedia) {
                         photoImage.setAllowStartAnimation(true);
                         photoImage.startAnimation();
-                        TLRPC.Document document = messageObject.getDocument();
+                        Document document = messageObject.getDocument();
 
                         if (currentMessageObject.videoEditedInfo != null && currentMessageObject.videoEditedInfo.canAutoPlaySourceVideo()) {
                             photoImage.setImage(ImageLocation.getForPath(currentMessageObject.videoEditedInfo.originalPath), ImageLoader.AUTOPLAY_FILTER, ImageLocation.getForObject(currentPhotoObject, photoParentObject), currentPhotoFilter, ImageLocation.getForDocument(currentPhotoObjectThumb, document), currentPhotoFilterThumb, null, messageObject.getDocument().size, null, messageObject, 0);
@@ -4791,7 +4802,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             localFile = 2;
                         }
                         boolean autoDownload = false;
-                        TLRPC.Document document = messageObject.getDocument();
+                        Document document = messageObject.getDocument();
                         if (MessageObject.isGifDocument(document) || messageObject.type == MessageObject.TYPE_ROUND_VIDEO) {
                             autoDownload = DownloadController.getInstance(currentAccount).canDownloadMedia(currentMessageObject);
                         }
@@ -5137,7 +5148,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             if (documentAttachType == DOCUMENT_ATTACH_TYPE_MUSIC) {
                 if (MessageObject.isDocumentHasThumb(documentAttach)) {
-                    TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(documentAttach.thumbs, 90);
+                    PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(documentAttach.thumbs, 90);
                     radialProgress.setImageOverlay(thumb, documentAttach, messageObject);
                 } else {
                     String artworkUrl = messageObject.getArtworkUrl(true);
@@ -5445,7 +5456,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             return;
         }
         for (int a = 0; a < documentAttach.attributes.size(); a++) {
-            TLRPC.DocumentAttribute attribute = documentAttach.attributes.get(a);
+            DocumentAttribute attribute = documentAttach.attributes.get(a);
             if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
                 if (attribute.waveform == null || attribute.waveform.length == 0) {
                     MediaController.getInstance().generateWaveform(currentMessageObject);
@@ -5470,7 +5481,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             documentAttachType = DOCUMENT_ATTACH_TYPE_AUDIO;
             int duration = 0;
             for (int a = 0; a < documentAttach.attributes.size(); a++) {
-                TLRPC.DocumentAttribute attribute = documentAttach.attributes.get(a);
+                DocumentAttribute attribute = documentAttach.attributes.get(a);
                 if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
                     duration = attribute.duration;
                     break;
@@ -5507,7 +5518,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
             int duration = 0;
             for (int a = 0; a < documentAttach.attributes.size(); a++) {
-                TLRPC.DocumentAttribute attribute = documentAttach.attributes.get(a);
+                DocumentAttribute attribute = documentAttach.attributes.get(a);
                 if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
                     duration = attribute.duration;
                     break;
@@ -5991,7 +6002,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             timeX -= getExtraTimeX();
 
-            if ((currentMessageObject.messageOwner.flags & TLRPC.MESSAGE_FLAG_HAS_VIEWS) != 0) {
+            if ((currentMessageObject.messageOwner.flags & Message_FLAG_HAS_VIEWS) != 0) {
                 viewsLayout = new StaticLayout(currentViewsString, Theme.chat_timePaint, viewsTextWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
             } else {
                 viewsLayout = null;
@@ -7684,7 +7695,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 } else {
                     radialProgress.setProgress(0, false);
                 }
-                TLRPC.PhotoSize thumb;
+                PhotoSize thumb;
                 String thumbFilter;
                 if (currentPhotoObject != null && (photoImage.hasNotThumb() || currentPhotoObjectThumb == null)) {
                     thumb = currentPhotoObject;
@@ -7706,7 +7717,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         FileLoader.getInstance(currentAccount).loadFile(currentMessageObject.getDocument(), currentMessageObject, 1, 1);
                     } else {
                         currentMessageObject.gifState = 2;
-                        TLRPC.Document document = currentMessageObject.getDocument();
+                        Document document = currentMessageObject.getDocument();
                         photoImage.setForceLoading(true);
 
                         photoImage.setImage(ImageLocation.getForDocument(document), null, ImageLocation.getForObject(thumb, document), thumbFilter, document.size, null, currentMessageObject, 0);
@@ -7913,7 +7924,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 TLRPC.TL_messages_stickerSet stickerSet = MediaDataController.getInstance(currentAccount).getDiceStickerSetByEmoji(emoji);
                 if (stickerSet != null) {
                     if (!lottieDrawable.hasBaseDice() && stickerSet.documents.size() > 0) {
-                        TLRPC.Document document = stickerSet.documents.get(0);
+                        Document document = stickerSet.documents.get(0);
                         File path = FileLoader.getPathToAttach(document, true);
                         if (lottieDrawable.setBaseDice(path)) {
                             DownloadController.getInstance(currentAccount).removeLoadingFileObserver(this);
@@ -7935,7 +7946,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                                 }, frameSuccess.frame);
                             }
                         }
-                        TLRPC.Document document = stickerSet.documents.get(Math.max(value, 0));
+                        Document document = stickerSet.documents.get(Math.max(value, 0));
                         File path = FileLoader.getPathToAttach(document, true);
                         if (lottieDrawable.setDiceNumber(path, instant)) {
                             DownloadController.getInstance(currentAccount).removeLoadingFileObserver(this);
@@ -8011,7 +8022,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         createLoadingProgressLayout(uploadedSize, totalSize);
     }
 
-    private void createLoadingProgressLayout(TLRPC.Document document) {
+    private void createLoadingProgressLayout(Document document) {
         if (document == null) {
             return;
         }
@@ -8114,9 +8125,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         } else if (messageObject.messageOwner.fwd_from != null && messageObject.messageOwner.fwd_from.post_author != null) {
             signString = messageObject.messageOwner.fwd_from.post_author.replace("\n", "");
         } else if (!messageObject.isOutOwner() && messageObject.messageOwner.from_id > 0 && messageObject.messageOwner.post) {
-            TLRPC.User signUser = MessagesController.getInstance(currentAccount).getUser(messageObject.messageOwner.from_id);
+            User signUser = MessagesController.getInstance(currentAccount).getUser(messageObject.messageOwner.from_id);
             if (signUser != null) {
-                signString = ContactsController.formatName(signUser.first_name, signUser.last_name).replace('\n', ' ');
+                signString = UserObject.formatName(signUser.first_name, signUser.last_name).replace('\n', ' ');
             } else {
                 signString = null;
             }
@@ -8124,19 +8135,19 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             signString = null;
         }
         String timeString;
-        TLRPC.User author = null;
+        User author = null;
         if (currentMessageObject.isFromUser()) {
             author = MessagesController.getInstance(currentAccount).getUser(messageObject.messageOwner.from_id);
         }
         if (messageObject.scheduled || messageObject.isLiveLocation() || messageObject.messageOwner.edit_hide || messageObject.getDialogId() == 777000 || messageObject.messageOwner.via_bot_id != 0 || messageObject.messageOwner.via_bot_name != null || author != null && author.bot) {
             edited = false;
         } else if (currentPosition == null || currentMessagesGroup == null) {
-            edited = (messageObject.messageOwner.flags & TLRPC.MESSAGE_FLAG_EDITED) != 0 || messageObject.isEditing();
+            edited = (messageObject.messageOwner.flags & Message_FLAG_EDITED) != 0 || messageObject.isEditing();
         } else {
             edited = false;
             for (int a = 0, size = currentMessagesGroup.messages.size(); a < size; a++) {
                 MessageObject object = currentMessagesGroup.messages.get(a);
-                if ((object.messageOwner.flags & TLRPC.MESSAGE_FLAG_EDITED) != 0 || object.isEditing()) {
+                if ((object.messageOwner.flags & Message_FLAG_EDITED) != 0 || object.isEditing()) {
                     edited = true;
                     break;
                 }
@@ -8158,7 +8169,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (currentMessageObject.scheduled && currentMessageObject.messageOwner.date == 0x7FFFFFFE) {
             timeWidth -= AndroidUtilities.dp(8);
         }
-        if ((messageObject.messageOwner.flags & TLRPC.MESSAGE_FLAG_HAS_VIEWS) != 0) {
+        if ((messageObject.messageOwner.flags & Message_FLAG_HAS_VIEWS) != 0) {
             currentViewsString = String.format("%s", LocaleController.formatShortNumber(Math.max(1, messageObject.messageOwner.views), null));
             viewsTextWidth = (int) Math.ceil(Theme.chat_timePaint.measureText(currentViewsString));
             timeWidth += viewsTextWidth + Theme.chat_msgInViewsDrawable.getIntrinsicWidth() + AndroidUtilities.dp(10);
@@ -8221,7 +8232,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     private void updateCurrentUserAndChat() {
         MessagesController messagesController = MessagesController.getInstance(currentAccount);
-        TLRPC.MessageFwdHeader fwd_from = currentMessageObject.messageOwner.fwd_from;
+        MessageFwdHeader fwd_from = currentMessageObject.messageOwner.fwd_from;
         int currentUserId = UserConfig.getInstance(currentAccount).getClientUserId();
         if (fwd_from != null && fwd_from.channel_id != 0 && currentMessageObject.getDialogId() == currentUserId) {
             currentChat = MessagesController.getInstance(currentAccount).getChat(fwd_from.channel_id);
@@ -8260,7 +8271,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     private void setMessageObjectInternal(MessageObject messageObject) {
-        if ((messageObject.messageOwner.flags & TLRPC.MESSAGE_FLAG_HAS_VIEWS) != 0 && !currentMessageObject.scheduled) {
+        if ((messageObject.messageOwner.flags & Message_FLAG_HAS_VIEWS) != 0 && !currentMessageObject.scheduled) {
             if (!currentMessageObject.viewsReloaded) {
                 MessagesController.getInstance(currentAccount).addToViewsQueue(currentMessageObject);
                 currentMessageObject.viewsReloaded = true;
@@ -8303,7 +8314,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         String viaUsername = null;
         CharSequence viaString = null;
         if (messageObject.messageOwner.via_bot_id != 0) {
-            TLRPC.User botUser = MessagesController.getInstance(currentAccount).getUser(messageObject.messageOwner.via_bot_id);
+            User botUser = MessagesController.getInstance(currentAccount).getUser(messageObject.messageOwner.via_bot_id);
             if (botUser != null && botUser.username != null && botUser.username.length() > 0) {
                 viaUsername = "@" + botUser.username;
                 viaString = AndroidUtilities.replaceTags(String.format(" %s <b>%s</b>", LocaleController.getString("ViaBot", R.string.ViaBot), viaUsername));
@@ -8514,8 +8525,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     int cacheType = 1;
                     int size = 0;
                     TLObject photoObject;
-                    TLRPC.PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(messageObject.replyMessageObject.photoThumbs2, 320);
-                    TLRPC.PhotoSize thumbPhotoSize = FileLoader.getClosestPhotoSizeWithSize(messageObject.replyMessageObject.photoThumbs2, 40);
+                    PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(messageObject.replyMessageObject.photoThumbs2, 320);
+                    PhotoSize thumbPhotoSize = FileLoader.getClosestPhotoSizeWithSize(messageObject.replyMessageObject.photoThumbs2, 40);
                     photoObject = messageObject.replyMessageObject.photoThumbsObject2;
                     if (photoSize == null) {
                         if (messageObject.replyMessageObject.mediaExists) {
@@ -8552,17 +8563,17 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         name = messageObject.customReplyName;
                     } else {
                         if (messageObject.replyMessageObject.isFromUser()) {
-                            TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(messageObject.replyMessageObject.messageOwner.from_id);
+                            User user = MessagesController.getInstance(currentAccount).getUser(messageObject.replyMessageObject.messageOwner.from_id);
                             if (user != null) {
                                 name = UserObject.getUserName(user);
                             }
                         } else if (messageObject.replyMessageObject.messageOwner.from_id < 0) {
-                            TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-messageObject.replyMessageObject.messageOwner.from_id);
+                            Chat chat = MessagesController.getInstance(currentAccount).getChat(-messageObject.replyMessageObject.messageOwner.from_id);
                             if (chat != null) {
                                 name = chat.title;
                             }
                         } else {
-                            TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(messageObject.replyMessageObject.messageOwner.to_id.channel_id);
+                            Chat chat = MessagesController.getInstance(currentAccount).getChat(messageObject.replyMessageObject.messageOwner.to_id.channel_id);
                             if (chat != null) {
                                 name = chat.title;
                             }
@@ -9814,7 +9825,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             paint.setAlpha(oldAlpha);
 
             int additionalX = (int) (-timeLayout.getLineLeft(0));
-            if (ChatObject.isChannel(currentChat) && !currentChat.megagroup || (currentMessageObject.messageOwner.flags & TLRPC.MESSAGE_FLAG_HAS_VIEWS) != 0) {
+            if (ChatObject.isChannel(currentChat) && !currentChat.megagroup || (currentMessageObject.messageOwner.flags & Message_FLAG_HAS_VIEWS) != 0) {
                 additionalX += (int) (timeWidth - timeLayout.getLineWidth(0));
 
                 if (currentMessageObject.isSending() || currentMessageObject.isEditing()) {
@@ -9865,7 +9876,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             Theme.chat_timePaint.setAlpha(255);
         } else {
             int additionalX = (int) (-timeLayout.getLineLeft(0));
-            if (ChatObject.isChannel(currentChat) && !currentChat.megagroup || (currentMessageObject.messageOwner.flags & TLRPC.MESSAGE_FLAG_HAS_VIEWS) != 0) {
+            if (ChatObject.isChannel(currentChat) && !currentChat.megagroup || (currentMessageObject.messageOwner.flags & Message_FLAG_HAS_VIEWS) != 0) {
                 additionalX += (int) (timeWidth - timeLayout.getLineWidth(0));
 
                 if (currentMessageObject.isSending() || currentMessageObject.isEditing()) {
@@ -10778,7 +10789,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return messageObjectToSet != null ? messageObjectToSet : currentMessageObject;
     }
 
-    public TLRPC.Document getStreamingMedia() {
+    public Document getStreamingMedia() {
         return documentAttachType == DOCUMENT_ATTACH_TYPE_VIDEO || documentAttachType == DOCUMENT_ATTACH_TYPE_ROUND || documentAttachType == DOCUMENT_ATTACH_TYPE_GIF ? documentAttach : null;
     }
 

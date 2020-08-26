@@ -92,10 +92,12 @@ import android.widget.Toast;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
+import com.demo.chat.alerts.AlertsCreator;
 import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
+import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
@@ -106,6 +108,8 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.VideoEditedInfo;
+import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
@@ -115,6 +119,7 @@ import com.demo.chat.ui.ActionBar.ActionBarMenuSubItem;
 import com.demo.chat.ui.ActionBar.ActionBarPopupWindow;
 import com.demo.chat.ui.ActionBar.BottomSheet;
 import com.demo.chat.ui.ActionBar.SimpleTextView;
+import com.demo.chat.ui.Adapters.MentionsAdapter;
 import com.demo.chat.ui.ChatActivity;
 import com.demo.chat.ui.Components.AnimatedFileDrawable;
 import com.demo.chat.ui.Components.AnimationProperties;
@@ -125,12 +130,19 @@ import com.demo.chat.ui.Components.ClippingImageView;
 import com.demo.chat.ui.Components.CombinedDrawable;
 import com.demo.chat.ui.Components.GestureDetector2;
 import com.demo.chat.ui.Components.LayoutHelper;
+import com.demo.chat.ui.Components.PickerBottomLayoutViewer;
 import com.demo.chat.ui.Components.PipVideoView;
 import com.demo.chat.ui.Components.RLottieDrawable;
 import com.demo.chat.ui.Components.RadialProgressView;
 import com.demo.chat.ui.Components.RecyclerListView;
+import com.demo.chat.ui.Components.SizeNotifierFrameLayoutPhoto;
+import com.demo.chat.ui.Components.StickersAlert;
+import com.demo.chat.ui.Components.TextViewSwitcher;
 import com.demo.chat.ui.Components.URLSpanNoUnderline;
 import com.demo.chat.ui.Components.VideoPlayer;
+import com.demo.chat.ui.Components.VideoPlayerSeekBar;
+import com.demo.chat.ui.Components.VideoSeekPreviewImage;
+import com.demo.chat.ui.Components.VideoTimelinePlayView;
 import com.demo.chat.ui.LaunchActivity;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayer;
@@ -1302,17 +1314,17 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
     public static class EmptyPhotoViewerProvider implements PhotoViewerProvider {
         @Override
-        public PlaceProviderObject getPlaceForPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index, boolean needPreview) {
+        public PlaceProviderObject getPlaceForPhoto(MessageObject messageObject, FileLocation fileLocation, int index, boolean needPreview) {
             return null;
         }
 
         @Override
-        public ImageReceiver.BitmapHolder getThumbForPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index) {
+        public ImageReceiver.BitmapHolder getThumbForPhoto(MessageObject messageObject, FileLocation fileLocation, int index) {
             return null;
         }
 
         @Override
-        public void willSwitchFromPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index) {
+        public void willSwitchFromPhoto(MessageObject messageObject, FileLocation fileLocation, int index) {
 
         }
 
@@ -1408,11 +1420,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     }
 
     public interface PhotoViewerProvider {
-        PlaceProviderObject getPlaceForPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index, boolean needPreview);
+        PlaceProviderObject getPlaceForPhoto(MessageObject messageObject, FileLocation fileLocation, int index, boolean needPreview);
 
-        ImageReceiver.BitmapHolder getThumbForPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index);
+        ImageReceiver.BitmapHolder getThumbForPhoto(MessageObject messageObject, FileLocation fileLocation, int index);
 
-        void willSwitchFromPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index);
+        void willSwitchFromPhoto(MessageObject messageObject, FileLocation fileLocation, int index);
 
         void willHidePhotoViewer();
 
@@ -2371,11 +2383,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     if (photo == null || photo instanceof TLRPC.TL_photoEmpty || photo.sizes == null) {
                         continue;
                     }
-                    TLRPC.PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, 640);
+                    PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, 640);
                     if (sizeFull != null) {
                         if (setToImage == -1 && currentFileLocation != null) {
                             for (int b = 0; b < photo.sizes.size(); b++) {
-                                TLRPC.PhotoSize size = photo.sizes.get(b);
+                                PhotoSize size = photo.sizes.get(b);
                                 if (size.location.local_id == currentFileLocation.location.local_id && size.location.volume_id == currentFileLocation.location.volume_id) {
                                     setToImage = imagesArrLocations.size();
                                     break;
@@ -2404,8 +2416,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 if (setToImage != -1) {
                     setImageIndex(setToImage);
                 } else {
-                    TLRPC.User user = null;
-                    TLRPC.Chat chat = null;
+                    User user = null;
+                    Chat chat = null;
                     if (avatarsDialogId > 0) {
                         user = MessagesController.getInstance(currentAccount).getUser(avatarsDialogId);
                     } else {
@@ -3015,7 +3027,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         if (lower_part > 0) {
                             args.putInt("user_id", lower_part);
                         } else if (lower_part < 0) {
-                            TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-lower_part);
+                            Chat chat = MessagesController.getInstance(currentAccount).getChat(-lower_part);
                             if (chat != null && chat.migrated_to != null) {
                                 args.putInt("migrated_to", lower_part);
                                 lower_part = -chat.migrated_to.channel_id;
@@ -3103,8 +3115,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     if (currentMessageObject != null && !currentMessageObject.scheduled) {
                         int lower_id = (int) currentMessageObject.getDialogId();
                         if (lower_id != 0) {
-                            TLRPC.Chat currentChat;
-                            TLRPC.User currentUser;
+                            Chat currentChat;
+                            User currentUser;
                             if (lower_id > 0) {
                                 currentUser = MessagesController.getInstance(currentAccount).getUser(lower_id);
                                 currentChat = null;
@@ -3183,7 +3195,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                             boolean current = false;
                             if (currentUserAvatarLocation != null) {
                                 if (photo != null) {
-                                    for (TLRPC.PhotoSize size : photo.sizes) {
+                                    for (PhotoSize size : photo.sizes) {
                                         if (size.location.local_id == currentUserAvatarLocation.location.local_id && size.location.volume_id == currentUserAvatarLocation.location.volume_id) {
                                             current = true;
                                             break;
@@ -3296,7 +3308,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     if (currentMessageObject == null) {
                         return;
                     }
-                    TLRPC.Document document = currentMessageObject.getDocument();
+                    Document document = currentMessageObject.getDocument();
                     if (parentChatActivity != null && parentChatActivity.chatActivityEnterView != null) {
                         parentChatActivity.chatActivityEnterView.addRecentGif(document);
                     } else {
@@ -3726,8 +3738,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             if (parentChatActivity == null || parentChatActivity.isInScheduleMode()) {
                 return false;
             }
-            TLRPC.Chat chat = parentChatActivity.getCurrentChat();
-            TLRPC.User user = parentChatActivity.getCurrentUser();
+            Chat chat = parentChatActivity.getCurrentChat();
+            User user = parentChatActivity.getCurrentUser();
             if (parentChatActivity.getCurrentEncryptedChat() != null) {
                 return false;
             }
@@ -4454,8 +4466,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             Object object = mentionsAdapter.getItem(position);
             int start = mentionsAdapter.getResultStartPosition();
             int len = mentionsAdapter.getResultLength();
-            if (object instanceof TLRPC.User) {
-                TLRPC.User user = (TLRPC.User) object;
+            if (object instanceof User) {
+                User user = (User) object;
                 if (user.username != null) {
                     captionEditText.replaceWithText(start, len, "@" + user.username + " ", false);
                 } else {
@@ -4505,8 +4517,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         }
         if (placeProvider != null && !doneButtonPressed) {
             if (parentChatActivity != null) {
-                TLRPC.Chat chat = parentChatActivity.getCurrentChat();
-                TLRPC.User user = parentChatActivity.getCurrentUser();
+                Chat chat = parentChatActivity.getCurrentChat();
+                User user = parentChatActivity.getCurrentUser();
                 if (user != null || ChatObject.isChannel(chat) && chat.megagroup || !ChatObject.isChannel(chat)) {
                     MessagesController.getNotificationsSettings(currentAccount).edit().putBoolean("silent_" + parentChatActivity.getDialogId(), !notify).commit();
                 }
@@ -4965,7 +4977,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             CharSequence caption = captionEditText.getFieldCharSequence();
             CharSequence[] result = new CharSequence[] {caption};
 
-            ArrayList<TLRPC.MessageEntity> entities = MediaDataController.getInstance(currentAccount).getEntities(result, supportsSendingNewEntities());
+            ArrayList<MessageEntity> entities = MediaDataController.getInstance(currentAccount).getEntities(result, supportsSendingNewEntities());
             if (object instanceof MediaController.PhotoEntry) {
                 MediaController.PhotoEntry photoEntry = (MediaController.PhotoEntry) object;
                 photoEntry.caption = result[0];
@@ -5034,7 +5046,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         if (!isStreaming || parentActivity == null || streamingAlertShown || videoPlayer == null || currentMessageObject == null) {
             return;
         }
-        TLRPC.Document document = currentMessageObject.getDocument();
+        Document document = currentMessageObject.getDocument();
         if (document == null) {
             return;
         }
@@ -5820,7 +5832,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             stickers = photoPaintView.getMasks();
         }
         if (bitmap != null) {
-            TLRPC.PhotoSize size = ImageLoader.scaleAndSaveImage(bitmap, currentEditMode == 3 ? Bitmap.CompressFormat.PNG : Bitmap.CompressFormat.JPEG, AndroidUtilities.getPhotoSize(), AndroidUtilities.getPhotoSize(), 87, false, 101, 101);
+            PhotoSize size = ImageLoader.scaleAndSaveImage(bitmap, currentEditMode == 3 ? Bitmap.CompressFormat.PNG : Bitmap.CompressFormat.JPEG, AndroidUtilities.getPhotoSize(), AndroidUtilities.getPhotoSize(), 87, false, 101, 101);
             if (size != null) {
                 if (entry.thumbPath != null) {
                     new File(entry.thumbPath).delete();
@@ -6056,7 +6068,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         if (placeProvider != null) {
             if (placeProvider.getSelectedPhotos() != null && maxSelectedPhotos > 0 && placeProvider.getSelectedPhotos().size() >= maxSelectedPhotos && !placeProvider.isPhotoChecked(currentIndex)) {
                 if (allowOrder && parentChatActivity != null) {
-                    TLRPC.Chat chat = parentChatActivity.getCurrentChat();
+                    Chat chat = parentChatActivity.getCurrentChat();
                     if (chat != null && !ChatObject.hasAdminRights(chat) && chat.slowmode_enabled) {
                         AlertsCreator.createSimpleAlert(parentActivity, LocaleController.getString("Slowmode", R.string.Slowmode), LocaleController.getString("SlowmodeSelectSendError", R.string.SlowmodeSelectSendError)).show();
                     }
@@ -6953,7 +6965,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 if (botInlineResult.document != null) {
                     return FileLoader.getAttachFileName(botInlineResult.document);
                 }  else if (botInlineResult.photo != null) {
-                    TLRPC.PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(botInlineResult.photo.sizes, AndroidUtilities.getPhotoSize());
+                    PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(botInlineResult.photo.sizes, AndroidUtilities.getPhotoSize());
                     return FileLoader.getAttachFileName(sizeFull);
                 } else if (botInlineResult.content instanceof TLRPC.TL_webDocument) {
                     return Utilities.MD5(botInlineResult.content.url) + "." + ImageLoader.getHttpUrlExtension(botInlineResult.content.url, FileLoader.getMimeTypePart(botInlineResult.content.mime_type));
@@ -6992,7 +7004,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 if (message.messageOwner.action instanceof TLRPC.TL_messageActionUserUpdatedPhoto) {
                     return null;
                 } else {
-                    TLRPC.PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, AndroidUtilities.getPhotoSize());
+                    PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, AndroidUtilities.getPhotoSize());
                     if (sizeFull != null) {
                         if (size != null) {
                             size[0] = sizeFull.size;
@@ -7009,8 +7021,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 if (message.isGif()) {
                     return ImageLocation.getForDocument(message.getDocument());
                 } else {
-                    TLRPC.FileLocation location;
-                    TLRPC.PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, AndroidUtilities.getPhotoSize());
+                    FileLocation location;
+                    PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, AndroidUtilities.getPhotoSize());
                     if (sizeFull != null) {
                         if (size != null) {
                             size[0] = sizeFull.size;
@@ -7026,11 +7038,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             } else if (message.messageOwner.media instanceof TLRPC.TL_messageMediaInvoice) {
                 return ImageLocation.getForWebFile(WebFile.createWithWebDocument(((TLRPC.TL_messageMediaInvoice) message.messageOwner.media).photo));
             } else if (message.getDocument() != null) {
-                TLRPC.Document document = message.getDocument();
+                Document document = message.getDocument();
                 if (sharedMediaType == MediaDataController.MEDIA_GIF) {
                     return ImageLocation.getForDocument(document);
                 } else if (MessageObject.isDocumentHasThumb(message.getDocument())) {
-                    TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
+                    PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
                     if (size != null) {
                         size[0] = thumb.size;
                         if (size[0] == 0) {
@@ -7073,7 +7085,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 if (message.messageOwner.action instanceof TLRPC.TL_messageActionUserUpdatedPhoto) {
                     return message.messageOwner.action.newUserPhoto.photo_big;
                 } else {
-                    TLRPC.PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, AndroidUtilities.getPhotoSize());
+                    PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, AndroidUtilities.getPhotoSize());
                     if (sizeFull != null) {
                         if (size != null) {
                             size[0] = sizeFull.size;
@@ -7087,8 +7099,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     }
                 }
             } else if (message.messageOwner.media instanceof TLRPC.TL_messageMediaPhoto && message.messageOwner.media.photo != null || message.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && message.messageOwner.media.webpage != null) {
-                TLRPC.FileLocation location;
-                TLRPC.PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, AndroidUtilities.getPhotoSize());
+                FileLocation location;
+                PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, AndroidUtilities.getPhotoSize());
                 if (sizeFull != null) {
                     if (size != null) {
                         size[0] = sizeFull.size;
@@ -7103,7 +7115,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             } else if (message.messageOwner.media instanceof TLRPC.TL_messageMediaInvoice) {
                 return ((TLRPC.TL_messageMediaInvoice) message.messageOwner.media).photo;
             } else if (message.getDocument() != null && MessageObject.isDocumentHasThumb(message.getDocument())) {
-                TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(message.getDocument().thumbs, 90);
+                PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(message.getDocument().thumbs, 90);
                 if (size != null) {
                     size[0] = thumb.size;
                     if (size[0] == 0) {
@@ -7153,7 +7165,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         }
     }
 
-    private void onPhotoShow(final MessageObject messageObject, final TLRPC.FileLocation fileLocation, ImageLocation imageLocation, final ArrayList<MessageObject> messages, final ArrayList<SecureDocument> documents, final ArrayList<Object> photos, int index, final PlaceProviderObject object) {
+    private void onPhotoShow(final MessageObject messageObject, final FileLocation fileLocation, ImageLocation imageLocation, final ArrayList<MessageObject> messages, final ArrayList<SecureDocument> documents, final ArrayList<Object> photos, int index, final PlaceProviderObject object) {
         classGuid = ConnectionsManager.generateClassGuid();
         currentMessageObject = null;
         currentFileLocation = null;
@@ -7349,10 +7361,10 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             avatarsDialogId = object.dialogId;
             if (imageLocation == null) {
                 if (avatarsDialogId > 0) {
-                    TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(avatarsDialogId);
+                    User user = MessagesController.getInstance(currentAccount).getUser(avatarsDialogId);
                     imageLocation = ImageLocation.getForUser(user, true);
                 } else {
-                    TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-avatarsDialogId);
+                    Chat chat = MessagesController.getInstance(currentAccount).getChat(-avatarsDialogId);
                     imageLocation = ImageLocation.getForChat(chat, true);
                 }
             }
@@ -7487,7 +7499,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         } else if (!imagesArrLocals.isEmpty()) {
             Object entry = imagesArrLocals.get(index);
             CharSequence caption = null;
-            TLRPC.User user = parentChatActivity != null ? parentChatActivity.getCurrentUser() : null;
+            User user = parentChatActivity != null ? parentChatActivity.getCurrentUser() : null;
             boolean allowTimeItem = !isDocumentsPicker && parentChatActivity != null && !parentChatActivity.isSecretChat() && !parentChatActivity.isInScheduleMode() && user != null && !user.bot && !UserObject.isUserSelf(user) && !parentChatActivity.isEditingMessageMedia();
             if (entry instanceof TLRPC.BotInlineResult) {
                 allowTimeItem = false;
@@ -7588,14 +7600,14 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         nameTextView.setText(nameOverride);
                     } else {
                         if (newMessageObject.isFromUser()) {
-                            TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(newMessageObject.messageOwner.from_id);
+                            User user = MessagesController.getInstance(currentAccount).getUser(newMessageObject.messageOwner.from_id);
                             if (user != null) {
                                 nameTextView.setText(UserObject.getUserName(user), animated);
                             } else {
                                 nameTextView.setText("", animated);
                             }
                         } else {
-                            TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(newMessageObject.messageOwner.to_id.channel_id);
+                            Chat chat = MessagesController.getInstance(currentAccount).getChat(newMessageObject.messageOwner.to_id.channel_id);
                             if (ChatObject.isChannel(chat) && chat.megagroup && newMessageObject.isForwardedChannelPost()) {
                                 chat = MessagesController.getInstance(currentAccount).getChat(newMessageObject.messageOwner.fwd_from.channel_id);
                             }
@@ -7864,16 +7876,16 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 actionBar.setTitle(LocaleController.formatString("Of", R.string.Of, switchingToIndex + 1, imagesArrLocals.size()));
             }
             if (parentChatActivity != null) {
-                TLRPC.Chat chat = parentChatActivity.getCurrentChat();
+                Chat chat = parentChatActivity.getCurrentChat();
                 if (chat != null) {
                     actionBar.setTitle(chat.title);
                 } else {
-                    TLRPC.User user = parentChatActivity.getCurrentUser();
+                    User user = parentChatActivity.getCurrentUser();
                     if (user != null) {
                         if (user.self) {
                             actionBar.setTitle(LocaleController.getString("SavedMessages", R.string.SavedMessages));
                         } else {
-                            actionBar.setTitle(ContactsController.formatName(user.first_name, user.last_name));
+                            actionBar.setTitle(UserObject.formatName(user.first_name, user.last_name));
                         }
                     }
                 }
@@ -7892,7 +7904,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         setCurrentCaption(newMessageObject, caption, animateCaption);
     }
 
-    private TLRPC.FileLocation getFileLocation(ImageLocation location) {
+    private FileLocation getFileLocation(ImageLocation location) {
         if (location == null) {
             return null;
         }
@@ -8477,7 +8489,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 if (!exists && a != 0 && messageObjectFinal != null && canStreamFinal) {
                     if (DownloadController.getInstance(currentAccount).canDownloadMedia(messageObjectFinal.messageOwner) != 0) {
                         if ((parentChatActivity == null || parentChatActivity.getCurrentEncryptedChat() == null) && !messageObjectFinal.shouldEncryptPhotoOrVideo()) {
-                            final TLRPC.Document document = messageObjectFinal.getDocument();
+                            final Document document = messageObjectFinal.getDocument();
                             if (document != null) {
                                 FileLoader.getInstance(currentAccount).loadFile(document, messageObjectFinal, 0, 10);
                             }
@@ -8576,10 +8588,10 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     placeHolder = placeProvider.getThumbForPhoto(null, null, index);
                 }
                 String path = null;
-                TLRPC.Document document = null;
+                Document document = null;
                 WebFile webDocument = null;
                 ImageLocation videoThumb = null;
-                TLRPC.PhotoSize photo = null;
+                PhotoSize photo = null;
                 TLObject photoObject = null;
                 int imageSize = 0;
                 String filter = null;
@@ -8624,7 +8636,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         }
                         filter = "d";
                     } else if (botInlineResult.photo != null) {
-                        TLRPC.PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(botInlineResult.photo.sizes, AndroidUtilities.getPhotoSize());
+                        PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(botInlineResult.photo.sizes, AndroidUtilities.getPhotoSize());
                         photo = sizeFull;
                         photoObject = botInlineResult.photo;
                         imageSize = sizeFull.size;
@@ -8661,7 +8673,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     filter = "d";
                 }
                 if (document != null) {
-                    TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
+                    PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
                     if (videoThumb != null) {
                         imageReceiver.setImage(ImageLocation.getForDocument(document), "d", videoThumb, null, placeHolder == null ? ImageLocation.getForDocument(thumb, document) : null, String.format(Locale.US, "%d_%d", size, size), placeHolder != null ? new BitmapDrawable(placeHolder.bitmap) : null, imageSize, null, object, cacheType);
                     } else {
@@ -8697,7 +8709,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         if (currentThumb != null && imageReceiver == centerImage) {
                             placeHolder = currentThumb;
                         }
-                        TLRPC.PhotoSize thumbLocation = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, 320);
+                        PhotoSize thumbLocation = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, 320);
                         imageReceiver.setNeedsQualityThumb(thumbLocation.w < 100 && thumbLocation.h < 100);
                         imageReceiver.setImage(null, null, placeHolder == null ? ImageLocation.getForObject(thumbLocation, messageObject.photoThumbsObject) : null, "b", placeHolder != null ? new BitmapDrawable(placeHolder.bitmap) : null, 0, null, messageObject, 1);
                     } else {
@@ -8710,13 +8722,13 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     return;
                 } else if (sharedMediaType == MediaDataController.MEDIA_FILE) {
                     if (messageObject.canPreviewDocument()) {
-                        TLRPC.Document document = messageObject.getDocument();
+                        Document document = messageObject.getDocument();
                         imageReceiver.setNeedsQualityThumb(true);
                         ImageReceiver.BitmapHolder placeHolder = null;
                         if (currentThumb != null && imageReceiver == centerImage) {
                             placeHolder = currentThumb;
                         }
-                        TLRPC.PhotoSize thumbLocation = messageObject != null ? FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, 100) : null;
+                        PhotoSize thumbLocation = messageObject != null ? FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, 100) : null;
                         int size = (int) (2048 / AndroidUtilities.density);
                         imageReceiver.setImage(ImageLocation.getForDocument(document), String.format(Locale.US, "%d_%d", size, size), placeHolder == null ? ImageLocation.getForDocument(thumbLocation, document) : null, "b", placeHolder != null ? new BitmapDrawable(placeHolder.bitmap) : null, document.size, null, messageObject, 0);
                     } else {
@@ -8739,7 +8751,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 if (size[0] == 0) {
                     size[0] = -1;
                 }
-                TLRPC.PhotoSize thumbLocation;
+                PhotoSize thumbLocation;
                 TLObject photoObject;
                 if (messageObject != null) {
                     thumbLocation = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, 100);
@@ -8757,7 +8769,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 if (messageObject != null) {
                     parentObject = messageObject;
                     if (sharedMediaType == MediaDataController.MEDIA_GIF) {
-                        TLRPC.Document document = messageObject.getDocument();
+                        Document document = messageObject.getDocument();
                         TLRPC.TL_videoSize videoSize = MessageObject.getDocumentVideoThumb(document);
                         if (videoSize != null) {
                             videoThumb = ImageLocation.getForDocument(videoSize, document);
@@ -8807,7 +8819,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         return Instance != null && !Instance.pipAnimationInProgress && Instance.isVisible && object != null && Instance.currentMessageObject != null && Instance.currentMessageObject.getId() == object.getId() && Instance.currentMessageObject.getDialogId() == object.getDialogId();
     }
 
-    public static boolean isShowingImage(TLRPC.FileLocation object) {
+    public static boolean isShowingImage(FileLocation object) {
         boolean result = false;
         if (Instance != null) {
             result = Instance.isVisible && !Instance.disableShowCheck && object != null && Instance.currentFileLocation != null && object.local_id == Instance.currentFileLocation.location.local_id && object.volume_id == Instance.currentFileLocation.location.volume_id && object.dc_id == Instance.currentFileLocation.dc_id;
@@ -8848,11 +8860,11 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         return openPhoto(messageObject, null, null, null, null, null, 0, provider, null, dialogId, mergeDialogId, fullScreenVideo);
     }
 
-    public boolean openPhoto(final TLRPC.FileLocation fileLocation, final PhotoViewerProvider provider) {
+    public boolean openPhoto(final FileLocation fileLocation, final PhotoViewerProvider provider) {
         return openPhoto(null, fileLocation, null, null, null, null, 0, provider, null, 0, 0, true);
     }
 
-    public boolean openPhoto(final TLRPC.FileLocation fileLocation, final ImageLocation imageLocation, final PhotoViewerProvider provider) {
+    public boolean openPhoto(final FileLocation fileLocation, final ImageLocation imageLocation, final PhotoViewerProvider provider) {
         return openPhoto(null, fileLocation, imageLocation, null, null, null, 0, provider, null, 0, 0, true);
     }
 
@@ -8967,7 +8979,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         padImageForHorizontalInsets = true;
     }
 
-    public boolean openPhoto(final MessageObject messageObject, final TLRPC.FileLocation fileLocation, final ImageLocation imageLocation, final ArrayList<MessageObject> messages, final ArrayList<SecureDocument> documents, final ArrayList<Object> photos, final int index, final PhotoViewerProvider provider, ChatActivity chatActivity, long dialogId, long mDialogId, boolean fullScreenVideo) {
+    public boolean openPhoto(final MessageObject messageObject, final FileLocation fileLocation, final ImageLocation imageLocation, final ArrayList<MessageObject> messages, final ArrayList<SecureDocument> documents, final ArrayList<Object> photos, final int index, final PhotoViewerProvider provider, ChatActivity chatActivity, long dialogId, long mDialogId, boolean fullScreenVideo) {
         if (parentActivity == null || isVisible || provider == null && checkAnimation() || messageObject == null && fileLocation == null && messages == null && photos == null && documents == null && imageLocation == null) {
             return false;
         }
@@ -10698,7 +10710,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         try {
                             int reference = FileLoader.getInstance(currentMessageObject.currentAccount).getFileReference(currentMessageObject);
                             FileLoader.getInstance(currentAccount).loadFile(currentMessageObject.getDocument(), currentMessageObject, 1, 0);
-                            TLRPC.Document document = currentMessageObject.getDocument();
+                            Document document = currentMessageObject.getDocument();
                             String params = "?account=" + currentMessageObject.currentAccount +
                                     "&id=" + document.id +
                                     "&hash=" + document.access_hash +

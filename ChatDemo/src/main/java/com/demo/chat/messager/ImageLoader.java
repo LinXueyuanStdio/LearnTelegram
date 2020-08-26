@@ -121,7 +121,7 @@ public class ImageLoader {
     }
 
     private static class ThumbGenerateInfo {
-        private TLRPC.Document parentDocument;
+        private Document parentDocument;
         private String filter;
         private ArrayList<ImageReceiver> imageReceiverArray = new ArrayList<>();
         private ArrayList<Integer> imageReceiverGuidsArray = new ArrayList<>();
@@ -844,7 +844,7 @@ public class ImageLoader {
             } else if (cacheImage.imageType == FileLoader.IMAGE_TYPE_ANIMATION) {
                 AnimatedFileDrawable fileDrawable;
                 if (AUTOPLAY_FILTER.equals(cacheImage.filter) && !(cacheImage.imageLocation.document instanceof TLRPC.TL_documentEncrypted)) {
-                    fileDrawable = new AnimatedFileDrawable(cacheImage.finalFilePath, false, cacheImage.size, cacheImage.imageLocation.document instanceof TLRPC.Document ? cacheImage.imageLocation.document : null, cacheImage.parentObject, cacheImage.currentAccount, false);
+                    fileDrawable = new AnimatedFileDrawable(cacheImage.finalFilePath, false, cacheImage.size, cacheImage.imageLocation.document instanceof Document ? cacheImage.imageLocation.document : null, cacheImage.parentObject, cacheImage.currentAccount, false);
                 } else {
                     fileDrawable = new AnimatedFileDrawable(cacheImage.finalFilePath, "d".equals(cacheImage.filter), 0, null, null, cacheImage.currentAccount, false);
                 }
@@ -2072,11 +2072,11 @@ public class ImageLoader {
         if (httpUrl != null) {
             key = Utilities.MD5(httpUrl);
         } else {
-            if (fileLocation instanceof TLRPC.FileLocation) {
-                TLRPC.FileLocation location = (TLRPC.FileLocation) fileLocation;
+            if (fileLocation instanceof FileLocation) {
+                FileLocation location = (FileLocation) fileLocation;
                 key = location.volume_id + "_" + location.local_id;
-            } else if (fileLocation instanceof TLRPC.Document) {
-                TLRPC.Document location = (TLRPC.Document) fileLocation;
+            } else if (fileLocation instanceof Document) {
+                Document location = (Document) fileLocation;
                 key = location.dc_id + "_" + location.id;
             } else if (fileLocation instanceof SecureDocument) {
                 SecureDocument location = (SecureDocument) fileLocation;
@@ -2159,7 +2159,7 @@ public class ImageLoader {
         final int finalTag = TAG;
         final boolean finalIsNeedsQualityThumb = imageReceiver.isNeedsQualityThumb();
         final Object parentObject = imageReceiver.getParentObject();
-        final TLRPC.Document qualityDocument = imageReceiver.getQulityThumbDocument();
+        final Document qualityDocument = imageReceiver.getQulityThumbDocument();
         final boolean shouldGenerateQualityThumb = imageReceiver.isShouldGenerateQualityThumb();
         final int currentAccount = imageReceiver.getCurrentAccount();
         final boolean currentKeyQuality = type == ImageReceiver.TYPE_IMAGE && imageReceiver.isCurrentKeyQuality();
@@ -2220,7 +2220,7 @@ public class ImageLoader {
                 } else if (thumb == 0 && currentKeyQuality) {
                     onlyCache = true;
 
-                    TLRPC.Document parentDocument;
+                    Document parentDocument;
                     String localPath;
                     File cachePath;
                     boolean forceCache;
@@ -2349,7 +2349,7 @@ public class ImageLoader {
                                 }
                             }
                         } else if (imageLocation.document != null) {
-                            TLRPC.Document document = imageLocation.document;
+                            Document document = imageLocation.document;
                             if (document instanceof TLRPC.TL_documentEncrypted) {
                                 cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE), url);
                             } else if (MessageObject.isVideoDocument(document)) {
@@ -2532,7 +2532,7 @@ public class ImageLoader {
 
         boolean qualityThumb = false;
         Object parentObject = imageReceiver.getParentObject();
-        TLRPC.Document qualityDocument = imageReceiver.getQulityThumbDocument();
+        Document qualityDocument = imageReceiver.getQulityThumbDocument();
         ImageLocation thumbLocation = imageReceiver.getThumbLocation();
         String thumbFilter = imageReceiver.getThumbFilter();
         ImageLocation mediaLocation = imageReceiver.getMediaLocation();
@@ -3084,7 +3084,7 @@ public class ImageLoader {
         return b;
     }
 
-    public static void fillPhotoSizeWithBytes(TLRPC.PhotoSize photoSize) {
+    public static void fillPhotoSizeWithBytes(PhotoSize photoSize) {
         if (photoSize == null || photoSize.bytes != null && photoSize.bytes.length != 0) {
             return;
         }
@@ -3101,7 +3101,7 @@ public class ImageLoader {
         }
     }
 
-    private static TLRPC.PhotoSize scaleAndSaveImageInternal(TLRPC.PhotoSize photoSize, Bitmap bitmap, Bitmap.CompressFormat compressFormat, int w, int h, float photoW, float photoH, float scaleFactor, int quality, boolean cache, boolean scaleAnyway, boolean forceCacheDir) throws Exception {
+    private static PhotoSize scaleAndSaveImageInternal(PhotoSize photoSize, Bitmap bitmap, Bitmap.CompressFormat compressFormat, int w, int h, float photoW, float photoH, float scaleFactor, int quality, boolean cache, boolean scaleAnyway, boolean forceCacheDir) throws Exception {
         Bitmap scaledBitmap;
         if (scaleFactor > 1 || scaleAnyway) {
             scaledBitmap = Bitmaps.createScaledBitmap(bitmap, w, h, true);
@@ -3164,23 +3164,23 @@ public class ImageLoader {
         return photoSize;
     }
 
-    public static TLRPC.PhotoSize scaleAndSaveImage(Bitmap bitmap, float maxWidth, float maxHeight, int quality, boolean cache) {
+    public static PhotoSize scaleAndSaveImage(Bitmap bitmap, float maxWidth, float maxHeight, int quality, boolean cache) {
         return scaleAndSaveImage(null, bitmap, Bitmap.CompressFormat.JPEG, maxWidth, maxHeight, quality, cache, 0, 0, false);
     }
 
-    public static TLRPC.PhotoSize scaleAndSaveImage(TLRPC.PhotoSize photoSize, Bitmap bitmap, float maxWidth, float maxHeight, int quality, boolean cache, boolean forceCacheDir) {
+    public static PhotoSize scaleAndSaveImage(PhotoSize photoSize, Bitmap bitmap, float maxWidth, float maxHeight, int quality, boolean cache, boolean forceCacheDir) {
         return scaleAndSaveImage(photoSize, bitmap, Bitmap.CompressFormat.JPEG, maxWidth, maxHeight, quality, cache, 0, 0, forceCacheDir);
     }
 
-    public static TLRPC.PhotoSize scaleAndSaveImage(Bitmap bitmap, float maxWidth, float maxHeight, int quality, boolean cache, int minWidth, int minHeight) {
+    public static PhotoSize scaleAndSaveImage(Bitmap bitmap, float maxWidth, float maxHeight, int quality, boolean cache, int minWidth, int minHeight) {
         return scaleAndSaveImage(null, bitmap, Bitmap.CompressFormat.JPEG, maxWidth, maxHeight, quality, cache, minWidth, minHeight, false);
     }
 
-    public static TLRPC.PhotoSize scaleAndSaveImage(Bitmap bitmap, Bitmap.CompressFormat compressFormat, float maxWidth, float maxHeight, int quality, boolean cache, int minWidth, int minHeight) {
+    public static PhotoSize scaleAndSaveImage(Bitmap bitmap, Bitmap.CompressFormat compressFormat, float maxWidth, float maxHeight, int quality, boolean cache, int minWidth, int minHeight) {
         return scaleAndSaveImage(null, bitmap, compressFormat, maxWidth, maxHeight, quality, cache, minWidth, minHeight, false);
     }
 
-    public static TLRPC.PhotoSize scaleAndSaveImage(TLRPC.PhotoSize photoSize, Bitmap bitmap, Bitmap.CompressFormat compressFormat, float maxWidth, float maxHeight, int quality, boolean cache, int minWidth, int minHeight, boolean forceCacheDir) {
+    public static PhotoSize scaleAndSaveImage(PhotoSize photoSize, Bitmap bitmap, Bitmap.CompressFormat compressFormat, float maxWidth, float maxHeight, int quality, boolean cache, int minWidth, int minHeight, boolean forceCacheDir) {
         if (bitmap == null) {
             return null;
         }
@@ -3238,11 +3238,11 @@ public class ImageLoader {
         return ext;
     }
 
-    public static void saveMessageThumbs(TLRPC.Message message) {
+    public static void saveMessageThumbs(Message message) {
         if (message.media == null) {
             return;
         }
-        TLRPC.PhotoSize photoSize = findPhotoCachedSize(message);
+        PhotoSize photoSize = findPhotoCachedSize(message);
 
         if (photoSize != null && photoSize.bytes != null && photoSize.bytes.length != 0) {
             if (photoSize.location == null || photoSize.location instanceof TLRPC.TL_fileLocationUnavailable) {
@@ -3292,7 +3292,7 @@ public class ImageLoader {
 
             if (message.media instanceof TLRPC.TL_messageMediaPhoto) {
                 for (int a = 0, count = message.media.photo.sizes.size(); a < count; a++) {
-                    TLRPC.PhotoSize size = message.media.photo.sizes.get(a);
+                    PhotoSize size = message.media.photo.sizes.get(a);
                     if (size instanceof TLRPC.TL_photoCachedSize) {
                         message.media.photo.sizes.set(a, newPhotoSize);
                         break;
@@ -3300,7 +3300,7 @@ public class ImageLoader {
                 }
             } else if (message.media instanceof TLRPC.TL_messageMediaDocument) {
                 for (int a = 0, count = message.media.document.thumbs.size(); a < count; a++) {
-                    TLRPC.PhotoSize size = message.media.document.thumbs.get(a);
+                    PhotoSize size = message.media.document.thumbs.get(a);
                     if (size instanceof TLRPC.TL_photoCachedSize) {
                         message.media.document.thumbs.set(a, newPhotoSize);
                         break;
@@ -3308,7 +3308,7 @@ public class ImageLoader {
                 }
             } else if (message.media instanceof TLRPC.TL_messageMediaWebPage) {
                 for (int a = 0, count = message.media.webpage.photo.sizes.size(); a < count; a++) {
-                    TLRPC.PhotoSize size = message.media.webpage.photo.sizes.get(a);
+                    PhotoSize size = message.media.webpage.photo.sizes.get(a);
                     if (size instanceof TLRPC.TL_photoCachedSize) {
                         message.media.webpage.photo.sizes.set(a, newPhotoSize);
                         break;
@@ -3318,11 +3318,11 @@ public class ImageLoader {
         }
     }
 
-    private static TLRPC.PhotoSize findPhotoCachedSize(TLRPC.Message message) {
-        TLRPC.PhotoSize photoSize = null;
+    private static PhotoSize findPhotoCachedSize(Message message) {
+        PhotoSize photoSize = null;
         if (message.media instanceof TLRPC.TL_messageMediaPhoto) {
             for (int a = 0, count = message.media.photo.sizes.size(); a < count; a++) {
-                TLRPC.PhotoSize size = message.media.photo.sizes.get(a);
+                PhotoSize size = message.media.photo.sizes.get(a);
                 if (size instanceof TLRPC.TL_photoCachedSize) {
                     photoSize = size;
                     break;
@@ -3330,7 +3330,7 @@ public class ImageLoader {
             }
         } else if (message.media instanceof TLRPC.TL_messageMediaDocument) {
             for (int a = 0, count = message.media.document.thumbs.size(); a < count; a++) {
-                TLRPC.PhotoSize size = message.media.document.thumbs.get(a);
+                PhotoSize size = message.media.document.thumbs.get(a);
                 if (size instanceof TLRPC.TL_photoCachedSize) {
                     photoSize = size;
                     break;
@@ -3339,7 +3339,7 @@ public class ImageLoader {
         } else if (message.media instanceof TLRPC.TL_messageMediaWebPage) {
             if (message.media.webpage.photo != null) {
                 for (int a = 0, count = message.media.webpage.photo.sizes.size(); a < count; a++) {
-                    TLRPC.PhotoSize size = message.media.webpage.photo.sizes.get(a);
+                    PhotoSize size = message.media.webpage.photo.sizes.get(a);
                     if (size instanceof TLRPC.TL_photoCachedSize) {
                         photoSize = size;
                         break;
@@ -3350,18 +3350,18 @@ public class ImageLoader {
         return photoSize;
     }
 
-    public static void saveMessagesThumbs(ArrayList<TLRPC.Message> messages) {
+    public static void saveMessagesThumbs(ArrayList<Message> messages) {
         if (messages == null || messages.isEmpty()) {
             return;
         }
         for (int a = 0; a < messages.size(); a++) {
-            TLRPC.Message message = messages.get(a);
+            Message message = messages.get(a);
             saveMessageThumbs(message);
         }
     }
 
-    public static MessageThumb generateMessageThumb(TLRPC.Message message) {
-        TLRPC.PhotoSize photoSize = findPhotoCachedSize(message);
+    public static MessageThumb generateMessageThumb(Message message) {
+        PhotoSize photoSize = findPhotoCachedSize(message);
 
         if (photoSize != null && photoSize.bytes != null && photoSize.bytes.length != 0) {
             File file = FileLoader.getPathToAttach(photoSize, true);
@@ -3393,9 +3393,9 @@ public class ImageLoader {
             }
         } else if (message.media instanceof TLRPC.TL_messageMediaDocument) {
             for (int a = 0, count = message.media.document.thumbs.size(); a < count; a++) {
-                TLRPC.PhotoSize size = message.media.document.thumbs.get(a);
+                PhotoSize size = message.media.document.thumbs.get(a);
                 if (size instanceof TLRPC.TL_photoStrippedSize) {
-                    TLRPC.PhotoSize thumbSize = FileLoader.getClosestPhotoSizeWithSize(message.media.document.thumbs, 320);
+                    PhotoSize thumbSize = FileLoader.getClosestPhotoSizeWithSize(message.media.document.thumbs, 320);
                     int h = 0;
                     int w = 0;
                     if (thumbSize != null) {

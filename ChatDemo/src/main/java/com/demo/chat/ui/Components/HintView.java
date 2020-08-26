@@ -17,6 +17,8 @@ import android.widget.TextView;
 import com.demo.chat.R;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.User;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.SimpleTextView;
@@ -171,7 +173,7 @@ public class HintView extends FrameLayout {
             }
             measure(MeasureSpec.makeMeasureSpec(1000, MeasureSpec.AT_MOST), MeasureSpec.makeMeasureSpec(1000, MeasureSpec.AT_MOST));
 
-            TLRPC.User user = cell.getCurrentUser();
+            User user = cell.getCurrentUser();
             if (user != null && user.id == 0) {
                 top += (cell.getMeasuredHeight() - Math.max(0, cell.getBottom() - parentView.getMeasuredHeight()) - AndroidUtilities.dp(50));
             } else {

@@ -19,6 +19,9 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import com.demo.chat.R;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.model.Chat;
+import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 
@@ -120,8 +123,8 @@ public class GroupCreateSpan extends View {
                     firstName = LocaleController.getString("FilterArchived", R.string.FilterArchived);
                     break;
             }
-        } else if (object instanceof TLRPC.User) {
-            TLRPC.User user = (TLRPC.User) object;
+        } else if (object instanceof User) {
+            User user = (User) object;
             uid = user.id;
             if (UserObject.isUserSelf(user)) {
                 firstName = LocaleController.getString("SavedMessages", R.string.SavedMessages);
@@ -135,8 +138,8 @@ public class GroupCreateSpan extends View {
                 imageLocation = ImageLocation.getForUser(user, false);
                 imageParent = user;
             }
-        } else if (object instanceof TLRPC.Chat) {
-            TLRPC.Chat chat = (TLRPC.Chat) object;
+        } else if (object instanceof Chat) {
+            Chat chat = (Chat) object;
             avatarDrawable.setInfo(chat);
             uid = -chat.id;
             firstName = chat.title;

@@ -266,7 +266,7 @@ public class FileLoadOperation {
         ext = ImageLoader.getHttpUrlExtension(webDocument.url, defaultExt);
     }
 
-    public FileLoadOperation(TLRPC.Document documentLocation, Object parent) {
+    public FileLoadOperation(Document documentLocation, Object parent) {
         try {
             parentObject = parent;
             if (documentLocation instanceof TLRPC.TL_documentEncrypted) {

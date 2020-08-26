@@ -110,7 +110,7 @@ public class MentionCell extends LinearLayout {
         nameTextView.setText(Emoji.replaceEmoji(stringBuilder, nameTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(20), false));
     }
 
-    public void setBotCommand(String command, String help, TLRPC.User user) {
+    public void setBotCommand(String command, String help, User user) {
         if (user != null) {
             imageView.setVisibility(VISIBLE);
             avatarDrawable.setInfo(user);

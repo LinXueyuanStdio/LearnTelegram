@@ -41,6 +41,7 @@ import com.demo.chat.messager.Bitmaps;
 import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayer;
@@ -2211,7 +2212,7 @@ public class WebPlayerView extends ViewGroup implements VideoPlayer.VideoPlayerD
         updateInlineButton();
         updatePlayButton();
         if (thumb != null) {
-            TLRPC.PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(thumb.sizes, 80, true);
+            PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(thumb.sizes, 80, true);
             if (photoSize != null) {
                 controlsView.imageReceiver.setImage(null, null, ImageLocation.getForPhoto(photoSize, thumb), "80_80_b", 0, null, parentObject, 1);
                 drawImage = true;

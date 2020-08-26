@@ -11,14 +11,13 @@ import android.view.ViewPropertyAnimator;
 
 import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.model.MessageObject;
 import com.demo.chat.receiver.ImageReceiver;
+import com.demo.chat.ui.Cells.BotHelpCell;
 import com.demo.chat.ui.Cells.ChatMessageCell;
 import com.demo.chat.ui.ChatActivity;
-
-import org.telegram.messenger.MessageObject;
-import org.telegram.ui.Cells.BotHelpCell;
-import org.telegram.ui.Components.CubicBezierInterpolator;
-import org.telegram.ui.Components.RecyclerListView;
+import com.demo.chat.ui.Components.CubicBezierInterpolator;
+import com.demo.chat.ui.Components.RecyclerListView;
 
 import java.util.ArrayList;
 import java.util.HashMap;

@@ -1,5 +1,7 @@
 package com.demo.chat.model;
 
+import com.demo.chat.model.small.ChatPhoto;
+
 /**
  * @author 林学渊
  * @email linxy59@mail2.sysu.edu.cn

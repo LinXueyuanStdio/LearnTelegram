@@ -39,23 +39,32 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.demo.chat.R;
+import com.demo.chat.alerts.AlertsCreator;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
+import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.MessagesController;
+import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.NotificationCenter;
+import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
+import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
 import com.demo.chat.ui.ActionBar.ActionBar;
 import com.demo.chat.ui.ActionBar.ActionBarMenuItem;
 import com.demo.chat.ui.ActionBar.ActionBarMenuSubItem;
 import com.demo.chat.ui.ActionBar.ActionBarPopupWindow;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ActionBar.BottomSheet;
 import com.demo.chat.ui.ChatActivity;
 import com.demo.chat.ui.PhotoPickerActivity;
+import com.demo.chat.ui.PhotoPickerSearchActivity;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -79,7 +88,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
     public interface ChatAttachViewDelegate {
         void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate);
         View getRevealView();
-        void didSelectBot(TLRPC.User user);
+        void didSelectBot(User user);
         void onCameraOpened();
         void needEnterComment();
         void doOnIdle(Runnable runnable);
@@ -469,7 +478,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         private TextView nameTextView;
         private AvatarDrawable avatarDrawable = new AvatarDrawable();
 
-        private TLRPC.User currentUser;
+        private User currentUser;
 
         public AttachBotButton(Context context) {
             super(context);
@@ -498,13 +507,13 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             super.onMeasure(MeasureSpec.makeMeasureSpec(attachItemSize, MeasureSpec.EXACTLY), MeasureSpec.makeMeasureSpec(AndroidUtilities.dp(100), MeasureSpec.EXACTLY));
         }
 
-        public void setUser(TLRPC.User user) {
+        public void setUser(User user) {
             if (user == null) {
                 return;
             }
             nameTextView.setTextColor(Theme.getColor(Theme.key_dialogTextGray2));
             currentUser = user;
-            nameTextView.setText(ContactsController.formatName(user.first_name, user.last_name));
+            nameTextView.setText(UserObject.formatName(user.first_name, user.last_name));
             avatarDrawable.setInfo(user);
             imageView.setImage(ImageLocation.getForUser(user, false), "50_50", avatarDrawable, user);
             requestLayout();
@@ -1103,7 +1112,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 }
                 AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
                 builder.setTitle(LocaleController.getString("AppName", R.string.AppName));
-                builder.setMessage(LocaleController.formatString("ChatHintsDelete", R.string.ChatHintsDelete, ContactsController.formatName(button.currentUser.first_name, button.currentUser.last_name)));
+                builder.setMessage(LocaleController.formatString("ChatHintsDelete", R.string.ChatHintsDelete, UserObject.formatName(button.currentUser.first_name, button.currentUser.last_name)));
                 builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), (dialogInterface, i) -> MediaDataController.getInstance(currentAccount).removeInline(button.currentUser.id));
                 builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
                 builder.show();
@@ -1193,8 +1202,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 return false;
             }
             ChatActivity chatActivity = (ChatActivity) baseFragment;
-            TLRPC.Chat chat = chatActivity.getCurrentChat();
-            TLRPC.User user = chatActivity.getCurrentUser();
+            Chat chat = chatActivity.getCurrentChat();
+            User user = chatActivity.getCurrentUser();
             if (chatActivity.getCurrentEncryptedChat() != null || chatActivity.isInScheduleMode()) {
                 return false;
             }
@@ -1366,8 +1375,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
         if (baseFragment instanceof ChatActivity) {
             ChatActivity chatActivity = (ChatActivity) baseFragment;
-            TLRPC.Chat chat = chatActivity.getCurrentChat();
-            TLRPC.User user = chatActivity.getCurrentUser();
+            Chat chat = chatActivity.getCurrentChat();
+            User user = chatActivity.getCurrentUser();
             if (user != null || ChatObject.isChannel(chat) && chat.megagroup || !ChatObject.isChannel(chat)) {
                 MessagesController.getNotificationsSettings(currentAccount).edit().putBoolean("silent_" + chatActivity.getDialogId(), !notify).commit();
             }
@@ -1490,7 +1499,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
         if (baseFragment instanceof ChatActivity) {
             ChatActivity chatActivity = (ChatActivity) baseFragment;
-            TLRPC.Chat currentChat = chatActivity.getCurrentChat();
+            Chat currentChat = chatActivity.getCurrentChat();
             audioLayout.setMaxSelectedFiles(currentChat != null && !ChatObject.hasAdminRights(currentChat) && currentChat.slowmode_enabled || editingMessageObject != null ? 1 : -1);
         }
         showLayout(audioLayout);
@@ -1513,8 +1522,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 public void didSelectPhotos(ArrayList<SendMessagesHelper.SendingMediaInfo> photos, boolean notify, int scheduleDate) {
                     if (baseFragment instanceof ChatActivity) {
                         ((ChatActivity) baseFragment).didSelectPhotos(photos, notify, scheduleDate);
-                    } else if (baseFragment instanceof PassportActivity) {
-                        ((PassportActivity) baseFragment).didSelectPhotos(photos, notify, scheduleDate);
                     }
                 }
 
@@ -1522,8 +1529,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 public void startDocumentSelectActivity() {
                     if (baseFragment instanceof ChatActivity) {
                         ((ChatActivity) baseFragment).startDocumentSelectActivity();
-                    } else if (baseFragment instanceof PassportActivity) {
-                        ((PassportActivity) baseFragment).startDocumentSelectActivity();
                     }
                 }
 
@@ -1535,7 +1540,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         }
         if (baseFragment instanceof ChatActivity) {
             ChatActivity chatActivity = (ChatActivity) baseFragment;
-            TLRPC.Chat currentChat = chatActivity.getCurrentChat();
+            Chat currentChat = chatActivity.getCurrentChat();
             documentLayout.setMaxSelectedFiles(currentChat != null && !ChatObject.hasAdminRights(currentChat) && currentChat.slowmode_enabled || editingMessageObject != null ? 1 : -1);
         } else {
             documentLayout.setMaxSelectedFiles(maxSelectedPhotos);
@@ -2080,8 +2085,8 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             return;
         }
         if (baseFragment instanceof ChatActivity) {
-            TLRPC.Chat chat = ((ChatActivity) baseFragment).getCurrentChat();
-            TLRPC.User user = ((ChatActivity) baseFragment).getCurrentUser();
+            Chat chat = ((ChatActivity) baseFragment).getCurrentChat();
+            User user = ((ChatActivity) baseFragment).getCurrentUser();
             if (chat != null) {
                 mediaEnabled = ChatObject.canSendMedia(chat);
                 pollsEnabled = ChatObject.canSendPolls(chat);
@@ -2296,7 +2301,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                 if (mediaEnabled) {
                     musicButton = buttonsCount++;
                 }
-                TLRPC.User user = baseFragment instanceof ChatActivity ? ((ChatActivity) baseFragment).getCurrentUser() : null;
+                User user = baseFragment instanceof ChatActivity ? ((ChatActivity) baseFragment).getCurrentUser() : null;
                 if (user != null && user.bot) {
                     contactButton = buttonsCount++;
                 }

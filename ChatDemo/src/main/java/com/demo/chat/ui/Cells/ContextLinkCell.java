@@ -31,6 +31,9 @@ import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLoader;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.User;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Components.AnimationProperties;
@@ -92,11 +95,11 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
     private StaticLayout descriptionLayout;
 
     private TLRPC.BotInlineResult inlineResult;
-    private TLRPC.User inlineBot;
-    private TLRPC.Document documentAttach;
+    private User inlineBot;
+    private Document documentAttach;
     private int currentDate;
     private TLRPC.Photo photoAttach;
-    private TLRPC.PhotoSize currentPhotoObject;
+    private PhotoSize currentPhotoObject;
     private int documentAttachType;
     private boolean mediaWebpage;
     private MessageObject currentMessageObject;
@@ -167,8 +170,8 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
         int viewWidth = MeasureSpec.getSize(widthMeasureSpec);
         int maxWidth = viewWidth - AndroidUtilities.dp(AndroidUtilities.leftBaseline) - AndroidUtilities.dp(8);
 
-        TLRPC.PhotoSize currentPhotoObjectThumb = null;
-        ArrayList<TLRPC.PhotoSize> photoThumbs = null;
+        PhotoSize currentPhotoObjectThumb = null;
+        ArrayList<PhotoSize> photoThumbs = null;
         WebFile webFile = null;
         TLRPC.TL_webDocument webDocument = null;
         String urlLocation = null;
@@ -276,7 +279,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
 
         if (documentAttach != null) {
             for (int b = 0; b < documentAttach.attributes.size(); b++) {
-                TLRPC.DocumentAttribute attribute = documentAttach.attributes.get(b);
+                DocumentAttribute attribute = documentAttach.attributes.get(b);
                 if (attribute instanceof TLRPC.TL_documentAttributeImageSize || attribute instanceof TLRPC.TL_documentAttributeVideo) {
                     w = attribute.w;
                     h = attribute.h;
@@ -428,7 +431,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
             message.media.flags |= 3;
             message.media.document = new TLRPC.TL_document();
             message.media.document.file_reference = new byte[0];
-            message.flags |= TLRPC.MESSAGE_FLAG_HAS_MEDIA | TLRPC.MESSAGE_FLAG_HAS_FROM_ID;
+            message.flags |= Message_FLAG_HAS_MEDIA | Message_FLAG_HAS_FROM_ID;
 
             if (documentAttach != null) {
                 message.media.document = documentAttach;
@@ -463,11 +466,11 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
         }
     }
 
-    public void setLink(TLRPC.BotInlineResult contextResult, TLRPC.User bot, boolean media, boolean divider, boolean shadow) {
+    public void setLink(TLRPC.BotInlineResult contextResult, User bot, boolean media, boolean divider, boolean shadow) {
         setLink(contextResult, bot, media, divider, shadow, false);
     }
 
-    public void setLink(TLRPC.BotInlineResult contextResult, TLRPC.User bot, boolean media, boolean divider, boolean shadow, boolean forceGif) {
+    public void setLink(TLRPC.BotInlineResult contextResult, User bot, boolean media, boolean divider, boolean shadow, boolean forceGif) {
         needDivider = divider;
         needShadow = shadow;
         inlineBot = bot;
@@ -489,7 +492,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
         updateButtonState(false, false);
     }
 
-    public TLRPC.User getInlineBot() {
+    public User getInlineBot() {
         return inlineBot;
     }
 
@@ -497,11 +500,11 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
         return parentObject;
     }
 
-    public void setGif(TLRPC.Document document, boolean divider) {
+    public void setGif(Document document, boolean divider) {
         setGif(document, "gif" + document, 0, divider);
     }
 
-    public void setGif(TLRPC.Document document, Object parent, int date, boolean divider) {
+    public void setGif(Document document, Object parent, int date, boolean divider) {
         needDivider = divider;
         needShadow = false;
         currentDate = date;
@@ -533,7 +536,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
         return currentDate;
     }
 
-    public TLRPC.Document getDocument() {
+    public Document getDocument() {
         return documentAttach;
     }
 

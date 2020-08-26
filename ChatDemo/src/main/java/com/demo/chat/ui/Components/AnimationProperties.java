@@ -6,6 +6,9 @@ import android.graphics.drawable.ShapeDrawable;
 import android.util.Property;
 import android.view.animation.OvershootInterpolator;
 
+import com.demo.chat.ui.Cells.DialogCell;
+import com.demo.chat.ui.Viewer.PhotoViewer;
+
 /**
  * @author 林学渊
  * @email linxy59@mail2.sysu.edu.cn

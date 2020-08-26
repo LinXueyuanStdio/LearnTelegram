@@ -54,7 +54,7 @@ public class MediaDataController extends BaseController {
                 byte[] bytes = Utilities.hexToBytes((String) entry.getValue());
                 SerializedData serializedData = new SerializedData(bytes);
                 if (key.startsWith("r_")) {
-                    TLRPC.Message message = TLRPC.Message.TLdeserialize(serializedData, serializedData.readInt32(true), true);
+                    Message message = Message.TLdeserialize(serializedData, serializedData.readInt32(true), true);
                     message.readAttachPath(serializedData, getUserConfig().clientUserId);
                     if (message != null) {
                         draftMessages.put(did, message);

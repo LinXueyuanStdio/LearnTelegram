@@ -524,7 +524,7 @@ public class ChatAttachAlertAudioLayout extends ChatAttachAlert.AttachAlertLayou
                     message.media = new TLRPC.TL_messageMediaDocument();
                     message.media.flags |= 3;
                     message.media.document = new TLRPC.TL_document();
-                    message.flags |= TLRPC.MESSAGE_FLAG_HAS_MEDIA | TLRPC.MESSAGE_FLAG_HAS_FROM_ID;
+                    message.flags |= Message_FLAG_HAS_MEDIA | Message_FLAG_HAS_FROM_ID;
 
                     String ext = FileLoader.getFileExtension(file);
 

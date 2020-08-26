@@ -30,6 +30,8 @@ import com.demo.chat.controller.FileLoader;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.theme.Theme;
 
 import java.util.HashMap;
@@ -289,7 +291,7 @@ public class ScrollSlidingTabStrip extends HorizontalScrollView {
         tabTypes.put(key, tab);
     }
 
-    public View addStickerTab(TLObject thumb, TLRPC.Document sticker, TLRPC.TL_messages_stickerSet parentObject) {
+    public View addStickerTab(TLObject thumb, Document sticker, TLRPC.TL_messages_stickerSet parentObject) {
         String key = "set" + parentObject.set.id;
         final int position = tabCount++;
 
@@ -363,14 +365,14 @@ public class ScrollSlidingTabStrip extends HorizontalScrollView {
             View child = tabsContainer.getChildAt(a);
             Object object = child.getTag();
             Object parentObject = child.getTag(R.id.parent_tag);
-            TLRPC.Document sticker = (TLRPC.Document) child.getTag(R.id.object_tag);
+            Document sticker = (Document) child.getTag(R.id.object_tag);
             ImageLocation imageLocation;
 
-            if (object instanceof TLRPC.Document) {
-                TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(sticker.thumbs, 90);
+            if (object instanceof Document) {
+                PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(sticker.thumbs, 90);
                 imageLocation = ImageLocation.getForDocument(thumb, sticker);
-            } else if (object instanceof TLRPC.PhotoSize) {
-                TLRPC.PhotoSize thumb = (TLRPC.PhotoSize) object;
+            } else if (object instanceof PhotoSize) {
+                PhotoSize thumb = (PhotoSize) object;
                 imageLocation = ImageLocation.getForSticker(thumb, sticker);
             } else {
                 continue;
@@ -379,7 +381,7 @@ public class ScrollSlidingTabStrip extends HorizontalScrollView {
                 continue;
             }
             BackupImageView imageView = (BackupImageView) ((FrameLayout) child).getChildAt(0);
-            if (object instanceof TLRPC.Document && MessageObject.isAnimatedStickerDocument(sticker, true)) {
+            if (object instanceof Document && MessageObject.isAnimatedStickerDocument(sticker, true)) {
                 imageView.setImage(ImageLocation.getForDocument(sticker), "30_30", imageLocation, null, 0, parentObject);
             } else if (imageLocation.imageType == FileLoader.IMAGE_TYPE_LOTTIE) {
                 imageView.setImage(imageLocation, "30_30", "tgs", null, parentObject);
@@ -408,13 +410,13 @@ public class ScrollSlidingTabStrip extends HorizontalScrollView {
             }
             Object object = child.getTag();
             Object parentObject = child.getTag(R.id.parent_tag);
-            TLRPC.Document sticker = (TLRPC.Document) child.getTag(R.id.object_tag);
+            Document sticker = (Document) child.getTag(R.id.object_tag);
             ImageLocation imageLocation;
-            if (object instanceof TLRPC.Document) {
-                TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(sticker.thumbs, 90);
+            if (object instanceof Document) {
+                PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(sticker.thumbs, 90);
                 imageLocation = ImageLocation.getForDocument(thumb, sticker);
-            } else if (object instanceof TLRPC.PhotoSize) {
-                TLRPC.PhotoSize thumb = (TLRPC.PhotoSize) object;
+            } else if (object instanceof PhotoSize) {
+                PhotoSize thumb = (PhotoSize) object;
                 imageLocation = ImageLocation.getForSticker(thumb, sticker);
             } else {
                 continue;
@@ -426,7 +428,7 @@ public class ScrollSlidingTabStrip extends HorizontalScrollView {
             if (a < newStart || a >= newStart + count) {
                 imageView.setImageDrawable(null);
             } else {
-                if (object instanceof TLRPC.Document && MessageObject.isAnimatedStickerDocument(sticker, true)) {
+                if (object instanceof Document && MessageObject.isAnimatedStickerDocument(sticker, true)) {
                     imageView.setImage(ImageLocation.getForDocument(sticker), "30_30", imageLocation, null, 0, parentObject);
                 } else if (imageLocation.imageType == FileLoader.IMAGE_TYPE_LOTTIE) {
                     imageView.setImage(imageLocation, "30_30", "tgs", null, parentObject);

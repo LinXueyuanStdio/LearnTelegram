@@ -32,7 +32,7 @@ public class FileStreamLoadOperation extends BaseDataSource implements FileLoadO
     private int currentOffset;
     private CountDownLatch countDownLatch;
     private RandomAccessFile file;
-    private TLRPC.Document document;
+    private Document document;
     private Object parentObject;
     private int currentAccount;
 

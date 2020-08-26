@@ -24,7 +24,9 @@ import android.view.animation.Interpolator;
 
 import com.demo.chat.R;
 import com.demo.chat.controller.ConnectionsManager;
+import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
+import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
@@ -32,6 +34,12 @@ import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.Emoji;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.SharedConfig;
+import com.demo.chat.model.Chat;
+import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
+import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Components.AvatarDrawable;
@@ -144,8 +152,8 @@ public class DialogCell extends BaseCell {
     private BounceInterpolator interpolator = new BounceInterpolator();
     private PullForegroundDrawable archivedChatsDrawable;
 
-    private TLRPC.User user;
-    private TLRPC.Chat chat;
+    private User user;
+    private Chat chat;
     private TLRPC.EncryptedChat encryptedChat;
     private CharSequence lastPrintString;
     private TLRPC.DraftMessage draftMessage;
@@ -400,8 +408,8 @@ public class DialogCell extends BaseCell {
         SpannableStringBuilder builder = new SpannableStringBuilder();
         for (int a = 0, N = dialogs.size(); a < N; a++) {
             TLRPC.Dialog dialog = dialogs.get(a);
-            TLRPC.User currentUser = null;
-            TLRPC.Chat currentChat = null;
+            User currentUser = null;
+            Chat currentChat = null;
             if (DialogObject.isSecretDialogId(dialog.id)) {
                 TLRPC.EncryptedChat encryptedChat = MessagesController.getInstance(currentAccount).getEncryptedChat((int) (dialog.id >> 32));
                 if (encryptedChat != null) {
@@ -422,7 +430,7 @@ public class DialogCell extends BaseCell {
                 if (UserObject.isDeleted(currentUser)) {
                     title = LocaleController.getString("HiddenName", R.string.HiddenName);
                 } else {
-                    title = ContactsController.formatName(currentUser.first_name, currentUser.last_name).replace('\n', ' ');
+                    title = UserObject.formatName(currentUser.first_name, currentUser.last_name).replace('\n', ' ');
                 }
             } else {
                 continue;
@@ -803,8 +811,8 @@ public class DialogCell extends BaseCell {
                             messageString = "";
                         }
                     } else {
-                        TLRPC.User fromUser = null;
-                        TLRPC.Chat fromChat = null;
+                        User fromUser = null;
+                        Chat fromChat = null;
                         if (message.isFromUser()) {
                             fromUser = MessagesController.getInstance(currentAccount).getUser(message.messageOwner.from_id);
                         } else {
@@ -829,8 +837,8 @@ public class DialogCell extends BaseCell {
                         } else {
                             boolean needEmoji = true;
                             if (BuildVars.DEBUG_VERSION && encryptedChat == null && !message.needDrawBluredPreview() && (message.isPhoto() || message.isNewGif() || message.isVideo())) {
-                                TLRPC.PhotoSize smallThumb = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, 40);
-                                TLRPC.PhotoSize bigThumb = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, AndroidUtilities.getPhotoSize());
+                                PhotoSize smallThumb = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, 40);
+                                PhotoSize bigThumb = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, AndroidUtilities.getPhotoSize());
                                 if (smallThumb == bigThumb) {
                                     bigThumb = null;
                                 }
@@ -849,7 +857,7 @@ public class DialogCell extends BaseCell {
                                         if (UserObject.isDeleted(fromUser)) {
                                             messageNameString = LocaleController.getString("HiddenName", R.string.HiddenName);
                                         } else {
-                                            messageNameString = ContactsController.formatName(fromUser.first_name, fromUser.last_name).replace("\n", "");
+                                            messageNameString = UserObject.formatName(fromUser.first_name, fromUser.last_name).replace("\n", "");
                                         }
                                     } else {
                                         messageNameString = UserObject.getFirstName(fromUser).replace("\n", "");
@@ -1733,7 +1741,7 @@ public class DialogCell extends BaseCell {
                     if (lower_id < 0) {
                         chat = MessagesController.getInstance(currentAccount).getChat(-lower_id);
                         if (!isDialogCell && chat != null && chat.migrated_to != null) {
-                            TLRPC.Chat chat2 = MessagesController.getInstance(currentAccount).getChat(chat.migrated_to.channel_id);
+                            Chat chat2 = MessagesController.getInstance(currentAccount).getChat(chat.migrated_to.channel_id);
                             if (chat2 != null) {
                                 chat = chat2;
                             }
@@ -2397,7 +2405,7 @@ public class DialogCell extends BaseCell {
                 if (user.self) {
                     sb.append(LocaleController.getString("SavedMessages", R.string.SavedMessages));
                 } else {
-                    sb.append(ContactsController.formatName(user.first_name, user.last_name));
+                    sb.append(UserObject.formatName(user.first_name, user.last_name));
                 }
                 sb.append(". ");
             } else if (chat != null) {
@@ -2431,9 +2439,9 @@ public class DialogCell extends BaseCell {
         }
         sb.append(". ");
         if (chat != null && !message.isOut() && message.isFromUser() && message.messageOwner.action == null) {
-            TLRPC.User fromUser = MessagesController.getInstance(currentAccount).getUser(message.messageOwner.from_id);
+            User fromUser = MessagesController.getInstance(currentAccount).getUser(message.messageOwner.from_id);
             if (fromUser != null) {
-                sb.append(ContactsController.formatName(fromUser.first_name, fromUser.last_name));
+                sb.append(UserObject.formatName(fromUser.first_name, fromUser.last_name));
                 sb.append(". ");
             }
         }

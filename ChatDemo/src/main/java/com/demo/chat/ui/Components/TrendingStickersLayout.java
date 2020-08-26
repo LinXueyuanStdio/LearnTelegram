@@ -69,7 +69,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
             return false;
         }
 
-        public void onStickerSelected(TLRPC.Document sticker, Object parent, boolean clearsInputField, boolean notify, int scheduleDate) {
+        public void onStickerSelected(Document sticker, Object parent, boolean clearsInputField, boolean notify, int scheduleDate) {
         }
 
         public boolean canSchedule() {
@@ -341,7 +341,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
         if (delegate.canSendSticker()) {
             stickersAlertDelegate = new StickersAlert.StickersAlertDelegate() {
                 @Override
-                public void onStickerSelected(TLRPC.Document sticker, Object parent, boolean clearsInputField, boolean notify, int scheduleDate) {
+                public void onStickerSelected(Document sticker, Object parent, boolean clearsInputField, boolean notify, int scheduleDate) {
                     delegate.onStickerSelected(sticker, parent, clearsInputField, notify, scheduleDate);
                 }
 
@@ -539,7 +539,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
             }
             Object object = cache.get(position);
             if (object != null) {
-                if (object instanceof TLRPC.Document) {
+                if (object instanceof Document) {
                     return 0; // sticker cell
                 } else if (object.equals(ITEM_SECTION)) {
                     return 4; // section cell
@@ -615,7 +615,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             switch (holder.getItemViewType()) {
                 case 0:
-                    TLRPC.Document sticker = (TLRPC.Document) cache.get(position);
+                    Document sticker = (Document) cache.get(position);
                     ((StickerEmojiCell) holder.itemView).setSticker(sticker, positionsToSets.get(position), false);
                     break;
                 case 1:

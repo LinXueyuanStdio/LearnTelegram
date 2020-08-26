@@ -12,7 +12,6 @@ import android.content.pm.PackageManager;
 import android.database.ContentObserver;
 import android.database.Cursor;
 import android.graphics.BitmapFactory;
-import android.graphics.Point;
 import android.graphics.SurfaceTexture;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
@@ -54,14 +53,21 @@ import com.demo.chat.messager.ImageLoader;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.messager.audioinfo.AudioInfo;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.User;
 import com.demo.chat.model.VideoEditedInfo;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.MessageEntity;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ChatActivity;
 import com.demo.chat.ui.Components.EmbedBottomSheet;
+import com.demo.chat.ui.Components.PhotoFilterView;
 import com.demo.chat.ui.Components.PipRoundVideoView;
 import com.demo.chat.ui.Components.VideoPlayer;
+import com.demo.chat.ui.Components.Point;
 import com.demo.chat.ui.Viewer.PhotoViewer;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayer;
@@ -191,7 +197,7 @@ public class MediaController
         public float sharpenValue;
         public PhotoFilterView.CurvesToolValue curvesToolValue = new PhotoFilterView.CurvesToolValue();
         public float blurExcludeSize;
-        public org.telegram.ui.Components.Point blurExcludePoint;
+        public Point blurExcludePoint;
         public float blurExcludeBlurSize;
         public float blurAngle;
     }
@@ -207,7 +213,7 @@ public class MediaController
         public String fullPaintPath;
         public String croppedPath;
 
-        public ArrayList<TLRPC.MessageEntity> entities;
+        public ArrayList<MessageEntity> entities;
         public SavedFilterState savedFilterState;
         public ArrayList<VideoEditedInfo.MediaEntity> mediaEntities;
         public ArrayList<TLRPC.InputDocument> stickers;
@@ -298,10 +304,10 @@ public class MediaController
         public int type;
         public int date;
         public CharSequence caption;
-        public TLRPC.Document document;
+        public Document document;
         public TLRPC.Photo photo;
-        public TLRPC.PhotoSize photoSize;
-        public TLRPC.PhotoSize thumbPhotoSize;
+        public PhotoSize photoSize;
+        public PhotoSize thumbPhotoSize;
         public TLRPC.BotInlineResult inlineResult;
         public HashMap<String, String> params;
 
@@ -661,7 +667,7 @@ public class MediaController
     private long lastChatLeaveTime;
     private long lastMediaCheckTime;
     private TLRPC.EncryptedChat lastSecretChat;
-    private TLRPC.User lastUser;
+    private User lastUser;
     private int lastMessageId;
     private ArrayList<Long> lastChatVisibleMessages;
     private int startObserverToken;
@@ -1105,7 +1111,7 @@ public class MediaController
         }
     }
 
-    public void setLastVisibleMessageIds(int account, long enterTime, long leaveTime, TLRPC.User user, TLRPC.EncryptedChat encryptedChat, ArrayList<Long> visibleMessages, int visibleMessage) {
+    public void setLastVisibleMessageIds(int account, long enterTime, long leaveTime, User user, TLRPC.EncryptedChat encryptedChat, ArrayList<Long> visibleMessages, int visibleMessage) {
         lastChatEnterTime = enterTime;
         lastChatLeaveTime = leaveTime;
         lastChatAccount = account;
@@ -2519,7 +2525,7 @@ public class MediaController
             } else {
                 try {
                     int reference = FileLoader.getInstance(messageObject.currentAccount).getFileReference(messageObject);
-                    TLRPC.Document document = messageObject.getDocument();
+                    Document document = messageObject.getDocument();
                     String params = "?account=" + messageObject.currentAccount +
                             "&id=" + document.id +
                             "&hash=" + document.access_hash +
@@ -2614,7 +2620,7 @@ public class MediaController
                     audioPlayer.preparePlayer(Uri.fromFile(cacheFile), "other");
                 } else {
                     int reference = FileLoader.getInstance(messageObject.currentAccount).getFileReference(messageObject);
-                    TLRPC.Document document = messageObject.getDocument();
+                    Document document = messageObject.getDocument();
                     String params = "?account=" + messageObject.currentAccount +
                             "&id=" + document.id +
                             "&hash=" + document.access_hash +
@@ -2969,7 +2975,7 @@ public class MediaController
                 }
                 if (waveform != null) {
                     for (int a = 0; a < messageObject1.getDocument().attributes.size(); a++) {
-                        TLRPC.DocumentAttribute attribute = messageObject1.getDocument().attributes.get(a);
+                        DocumentAttribute attribute = messageObject1.getDocument().attributes.get(a);
                         if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
                             attribute.waveform = waveform;
                             attribute.flags |= 4;
@@ -3374,7 +3380,7 @@ public class MediaController
             intent.putExtra("currentAccount", messageObject.currentAccount);
             if (messageObject.messageOwner.media.document != null) {
                 for (int a = 0; a < messageObject.messageOwner.media.document.attributes.size(); a++) {
-                    TLRPC.DocumentAttribute documentAttribute = messageObject.messageOwner.media.document.attributes.get(a);
+                    DocumentAttribute documentAttribute = messageObject.messageOwner.media.document.attributes.get(a);
                     if (documentAttribute instanceof TLRPC.TL_documentAttributeAnimated) {
                         intent.putExtra("gif", true);
                         break;

@@ -8,7 +8,9 @@ import android.provider.MediaStore;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.model.VideoEditedInfo;
+import com.demo.chat.model.small.MessageEntity;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 
 /**
@@ -112,7 +114,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         public String thumbPath;
         public String paintPath;
         public int ttl;
-        public ArrayList<TLRPC.MessageEntity> entities;
+        public ArrayList<MessageEntity> entities;
         public ArrayList<TLRPC.InputDocument> masks;
         public VideoEditedInfo videoEditedInfo;
         public MediaController.SearchImage searchImage;

@@ -23,6 +23,7 @@ import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Emoji;
+import com.demo.chat.model.small.Document;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
 import com.demo.chat.ui.Cells.FeaturedStickerSetInfoCell;
@@ -86,8 +87,8 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
     private ArrayList<TLRPC.TL_messages_stickerSet> localPacks = new ArrayList<>();
     private HashMap<TLRPC.TL_messages_stickerSet, Boolean> localPacksByShortName = new HashMap<>();
     private HashMap<TLRPC.TL_messages_stickerSet, Integer> localPacksByName = new HashMap<>();
-    private HashMap<ArrayList<TLRPC.Document>, String> emojiStickers = new HashMap<>();
-    private ArrayList<ArrayList<TLRPC.Document>> emojiArrays = new ArrayList<>();
+    private HashMap<ArrayList<Document>, String> emojiStickers = new HashMap<>();
+    private ArrayList<ArrayList<Document>> emojiArrays = new ArrayList<>();
     private SparseArray<TLRPC.StickerSetCovered> positionsToSets = new SparseArray<>();
 
     private ImageView emptyImageView;
@@ -123,9 +124,9 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
             cleared = false;
             int lastId = ++emojiSearchId;
 
-            final ArrayList<TLRPC.Document> emojiStickersArray = new ArrayList<>(0);
-            final LongSparseArray<TLRPC.Document> emojiStickersMap = new LongSparseArray<>(0);
-            HashMap<String, ArrayList<TLRPC.Document>> allStickers = MediaDataController.getInstance(currentAccount).getAllStickers();
+            final ArrayList<Document> emojiStickersArray = new ArrayList<>(0);
+            final LongSparseArray<Document> emojiStickersMap = new LongSparseArray<>(0);
+            HashMap<String, ArrayList<Document>> allStickers = MediaDataController.getInstance(currentAccount).getAllStickers();
             if (searchQuery.length() <= 14) {
                 CharSequence emoji = searchQuery;
                 int length = emoji.length();
@@ -140,12 +141,12 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
                         a--;
                     }
                 }
-                ArrayList<TLRPC.Document> newStickers = allStickers != null ? allStickers.get(emoji.toString()) : null;
+                ArrayList<Document> newStickers = allStickers != null ? allStickers.get(emoji.toString()) : null;
                 if (newStickers != null && !newStickers.isEmpty()) {
                     clear();
                     emojiStickersArray.addAll(newStickers);
                     for (int a = 0, size = newStickers.size(); a < size; a++) {
-                        TLRPC.Document document = newStickers.get(a);
+                        Document document = newStickers.get(a);
                         emojiStickersMap.put(document.id, document);
                     }
                     emojiStickers.put(emojiStickersArray, searchQuery);
@@ -167,7 +168,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
                         boolean added = false;
                         for (int a = 0, size = param.size(); a < size; a++) {
                             String emoji = param.get(a).emoji;
-                            ArrayList<TLRPC.Document> newStickers = allStickers != null ? allStickers.get(emoji) : null;
+                            ArrayList<Document> newStickers = allStickers != null ? allStickers.get(emoji) : null;
                             if (newStickers != null && !newStickers.isEmpty()) {
                                 clear();
                                 if (!emojiStickers.containsKey(newStickers)) {
@@ -251,7 +252,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
                         TLRPC.TL_messages_stickers res = (TLRPC.TL_messages_stickers) response;
                         int oldCount = emojiStickersArray.size();
                         for (int a = 0, size = res.stickers.size(); a < size; a++) {
-                            TLRPC.Document document = res.stickers.get(a);
+                            Document document = res.stickers.get(a);
                             if (emojiStickersMap.indexOfKey(document.id) >= 0) {
                                 continue;
                             }
@@ -326,7 +327,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
         }
         Object object = cache.get(position);
         if (object != null) {
-            if (object instanceof TLRPC.Document) {
+            if (object instanceof Document) {
                 return 0;
             } else if (object instanceof TLRPC.StickerSetCovered) {
                 return 3;
@@ -406,7 +407,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
     public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
         switch (holder.getItemViewType()) {
             case 0: {
-                TLRPC.Document sticker = (TLRPC.Document) cache.get(position);
+                Document sticker = (Document) cache.get(position);
                 StickerEmojiCell cell = (StickerEmojiCell) holder.itemView;
                 cell.setSticker(sticker, cacheParent.get(position), positionToEmoji.get(position), false);
                 //cell.setRecent(recentStickers.contains(sticker) || favouriteStickers.contains(sticker));
@@ -564,7 +565,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
         totalItems = 0;
         int startRow = 0;
         for (int a = 0, serverCount = serverPacks.size(), localCount = localPacks.size(), emojiCount = (emojiArrays.isEmpty() ? 0 : 1); a < serverCount + localCount + emojiCount; a++) {
-            ArrayList<TLRPC.Document> documents;
+            ArrayList<Document> documents;
             Object pack = null;
             String key;
             int idx = a;
@@ -588,7 +589,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
                             int num = documentsCount + totalItems;
                             int row = startRow + documentsCount / delegate.getStickersPerRow();
 
-                            TLRPC.Document document = documents.get(b);
+                            Document document = documents.get(b);
                             cache.put(num, document);
                             Object parent = MediaDataController.getInstance(currentAccount).getStickerSetById(MediaDataController.getStickerSetId(document));
                             if (parent != null) {
@@ -627,7 +628,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
             for (int b = 0, size = documents.size(); b < size; b++) {
                 int num = 1 + b + totalItems;
                 int row = startRow + 1 + b / delegate.getStickersPerRow();
-                TLRPC.Document document = documents.get(b);
+                Document document = documents.get(b);
                 cache.put(num, document);
                 if (pack != null) {
                     cacheParent.put(num, pack);
@@ -649,7 +650,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
     public int getSpanSize(int position) {
         if (position != totalItems) {
             Object object = cache.get(position);
-            if (object == null || cache.get(position) instanceof TLRPC.Document) {
+            if (object == null || cache.get(position) instanceof Document) {
                 return 1;
             }
         }

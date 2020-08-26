@@ -60,7 +60,7 @@ public class ContentPreviewViewer {
     }
 
     public interface ContentPreviewViewerDelegate {
-        void sendSticker(TLRPC.Document sticker, Object parent, boolean notify, int scheduleDate);
+        void sendSticker(Document sticker, Object parent, boolean notify, int scheduleDate);
         void openSet(TLRPC.InputStickerSet set, boolean clearInputField);
         boolean needSend();
         boolean canSchedule();
@@ -185,7 +185,7 @@ public class ContentPreviewViewer {
                     } else if (actions.get(which) == 2) {
                         MediaDataController.getInstance(currentAccount).addRecentSticker(MediaDataController.TYPE_FAVE, parentObject, currentDocument, (int) (System.currentTimeMillis() / 1000), inFavs);
                     } else if (actions.get(which) == 3) {
-                        TLRPC.Document sticker = currentDocument;
+                        Document sticker = currentDocument;
                         Object parent = parentObject;
                         ContentPreviewViewerDelegate stickerPreviewViewerDelegate = delegate;
                         AlertsCreator.createScheduleDatePickerDialog(parentActivity, stickerPreviewViewerDelegate.getDialogId(), (notify, scheduleDate) -> stickerPreviewViewerDelegate.sendSticker(sticker, parent, notify, scheduleDate));
@@ -269,7 +269,7 @@ public class ContentPreviewViewer {
                         MessagesController.getInstance(currentAccount).saveGif("gif", currentDocument);
                         delegate.gifAddedOrDeleted();
                     } else if (actions.get(which) == 3) {
-                        TLRPC.Document document = currentDocument;
+                        Document document = currentDocument;
                         TLRPC.BotInlineResult result = inlineResult;
                         Object parent = parentObject;
                         ContentPreviewViewerDelegate stickerPreviewViewerDelegate = delegate;
@@ -291,7 +291,7 @@ public class ContentPreviewViewer {
     };
 
     private int currentContentType;
-    private TLRPC.Document currentDocument;
+    private Document currentDocument;
     private TLRPC.BotInlineResult inlineResult;
     private TLRPC.InputStickerSet currentStickerSet;
     private Object parentObject;
@@ -611,7 +611,7 @@ public class ContentPreviewViewer {
         keyboardHeight = height;
     }
 
-    public void open(TLRPC.Document document, TLRPC.BotInlineResult botInlineResult, int contentType, boolean isRecent, Object parent) {
+    public void open(Document document, TLRPC.BotInlineResult botInlineResult, int contentType, boolean isRecent, Object parent) {
         if (parentActivity == null || windowView == null) {
             return;
         }
@@ -628,7 +628,7 @@ public class ContentPreviewViewer {
 
             TLRPC.InputStickerSet newSet = null;
             for (int a = 0; a < document.attributes.size(); a++) {
-                TLRPC.DocumentAttribute attribute = document.attributes.get(a);
+                DocumentAttribute attribute = document.attributes.get(a);
                 if (attribute instanceof TLRPC.TL_documentAttributeSticker && attribute.stickerset != null) {
                     newSet = attribute.stickerset;
                     break;
@@ -648,10 +648,10 @@ public class ContentPreviewViewer {
                 AndroidUtilities.runOnUIThread(showSheetRunnable, 1300);
             }
             currentStickerSet = newSet;
-            TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
+            PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
             centerImage.setImage(ImageLocation.getForDocument(document), null, ImageLocation.getForDocument(thumb, document), null, "webp", currentStickerSet, 1);
             for (int a = 0; a < document.attributes.size(); a++) {
-                TLRPC.DocumentAttribute attribute = document.attributes.get(a);
+                DocumentAttribute attribute = document.attributes.get(a);
                 if (attribute instanceof TLRPC.TL_documentAttributeSticker) {
                     if (!TextUtils.isEmpty(attribute.alt)) {
                         CharSequence emoji = Emoji.replaceEmoji(attribute.alt, textPaint.getFontMetricsInt(), AndroidUtilities.dp(24), false);
@@ -662,7 +662,7 @@ public class ContentPreviewViewer {
             }
         } else {
             if (document != null) {
-                TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
+                PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
                 TLRPC.TL_videoSize videoSize = MessageObject.getDocumentVideoThumb(document);
                 ImageLocation location = ImageLocation.getForDocument(document);
                 location.imageType = FileLoader.IMAGE_TYPE_ANIMATION;

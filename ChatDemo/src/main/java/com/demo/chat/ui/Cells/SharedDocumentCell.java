@@ -14,11 +14,15 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.demo.chat.R;
+import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.ImageLoader;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Components.BackupImageView;
 import com.demo.chat.ui.Components.CheckBox2;
@@ -300,13 +304,13 @@ public class SharedDocumentCell extends FrameLayout implements DownloadControlle
         loaded = false;
         loading = false;
 
-        TLRPC.Document document = messageObject.getDocument();
+        Document document = messageObject.getDocument();
         if (messageObject != null && document != null) {
             int idx;
             String name = null;
             if (messageObject.isMusic()) {
                 for (int a = 0; a < document.attributes.size(); a++) {
-                    TLRPC.DocumentAttribute attribute = document.attributes.get(a);
+                    DocumentAttribute attribute = document.attributes.get(a);
                     if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
                         if (attribute.performer != null && attribute.performer.length() != 0 || attribute.title != null && attribute.title.length() != 0) {
                             name = messageObject.getMusicAuthor() + " - " + messageObject.getMusicTitle();
@@ -324,8 +328,8 @@ public class SharedDocumentCell extends FrameLayout implements DownloadControlle
             placeholderImageView.setImageResource(AndroidUtilities.getThumbForNameOrMime(fileName, document.mime_type, false));
             extTextView.setText((idx = fileName.lastIndexOf('.')) == -1 ? "" : fileName.substring(idx + 1).toLowerCase());
 
-            TLRPC.PhotoSize bigthumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 320);
-            TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 40);
+            PhotoSize bigthumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 320);
+            PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 40);
             if (thumb == bigthumb) {
                 bigthumb = null;
             }

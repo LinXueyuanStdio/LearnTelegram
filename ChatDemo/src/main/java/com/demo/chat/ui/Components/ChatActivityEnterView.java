@@ -309,7 +309,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     private int editingMessageReqId;
     private boolean editingCaption;
 
-    private TLRPC.ChatFull info;
+    private ChatFull info;
 
     private boolean hasRecordVideo;
 
@@ -2086,7 +2086,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                 }
                 if (editingMessageObject == null && !canWriteToChannel && message.length() != 0 && lastTypingTimeSend < System.currentTimeMillis() - 5000 && !ignoreTextChange) {
                     int currentTime = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
-                    TLRPC.User currentUser = null;
+                    User currentUser = null;
                     if ((int) dialog_id > 0) {
                         currentUser = accountInstance.getMessagesController().getUser((int) dialog_id);
                     }
@@ -2400,7 +2400,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     return false;
                 }
                 if (parentFragment != null) {
-                    TLRPC.Chat chat = parentFragment.getCurrentChat();
+                    Chat chat = parentFragment.getCurrentChat();
                     if (chat != null && !ChatObject.canSendMedia(chat)) {
                         delegate.needShowMediaBanHint();
                         return false;
@@ -2857,8 +2857,8 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         if (parentFragment == null || isInScheduleMode() || parentFragment.getCurrentEncryptedChat() != null) {
             return false;
         }
-        TLRPC.Chat chat = parentFragment.getCurrentChat();
-        TLRPC.User user = parentFragment.getCurrentUser();
+        Chat chat = parentFragment.getCurrentChat();
+        User user = parentFragment.getCurrentUser();
 
         if (sendPopupLayout == null) {
             sendPopupLayout = new ActionBarPopupWindow.ActionBarPopupWindowLayout(parentActivity);
@@ -2972,7 +2972,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             SharedPreferences preferences = MessagesController.getGlobalMainSettings();
             boolean isChannel = false;
             if ((int) dialog_id < 0) {
-                TLRPC.Chat chat = accountInstance.getMessagesController().getChat(-(int) dialog_id);
+                Chat chat = accountInstance.getMessagesController().getChat(-(int) dialog_id);
                 isChannel = ChatObject.isChannel(chat) && !chat.megagroup;
             }
             preferences.edit().putBoolean(isChannel ? "currentModeVideoChannel" : "currentModeVideo", visible).commit();
@@ -3062,7 +3062,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         if (info != null && info.slowmode_seconds != 0 && info.slowmode_next_send_date <= serverTime && (
                 (isUploading = SendMessagesHelper.getInstance(currentAccount).isUploadingMessageIdDialog(dialog_id)) ||
                         SendMessagesHelper.getInstance(currentAccount).isSendingMessageIdDialog(dialog_id))) {
-            TLRPC.Chat chat = accountInstance.getMessagesController().getChat(info.id);
+            Chat chat = accountInstance.getMessagesController().getChat(info.id);
             if (!ChatObject.hasAdminRights(chat)) {
                 currentTime = info.slowmode_seconds;
                 slowModeTimer = isUploading ? Integer.MAX_VALUE : Integer.MAX_VALUE - 1;
@@ -3412,7 +3412,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         if (parentFragment == null) {
             return;
         }
-        TLRPC.Chat chat = parentFragment.getCurrentChat();
+        Chat chat = parentFragment.getCurrentChat();
         if (chat != null) {
             audioVideoButtonContainer.setAlpha(ChatObject.canSendMedia(chat) ? 1.0f : 0.5f);
             if (emojiView != null) {
@@ -3492,7 +3492,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         updateFieldHint();
     }
 
-    public void setChatInfo(TLRPC.ChatFull chatInfo) {
+    public void setChatInfo(ChatFull chatInfo) {
         info = chatInfo;
         if (emojiView != null) {
             emojiView.setChatInfo(info);
@@ -3521,7 +3521,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         }
         boolean isChannel = false;
         if ((int) dialog_id < 0) {
-            TLRPC.Chat chat = accountInstance.getMessagesController().getChat(-(int) dialog_id);
+            Chat chat = accountInstance.getMessagesController().getChat(-(int) dialog_id);
             isChannel = ChatObject.isChannel(chat) && !chat.megagroup;
             if (isChannel && !chat.creator && (chat.admin_rights == null || !chat.admin_rights.post_messages)) {
                 hasRecordVideo = false;
@@ -3553,7 +3553,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     private void updateFieldHint() {
         boolean isChannel = false;
         if ((int) dialog_id < 0) {
-            TLRPC.Chat chat = accountInstance.getMessagesController().getChat(-(int) dialog_id);
+            Chat chat = accountInstance.getMessagesController().getChat(-(int) dialog_id);
             isChannel = ChatObject.isChannel(chat) && !chat.megagroup;
         }
         if (editingMessageObject != null) {
@@ -3769,8 +3769,8 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             return;
         }
         if (parentFragment != null) {
-            TLRPC.Chat chat = parentFragment.getCurrentChat();
-            TLRPC.User user = parentFragment.getCurrentUser();
+            Chat chat = parentFragment.getCurrentChat();
+            User user = parentFragment.getCurrentUser();
             if (user != null || ChatObject.isChannel(chat) && chat.megagroup || !ChatObject.isChannel(chat)) {
                 MessagesController.getNotificationsSettings(currentAccount).edit().putBoolean("silent_" + dialog_id, !notify).commit();
             }
@@ -3802,7 +3802,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         }
         CharSequence message = messageEditText.getText();
         if (parentFragment != null) {
-            TLRPC.Chat chat = parentFragment.getCurrentChat();
+            Chat chat = parentFragment.getCurrentChat();
             if (chat != null && chat.slowmode_enabled && !ChatObject.hasAdminRights(chat)) {
                 if (message.length() > accountInstance.getMessagesController().maxMessageLength) {
                     AlertsCreator.showSimpleAlert(parentFragment, LocaleController.getString("Slowmode", R.string.Slowmode), LocaleController.getString("SlowmodeSendErrorTooLong", R.string.SlowmodeSendErrorTooLong));
@@ -3831,7 +3831,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             delegate.onMessageEditEnd(true);
             showEditDoneProgress(true, true);
             CharSequence[] message = new CharSequence[]{messageEditText.getText()};
-            ArrayList<TLRPC.MessageEntity> entities = MediaDataController.getInstance(currentAccount).getEntities(message, supportsSendingNewEntities());
+            ArrayList<MessageEntity> entities = MediaDataController.getInstance(currentAccount).getEntities(message, supportsSendingNewEntities());
             editingMessageReqId = SendMessagesHelper.getInstance(currentAccount).editMessage(editingMessageObject, message[0].toString(), messageWebPageSearch, parentFragment, entities, editingMessageObject.scheduled ? editingMessageObject.messageOwner.date : 0, () -> {
                 editingMessageReqId = 0;
                 setEditingMessageObject(null, false);
@@ -3850,7 +3850,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             int count = (int) Math.ceil(text.length() / (float) maxLength);
             for (int a = 0; a < count; a++) {
                 CharSequence[] message = new CharSequence[]{text.subSequence(a * maxLength, Math.min((a + 1) * maxLength, text.length()))};
-                ArrayList<TLRPC.MessageEntity> entities = MediaDataController.getInstance(currentAccount).getEntities(message, supportsNewEntities);
+                ArrayList<MessageEntity> entities = MediaDataController.getInstance(currentAccount).getEntities(message, supportsNewEntities);
                 SendMessagesHelper.getInstance(currentAccount).sendMessage(message[0].toString(), dialog_id, replyingMessageObject, messageWebPage, messageWebPageSearch, entities, null, null, notify, scheduleDate);
             }
             return true;
@@ -5188,7 +5188,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         }
         if (longPress) {
             String text = messageEditText.getText().toString();
-            TLRPC.User user = messageObject != null && (int) dialog_id < 0 ? accountInstance.getMessagesController().getUser(messageObject.messageOwner.from_id) : null;
+            User user = messageObject != null && (int) dialog_id < 0 ? accountInstance.getMessagesController().getUser(messageObject.messageOwner.from_id) : null;
             if ((botCount != 1 || username) && user != null && user.bot && !command.contains("@")) {
                 text = String.format(Locale.US, "%s@%s", command, user.username) + " " + text.replaceFirst("^/[a-zA-Z@\\d_]{1,255}(\\s|$)", "");
             } else {
@@ -5211,7 +5211,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                 }
                 return;
             }
-            TLRPC.User user = messageObject != null && (int) dialog_id < 0 ? accountInstance.getMessagesController().getUser(messageObject.messageOwner.from_id) : null;
+            User user = messageObject != null && (int) dialog_id < 0 ? accountInstance.getMessagesController().getUser(messageObject.messageOwner.from_id) : null;
             if ((botCount != 1 || username) && user != null && user.bot && !command.contains("@")) {
                 SendMessagesHelper.getInstance(currentAccount).sendMessage(String.format(Locale.US, "%s@%s", command, user.username), dialog_id, replyingMessageObject, null, false, null, null, null, true, 0);
             } else {
@@ -5248,7 +5248,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                 editingText = editingMessageObject.messageText;
             }
             if (editingText != null) {
-                ArrayList<TLRPC.MessageEntity> entities = editingMessageObject.messageOwner.entities;
+                ArrayList<MessageEntity> entities = editingMessageObject.messageOwner.entities;
                 MediaDataController.sortEntities(entities);
                 SpannableStringBuilder stringBuilder = new SpannableStringBuilder(editingText);
                 Object[] spansToRemove = stringBuilder.getSpans(0, stringBuilder.length(), Object.class);
@@ -5260,7 +5260,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                 if (entities != null) {
                     try {
                         for (int a = 0; a < entities.size(); a++) {
-                            TLRPC.MessageEntity entity = entities.get(a);
+                            MessageEntity entity = entities.get(a);
                             if (entity.offset + entity.length > stringBuilder.length()) {
                                 continue;
                             }
@@ -5573,7 +5573,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     public void updateScheduleButton(boolean animated) {
         boolean notifyVisible = false;
         if ((int) dialog_id < 0) {
-            TLRPC.Chat currentChat = accountInstance.getMessagesController().getChat(-(int) dialog_id);
+            Chat currentChat = accountInstance.getMessagesController().getChat(-(int) dialog_id);
             silent = MessagesController.getNotificationsSettings(currentAccount).getBoolean("silent_" + dialog_id, false);
             canWriteToChannel = ChatObject.isChannel(currentChat) && (currentChat.creator || currentChat.admin_rights != null && currentChat.admin_rights.post_messages) && !currentChat.megagroup;
             if (notifyButton != null) {
@@ -5798,7 +5798,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                 if (messageObject.messageOwner.via_bot_id != 0) {
                     uid = messageObject.messageOwner.via_bot_id;
                 }
-                TLRPC.User user = accountInstance.getMessagesController().getUser(uid);
+                User user = accountInstance.getMessagesController().getUser(uid);
                 if (user == null) {
                     return true;
                 }
@@ -5813,7 +5813,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     if (messageObject.messageOwner.via_bot_id != 0) {
                         uid = messageObject.messageOwner.via_bot_id;
                     }
-                    TLRPC.User user = accountInstance.getMessagesController().getUser(uid);
+                    User user = accountInstance.getMessagesController().getUser(uid);
                     if (user == null) {
                         fragment1.finishFragment();
                         return;
@@ -5906,7 +5906,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             }
 
             @Override
-            public void onStickerSelected(View view, TLRPC.Document sticker, Object parent, boolean notify, int scheduleDate) {
+            public void onStickerSelected(View view, Document sticker, Object parent, boolean notify, int scheduleDate) {
                 if (trendingStickersAlert != null) {
                     trendingStickersAlert.dismiss();
                     trendingStickersAlert = null;
@@ -5955,8 +5955,8 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                         }
                         setStickersExpanded(false, true, false);
                     }
-                    if (gif instanceof TLRPC.Document) {
-                        TLRPC.Document document = (TLRPC.Document) gif;
+                    if (gif instanceof Document) {
+                        Document document = (Document) gif;
                         SendMessagesHelper.getInstance(currentAccount).sendSticker(document, dialog_id, replyingMessageObject, parent, notify, scheduleDate);
                         MediaDataController.getInstance(currentAccount).addRecentGif(document, (int) (System.currentTimeMillis() / 1000));
                         if ((int) dialog_id == 0) {
@@ -5972,7 +5972,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                             }
                         }
 
-                        TLRPC.User bot = (TLRPC.User) parent;
+                        User bot = (User) parent;
 
                         HashMap<String, String> params = new HashMap<>();
                         params.put("id", result.id);
@@ -6177,7 +6177,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     }
 
     @Override
-    public void onStickerSelected(TLRPC.Document sticker, Object parent, boolean clearsInputField, boolean notify, int scheduleDate) {
+    public void onStickerSelected(Document sticker, Object parent, boolean clearsInputField, boolean notify, int scheduleDate) {
         if (isInScheduleMode() && scheduleDate == 0) {
             AlertsCreator.createScheduleDatePickerDialog(parentActivity, parentFragment.getDialogId(), (n, s) -> onStickerSelected(sticker, parent, clearsInputField, n, s));
         } else {
@@ -6214,7 +6214,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         return parentFragment != null && parentFragment.isInScheduleMode();
     }
 
-    public void addStickerToRecent(TLRPC.Document sticker) {
+    public void addStickerToRecent(Document sticker) {
         createEmojiView();
         emojiView.addRecentSticker(sticker);
     }
@@ -6546,7 +6546,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         return keyboardVisible;
     }
 
-    public void addRecentGif(TLRPC.Document searchImage) {
+    public void addRecentGif(Document searchImage) {
         MediaDataController.getInstance(currentAccount).addRecentGif(searchImage, (int) (System.currentTimeMillis() / 1000));
         if (emojiView != null) {
             emojiView.addRecentGif(searchImage);
@@ -6761,7 +6761,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     message.media = new TLRPC.TL_messageMediaDocument();
                     message.media.flags |= 3;
                     message.media.document = audioToSend;
-                    message.flags |= TLRPC.MESSAGE_FLAG_HAS_MEDIA | TLRPC.MESSAGE_FLAG_HAS_FROM_ID;
+                    message.flags |= Message_FLAG_HAS_MEDIA | Message_FLAG_HAS_FROM_ID;
                     audioToSendMessageObject = new MessageObject(UserConfig.selectedAccount, message, false);
 
                     recordedAudioPanel.setAlpha(1.0f);
@@ -6772,7 +6772,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     recordDeleteImageView.setScaleX(0f);
                     int duration = 0;
                     for (int a = 0; a < audioToSend.attributes.size(); a++) {
-                        TLRPC.DocumentAttribute attribute = audioToSend.attributes.get(a);
+                        DocumentAttribute attribute = audioToSend.attributes.get(a);
                         if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
                             duration = attribute.duration;
                             break;
@@ -6780,7 +6780,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     }
 
                     for (int a = 0; a < audioToSend.attributes.size(); a++) {
-                        TLRPC.DocumentAttribute attribute = audioToSend.attributes.get(a);
+                        DocumentAttribute attribute = audioToSend.attributes.get(a);
                         if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
                             if (attribute.waveform == null || attribute.waveform.length == 0) {
                                 attribute.waveform = MediaController.getInstance().getWaveform(audioToSendPath);
@@ -6832,7 +6832,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             }
             long did = (Long) args[3];
             if (did == dialog_id && info != null && info.slowmode_seconds != 0) {
-                TLRPC.Chat chat = accountInstance.getMessagesController().getChat(info.id);
+                Chat chat = accountInstance.getMessagesController().getChat(info.id);
                 if (chat != null && !ChatObject.hasAdminRights(chat)) {
                     info.slowmode_next_send_date = ConnectionsManager.getInstance(currentAccount).getCurrentTime() + info.slowmode_seconds;
                     info.flags |= 262144;

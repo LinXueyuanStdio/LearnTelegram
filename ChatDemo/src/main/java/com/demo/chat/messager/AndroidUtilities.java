@@ -932,7 +932,7 @@ public class AndroidUtilities {
     }
 
     public static ArrayList<User> loadVCardFromStream(Uri uri, int currentAccount, boolean asset, ArrayList<VcardItem> items, String name) {
-        ArrayList<TLRPC.User> result = null;
+        ArrayList<User> result = null;
         try {
             InputStream stream;
             if (asset) {
@@ -1090,7 +1090,7 @@ public class AndroidUtilities {
                             break;
                         }
                     }
-                    TLRPC.User user = new TLRPC.TL_userContact_old2();
+                    User user = new TLRPC.TL_userContact_old2();
                     user.phone = phoneToUse;
                     user.first_name = vcardData.name;
                     user.last_name = "";
@@ -2448,7 +2448,7 @@ public class AndroidUtilities {
         if (message == null) {
             return;
         }
-        TLRPC.Document document = message.getDocument();
+        Document document = message.getDocument();
         if (document == null) {
             return;
         }

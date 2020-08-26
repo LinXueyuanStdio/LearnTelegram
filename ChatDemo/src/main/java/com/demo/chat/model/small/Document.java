@@ -26,4 +26,22 @@ public class Document {
     public ArrayList<PhotoSize> thumbs = new ArrayList<>();
     public ArrayList<TL_videoSize> video_thumbs = new ArrayList<>();
     public ArrayList<DocumentAttribute> attributes = new ArrayList<>();
+
+    public static class DocumentAttribute{
+        public InputStickerSet stickerset;
+        public TL_maskCoords mask_coords;
+        public String alt;
+        public int duration;
+        public int flags;
+        public boolean round_message;
+        public boolean supports_streaming;
+        public String file_name;
+        public int w;
+        public int h;
+        public boolean mask;
+        public String title;
+        public String performer;
+        public boolean voice;
+        public byte[] waveform;
+    }
 }

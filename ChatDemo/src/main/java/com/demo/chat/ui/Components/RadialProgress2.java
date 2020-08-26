@@ -8,6 +8,8 @@ import android.graphics.RectF;
 import android.view.View;
 
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 
@@ -97,7 +99,7 @@ public class RadialProgress2 {
         miniMediaActionDrawable.setBackgroundDrawable(drawable);
     }
 
-    public void setImageOverlay(TLRPC.PhotoSize image, TLRPC.Document document, Object parentObject) {
+    public void setImageOverlay(PhotoSize image, Document document, Object parentObject) {
         overlayImageView.setImage(ImageLocation.getForDocument(image, document), String.format(Locale.US, "%d_%d", circleRadius * 2, circleRadius * 2), null, null, parentObject, 1);
     }
 

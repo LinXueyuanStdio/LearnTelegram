@@ -1672,11 +1672,11 @@ public class LocaleController {
         }
     }
 
-    public static String formatUserStatus(int currentAccount, TLRPC.User user) {
+    public static String formatUserStatus(int currentAccount, User user) {
         return formatUserStatus(currentAccount, user, null);
     }
 
-    public static String formatUserStatus(int currentAccount, TLRPC.User user, boolean[] isOnline) {
+    public static String formatUserStatus(int currentAccount, User user, boolean[] isOnline) {
         if (user != null && user.status != null && user.status.expires == 0) {
             if (user.status instanceof TLRPC.TL_userStatusRecently) {
                 user.status.expires = -100;

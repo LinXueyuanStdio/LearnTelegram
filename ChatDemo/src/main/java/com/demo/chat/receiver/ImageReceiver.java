@@ -194,7 +194,7 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
 
     private boolean needsQualityThumb;
     private boolean shouldGenerateQualityThumb;
-    private TLRPC.Document qulityThumbDocument;
+    private Document qulityThumbDocument;
     private boolean currentKeyQuality;
     private boolean invalidateAll;
 
@@ -349,7 +349,7 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
         }
         currentKeyQuality = false;
         if (imageKey == null && needsQualityThumb && (parentObject instanceof MessageObject || qulityThumbDocument != null)) {
-            TLRPC.Document document = qulityThumbDocument != null ? qulityThumbDocument : ((MessageObject) parentObject).getDocument();
+            Document document = qulityThumbDocument != null ? qulityThumbDocument : ((MessageObject) parentObject).getDocument();
             if (document != null && document.dc_id != 0 && document.id != 0) {
                 imageKey = "q_" + document.dc_id + "_" + document.id;
                 currentKeyQuality = true;
@@ -1561,11 +1561,11 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
         needsQualityThumb = value;
     }
 
-    public void setQualityThumbDocument(TLRPC.Document document) {
+    public void setQualityThumbDocument(Document document) {
         qulityThumbDocument = document;
     }
 
-    public TLRPC.Document getQulityThumbDocument() {
+    public Document getQulityThumbDocument() {
         return qulityThumbDocument;
     }
 

@@ -39,6 +39,9 @@ import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Emoji;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.model.Chat;
+import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.theme.Theme;
 
@@ -353,7 +356,7 @@ public class UndoView extends FrameLayout {
             int size = 36;
             boolean iconIsDrawable = false;
             if (action == ACTION_OWNER_TRANSFERED_CHANNEL || action == ACTION_OWNER_TRANSFERED_GROUP) {
-                TLRPC.User user = (TLRPC.User) infoObject;
+                User user = (User) infoObject;
                 if (action == ACTION_OWNER_TRANSFERED_CHANNEL) {
                     infoText = AndroidUtilities.replaceTags(LocaleController.formatString("EditAdminTransferChannelToast", R.string.EditAdminTransferChannelToast, UserObject.getFirstName(user)));
                 } else {
@@ -362,7 +365,7 @@ public class UndoView extends FrameLayout {
                 subInfoText = null;
                 icon = R.raw.contact_check;
             } else if (action == ACTION_CONTACT_ADDED) {
-                TLRPC.User user = (TLRPC.User) infoObject;
+                User user = (User) infoObject;
                 infoText = LocaleController.formatString("NowInContacts", R.string.NowInContacts, UserObject.getFirstName(user));
                 subInfoText = null;
                 icon = R.raw.contact_check;
@@ -398,14 +401,14 @@ public class UndoView extends FrameLayout {
                         lowerId = encryptedChat.user_id;
                     }
                     if (lowerId > 0) {
-                        TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(lowerId);
+                        User user = MessagesController.getInstance(currentAccount).getUser(lowerId);
                         if (action == ACTION_ADDED_TO_FOLDER) {
                             infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterUserAddedToExisting", R.string.FilterUserAddedToExisting, UserObject.getFirstName(user), filter.name));
                         } else {
                             infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterUserRemovedFrom", R.string.FilterUserRemovedFrom, UserObject.getFirstName(user), filter.name));
                         }
                     } else {
-                        TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-lowerId);
+                        Chat chat = MessagesController.getInstance(currentAccount).getChat(-lowerId);
                         if (action == ACTION_ADDED_TO_FOLDER) {
                             infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterChatAddedToExisting", R.string.FilterChatAddedToExisting, chat.title, filter.name));
                         } else {
@@ -662,7 +665,7 @@ public class UndoView extends FrameLayout {
             } else {
                 int lowerId = (int) did;
                 if (lowerId < 0) {
-                    TLRPC.Chat chat = MessagesController.getInstance(currentAccount).getChat(-lowerId);
+                    Chat chat = MessagesController.getInstance(currentAccount).getChat(-lowerId);
                     if (ChatObject.isChannel(chat) && !chat.megagroup) {
                         infoTextView.setText(LocaleController.getString("ChannelDeletedUndo", R.string.ChannelDeletedUndo));
                     } else {

@@ -6,18 +6,26 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
 import android.graphics.Outline;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.Drawable;
 import android.hardware.Camera;
+import android.media.MediaMetadataRetriever;
+import android.net.Uri;
 import android.os.Build;
+import android.provider.MediaStore;
+import android.provider.Settings;
 import android.text.TextUtils;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
+import android.view.TextureView;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.ViewOutlineProvider;
@@ -27,28 +35,44 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
+import com.demo.chat.alerts.AlertsCreator;
+import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
+import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
+import com.demo.chat.messager.Utilities;
+import com.demo.chat.messager.camera.CameraController;
+import com.demo.chat.messager.camera.CameraView;
+import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.VideoEditedInfo;
+import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
 import com.demo.chat.ui.ActionBar.ActionBarMenu;
 import com.demo.chat.ui.ActionBar.ActionBarMenuItem;
+import com.demo.chat.ui.Cells.PhotoAttachCameraCell;
+import com.demo.chat.ui.Cells.PhotoAttachPermissionCell;
 import com.demo.chat.ui.Cells.PhotoAttachPhotoCell;
 import com.demo.chat.ui.ChatActivity;
 import com.demo.chat.ui.Viewer.PhotoViewer;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 
+import androidx.annotation.Keep;
 import androidx.exifinterface.media.ExifInterface;
 import androidx.recyclerview.widget.GridLayoutManager;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -128,7 +152,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
     private float cameraZoom;
     private boolean zooming;
     private boolean zoomWas;
-    private Rect hitRect = new Rect();
+    private android.graphics.Rect hitRect = new android.graphics.Rect();
 
     private float lastY;
     private boolean pressed;
@@ -246,7 +270,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
 
     private PhotoViewer.PhotoViewerProvider photoViewerProvider = new BasePhotoProvider() {
         @Override
-        public PhotoViewer.PlaceProviderObject getPlaceForPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index, boolean needPreview) {
+        public PhotoViewer.PlaceProviderObject getPlaceForPhoto(MessageObject messageObject, FileLocation fileLocation, int index, boolean needPreview) {
             PhotoAttachPhotoCell cell = getCellForIndex(index);
             if (cell != null) {
                 int[] coords = new int[2];
@@ -292,7 +316,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         }
 
         @Override
-        public ImageReceiver.BitmapHolder getThumbForPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index) {
+        public ImageReceiver.BitmapHolder getThumbForPhoto(MessageObject messageObject, FileLocation fileLocation, int index) {
             PhotoAttachPhotoCell cell = getCellForIndex(index);
             if (cell != null) {
                 return cell.getImageView().getImageReceiver().getBitmapSafe();
@@ -301,7 +325,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         }
 
         @Override
-        public void willSwitchFromPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index) {
+        public void willSwitchFromPhoto(MessageObject messageObject, FileLocation fileLocation, int index) {
             PhotoAttachPhotoCell cell = getCellForIndex(index);
             if (cell != null) {
                 cell.showCheck(true);
@@ -1205,7 +1229,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         PhotoViewer.getInstance().openPhotoForSelect(getAllPhotosArray(), cameraPhotos.size() - 1, type, false, new BasePhotoProvider() {
 
             @Override
-            public ImageReceiver.BitmapHolder getThumbForPhoto(MessageObject messageObject, TLRPC.FileLocation fileLocation, int index) {
+            public ImageReceiver.BitmapHolder getThumbForPhoto(MessageObject messageObject, FileLocation fileLocation, int index) {
                 return null;
             }
 
@@ -2139,7 +2163,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
         if (id == group || id == compress) {
             if (parentAlert.maxSelectedPhotos > 0 && selectedPhotosOrder.size() > 1 && parentAlert.baseFragment instanceof ChatActivity) {
                 ChatActivity chatActivity = (ChatActivity) parentAlert.baseFragment;
-                TLRPC.Chat chat = chatActivity.getCurrentChat();
+                Chat chat = chatActivity.getCurrentChat();
                 if (chat != null && !ChatObject.hasAdminRights(chat) && chat.slowmode_enabled) {
                     AlertsCreator.createSimpleAlert(getContext(), LocaleController.getString("Slowmode", R.string.Slowmode), LocaleController.getString("SlowmodeSendError", R.string.SlowmodeSendError)).show();
                     return;
@@ -2334,7 +2358,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
             cameraIcon.setEnabled(mediaEnabled);
         }
         if (parentAlert.baseFragment instanceof ChatActivity) {
-            TLRPC.Chat chat = ((ChatActivity) parentAlert.baseFragment).getCurrentChat();
+            Chat chat = ((ChatActivity) parentAlert.baseFragment).getCurrentChat();
             galleryAlbumEntry = MediaController.allMediaAlbumEntry;
             if (mediaEnabled) {
                 progressView.setText(LocaleController.getString("NoPhotos", R.string.NoPhotos));
@@ -2780,6 +2804,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
             needCamera = camera;
 
         }
+
         public void createCache() {
             for (int a = 0; a < 8; a++) {
                 viewsCache.add(createHolder());
@@ -2820,7 +2845,7 @@ public class ChatAttachAlertPhotoLayout extends ChatAttachAlert.AttachAlertLayou
                 if (added && parentAlert.maxSelectedPhotos >= 0 && selectedPhotos.size() >= parentAlert.maxSelectedPhotos) {
                     if (parentAlert.allowOrder && parentAlert.baseFragment instanceof ChatActivity) {
                         ChatActivity chatActivity = (ChatActivity) parentAlert.baseFragment;
-                        TLRPC.Chat chat = chatActivity.getCurrentChat();
+                        Chat chat = chatActivity.getCurrentChat();
                         if (chat != null && !ChatObject.hasAdminRights(chat) && chat.slowmode_enabled) {
                             if (alertOnlyOnce != 2) {
                                 AlertsCreator.createSimpleAlert(getContext(), LocaleController.getString("Slowmode", R.string.Slowmode), LocaleController.getString("SlowmodeSelectSendError", R.string.SlowmodeSelectSendError)).show();

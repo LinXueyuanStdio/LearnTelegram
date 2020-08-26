@@ -15,6 +15,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
+import com.demo.chat.PhoneFormat.PhoneFormat;
 import com.demo.chat.R;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MessagesController;
@@ -22,6 +23,9 @@ import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
+import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
 import com.demo.chat.ui.ActionBar.SimpleTextView;
@@ -57,7 +61,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
     private PhonebookShareAlertDelegate delegate;
 
     public interface PhonebookShareAlertDelegate {
-        void didSelectContact(TLRPC.User user, boolean notify, int scheduleDate);
+        void didSelectContact(User user, boolean notify, int scheduleDate);
     }
 
     public static class UserCell extends FrameLayout {
@@ -67,7 +71,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
         private SimpleTextView statusTextView;
 
         private AvatarDrawable avatarDrawable;
-        private TLRPC.User currentUser;
+        private User currentUser;
         private int currentId;
 
         private CharSequence currentName;
@@ -75,7 +79,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
 
         private String lastName;
         private int lastStatus;
-        private TLRPC.FileLocation lastAvatar;
+        private FileLocation lastAvatar;
 
         private int currentAccount = UserConfig.selectedAccount;
 
@@ -108,7 +112,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
             currentId = id;
         }
 
-        public void setData(TLRPC.User user, CharSequence name, CharSequence status, boolean divider) {
+        public void setData(User user, CharSequence name, CharSequence status, boolean divider) {
             if (user == null && name == null && status == null) {
                 currentStatus = null;
                 currentName = null;
@@ -131,7 +135,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
         }
 
         public void update(int mask) {
-            TLRPC.FileLocation photo = null;
+            FileLocation photo = null;
             String newName = null;
             if (currentUser != null && currentUser.photo != null) {
                 photo = currentUser.photo.photo_small;
@@ -333,7 +337,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
                         lastName = contact.last_name;
                     }
                 } else {
-                    TLRPC.User user = (TLRPC.User) object;
+                    User user = (User) object;
                     contact = new ContactsController.Contact();
                     firstName = contact.first_name = user.first_name;
                     lastName = contact.last_name = user.last_name;
@@ -619,7 +623,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
             if (holder.getItemViewType() == 0) {
                 UserCell userCell = (UserCell) holder.itemView;
                 Object object = getItem(section, position);
-                TLRPC.User user = null;
+                User user = null;
                 boolean divider = section != getSectionCount() - 2 || position != getCountForSection(section) - 1;
                 if (object instanceof ContactsController.Contact) {
                     ContactsController.Contact contact = (ContactsController.Contact) object;
@@ -627,10 +631,10 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
                         user = contact.user;
                     } else {
                         userCell.setCurrentId(contact.contact_id);
-                        userCell.setData(null, ContactsController.formatName(contact.first_name, contact.last_name), contact.phones.isEmpty() ? "" : PhoneFormat.getInstance().format(contact.phones.get(0)), divider);
+                        userCell.setData(null, UserObject.formatName(contact.first_name, contact.last_name), contact.phones.isEmpty() ? "" : PhoneFormat.getInstance().format(contact.phones.get(0)), divider);
                     }
                 } else {
-                    user = (TLRPC.User) object;
+                    user = (User) object;
                 }
                 if (user != null) {
                     userCell.setData(user, null, PhoneFormat.getInstance().format("+" + user.phone), divider);
@@ -720,12 +724,12 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
 
                     for (int a = 0; a < contactsCopy.size(); a++) {
                         ContactsController.Contact contact = contactsCopy.get(a);
-                        String name = ContactsController.formatName(contact.first_name, contact.last_name).toLowerCase();
+                        String name = UserObject.formatName(contact.first_name, contact.last_name).toLowerCase();
                         String tName = LocaleController.getInstance().getTranslitString(name);
                         String name2;
                         String tName2;
                         if (contact.user != null) {
-                            name2 = ContactsController.formatName(contact.user.first_name, contact.user.last_name).toLowerCase();
+                            name2 = UserObject.formatName(contact.user.first_name, contact.user.last_name).toLowerCase();
                             tName2 = LocaleController.getInstance().getTranslitString(name);
                         } else {
                             name2 = null;
@@ -766,8 +770,8 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
                         if (foundUids.indexOfKey(contact.user_id) >= 0) {
                             continue;
                         }
-                        TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(contact.user_id);
-                        String name = ContactsController.formatName(user.first_name, user.last_name).toLowerCase();
+                        User user = MessagesController.getInstance(currentAccount).getUser(contact.user_id);
+                        String name = UserObject.formatName(user.first_name, user.last_name).toLowerCase();
                         String tName = LocaleController.getInstance().getTranslitString(name);
                         if (name.equals(tName)) {
                             tName = null;
@@ -851,7 +855,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
 
                 boolean divider = position != getItemCount() - 2;
                 Object object = getItem(position);
-                TLRPC.User user = null;
+                User user = null;
                 if (object instanceof ContactsController.Contact) {
                     ContactsController.Contact contact = (ContactsController.Contact) object;
                     if (contact.user != null) {
@@ -861,7 +865,7 @@ public class ChatAttachAlertContactsLayout extends ChatAttachAlert.AttachAlertLa
                         userCell.setData(null, searchResultNames.get(position - 1), contact.phones.isEmpty() ? "" : PhoneFormat.getInstance().format(contact.phones.get(0)), divider);
                     }
                 } else {
-                    user = (TLRPC.User) object;
+                    user = (User) object;
                 }
                 if (user != null) {
                     userCell.setData(user, searchResultNames.get(position - 1), PhoneFormat.getInstance().format("+" + user.phone), divider);
