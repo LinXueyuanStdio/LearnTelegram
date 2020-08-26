@@ -2184,8 +2184,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             } else if (response != null) {
                 if (button instanceof TLRPC.TL_keyboardButtonUrlAuth) {
                     if (response instanceof TLRPC.TL_urlAuthResultRequest) {
-                        TLRPC.TL_urlAuthResultRequest res = (TLRPC.TL_urlAuthResultRequest) response;
-                        parentFragment.showRequestUrlAlert(res, (TLRPC.TL_messages_requestUrlAuth) request[0], button.url);
                     } else if (response instanceof TLRPC.TL_urlAuthResultAccepted) {
                         TLRPC.TL_urlAuthResultAccepted res = (TLRPC.TL_urlAuthResultAccepted) response;
                         AlertsCreator.showOpenUrlAlert(parentFragment, res.url, false, false);
@@ -2249,11 +2247,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         User user = getMessagesController().getUser(uid);
                         boolean verified = user != null && user.verified;
                         if (button instanceof TLRPC.TL_keyboardButtonGame) {
-                            TLRPC.TL_game game = messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGame ? messageObject.messageOwner.media.game : null;
-                            if (game == null) {
-                                return;
-                            }
-                            parentFragment.showOpenGameAlert(game, messageObject, res.url, !verified && MessagesController.getNotificationsSettings(currentAccount).getBoolean("askgame_" + uid, true), uid);
                         } else {
                             AlertsCreator.showOpenUrlAlert(parentFragment, res.url, false, false);
                         }

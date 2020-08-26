@@ -55,9 +55,7 @@ import android.text.style.URLSpan;
 import android.text.util.Linkify;
 import android.util.DisplayMetrics;
 import android.util.StateSet;
-import android.util.TypedValue;
 import android.view.Display;
-import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.Surface;
 import android.view.View;
@@ -74,7 +72,6 @@ import android.view.inputmethod.InputMethodSubtype;
 import android.webkit.MimeTypeMap;
 import android.widget.EdgeEffect;
 import android.widget.HorizontalScrollView;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.ScrollView;
 import android.widget.TextView;
@@ -82,18 +79,17 @@ import android.widget.TextView;
 import com.android.internal.telephony.ITelephony;
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
-import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.UserConfig;
+import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
+import com.demo.chat.model.small.Document;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.BaseFragment;
-import com.demo.chat.ui.ActionBar.BottomSheet;
 import com.demo.chat.ui.Components.ForegroundDetector;
-import com.demo.chat.ui.Components.LayoutHelper;
 import com.google.android.gms.auth.api.phone.SmsRetriever;
 import com.google.android.gms.auth.api.phone.SmsRetrieverClient;
 import com.google.android.gms.tasks.Task;
@@ -2638,7 +2634,7 @@ public class AndroidUtilities {
         }
     }
 
-    public static boolean isBannedForever(TLRPC.TL_chatBannedRights rights) {
+    public static boolean isBannedForever(Chat.TL_chatBannedRights rights) {
         return rights == null || Math.abs(rights.until_date - System.currentTimeMillis() / 1000) > 5 * 365 * 24 * 60 * 60;
     }
 

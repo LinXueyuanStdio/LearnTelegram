@@ -542,6 +542,9 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     //endregion
+
+    public void markDialogAsRead(final long dialogId, final int maxPositiveId, final int maxNegativeId, final int maxDate, final boolean popup, final int countDiff, final boolean readNow, final int scheduledCount){}
+
     //region NotificationCenter.NotificationCenterDelegate
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {

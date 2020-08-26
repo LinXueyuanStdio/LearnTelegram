@@ -5,6 +5,7 @@ import android.text.TextUtils;
 import com.demo.chat.messager.AbstractSerializedData;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.small.MessageEntity;
+import com.demo.chat.model.small.MessageMedia;
 
 import java.util.ArrayList;
 import java.util.HashMap;

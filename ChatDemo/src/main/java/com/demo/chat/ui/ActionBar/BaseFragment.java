@@ -21,6 +21,7 @@ import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.MediaController;
 import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.MessagesController;
+import com.demo.chat.controller.MessagesStorage;
 import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.FileLog;
@@ -622,10 +623,10 @@ public class BaseFragment {
 //    protected NotificationsController getNotificationsController() {
 //        return getAccountInstance().getNotificationsController();
 //    }
-//
-//    public MessagesStorage getMessagesStorage() {
-//        return getAccountInstance().getMessagesStorage();
-//    }
+
+    public MessagesStorage getMessagesStorage() {
+        return getAccountInstance().getMessagesStorage();
+    }
 //
     public SendMessagesHelper getSendMessagesHelper() {
         return getAccountInstance().getSendMessagesHelper();
