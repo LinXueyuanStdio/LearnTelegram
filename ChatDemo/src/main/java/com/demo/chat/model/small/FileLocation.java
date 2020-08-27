@@ -7,7 +7,7 @@ package com.demo.chat.model.small;
  * @description null
  * @usage null
  */
-public class FileLocation {
+public class FileLocation extends Media {
     public int dc_id;
     public long volume_id;
     public int local_id;

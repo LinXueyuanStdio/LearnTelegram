@@ -1178,6 +1178,11 @@ public class MessagesController extends BaseController implements NotificationCe
     public boolean isJoiningChannel(final int chat_id) {
         return joiningToChannels.contains(chat_id);
     }
+    public LongSparseArray<CharSequence> printingStrings = new LongSparseArray<>();
+    public LongSparseArray<Integer> printingStringsTypes = new LongSparseArray<>();
+    public ConcurrentHashMap<Integer, User> getUsers() {
+        return users;
+    }
 
     //region NotificationCenter.NotificationCenterDelegate
     @Override

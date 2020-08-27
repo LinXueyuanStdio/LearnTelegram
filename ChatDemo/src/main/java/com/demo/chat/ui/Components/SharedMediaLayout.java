@@ -49,6 +49,7 @@ import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.browser.Browser;
+import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
@@ -64,6 +65,7 @@ import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ActionBar.BottomSheet;
 import com.demo.chat.ui.Cells.ChatActionCell;
 import com.demo.chat.ui.Cells.ContextLinkCell;
+import com.demo.chat.ui.Cells.SharedAudioCell;
 import com.demo.chat.ui.Cells.SharedDocumentCell;
 import com.demo.chat.ui.Cells.SharedLinkCell;
 import com.demo.chat.ui.Cells.SharedPhotoVideoCell;
@@ -157,7 +159,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     private int cantDeleteMessagesCount;
     private boolean scrolling;
     private long mergeDialogId;
-    private TLRPC.ChatFull info;
+    private Chat info;
 
     private AnimatorSet tabsAnimation;
     private boolean tabsAnimationInProgress;
@@ -439,7 +441,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     }
                 }
             } else if (id == NotificationCenter.chatInfoDidLoad) {
-                TLRPC.ChatFull chatFull = (TLRPC.ChatFull) args[0];
+                Chat chatFull = (Chat) args[0];
                 if (dialogId < 0 && chatFull.id == -dialogId) {
                     setChatInfo(chatFull);
                 }
@@ -453,7 +455,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             }
         }
 
-        private void setChatInfo(TLRPC.ChatFull chatInfo) {
+        private void setChatInfo(Chat chatInfo) {
             if (chatInfo != null && chatInfo.migrated_from_chat_id != 0 && mergeDialogId == 0) {
                 mergeDialogId = -chatInfo.migrated_from_chat_id;
                 parentFragment.getMediaDataController().getMediaCounts(mergeDialogId, parentFragment.getClassGuid());
@@ -649,7 +651,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
     private boolean isActionModeShowed;
 
-    public SharedMediaLayout(Context context, long did, SharedMediaPreloader preloader, int commonGroupsCount, ArrayList<Integer> sortedUsers, TLRPC.ChatFull chatInfo, boolean membersFirst, ProfileActivity parent) {
+    public SharedMediaLayout(Context context, long did, SharedMediaPreloader preloader, int commonGroupsCount, ArrayList<Integer> sortedUsers, Chat chatInfo, boolean membersFirst, ProfileActivity parent) {
         super(context);
 
         sharedMediaPreloader = preloader;
@@ -2247,7 +2249,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         }
     }
 
-    public void setChatInfo(TLRPC.ChatFull chatInfo) {
+    public void setChatInfo(Chat chatInfo) {
         info = chatInfo;
         if (info != null && info.migrated_from_chat_id != 0 && mergeDialogId == 0) {
             mergeDialogId = -info.migrated_from_chat_id;
@@ -2258,7 +2260,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         }
     }
 
-    public void setChatUsers(ArrayList<Integer> sortedUsers, TLRPC.ChatFull chatInfo) {
+    public void setChatUsers(ArrayList<Integer> sortedUsers,Chat chatInfo) {
         chatUsersAdapter.chatInfo = chatInfo;
         chatUsersAdapter.sortedUsers = sortedUsers;
         updateTabs();
@@ -3819,7 +3821,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     private class ChatUsersAdapter extends RecyclerListView.SelectionAdapter {
 
         private Context mContext;
-        private TLRPC.ChatFull chatInfo;
+        private Chat chatInfo;
         private ArrayList<Integer> sortedUsers;
 
         public ChatUsersAdapter(Context context) {

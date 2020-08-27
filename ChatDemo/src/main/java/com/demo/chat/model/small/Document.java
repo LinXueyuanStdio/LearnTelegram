@@ -11,7 +11,7 @@ import java.util.ArrayList;
  * @description null
  * @usage null
  */
-public class Document {
+public class Document extends Media {
     public int flags;
     public long id;
     public long access_hash;
@@ -56,6 +56,9 @@ public class Document {
             return false;
         }
         public boolean isSticker() {
+            return false;
+        }
+        public boolean isAnimated() {
             return false;
         }
     }

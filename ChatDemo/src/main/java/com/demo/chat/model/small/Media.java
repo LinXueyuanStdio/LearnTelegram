@@ -7,7 +7,5 @@ package com.demo.chat.model.small;
  * @description null
  * @usage null
  */
-public class InlineBotSwitchPM {
-    public String text;
-    public String start_param;
+public abstract class Media {
 }

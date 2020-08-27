@@ -36,9 +36,10 @@ import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.model.MessageObject;
-import com.demo.chat.model.small.BotInlineResult;
+import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.small.WebFile;
 import com.demo.chat.model.sticker.InputStickerSet;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
@@ -642,7 +643,7 @@ public class ContentPreviewViewer {
             InputStickerSet newSet = null;
             for (int a = 0; a < document.attributes.size(); a++) {
                 Document.DocumentAttribute attribute = document.attributes.get(a);
-                if (attribute instanceof TLRPC.TL_documentAttributeSticker && attribute.stickerset != null) {
+                if (attribute.isSticker() && attribute.stickerset != null) {
                     newSet = attribute.stickerset;
                     break;
                 }
@@ -664,8 +665,8 @@ public class ContentPreviewViewer {
             PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
             centerImage.setImage(ImageLocation.getForDocument(document), null, ImageLocation.getForDocument(thumb, document), null, "webp", currentStickerSet, 1);
             for (int a = 0; a < document.attributes.size(); a++) {
-                DocumentAttribute attribute = document.attributes.get(a);
-                if (attribute instanceof TLRPC.TL_documentAttributeSticker) {
+                Document.DocumentAttribute attribute = document.attributes.get(a);
+                if (attribute.isSticker()) {
                     if (!TextUtils.isEmpty(attribute.alt)) {
                         CharSequence emoji = Emoji.replaceEmoji(attribute.alt, textPaint.getFontMetricsInt(), AndroidUtilities.dp(24), false);
                         stickerEmojiLayout = new StaticLayout(emoji, textPaint, AndroidUtilities.dp(100), Layout.Alignment.ALIGN_CENTER, 1.0f, 0.0f, false);
@@ -676,19 +677,14 @@ public class ContentPreviewViewer {
         } else {
             if (document != null) {
                 PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
-                TLRPC.TL_videoSize videoSize = MessageObject.getDocumentVideoThumb(document);
                 ImageLocation location = ImageLocation.getForDocument(document);
                 location.imageType = FileLoader.IMAGE_TYPE_ANIMATION;
-                if (videoSize != null) {
-                    centerImage.setImage(location, null, ImageLocation.getForDocument(videoSize, document), null, ImageLocation.getForDocument(thumb, document), "90_90_b", null, document.size, null, "gif" + document, 0);
-                } else {
-                    centerImage.setImage(location, null, ImageLocation.getForDocument(thumb, document), "90_90_b", document.size, null, "gif" + document, 0);
-                }
+                centerImage.setImage(location, null, ImageLocation.getForDocument(thumb, document), "90_90_b", document.size, null, "gif" + document, 0);
             } else if (botInlineResult != null) {
                 if (botInlineResult.content == null) {
                     return;
                 }
-                if (botInlineResult.thumb instanceof TLRPC.TL_webDocument && "video/mp4".equals(botInlineResult.thumb.mime_type)) {
+                if ("video/mp4".equals(botInlineResult.thumb.mime_type)) {
                     centerImage.setImage(ImageLocation.getForWebFile(WebFile.createWithWebDocument(botInlineResult.content)), null, ImageLocation.getForWebFile(WebFile.createWithWebDocument(botInlineResult.thumb)), null, ImageLocation.getForWebFile(WebFile.createWithWebDocument(botInlineResult.thumb)), "90_90_b", null, botInlineResult.content.size, null, "gif" + botInlineResult, 1);
                 } else {
                     centerImage.setImage(ImageLocation.getForWebFile(WebFile.createWithWebDocument(botInlineResult.content)), null, ImageLocation.getForWebFile(WebFile.createWithWebDocument(botInlineResult.thumb)), "90_90_b", botInlineResult.content.size, null, "gif" + botInlineResult, 1);

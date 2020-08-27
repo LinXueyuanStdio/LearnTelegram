@@ -233,7 +233,7 @@ public class UndoView extends FrameLayout {
     private boolean hasSubInfo() {
         return currentAction == ACTION_QR_SESSION_ACCEPTED || currentAction == ACTION_ARCHIVE_HIDDEN || currentAction == ACTION_ARCHIVE_HINT || currentAction == ACTION_ARCHIVE_FEW_HINT ||
                 currentAction == ACTION_QUIZ_CORRECT || currentAction == ACTION_QUIZ_INCORRECT ||
-                currentAction == ACTION_ARCHIVE_PINNED && MessagesController.getInstance(currentAccount).dialogFilters.isEmpty();
+                currentAction == ACTION_ARCHIVE_PINNED;
     }
 
     public boolean isMultilineSubInfo() {

@@ -32,9 +32,13 @@ import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.model.Message;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.Cells.SharedAudioCell;
 
 import java.io.File;
@@ -514,7 +518,7 @@ public class ChatAttachAlertAudioLayout extends ChatAttachAlert.AttachAlertLayou
 
                     File file = new File(audioEntry.path);
 
-                    TLRPC.TL_message message = new TLRPC.TL_message();
+                    Message message = new Message();
                     message.out = true;
                     message.id = id;
                     message.to_id = new TLRPC.TL_peerUser();
@@ -522,10 +526,10 @@ public class ChatAttachAlertAudioLayout extends ChatAttachAlert.AttachAlertLayou
                     message.date = (int) (System.currentTimeMillis() / 1000);
                     message.message = "";
                     message.attachPath = audioEntry.path;
-                    message.media = new TLRPC.TL_messageMediaDocument();
+                    message.media = new MessageMedia();
                     message.media.flags |= 3;
-                    message.media.document = new TLRPC.TL_document();
-                    message.flags |= Message_FLAG_HAS_MEDIA | Message_FLAG_HAS_FROM_ID;
+                    message.media.document = new Document();
+                    message.flags |= Message.MESSAGE_FLAG_HAS_MEDIA | Message.MESSAGE_FLAG_HAS_FROM_ID;
 
                     String ext = FileLoader.getFileExtension(file);
 
@@ -537,14 +541,14 @@ public class ChatAttachAlertAudioLayout extends ChatAttachAlert.AttachAlertLayou
                     message.media.document.size = (int) file.length();
                     message.media.document.dc_id = 0;
 
-                    TLRPC.TL_documentAttributeAudio attributeAudio = new TLRPC.TL_documentAttributeAudio();
+                    Document.DocumentAttribute attributeAudio = new Document.DocumentAttribute();
                     attributeAudio.duration = audioEntry.duration;
                     attributeAudio.title = audioEntry.title;
                     attributeAudio.performer = audioEntry.author;
                     attributeAudio.flags |= 3;
                     message.media.document.attributes.add(attributeAudio);
 
-                    TLRPC.TL_documentAttributeFilename fileName = new TLRPC.TL_documentAttributeFilename();
+                    Document.DocumentAttribute fileName = new Document.DocumentAttribute();
                     fileName.file_name = file.getName();
                     message.media.document.attributes.add(fileName);
 

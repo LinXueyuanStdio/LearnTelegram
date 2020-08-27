@@ -21,6 +21,10 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
         void didSelectDialogs(DialogsActivity fragment, ArrayList<Long> dids, CharSequence message, boolean param);
     }
 
+    public void setDelegate(DialogsActivityDelegate delegate) {
+        this.delegate = delegate;
+    }
+
     public DialogsActivity(Bundle args) {
         super(args);
     }

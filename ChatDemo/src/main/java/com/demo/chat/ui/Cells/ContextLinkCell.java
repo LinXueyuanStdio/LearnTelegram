@@ -32,12 +32,14 @@ import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLoader;
 import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.model.Message;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
-import com.demo.chat.model.small.BotInlineResult;
+import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.small.WebFile;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Components.AnimationProperties;
@@ -435,7 +437,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
             message.media.flags |= 3;
             message.media.document = new TLRPC.TL_document();
             message.media.document.file_reference = new byte[0];
-            message.flags |= Message_FLAG_HAS_MEDIA | Message_FLAG_HAS_FROM_ID;
+            message.flags |= Message.MESSAGE_FLAG_HAS_MEDIA | Message.MESSAGE_FLAG_HAS_FROM_ID;
 
             if (documentAttach != null) {
                 message.media.document = documentAttach;

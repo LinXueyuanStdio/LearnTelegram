@@ -43,6 +43,7 @@ import com.demo.chat.model.small.Document;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
 import com.demo.chat.ui.ActionBar.ActionBarPopupWindow;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.Components.Paint.Brush;
 import com.demo.chat.ui.Components.Paint.Painting;
 import com.demo.chat.ui.Components.Paint.PhotoFace;

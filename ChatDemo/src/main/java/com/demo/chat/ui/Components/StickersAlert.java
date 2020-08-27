@@ -42,6 +42,8 @@ import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.Media;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.sticker.InputStickerSet;
 import com.demo.chat.model.sticker.StickerSetCovered;
@@ -50,6 +52,7 @@ import com.demo.chat.theme.ThemeDescription;
 import com.demo.chat.ui.ActionBar.ActionBarMenuItem;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ActionBar.BottomSheet;
+import com.demo.chat.ui.Cells.EmptyCell;
 import com.demo.chat.ui.Cells.FeaturedStickerSetInfoCell;
 import com.demo.chat.ui.Cells.StickerEmojiCell;
 import com.demo.chat.ui.ChatActivity;
@@ -181,12 +184,12 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
         }
     };
 
-    public StickersAlert(Context context, Object parentObject, TLObject object) {
+    public StickersAlert(Context context, Object parentObject, Media object) {
         super(context, false);
         parentActivity = (Activity) context;
         final TLRPC.TL_messages_getAttachedStickers req = new TLRPC.TL_messages_getAttachedStickers();
-        if (object instanceof TLRPC.Photo) {
-            TLRPC.Photo photo = (TLRPC.Photo) object;
+        if (object instanceof MessageMedia.Photo) {
+            MessageMedia.Photo photo = (MessageMedia.Photo) object;
             TLRPC.TL_inputStickeredMediaPhoto inputStickeredMediaPhoto = new TLRPC.TL_inputStickeredMediaPhoto();
             inputStickeredMediaPhoto.id = new TLRPC.TL_inputPhoto();
             inputStickeredMediaPhoto.id.id = photo.id;

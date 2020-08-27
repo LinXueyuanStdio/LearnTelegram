@@ -183,10 +183,10 @@ public class VideoSeekPreviewImage extends View {
                 document.dc_id = Utilities.parseInt(uri.getQueryParameter("dc"));
                 document.mime_type = uri.getQueryParameter("mime");
                 document.file_reference = Utilities.hexToBytes(uri.getQueryParameter("reference"));
-                DocumentAttributeFilename filename = new TLRPC.TL_documentAttributeFilename();
+                Document.DocumentAttribute filename = new Document.DocumentAttribute();//TL_documentAttributeFilename
                 filename.file_name = uri.getQueryParameter("name");
                 document.attributes.add(filename);
-                document.attributes.add(new TLRPC.TL_documentAttributeVideo());
+                document.attributes.add(new Document.DocumentAttribute());//TL_documentAttributeVideo
                 String name = FileLoader.getAttachFileName(document);
                 if (FileLoader.getInstance(currentAccount).isLoadingFile(name)) {
                     path = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE), document.dc_id + "_" + document.id + ".temp").getAbsolutePath();

@@ -56,7 +56,7 @@ import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.action.ChatObject;
-import com.demo.chat.model.small.BotInlineResult;
+import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;

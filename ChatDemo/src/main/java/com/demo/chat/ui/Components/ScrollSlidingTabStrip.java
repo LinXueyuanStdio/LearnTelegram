@@ -32,6 +32,7 @@ import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.theme.Theme;
 
@@ -292,7 +293,7 @@ public class ScrollSlidingTabStrip extends HorizontalScrollView {
         tabTypes.put(key, tab);
     }
 
-    public View addStickerTab(TLObject thumb, Document sticker, TLRPC.TL_messages_stickerSet parentObject) {
+    public View addStickerTab(Media thumb, Document sticker, TLRPC.TL_messages_stickerSet parentObject) {
         String key = "set" + parentObject.set.id;
         final int position = tabCount++;
 

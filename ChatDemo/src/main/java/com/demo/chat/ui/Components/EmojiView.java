@@ -63,8 +63,9 @@ import com.demo.chat.messager.browser.Browser;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.User;
 import com.demo.chat.model.action.ChatObject;
-import com.demo.chat.model.small.BotInlineResult;
+import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.sticker.InputStickerSet;
 import com.demo.chat.model.sticker.StickerSet;
@@ -74,8 +75,10 @@ import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.ActionBar.BottomSheet;
 import com.demo.chat.ui.Cells.ContextLinkCell;
+import com.demo.chat.ui.Cells.EmptyCell;
 import com.demo.chat.ui.Cells.FeaturedStickerSetInfoCell;
 import com.demo.chat.ui.Cells.StickerEmojiCell;
+import com.demo.chat.ui.Cells.StickerSetNameCell;
 import com.demo.chat.ui.Viewer.ContentPreviewViewer;
 
 import java.lang.annotation.Retention;
@@ -2981,7 +2984,7 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
                 }
             } else {
                 TLRPC.TL_messages_stickerSet stickerSet = stickerSets.get(a);
-                TLObject thumb;
+                Media thumb;
                 Document document = stickerSet.documents.get(0);
                 if (stickerSet.set.thumb instanceof TLRPC.TL_photoSize) {
                     thumb = stickerSet.set.thumb;

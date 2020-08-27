@@ -117,9 +117,10 @@ import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.action.ChatObject;
-import com.demo.chat.model.small.BotInlineResult;
+import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
@@ -3287,7 +3288,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     if (parentActivity == null || currentMessageObject == null) {
                         return;
                     }
-                    TLObject object;
+                    Media object;
                     if (currentMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaPhoto) {
                         object = currentMessageObject.messageOwner.media.photo;
                     } else if (currentMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaDocument) {

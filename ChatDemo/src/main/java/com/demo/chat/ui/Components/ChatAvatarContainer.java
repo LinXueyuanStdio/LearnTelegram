@@ -325,7 +325,7 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
                                 }
                             }
                         } else {
-                            if ((chat.flags & Chat_FLAG_IS_PUBLIC) != 0) {
+                            if (chat.isPublic()) {
                                 newSubtitle = LocaleController.getString("ChannelPublic", R.string.ChannelPublic).toLowerCase();
                             } else {
                                 newSubtitle = LocaleController.getString("ChannelPrivate", R.string.ChannelPrivate).toLowerCase();
@@ -449,7 +449,7 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
             return;
         }
         int currentTime = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
-        if (info instanceof TLRPC.TL_chatFull || info instanceof TLRPC.TL_channelFull && info.participants_count <= 200 && info.participants != null) {
+        if (info.isGroup() || info.isChannel() && info.participants_count <= 200 && info.participants != null) {
             for (int a = 0; a < info.participants.participants.size(); a++) {
                 Chat.ChatParticipant participant = info.participants.participants.get(a);
                 User user = MessagesController.getInstance(currentAccount).getUser(participant.user_id);
@@ -457,7 +457,7 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
                     onlineCount++;
                 }
             }
-        } else if (info instanceof TLRPC.TL_channelFull && info.participants_count > 200) {
+        } else if (info.isChannel() && info.participants_count > 200) {
             onlineCount = info.online_count;
         }
     }

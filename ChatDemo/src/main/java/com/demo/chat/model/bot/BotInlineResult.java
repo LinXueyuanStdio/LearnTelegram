@@ -1,4 +1,8 @@
-package com.demo.chat.model.small;
+package com.demo.chat.model.bot;
+
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.MessageMedia;
+import com.demo.chat.model.small.WebDocument;
 
 /**
  * @author 林学渊

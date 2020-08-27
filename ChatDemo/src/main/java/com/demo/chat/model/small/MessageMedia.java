@@ -40,7 +40,7 @@ public class MessageMedia {
     public int period;
     public int ttl_seconds;
 
-    public static class Audio {
+    public static class Audio extends Media {
         public long id;
         public long access_hash;
         public int date;
@@ -53,7 +53,7 @@ public class MessageMedia {
         public byte[] iv;
     }
 
-    public static class Photo {
+    public static class Photo extends Media {
         public int flags;
         public boolean has_stickers;
         public long id;
@@ -67,13 +67,13 @@ public class MessageMedia {
         public String caption;
     }
 
-    public static class GeoPoint {
+    public static class GeoPoint extends Media {
         public double _long;
         public double lat;
         public long access_hash;
     }
 
-    public static class Video {
+    public static class Video extends Media {
         public long id;
         public long access_hash;
         public int user_id;
@@ -90,7 +90,7 @@ public class MessageMedia {
         public byte[] iv;
     }
 
-    public static class WebPage {
+    public static class WebPage extends Media {
         public int flags;
         public long id;
         public String url;
@@ -112,7 +112,7 @@ public class MessageMedia {
         public int date;
     }
 
-    public static class Page{
+    public static class Page {
         public int flags;
         public boolean part;
         public boolean rtl;
@@ -124,12 +124,13 @@ public class MessageMedia {
         public int views;
     }
 
-    public static class PageBlock{
+    public static class PageBlock {
         public boolean first; //custom
         public boolean bottom; //custom
         public int level; //custom
         public int mid; //custom
         public int groupId; //custom
         public PhotoSize thumb; //custom
+        public Media thumbObject; //custom
     }
 }

@@ -43,7 +43,7 @@ import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.NotificationCenter;
-import com.demo.chat.model.small.BotInlineResult;
+import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.small.WallPaper;
 import com.demo.chat.theme.Theme;

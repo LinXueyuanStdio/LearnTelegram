@@ -1494,8 +1494,6 @@ public class ImageLoader {
                             FileLoader.getInstance(currentAccount).cancelLoadFile(imageLocation.location, ext);
                         } else if (imageLocation.document != null) {
                             FileLoader.getInstance(currentAccount).cancelLoadFile(imageLocation.document);
-                        } else if (imageLocation.secureDocument != null) {
-                            FileLoader.getInstance(currentAccount).cancelLoadFile(imageLocation.secureDocument);
                         } else if (imageLocation.webFile != null) {
                             FileLoader.getInstance(currentAccount).cancelLoadFile(imageLocation.webFile);
                         }
@@ -2320,10 +2318,6 @@ public class ImageLoader {
                         int fileSize = 0;
                         if (imageLocation.photoSize instanceof TLRPC.TL_photoStrippedSize) {
                             onlyCache = true;
-                        } else if (imageLocation.secureDocument != null) {
-                            img.secureDocument = imageLocation.secureDocument;
-                            onlyCache = img.secureDocument.secureFile.dc_id == Integer.MIN_VALUE;
-                            cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE), url);
                         } else if (!AUTOPLAY_FILTER.equals(filter) && (cacheType != 0 || size <= 0 || imageLocation.path != null || isEncrypted)) {
                             cacheFile = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE), url);
                             if (cacheFile.exists()) {

@@ -113,12 +113,14 @@ import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.action.ChatObject;
-import com.demo.chat.model.small.BotInfo;
-import com.demo.chat.model.small.BotInlineResult;
+import com.demo.chat.model.bot.BotInfo;
+import com.demo.chat.model.bot.BotInlineResult;
+import com.demo.chat.model.bot.InlineBotSwitchPM;
+import com.demo.chat.model.bot.KeyboardButton;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.DraftMessage;
 import com.demo.chat.model.small.FileLocation;
-import com.demo.chat.model.small.InlineBotSwitchPM;
+import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
@@ -182,6 +184,7 @@ import com.demo.chat.ui.Components.RLottieDrawable;
 import com.demo.chat.ui.Components.RadialProgressView;
 import com.demo.chat.ui.Components.RecyclerAnimationScrollHelper;
 import com.demo.chat.ui.Components.RecyclerListView;
+import com.demo.chat.ui.Components.ShareAlert;
 import com.demo.chat.ui.Components.Size;
 import com.demo.chat.ui.Components.SizeNotifierFrameLayout;
 import com.demo.chat.ui.Components.StickersAlert;
@@ -457,13 +460,13 @@ public class ChatActivity extends BaseFragment
     private int replyImageCacheType;
     private PhotoSize replyImageLocation;
     private PhotoSize replyImageThumbLocation;
-    private TLObject replyImageLocationObject;
+    private Media replyImageLocationObject;
 
     private int pinnedImageSize;
     private int pinnedImageCacheType;
     private PhotoSize pinnedImageLocation;
     private PhotoSize pinnedImageThumbLocation;
-    private TLObject pinnedImageLocationObject;
+    private Media pinnedImageLocationObject;
 
     private MessageMedia.WebPage foundWebPage;
     private ArrayList<CharSequence> foundUrls;
@@ -6543,14 +6546,8 @@ public class ChatActivity extends BaseFragment
                     return 2;
                 } else if (messageObject.isSticker() || messageObject.isAnimatedSticker()) {
                     InputStickerSet inputStickerSet = messageObject.getInputStickerSet();
-                    if (inputStickerSet instanceof TLRPC.TL_inputStickerSetID) {
-                        if (!getMediaDataController().isStickerPackInstalled(inputStickerSet.id)) {
-                            return 7;
-                        }
-                    } else if (inputStickerSet instanceof TLRPC.TL_inputStickerSetShortName) {
-                        if (!getMediaDataController().isStickerPackInstalled(inputStickerSet.short_name)) {
-                            return 7;
-                        }
+                    if (!getMediaDataController().isStickerPackInstalled(inputStickerSet.id)) {
+                        return 7;
                     }
                     return 9;
                 } else if (!messageObject.isRoundVideo() && (messageObject.getDocument() != null || messageObject.isMusic() || messageObject.isVideo())) {
@@ -7127,27 +7124,27 @@ public class ChatActivity extends BaseFragment
                                 entity.length++;
                             }
                             stringBuilder.setSpan(new URLSpanUserMention("" + user_id, 3), entity.offset, entity.offset + entity.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                        } else if (entity instanceof TLRPC.TL_messageEntityCode || entity instanceof TLRPC.TL_messageEntityPre) {
+                        } else if (entity.isCode() || entity.isPre()) {
                             TextStyleSpan.TextStyleRun run = new TextStyleSpan.TextStyleRun();
                             run.flags |= TextStyleSpan.FLAG_STYLE_MONO;
                             MediaDataController.addStyleToText(new TextStyleSpan(run), entity.offset, entity.offset + entity.length, stringBuilder, true);
-                        } else if (entity instanceof TLRPC.TL_messageEntityBold) {
+                        } else if (entity.isBold()) {
                             TextStyleSpan.TextStyleRun run = new TextStyleSpan.TextStyleRun();
                             run.flags |= TextStyleSpan.FLAG_STYLE_BOLD;
                             MediaDataController.addStyleToText(new TextStyleSpan(run), entity.offset, entity.offset + entity.length, stringBuilder, true);
-                        } else if (entity instanceof TLRPC.TL_messageEntityItalic) {
+                        } else if (entity.isItalic()) {
                             TextStyleSpan.TextStyleRun run = new TextStyleSpan.TextStyleRun();
                             run.flags |= TextStyleSpan.FLAG_STYLE_ITALIC;
                             MediaDataController.addStyleToText(new TextStyleSpan(run), entity.offset, entity.offset + entity.length, stringBuilder, true);
-                        } else if (entity instanceof TLRPC.TL_messageEntityStrike) {
+                        } else if (entity.isStrike()) {
                             TextStyleSpan.TextStyleRun run = new TextStyleSpan.TextStyleRun();
                             run.flags |= TextStyleSpan.FLAG_STYLE_STRIKE;
                             MediaDataController.addStyleToText(new TextStyleSpan(run), entity.offset, entity.offset + entity.length, stringBuilder, true);
-                        } else if (entity instanceof TLRPC.TL_messageEntityUnderline) {
+                        } else if (entity.isUnderline()) {
                             TextStyleSpan.TextStyleRun run = new TextStyleSpan.TextStyleRun();
                             run.flags |= TextStyleSpan.FLAG_STYLE_UNDERLINE;
                             MediaDataController.addStyleToText(new TextStyleSpan(run), entity.offset, entity.offset + entity.length, stringBuilder, true);
-                        } else if (entity instanceof TLRPC.TL_messageEntityTextUrl) {
+                        } else if (entity.isTextUrl()) {
                             stringBuilder.setSpan(new URLSpanReplacement(entity.url), entity.offset, entity.offset + entity.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                         }
                     }
@@ -8602,7 +8599,7 @@ public class ChatActivity extends BaseFragment
             return;
         }
         if (currentChat != null) {
-            if (ChatObject.isChannel(currentChat) && !(currentChat instanceof TLRPC.TL_channelForbidden)) {
+            if (ChatObject.isChannel(currentChat) && !(currentChat.isForbidden())) {
                 if (ChatObject.isNotInChat(currentChat)) {
                     if (getMessagesController().isJoiningChannel(currentChat.id)) {
                         showBottomOverlayProgress(true, false);
@@ -13668,7 +13665,7 @@ public class ChatActivity extends BaseFragment
                             messageObject.generatePaymentSentMessageText(null);
                         }
                         if (messageObject.isMegagroup() && messageObject.replyMessageObject != null && messageObject.replyMessageObject.messageOwner != null) {
-                            messageObject.replyMessageObject.messageOwner.flags |= Message_FLAG_MEGAGROUP;
+                            messageObject.replyMessageObject.messageOwner.flags |= Message.MESSAGE_FLAG_MEGAGROUP;
                         }
                     }
                 }
@@ -15818,10 +15815,6 @@ public class ChatActivity extends BaseFragment
                             Bundle args = new Bundle();
                             if (messageObject.messageOwner.fwd_from.saved_from_peer.channel_id != 0) {
                                 args.putInt("chat_id", messageObject.messageOwner.fwd_from.saved_from_peer.channel_id);
-                            } else if (messageObject.messageOwner.fwd_from.saved_from_peer.chat_id != 0) {
-                                args.putInt("chat_id", messageObject.messageOwner.fwd_from.saved_from_peer.chat_id);
-                            } else if (messageObject.messageOwner.fwd_from.saved_from_peer.user_id != 0) {
-                                args.putInt("user_id", messageObject.messageOwner.fwd_from.saved_from_peer.user_id);
                             }
                             args.putInt("message_id", messageObject.messageOwner.fwd_from.saved_from_msg_id);
                             if (getMessagesController().checkCanOpenChat(args, ChatActivity.this)) {
@@ -15916,12 +15909,8 @@ public class ChatActivity extends BaseFragment
                     }
 
                     @Override
-                    public void didPressBotButton(ChatMessageCell cell, TLRPC.KeyboardButton button) {
-                        if (getParentActivity() == null
-                                || bottomOverlayChat.getVisibility() == View.VISIBLE &&
-                                !(button instanceof TLRPC.TL_keyboardButtonSwitchInline) && !(button instanceof TLRPC.TL_keyboardButtonCallback) &&
-                                !(button instanceof TLRPC.TL_keyboardButtonGame) && !(button instanceof TLRPC.TL_keyboardButtonUrl) &&
-                                !(button instanceof TLRPC.TL_keyboardButtonBuy) && !(button instanceof TLRPC.TL_keyboardButtonUrlAuth)) {
+                    public void didPressBotButton(ChatMessageCell cell, KeyboardButton button) {
+                        if (getParentActivity() == null || bottomOverlayChat.getVisibility() == View.VISIBLE) {
                             return;
                         }
                         chatActivityEnterView.didPressedBotButton(button, cell.getMessageObject(), cell.getMessageObject());
@@ -16200,11 +16189,8 @@ public class ChatActivity extends BaseFragment
                     }
 
                     @Override
-                    public void didPressBotButton(MessageObject messageObject, TLRPC.KeyboardButton button) {
-                        if (getParentActivity() == null || bottomOverlayChat.getVisibility() == View.VISIBLE &&
-                                !(button instanceof TLRPC.TL_keyboardButtonSwitchInline) && !(button instanceof TLRPC.TL_keyboardButtonCallback) &&
-                                !(button instanceof TLRPC.TL_keyboardButtonGame) && !(button instanceof TLRPC.TL_keyboardButtonUrl) &&
-                                !(button instanceof TLRPC.TL_keyboardButtonBuy) && !(button instanceof TLRPC.TL_keyboardButtonUrlAuth)) {
+                    public void didPressBotButton(MessageObject messageObject, KeyboardButton button) {
+                        if (getParentActivity() == null || bottomOverlayChat.getVisibility() == View.VISIBLE) {
                             return;
                         }
                         chatActivityEnterView.didPressedBotButton(button, messageObject, messageObject);

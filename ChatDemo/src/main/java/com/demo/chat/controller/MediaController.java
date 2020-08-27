@@ -57,7 +57,7 @@ import com.demo.chat.messager.audioinfo.AudioInfo;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.VideoEditedInfo;
-import com.demo.chat.model.small.BotInlineResult;
+import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;

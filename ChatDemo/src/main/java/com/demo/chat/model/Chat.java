@@ -1,6 +1,6 @@
 package com.demo.chat.model;
 
-import com.demo.chat.model.small.BotInfo;
+import com.demo.chat.model.bot.BotInfo;
 import com.demo.chat.model.small.ChatPhoto;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.sticker.StickerSet;
@@ -40,6 +40,9 @@ public class Chat {
 
     public boolean isForbidden() {
         return false;
+    }
+    public boolean isPublic() {
+        return (flags & Chat_FLAG_IS_PUBLIC) != 0;
     }
     public int type = 0;
     public int id = 0;

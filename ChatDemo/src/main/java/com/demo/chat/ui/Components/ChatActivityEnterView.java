@@ -92,7 +92,8 @@ import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.action.ChatObject;
-import com.demo.chat.model.small.BotInlineResult;
+import com.demo.chat.model.bot.BotInlineResult;
+import com.demo.chat.model.bot.KeyboardButton;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
@@ -105,6 +106,7 @@ import com.demo.chat.ui.ActionBar.ActionBarMenuSubItem;
 import com.demo.chat.ui.ActionBar.ActionBarPopupWindow;
 import com.demo.chat.ui.ActionBar.SimpleTextView;
 import com.demo.chat.ui.ChatActivity;
+import com.demo.chat.ui.DialogsActivity;
 import com.demo.chat.ui.LaunchActivity;
 
 import java.io.File;
@@ -396,7 +398,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
 
 
     private MessageObject pendingMessageObject;
-    private TLRPC.KeyboardButton pendingLocationButton;
+    private KeyboardButton pendingLocationButton;
 
     private boolean configAnimationsEnabled;
 
@@ -2108,8 +2110,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     if (currentUser != null
                             && (currentUser.id == UserConfig.getInstance(currentAccount).getClientUserId()
                             || currentUser.status != null
-                            && currentUser.status.expires < currentTime
-                            && !accountInstance.getMessagesController().onlinePrivacy.containsKey(currentUser.id))) {
+                            && currentUser.status.expires < currentTime)) {
                         return;
                     }
                     lastTypingTimeSend = System.currentTimeMillis();
@@ -4724,7 +4725,6 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             if (recordInterfaceState == 0) {
                 return;
             }
-            accountInstance.getMessagesController().sendTyping(dialog_id, 2, 0);
             recordInterfaceState = 0;
             if (emojiView != null) {
                 emojiView.setEnabled(true);
@@ -5272,37 +5272,32 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                             if (entity.offset + entity.length > stringBuilder.length()) {
                                 continue;
                             }
-                            if (entity instanceof TLRPC.TL_inputMessageEntityMentionName) {
+                            if (entity.isMentionName()) {
                                 if (entity.offset + entity.length < stringBuilder.length() && stringBuilder.charAt(entity.offset + entity.length) == ' ') {
                                     entity.length++;
                                 }
-                                stringBuilder.setSpan(new URLSpanUserMention("" + ((TLRPC.TL_inputMessageEntityMentionName) entity).user_id.user_id, 3), entity.offset, entity.offset + entity.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                            } else if (entity instanceof TLRPC.TL_messageEntityMentionName) {
-                                if (entity.offset + entity.length < stringBuilder.length() && stringBuilder.charAt(entity.offset + entity.length) == ' ') {
-                                    entity.length++;
-                                }
-                                stringBuilder.setSpan(new URLSpanUserMention("" + ((TLRPC.TL_messageEntityMentionName) entity).user_id, 3), entity.offset, entity.offset + entity.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-                            } else if (entity instanceof TLRPC.TL_messageEntityCode || entity instanceof TLRPC.TL_messageEntityPre) {
+                                stringBuilder.setSpan(new URLSpanUserMention("" + entity.user_id, 3), entity.offset, entity.offset + entity.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+                            } else if (entity.isCode() || entity.isPre()) {
                                 TextStyleSpan.TextStyleRun run = new TextStyleSpan.TextStyleRun();
                                 run.flags |= TextStyleSpan.FLAG_STYLE_MONO;
                                 MediaDataController.addStyleToText(new TextStyleSpan(run), entity.offset, entity.offset + entity.length, stringBuilder, true);
-                            } else if (entity instanceof TLRPC.TL_messageEntityBold) {
+                            } else if (entity.isBold()) {
                                 TextStyleSpan.TextStyleRun run = new TextStyleSpan.TextStyleRun();
                                 run.flags |= TextStyleSpan.FLAG_STYLE_BOLD;
                                 MediaDataController.addStyleToText(new TextStyleSpan(run), entity.offset, entity.offset + entity.length, stringBuilder, true);
-                            } else if (entity instanceof TLRPC.TL_messageEntityItalic) {
+                            } else if (entity.isItalic()) {
                                 TextStyleSpan.TextStyleRun run = new TextStyleSpan.TextStyleRun();
                                 run.flags |= TextStyleSpan.FLAG_STYLE_ITALIC;
                                 MediaDataController.addStyleToText(new TextStyleSpan(run), entity.offset, entity.offset + entity.length, stringBuilder, true);
-                            } else if (entity instanceof TLRPC.TL_messageEntityStrike) {
+                            } else if (entity.isStrike()) {
                                 TextStyleSpan.TextStyleRun run = new TextStyleSpan.TextStyleRun();
                                 run.flags |= TextStyleSpan.FLAG_STYLE_STRIKE;
                                 MediaDataController.addStyleToText(new TextStyleSpan(run), entity.offset, entity.offset + entity.length, stringBuilder, true);
-                            } else if (entity instanceof TLRPC.TL_messageEntityUnderline) {
+                            } else if (entity.isUnderline()) {
                                 TextStyleSpan.TextStyleRun run = new TextStyleSpan.TextStyleRun();
                                 run.flags |= TextStyleSpan.FLAG_STYLE_UNDERLINE;
                                 MediaDataController.addStyleToText(new TextStyleSpan(run), entity.offset, entity.offset + entity.length, stringBuilder, true);
-                            } else if (entity instanceof TLRPC.TL_messageEntityTextUrl) {
+                            } else if (entity.isTextUrl()) {
                                 stringBuilder.setSpan(new URLSpanReplacement(entity.url), entity.offset, entity.offset + entity.length, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                             }
                         }
@@ -5767,7 +5762,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         updateBotButton();
     }
 
-    public boolean didPressedBotButton(final TLRPC.KeyboardButton button, final MessageObject replyMessageObject, final MessageObject messageObject) {
+    public boolean didPressedBotButton(final KeyboardButton button, final MessageObject replyMessageObject, final MessageObject messageObject) {
         if (button == null || messageObject == null) {
             return false;
         }
@@ -6043,14 +6038,14 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
 
             @Override
             public void onStickersGroupClick(int chatId) {
-                if (parentFragment != null) {
-                    if (AndroidUtilities.isTablet()) {
-                        hidePopup(false);
-                    }
-                    GroupStickersActivity fragment = new GroupStickersActivity(chatId);
-                    fragment.setInfo(info);
-                    parentFragment.presentFragment(fragment);
-                }
+//                if (parentFragment != null) {
+//                    if (AndroidUtilities.isTablet()) {
+//                        hidePopup(false);
+//                    }
+//                    GroupStickersActivity fragment = new GroupStickersActivity(chatId);
+//                    fragment.setInfo(info);
+//                    parentFragment.presentFragment(fragment);
+//                }
             }
 
             @Override

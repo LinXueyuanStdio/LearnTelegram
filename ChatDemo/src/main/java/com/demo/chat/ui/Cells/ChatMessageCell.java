@@ -4,6 +4,7 @@ import android.animation.AnimatorSet;
 import android.animation.Keyframe;
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -15,16 +16,18 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Rect;
 import android.graphics.RectF;
+import android.graphics.Shader;
+import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.SystemClock;
-import android.provider.Browser;
 import android.text.Layout;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
+import android.text.Spanned;
 import android.text.StaticLayout;
 import android.text.TextPaint;
 import android.text.TextUtils;
@@ -39,6 +42,7 @@ import android.view.MotionEvent;
 import android.view.SoundEffectConstants;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewStructure;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityManager;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -48,33 +52,48 @@ import android.widget.Toast;
 
 import com.demo.chat.R;
 import com.demo.chat.controller.ConnectionsManager;
+import com.demo.chat.controller.DownloadController;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
+import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.MessagesController;
+import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.Emoji;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLoader;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.messager.browser.Browser;
 import com.demo.chat.model.Chat;
+import com.demo.chat.model.Message;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
+import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.bot.KeyboardButton;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.small.WebFile;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
+import com.demo.chat.ui.ChatActivity;
 import com.demo.chat.ui.Components.AnimatedFileDrawable;
 import com.demo.chat.ui.Components.AnimationProperties;
 import com.demo.chat.ui.Components.AvatarDrawable;
+import com.demo.chat.ui.Components.BackgroundGradientDrawable;
 import com.demo.chat.ui.Components.CheckBoxBase;
 import com.demo.chat.ui.Components.CubicBezierInterpolator;
+import com.demo.chat.ui.Components.EmptyStubSpan;
 import com.demo.chat.ui.Components.LinkPath;
 import com.demo.chat.ui.Components.MediaActionDrawable;
 import com.demo.chat.ui.Components.MessageBackgroundDrawable;
+import com.demo.chat.ui.Components.RLottieDrawable;
 import com.demo.chat.ui.Components.RadialProgress2;
 import com.demo.chat.ui.Components.RoundVideoPlayingDrawable;
 import com.demo.chat.ui.Components.SeekBar;
@@ -82,11 +101,16 @@ import com.demo.chat.ui.Components.SeekBarWaveform;
 import com.demo.chat.ui.Components.TextStyleSpan;
 import com.demo.chat.ui.Components.TimerParticles;
 import com.demo.chat.ui.Components.URLSpanBotCommand;
+import com.demo.chat.ui.Components.URLSpanBrowser;
+import com.demo.chat.ui.Components.URLSpanMono;
+import com.demo.chat.ui.Components.URLSpanNoUnderline;
 import com.demo.chat.ui.Viewer.PhotoViewer;
+import com.demo.chat.ui.Viewer.SecretMediaViewer;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Locale;
 
 /**
  * @author 林学渊
@@ -135,7 +159,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         default void didPressOther(ChatMessageCell cell, float otherX, float otherY) {
         }
 
-        default void didPressBotButton(ChatMessageCell cell, TLRPC.KeyboardButton button) {
+        default void didPressBotButton(ChatMessageCell cell, KeyboardButton button) {
         }
 
         default void didPressReaction(ChatMessageCell cell, TLRPC.TL_reactionCount reaction) {
@@ -206,7 +230,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         private int width;
         private int height;
         private StaticLayout title;
-        private TLRPC.KeyboardButton button;
+        private KeyboardButton button;
         private TLRPC.TL_reactionCount reaction;
         private int angle;
         private float progressAlpha;
@@ -415,21 +439,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private StaticLayout performerLayout;
     private int performerX;
 
-    private ArrayList<PollButton> pollButtons = new ArrayList<>();
-    private float pollAnimationProgress;
-    private float pollAnimationProgressTime;
-    private boolean pollVoted;
-    private boolean pollClosed;
-    private long lastPollCloseTime;
     private String closeTimeText;
     private int closeTimeWidth;
-    private boolean pollVoteInProgress;
-    private boolean vibrateOnPollVote;
-    private boolean pollUnvoteInProgress;
-    private boolean animatePollAnswer;
-    private boolean animatePollAvatars;
-    private boolean animatePollAnswerAlpha;
-    private int pollVoteInProgressNum;
     private long voteLastUpdateTime;
     private float voteRadOffset;
     private float voteCurrentCircleLength;
@@ -438,11 +449,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private float voteCurrentProgressTime;
     private int pressedVoteButton;
     private float timerTransitionProgress;
-    private int lastPollResultsVoters;
     private TimerParticles timerParticles;
-    private int pollHintX;
-    private int pollHintY;
-    private boolean pollHintPressed;
     private boolean hintButtonVisible;
     private float hintButtonProgress;
 
@@ -512,11 +519,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
     private int layoutWidth;
     private int layoutHeight;
-
-    private ImageReceiver[] pollAvatarImages;
-    private AvatarDrawable[] pollAvatarDrawables;
-    private boolean[] pollAvatarImagesVisible;
-    private CheckBoxBase[] pollCheckBox;
 
     private ImageReceiver avatarImage;
     private AvatarDrawable avatarDrawable;
@@ -649,27 +651,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         seekBarWaveform.setDelegate(this);
         seekBarWaveform.setParentView(this);
         roundVideoPlayingDrawable = new RoundVideoPlayingDrawable(this);
-    }
-
-    private void createPollUI() {
-        if (pollAvatarImages != null) {
-            return;
-        }
-        pollAvatarImages = new ImageReceiver[3];
-        pollAvatarDrawables = new AvatarDrawable[3];
-        pollAvatarImagesVisible = new boolean[3];
-        for (int a = 0; a < pollAvatarImages.length; a++) {
-            pollAvatarImages[a] = new ImageReceiver(this);
-            pollAvatarImages[a].setRoundRadius(AndroidUtilities.dp(8));
-            pollAvatarDrawables[a] = new AvatarDrawable();
-            pollAvatarDrawables[a].setTextSize(AndroidUtilities.dp(6));
-        }
-        pollCheckBox = new CheckBoxBase[10];
-        for (int a = 0; a < pollCheckBox.length; a++) {
-            pollCheckBox[a] = new CheckBoxBase(this, 20);
-            pollCheckBox[a].setDrawUnchecked(false);
-            pollCheckBox[a].setDrawBackgroundAsArc(9);
-        }
     }
 
     private void resetPressedLink(int type) {
@@ -975,15 +956,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     resetPressedLink(2);
                 } else {
                     gamePreviewPressed = false;
-                    for (int a = 0; a < botButtons.size(); a++) {
-                        BotButton button = botButtons.get(a);
-                        if (button.button instanceof TLRPC.TL_keyboardButtonGame) {
-                            playSoundEffect(SoundEffectConstants.CLICK);
-                            delegate.didPressBotButton(this, button.button);
-                            invalidate();
-                            break;
-                        }
-                    }
                     resetPressedLink(2);
                     return true;
                 }
@@ -1146,7 +1118,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                                 playSoundEffect(SoundEffectConstants.CLICK);
                             }
                         } else {
-                            TLRPC.WebPage webPage = currentMessageObject.messageOwner.media.webpage;
+                            MessageMedia.WebPage webPage = currentMessageObject.messageOwner.media.webpage;
                             if (webPage != null && !TextUtils.isEmpty(webPage.embed_url)) {
                                 delegate.needOpenWebView(webPage.embed_url, webPage.site_name, webPage.title, webPage.url, webPage.embed_width, webPage.embed_height);
                             } else if (buttonState == -1 || buttonState == 3) {
@@ -1171,76 +1143,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         return false;
     }
 
-    private boolean checkPollButtonMotionEvent(MotionEvent event) {
-        if (currentMessageObject.eventId != 0 || pollVoteInProgress || pollUnvoteInProgress || pollButtons.isEmpty() || currentMessageObject.type != 17 || !currentMessageObject.isSent()) {
-            return false;
-        }
-        int x = (int) event.getX();
-        int y = (int) event.getY();
-
-        boolean result = false;
-        if (event.getAction() == MotionEvent.ACTION_DOWN) {
-            pressedVoteButton = -1;
-            pollHintPressed = false;
-            if (hintButtonVisible && pollHintX != -1 && x >= pollHintX && x <= pollHintX + AndroidUtilities.dp(40) && y >= pollHintY && y <= pollHintY + AndroidUtilities.dp(40)) {
-                pollHintPressed = true;
-                result = true;
-                selectorDrawableMaskType = 3;
-                if (Build.VERSION.SDK_INT >= 21 && selectorDrawable != null) {
-                    selectorDrawable.setBounds(pollHintX - AndroidUtilities.dp(8), pollHintY - AndroidUtilities.dp(8), pollHintX + AndroidUtilities.dp(32), pollHintY + AndroidUtilities.dp(32));
-                    selectorDrawable.setState(pressedState);
-                    selectorDrawable.setHotspot(x, y);
-                }
-                invalidate();
-            } else {
-                for (int a = 0; a < pollButtons.size(); a++) {
-                    PollButton button = pollButtons.get(a);
-                    int y2 = button.y + namesOffset - AndroidUtilities.dp(13);
-                    if (x >= button.x && x <= button.x + backgroundWidth - AndroidUtilities.dp(31) && y >= y2 && y <= y2 + button.height + AndroidUtilities.dp(26)) {
-                        pressedVoteButton = a;
-                        if (!pollVoted && !pollClosed) {
-                            selectorDrawableMaskType = 1;
-                            if (Build.VERSION.SDK_INT >= 21 && selectorDrawable != null) {
-                                selectorDrawable.setBounds(button.x - AndroidUtilities.dp(9), y2, button.x + backgroundWidth - AndroidUtilities.dp(22), y2 + button.height + AndroidUtilities.dp(26));
-                                selectorDrawable.setState(pressedState);
-                                selectorDrawable.setHotspot(x, y);
-                            }
-                            invalidate();
-                        }
-                        result = true;
-                        break;
-                    }
-                }
-            }
-        } else {
-            if (event.getAction() == MotionEvent.ACTION_UP) {
-                if (pollHintPressed) {
-                    playSoundEffect(SoundEffectConstants.CLICK);
-                    delegate.didPressHint(this, 0);
-                    pollHintPressed = false;
-                    if (Build.VERSION.SDK_INT >= 21 && selectorDrawable != null) {
-                        selectorDrawable.setState(StateSet.NOTHING);
-                    }
-                } else if (pressedVoteButton != -1) {
-                    playSoundEffect(SoundEffectConstants.CLICK);
-                    if (Build.VERSION.SDK_INT >= 21 && selectorDrawable != null) {
-                        selectorDrawable.setState(StateSet.NOTHING);
-                    }
-                    if (currentMessageObject.scheduled) {
-                        Toast.makeText(getContext(), LocaleController.getString("MessageScheduledVote", R.string.MessageScheduledVote), Toast.LENGTH_LONG).show();
-                    }
-                    pressedVoteButton = -1;
-                    invalidate();
-                }
-            } else if (event.getAction() == MotionEvent.ACTION_MOVE) {
-                if ((pressedVoteButton != -1 || pollHintPressed) && Build.VERSION.SDK_INT >= 21 && selectorDrawable != null) {
-                    selectorDrawable.setHotspot(x, y);
-                }
-            }
-        }
-        return result;
-    }
-
     private boolean checkInstantButtonMotionEvent(MotionEvent event) {
         if (!drawInstantView || currentMessageObject.type == 0) {
             return false;
@@ -1250,7 +1152,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
         if (event.getAction() == MotionEvent.ACTION_DOWN) {
             if (drawInstantView && instantButtonRect.contains(x, y)) {
-                selectorDrawableMaskType = lastPoll != null ? 2 : 0;
+                selectorDrawableMaskType = 0;
                 instantPressed = true;
                 if (Build.VERSION.SDK_INT >= 21 && selectorDrawable != null) {
                     if (instantButtonRect.contains(x, y)) {
@@ -1265,28 +1167,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         } else if (event.getAction() == MotionEvent.ACTION_UP) {
             if (instantPressed) {
                 if (delegate != null) {
-                    if (lastPoll != null) {
-                        if (currentMessageObject.scheduled) {
-                            Toast.makeText(getContext(), LocaleController.getString("MessageScheduledVoteResults", R.string.MessageScheduledVoteResults), Toast.LENGTH_LONG).show();
-                        } else {
-                            if (pollVoted || pollClosed) {
-                                delegate.didPressInstantButton(this, drawInstantViewType);
-                            } else {
-                                if (!currentMessageObject.checkedVotes.isEmpty()) {
-                                    pollVoteInProgressNum = -1;
-                                    pollVoteInProgress = true;
-                                    vibrateOnPollVote = true;
-                                    voteCurrentProgressTime = 0.0f;
-                                    firstCircleLength = true;
-                                    voteCurrentCircleLength = 360;
-                                    voteRisingCircleLength = false;
-                                }
-                                delegate.didPressVoteButtons(this, currentMessageObject.checkedVotes, -1, 0, namesOffset);
-                            }
-                        }
-                    } else {
-                        delegate.didPressInstantButton(this, drawInstantViewType);
-                    }
+                    delegate.didPressInstantButton(this, drawInstantViewType);
                 }
                 playSoundEffect(SoundEffectConstants.CLICK);
                 if (Build.VERSION.SDK_INT >= 21 && selectorDrawable != null) {
@@ -1613,16 +1494,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (!result) {
             result = checkBotButtonMotionEvent(event);
         }
-        if (!result) {
-            result = checkPollButtonMotionEvent(event);
-        }
 
         if (event.getAction() == MotionEvent.ACTION_CANCEL) {
             buttonPressed = 0;
             miniButtonPressed = 0;
             pressedBotButton = -1;
             pressedVoteButton = -1;
-            pollHintPressed = false;
             psaHintPressed = false;
             linkPreviewPressed = false;
             otherPressed = false;
@@ -1916,10 +1793,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     }
 
-    public ArrayList<PollButton> getPollButtons() {
-        return pollButtons;
-    }
-
     public void updatePlayingMessageProgress() {
         if (currentMessageObject == null) {
             return;
@@ -1960,8 +1833,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             int duration = 0;
             Document document = currentMessageObject.getDocument();
             for (int a = 0; a < document.attributes.size(); a++) {
-                DocumentAttribute attribute = document.attributes.get(a);
-                if (attribute instanceof TLRPC.TL_documentAttributeVideo) {
+                Document.DocumentAttribute attribute = document.attributes.get(a);
+                if (attribute.isVideo()) {
                     duration = attribute.duration;
                     break;
                 }
@@ -1992,8 +1865,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             if (documentAttachType == DOCUMENT_ATTACH_TYPE_AUDIO) {
                 if (!MediaController.getInstance().isPlayingMessage(currentMessageObject)) {
                     for (int a = 0; a < documentAttach.attributes.size(); a++) {
-                        DocumentAttribute attribute = documentAttach.attributes.get(a);
-                        if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
+                        Document.DocumentAttribute attribute = documentAttach.attributes.get(a);
+                        if (attribute.isAudio()) {
                             duration = attribute.duration;
                             break;
                         }
@@ -2160,7 +2033,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
         } else if (documentAttachType == DOCUMENT_ATTACH_TYPE_GIF) {
             if (buttonState == -1) {
-                TLRPC.WebPage webPage = currentMessageObject.messageOwner.media.webpage;
+                MessageMedia.WebPage webPage = currentMessageObject.messageOwner.media.webpage;
                 if (webPage != null) {
                     if (webPage.embed_url != null && webPage.embed_url.length() != 0) {
                         delegate.needOpenWebView(webPage.embed_url, webPage.site_name, webPage.description, webPage.url, webPage.embed_width, webPage.embed_height);
@@ -2347,20 +2220,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (photoCheckBox != null) {
             photoCheckBox.onDetachedFromWindow();
         }
-        if (pollCheckBox != null) {
-            for (int a = 0; a < pollCheckBox.length; a++) {
-                pollCheckBox[a].onDetachedFromWindow();
-            }
-        }
         attachedToWindow = false;
         radialProgress.onDetachedFromWindow();
         videoRadialProgress.onDetachedFromWindow();
         avatarImage.onDetachedFromWindow();
-        if (pollAvatarImages != null) {
-            for (int a = 0; a < pollAvatarImages.length; a++) {
-                pollAvatarImages[a].onDetachedFromWindow();
-            }
-        }
         replyImageReceiver.onDetachedFromWindow();
         locationImageReceiver.onDetachedFromWindow();
         photoImage.onDetachedFromWindow();
@@ -2395,11 +2258,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (photoCheckBox != null) {
             photoCheckBox.onAttachedToWindow();
         }
-        if (pollCheckBox != null) {
-            for (int a = 0; a < pollCheckBox.length; a++) {
-                pollCheckBox[a].onAttachedToWindow();
-            }
-        }
 
         attachedToWindow = true;
 
@@ -2412,11 +2270,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         videoRadialProgress.onAttachedToWindow();
         avatarImage.onAttachedToWindow();
         avatarImage.setParentView((View) getParent());
-        if (pollAvatarImages != null) {
-            for (int a = 0; a < pollAvatarImages.length; a++) {
-                pollAvatarImages[a].onAttachedToWindow();
-            }
-        }
         replyImageReceiver.onAttachedToWindow();
         locationImageReceiver.onAttachedToWindow();
         if (photoImage.onAttachedToWindow()) {
@@ -2454,41 +2307,8 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         boolean dataChanged = currentMessageObject != null && currentMessageObject.getId() == messageObject.getId() && lastSendState == MessageObject.MESSAGE_SEND_STATE_EDITING && messageObject.isSent()
                 || currentMessageObject == messageObject && (isUserDataChanged() || photoNotSet);
         boolean groupChanged = groupedMessages != currentMessagesGroup;
-        boolean pollChanged = false;
         if (!messageChanged && messageObject.isDice()) {
             setCurrentDiceValue(false);
-        }
-        if (!messageChanged && messageObject.isPoll()) {
-            ArrayList<TLRPC.TL_pollAnswerVoters> newResults = null;
-            TLRPC.Poll newPoll = null;
-            int newVoters = 0;
-            if (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaPoll) {
-                TLRPC.TL_messageMediaPoll mediaPoll = (TLRPC.TL_messageMediaPoll) messageObject.messageOwner.media;
-                newResults = mediaPoll.results.results;
-                newPoll = mediaPoll.poll;
-                newVoters = mediaPoll.results.total_voters;
-            }
-            if (newResults != null && lastPollResults != null && newVoters != lastPollResultsVoters) {
-                pollChanged = true;
-            }
-            if (!pollChanged && newResults != lastPollResults) {
-                pollChanged = true;
-            }
-            if (lastPoll != newPoll && lastPoll.closed != newPoll.closed) {
-                pollChanged = true;
-                if (!pollVoted) {
-                    pollVoteInProgress = true;
-                    vibrateOnPollVote = false;
-                }
-            }
-            animatePollAvatars = false;
-            if (pollChanged && attachedToWindow) {
-                pollAnimationProgressTime = 0.0f;
-                if (pollVoted && !messageObject.isVoted()) {
-                    pollUnvoteInProgress = true;
-                }
-                animatePollAvatars = lastPollResultsVoters == 0 || lastPollResultsVoters != 0 && newVoters == 0;
-            }
         }
         if (!groupChanged && groupedMessages != null) {
             MessageObject.GroupedMessagePosition newPosition;
@@ -2499,7 +2319,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             groupChanged = newPosition != currentPosition;
         }
-        if (messageChanged || dataChanged || groupChanged || pollChanged || isPhotoDataChanged(messageObject) || pinnedBottom != bottomNear || pinnedTop != topNear) {
+        if (messageChanged || dataChanged || groupChanged || isPhotoDataChanged(messageObject) || pinnedBottom != bottomNear || pinnedTop != topNear) {
             pinnedBottom = bottomNear;
             pinnedTop = topNear;
             currentMessageObject = messageObject;
@@ -2569,7 +2389,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             hasGamePreview = false;
             hasInvoicePreview = false;
             instantPressed = instantButtonPressed = false;
-            if (!pollChanged && Build.VERSION.SDK_INT >= 21 && selectorDrawable != null) {
+            if (Build.VERSION.SDK_INT >= 21 && selectorDrawable != null) {
                 selectorDrawable.setVisible(false, false);
                 selectorDrawable.setState(StateSet.NOTHING);
             }
@@ -2578,7 +2398,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             miniButtonPressed = 0;
             pressedBotButton = -1;
             pressedVoteButton = -1;
-            pollHintPressed = false;
             psaHintPressed = false;
             linkPreviewHeight = 0;
             mediaOffsetY = 0;
@@ -2633,9 +2452,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 createSelectorDrawable();
             }
             photoImage.setAlpha(1.0f);
-            if (messageChanged || dataChanged) {
-                pollButtons.clear();
-            }
             int captionNewLine = 0;
             availableTimeWidth = 0;
             lastReactions = messageObject.messageOwner.reactions;
@@ -2862,7 +2678,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     boolean smallImage;
                     String type;
                     if (hasLinkPreview) {
-                        TLRPC.TL_webPage webPage = (TLRPC.TL_webPage) messageObject.messageOwner.media.webpage;
+                        MessageMedia.WebPage webPage = (MessageMedia.WebPage) messageObject.messageOwner.media.webpage;
                         site_name = webPage.site_name;
                         title = drawInstantViewType != 6 && drawInstantViewType != 7 ? webPage.title : null;
                         author = drawInstantViewType != 6 && drawInstantViewType != 7 ? webPage.author : null;
@@ -3697,268 +3513,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 totalHeight = AndroidUtilities.dp(82) + namesOffset;
                 if (drawPinnedTop) {
                     namesOffset -= AndroidUtilities.dp(1);
-                }
-            } else if (messageObject.type == MessageObject.TYPE_POLL) {
-                if (timerParticles == null) {
-                    timerParticles = new TimerParticles();
-                }
-                createSelectorDrawable();
-                drawName = true;
-                drawForwardedName = true;
-                drawPhotoImage = false;
-                int maxWidth = Math.min(AndroidUtilities.dp(500), messageObject.getMaxMessageTextWidth());
-                backgroundWidth = maxWidth + AndroidUtilities.dp(31);
-
-                TLRPC.TL_messageMediaPoll media = (TLRPC.TL_messageMediaPoll) messageObject.messageOwner.media;
-
-                timerTransitionProgress = media.poll.close_date - ConnectionsManager.getInstance(currentAccount).getCurrentTime() < 60 ? 0.0f : 1.0f;
-                pollClosed = media.poll.closed;
-                pollVoted = messageObject.isVoted();
-                if (pollVoted) {
-                    messageObject.checkedVotes.clear();
-                }
-                titleLayout = new StaticLayout(Emoji.replaceEmoji(media.poll.question, Theme.chat_audioTitlePaint.getFontMetricsInt(), AndroidUtilities.dp(16), false), Theme.chat_audioTitlePaint, maxWidth + AndroidUtilities.dp(2) - getExtraTextX() * 2, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
-                boolean titleRtl = false;
-                if (titleLayout != null) {
-                    for (int a = 0, N = titleLayout.getLineCount(); a < N; a++) {
-                        if (titleLayout.getLineLeft(a) != 0) {
-                            titleRtl = true;
-                            break;
-                        }
-                    }
-                }
-                String title;
-                if (pollClosed) {
-                    title = LocaleController.getString("FinalResults", R.string.FinalResults);
-                } else {
-                    if (media.poll.quiz) {
-                        if (media.poll.public_voters) {
-                            title = LocaleController.getString("QuizPoll", R.string.QuizPoll);
-                        } else {
-                            title = LocaleController.getString("AnonymousQuizPoll", R.string.AnonymousQuizPoll);
-                        }
-                    } else if (media.poll.public_voters) {
-                        title = LocaleController.getString("PublicPoll", R.string.PublicPoll);
-                    } else {
-                        title = LocaleController.getString("AnonymousPoll", R.string.AnonymousPoll);
-                    }
-                }
-                docTitleLayout = new StaticLayout(TextUtils.ellipsize(title, Theme.chat_timePaint, maxWidth, TextUtils.TruncateAt.END), Theme.chat_timePaint, maxWidth + AndroidUtilities.dp(2) - getExtraTextX() * 2, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
-                if (docTitleLayout != null && docTitleLayout.getLineCount() > 0) {
-                    if (titleRtl && !LocaleController.isRTL) {
-                        docTitleOffsetX = (int) Math.ceil(maxWidth - docTitleLayout.getLineWidth(0));
-                    } else if (!titleRtl && LocaleController.isRTL) {
-                        docTitleOffsetX = -(int) Math.ceil(docTitleLayout.getLineLeft(0));
-                    } else {
-                        docTitleOffsetX = 0;
-                    }
-                }
-                int w = maxWidth - AndroidUtilities.dp(messageObject.isOutOwner() ? 28 : 8);
-
-                if (!isBot) {
-                    TextPaint textPaint = !media.poll.public_voters && !media.poll.multiple_choice ? Theme.chat_livePaint : Theme.chat_locationAddressPaint;
-                    CharSequence votes;
-                    if (media.poll.quiz) {
-                        votes = TextUtils.ellipsize(media.results.total_voters == 0 ? LocaleController.getString("NoVotesQuiz", R.string.NoVotesQuiz) : LocaleController.formatPluralString("Answer", media.results.total_voters), textPaint, w, TextUtils.TruncateAt.END);
-                    } else {
-                        votes = TextUtils.ellipsize(media.results.total_voters == 0 ? LocaleController.getString("NoVotes", R.string.NoVotes) : LocaleController.formatPluralString("Vote", media.results.total_voters), textPaint, w, TextUtils.TruncateAt.END);
-                    }
-                    infoLayout = new StaticLayout(votes, textPaint, w, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
-                    if (infoLayout != null) {
-                        if (!media.poll.public_voters && !media.poll.multiple_choice) {
-                            infoX = (int) Math.ceil(infoLayout.getLineCount() > 0 ? -infoLayout.getLineLeft(0) : 0);
-                            availableTimeWidth = (int) (maxWidth - infoLayout.getLineWidth(0) - AndroidUtilities.dp(16));
-                        } else {
-                            infoX = (int) ((backgroundWidth - AndroidUtilities.dp(28) - Math.ceil(infoLayout.getLineWidth(0))) / 2 - infoLayout.getLineLeft(0));
-                            availableTimeWidth = maxWidth;
-                        }
-                    }
-                }
-                measureTime(messageObject);
-
-                lastPoll = media.poll;
-                lastPollResults = media.results.results;
-                lastPollResultsVoters = media.results.total_voters;
-                if (media.poll.multiple_choice && !pollVoted && !pollClosed || !isBot && (media.poll.public_voters && pollVoted || pollClosed && media.results != null && media.results.total_voters != 0 && media.poll.public_voters)) {
-                    drawInstantView = true;
-                    drawInstantViewType = 8;
-                    createInstantViewButton();
-                }
-                if (media.poll.multiple_choice) {
-                    createPollUI();
-                }
-                if (media.results != null) {
-                    createPollUI();
-                    int size = media.results.recent_voters.size();
-                    for (int a = 0; a < pollAvatarImages.length; a++) {
-                        if (!isBot && a < size) {
-                            pollAvatarImages[a].setImageCoords(0, 0, AndroidUtilities.dp(16), AndroidUtilities.dp(16));
-                            Integer id = media.results.recent_voters.get(a);
-                            User user = MessagesController.getInstance(currentAccount).getUser(id);
-                            if (user != null) {
-                                pollAvatarDrawables[a].setInfo(user);
-                                pollAvatarImages[a].setImage(ImageLocation.getForUser(user, false), "50_50", pollAvatarDrawables[a], null, user, 0);
-                            } else {
-                                pollAvatarDrawables[a].setInfo(id, "", "");
-                            }
-                            pollAvatarImagesVisible[a] = true;
-                        } else if (!pollUnvoteInProgress || size != 0) {
-                            pollAvatarImages[a].setImageBitmap((Drawable) null);
-                            pollAvatarImagesVisible[a] = false;
-                        }
-                    }
-                } else {
-                    for (int a = 0; a < pollAvatarImages.length; a++) {
-                        pollAvatarImages[a].setImageBitmap((Drawable) null);
-                        pollAvatarImagesVisible[a] = false;
-                    }
-                }
-
-                int maxVote = 0;
-                if (!animatePollAnswer && pollVoteInProgress && vibrateOnPollVote) {
-                    performHapticFeedback(HapticFeedbackConstants.KEYBOARD_TAP, HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING);
-                }
-                animatePollAnswerAlpha = animatePollAnswer = attachedToWindow && (pollVoteInProgress || pollUnvoteInProgress);
-                ArrayList<PollButton> previousPollButtons = null;
-                ArrayList<PollButton> sortedPollButtons = new ArrayList<>();
-                if (!pollButtons.isEmpty()) {
-                    previousPollButtons = new ArrayList<>(pollButtons);
-                    pollButtons.clear();
-                    if (!animatePollAnswer) {
-                        animatePollAnswer = attachedToWindow && (pollVoted || pollClosed);
-                    }
-                    if (pollAnimationProgress > 0 && pollAnimationProgress < 1.0f) {
-                        for (int b = 0, N2 = previousPollButtons.size(); b < N2; b++) {
-                            PollButton button = previousPollButtons.get(b);
-                            button.percent = (int) Math.ceil(button.prevPercent + (button.percent - button.prevPercent) * pollAnimationProgress);
-                            button.percentProgress = button.prevPercentProgress + (button.percentProgress - button.prevPercentProgress) * pollAnimationProgress;
-                        }
-                    }
-                }
-
-                pollAnimationProgress = animatePollAnswer ? 0.0f : 1.0f;
-                byte[] votingFor;
-                if (!animatePollAnswerAlpha) {
-                    pollVoteInProgress = false;
-                    pollVoteInProgressNum = -1;
-                    votingFor = SendMessagesHelper.getInstance(currentAccount).isSendingVote(currentMessageObject);
-                } else {
-                    votingFor = null;
-                }
-
-                int height = titleLayout != null ? titleLayout.getHeight() : 0;
-                int restPercent = 100;
-                boolean hasDifferent = false;
-                int previousPercent = 0;
-                for (int a = 0, N = media.poll.answers.size(); a < N; a++) {
-                    PollButton button = new PollButton();
-                    button.answer = media.poll.answers.get(a);
-                    button.title = new StaticLayout(Emoji.replaceEmoji(button.answer.text, Theme.chat_audioPerformerPaint.getFontMetricsInt(), AndroidUtilities.dp(15), false), Theme.chat_audioPerformerPaint, maxWidth - AndroidUtilities.dp(33), Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
-                    button.y = height + AndroidUtilities.dp(52);
-                    button.height = button.title.getHeight();
-                    pollButtons.add(button);
-                    sortedPollButtons.add(button);
-                    height += button.height + AndroidUtilities.dp(26);
-                    if (!media.results.results.isEmpty()) {
-                        for (int b = 0, N2 = media.results.results.size(); b < N2; b++) {
-                            TLRPC.TL_pollAnswerVoters answer = media.results.results.get(b);
-                            if (Arrays.equals(button.answer.option, answer.option)) {
-                                button.chosen = answer.chosen;
-                                button.count = answer.voters;
-                                button.correct = answer.correct;
-                                if ((pollVoted || pollClosed) && media.results.total_voters > 0) {
-                                    button.decimal = 100 * (answer.voters / (float) media.results.total_voters);
-                                    button.percent = (int) button.decimal;
-                                    button.decimal -= button.percent;
-                                } else {
-                                    button.percent = 0;
-                                    button.decimal = 0;
-                                }
-                                if (previousPercent == 0) {
-                                    previousPercent = button.percent;
-                                } else if (button.percent != 0 && previousPercent != button.percent) {
-                                    hasDifferent = true;
-                                }
-                                restPercent -= button.percent;
-                                maxVote = Math.max(button.percent, maxVote);
-                                break;
-                            }
-                        }
-                    }
-                    if (previousPollButtons != null) {
-                        for (int b = 0, N2 = previousPollButtons.size(); b < N2; b++) {
-                            PollButton prevButton = previousPollButtons.get(b);
-                            if (Arrays.equals(button.answer.option, prevButton.answer.option)) {
-                                button.prevPercent = prevButton.percent;
-                                button.prevPercentProgress = prevButton.percentProgress;
-                                button.prevChosen = prevButton.chosen;
-                                break;
-                            }
-                        }
-                    }
-                    if (votingFor != null && button.answer.option.length > 0 && Arrays.binarySearch(votingFor, button.answer.option[0]) >= 0) {
-                        pollVoteInProgressNum = a;
-                        pollVoteInProgress = true;
-                        vibrateOnPollVote = true;
-                        votingFor = null;
-                    }
-
-                    if (currentMessageObject.checkedVotes.contains(button.answer)) {
-                        pollCheckBox[a].setChecked(true, false);
-                    } else {
-                        pollCheckBox[a].setChecked(false, false);
-                    }
-                }
-                if (hasDifferent && restPercent != 0) {
-                    Collections.sort(sortedPollButtons, (o1, o2) -> {
-                        if (o1.decimal > o2.decimal) {
-                            return -1;
-                        } else if (o1.decimal < o2.decimal) {
-                            return 1;
-                        }
-                        return 0;
-                    });
-                    for (int a = 0, N = Math.min(restPercent, sortedPollButtons.size()); a < N; a++) {
-                        sortedPollButtons.get(a).percent += 1;
-                    }
-                }
-                int width = backgroundWidth - AndroidUtilities.dp(76);
-                for (int b = 0, N2 = pollButtons.size(); b < N2; b++) {
-                    PollButton button = pollButtons.get(b);
-                    button.percentProgress = Math.max(AndroidUtilities.dp(5) / (float) width, maxVote != 0 ? button.percent / (float) maxVote : 0);
-                }
-
-                setMessageObjectInternal(messageObject);
-
-
-                if (isBot && !drawInstantView) {
-                    height -= AndroidUtilities.dp(10);
-                } else if (media.poll.public_voters || media.poll.multiple_choice) {
-                    height += AndroidUtilities.dp(13);
-                }
-                totalHeight = AndroidUtilities.dp(46 + 27) + namesOffset + height;
-                if (drawPinnedTop) {
-                    namesOffset -= AndroidUtilities.dp(1);
-                }
-                insantTextNewLine = false;
-                if (media.poll.public_voters || media.poll.multiple_choice) {
-                    int instantTextWidth = 0;
-                    for (int a = 0; a < 3; a++) {
-                        String str;
-                        if (a == 0) {
-                            str = LocaleController.getString("PollViewResults", R.string.PollViewResults);
-                        } else if (a == 1) {
-                            str = LocaleController.getString("PollSubmitVotes", R.string.PollSubmitVotes);
-                        } else {
-                            str = LocaleController.getString("NoVotes", R.string.NoVotes);
-                        }
-                        instantTextWidth = Math.max(instantTextWidth, (int) Math.ceil(Theme.chat_instantViewPaint.measureText(str)));
-                    }
-                    int timeWidthTotal = timeWidth + (messageObject.isOutOwner() ? AndroidUtilities.dp(20) : 0) + getExtraTimeX();
-                    if (timeWidthTotal >= (backgroundWidth - AndroidUtilities.dp(76) - instantTextWidth) / 2) {
-                        totalHeight += AndroidUtilities.dp(18);
-                        insantTextNewLine = true;
-                    }
                 }
             } else {
                 drawForwardedName = messageObject.messageOwner.fwd_from != null && !messageObject.isAnyKindOfSticker();
@@ -5247,10 +4801,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         imagePressed = false;
         gamePreviewPressed = false;
 
-        if (pressedVoteButton != -1 || pollHintPressed || psaHintPressed || instantPressed) {
+        if (pressedVoteButton != -1 || psaHintPressed || instantPressed) {
             instantPressed = instantButtonPressed = false;
             pressedVoteButton = -1;
-            pollHintPressed = false;
             psaHintPressed = false;
             if (Build.VERSION.SDK_INT >= 21 && selectorDrawable != null) {
                 selectorDrawable.setState(StateSet.NOTHING);
@@ -5397,17 +4950,13 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         MediaController.getInstance().seekToProgress(currentMessageObject, progress);
     }
 
-    public boolean isAnimatingPollAnswer() {
-        return animatePollAnswerAlpha;
-    }
-
     private void updateWaveform() {
         if (currentMessageObject == null || documentAttachType != DOCUMENT_ATTACH_TYPE_AUDIO) {
             return;
         }
         for (int a = 0; a < documentAttach.attributes.size(); a++) {
-            DocumentAttribute attribute = documentAttach.attributes.get(a);
-            if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
+            Document.DocumentAttribute attribute = documentAttach.attributes.get(a);
+            if (attribute.isAudio()) {
                 if (attribute.waveform == null || attribute.waveform.length == 0) {
                     MediaController.getInstance().generateWaveform(currentMessageObject);
                 }
@@ -5820,12 +5369,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 str = LocaleController.getString("OpenBackground", R.string.OpenBackground);
             } else if (drawInstantViewType == 7) {
                 str = LocaleController.getString("OpenTheme", R.string.OpenTheme);
-            } else if (drawInstantViewType == 8) {
-                if (pollVoted || pollClosed) {
-                    str = LocaleController.getString("PollViewResults", R.string.PollViewResults);
-                } else {
-                    str = LocaleController.getString("PollSubmitVotes", R.string.PollSubmitVotes);
-                }
             } else {
                 str = LocaleController.getString("InstantView", R.string.InstantView);
             }
@@ -5952,7 +5495,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             timeX -= getExtraTimeX();
 
-            if ((currentMessageObject.messageOwner.flags & Message_FLAG_HAS_VIEWS) != 0) {
+            if ((currentMessageObject.messageOwner.flags & Message.MESSAGE_FLAG_HAS_VIEWS) != 0) {
                 viewsLayout = new StaticLayout(currentViewsString, Theme.chat_timePaint, viewsTextWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, 0.0f, false);
             } else {
                 viewsLayout = null;
@@ -6120,74 +5663,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     public void drawRoundProgress(Canvas canvas) {
         rect.set(photoImage.getImageX() + AndroidUtilities.dpf2(1.5f), photoImage.getImageY() + AndroidUtilities.dpf2(1.5f), photoImage.getImageX2() - AndroidUtilities.dpf2(1.5f), photoImage.getImageY2() - AndroidUtilities.dpf2(1.5f));
         canvas.drawArc(rect, -90, 360 * currentMessageObject.audioProgress, false, Theme.chat_radialProgressPaint);
-    }
-
-    private void updatePollAnimations(long dt) {
-        if (pollVoteInProgress) {
-            voteRadOffset += 360 * dt / 2000.0f;
-            int count = (int) (voteRadOffset / 360);
-            voteRadOffset -= count * 360;
-
-            voteCurrentProgressTime += dt;
-            if (voteCurrentProgressTime >= 500.0f) {
-                voteCurrentProgressTime = 500.0f;
-            }
-            if (voteRisingCircleLength) {
-                voteCurrentCircleLength = 4 + 266 * AndroidUtilities.accelerateInterpolator.getInterpolation(voteCurrentProgressTime / 500.0f);
-            } else {
-                voteCurrentCircleLength = 4 - (firstCircleLength ? 360 : 270) * (1.0f - AndroidUtilities.decelerateInterpolator.getInterpolation(voteCurrentProgressTime / 500.0f));
-            }
-            if (voteCurrentProgressTime == 500.0f) {
-                if (voteRisingCircleLength) {
-                    voteRadOffset += 270;
-                    voteCurrentCircleLength = -266;
-                }
-                voteRisingCircleLength = !voteRisingCircleLength;
-                if (firstCircleLength) {
-                    firstCircleLength = false;
-                }
-                voteCurrentProgressTime = 0;
-            }
-            invalidate();
-        }
-        if (hintButtonVisible && hintButtonProgress < 1.0f) {
-            hintButtonProgress += dt / 180.0f;
-            if (hintButtonProgress > 1.0f) {
-                hintButtonProgress = 1.0f;
-            }
-            invalidate();
-        } else if (!hintButtonVisible && hintButtonProgress > 0.0f) {
-            hintButtonProgress -= dt / 180.0f;
-            if (hintButtonProgress < 0.0f) {
-                hintButtonProgress = 0.0f;
-            }
-            invalidate();
-        }
-        if (animatePollAnswer) {
-            pollAnimationProgressTime += dt;
-            if (pollAnimationProgressTime >= 300.0f) {
-                pollAnimationProgressTime = 300.0f;
-            }
-            pollAnimationProgress = AndroidUtilities.decelerateInterpolator.getInterpolation(pollAnimationProgressTime / 300.0f);
-            if (pollAnimationProgress >= 1.0f) {
-                pollAnimationProgress = 1.0f;
-                animatePollAnswer = false;
-                animatePollAnswerAlpha = false;
-                pollVoteInProgress = false;
-                if (pollUnvoteInProgress && animatePollAvatars) {
-                    for (int a = 0; a < pollAvatarImages.length; a++) {
-                        pollAvatarImages[a].setImageBitmap((Drawable) null);
-                        pollAvatarImagesVisible[a] = false;
-                    }
-                }
-                pollUnvoteInProgress = false;
-                for (int a = 0, N = pollButtons.size(); a < N; a++) {
-                    PollButton button = pollButtons.get(a);
-                    button.prevChosen = false;
-                }
-            }
-            invalidate();
-        }
     }
 
     private void drawContent(Canvas canvas) {
@@ -8092,12 +7567,12 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (messageObject.scheduled || messageObject.isLiveLocation() || messageObject.messageOwner.edit_hide || messageObject.getDialogId() == 777000 || messageObject.messageOwner.via_bot_id != 0 || messageObject.messageOwner.via_bot_name != null || author != null && author.bot) {
             edited = false;
         } else if (currentPosition == null || currentMessagesGroup == null) {
-            edited = (messageObject.messageOwner.flags & Message_FLAG_EDITED) != 0 || messageObject.isEditing();
+            edited = (messageObject.messageOwner.flags & Message.MESSAGE_FLAG_EDITED) != 0 || messageObject.isEditing();
         } else {
             edited = false;
             for (int a = 0, size = currentMessagesGroup.messages.size(); a < size; a++) {
                 MessageObject object = currentMessagesGroup.messages.get(a);
-                if ((object.messageOwner.flags & Message_FLAG_EDITED) != 0 || object.isEditing()) {
+                if ((object.messageOwner.flags & Message.MESSAGE_FLAG_EDITED) != 0 || object.isEditing()) {
                     edited = true;
                     break;
                 }
@@ -8119,7 +7594,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         if (currentMessageObject.scheduled && currentMessageObject.messageOwner.date == 0x7FFFFFFE) {
             timeWidth -= AndroidUtilities.dp(8);
         }
-        if ((messageObject.messageOwner.flags & Message_FLAG_HAS_VIEWS) != 0) {
+        if ((messageObject.messageOwner.flags & Message.MESSAGE_FLAG_HAS_VIEWS) != 0) {
             currentViewsString = String.format("%s", LocaleController.formatShortNumber(Math.max(1, messageObject.messageOwner.views), null));
             viewsTextWidth = (int) Math.ceil(Theme.chat_timePaint.measureText(currentViewsString));
             timeWidth += viewsTextWidth + Theme.chat_msgInViewsDrawable.getIntrinsicWidth() + AndroidUtilities.dp(10);
@@ -8209,7 +7684,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         } else if (fwd_from != null && fwd_from.from_id != 0 && fwd_from.channel_id == 0 && currentMessageObject.getDialogId() == currentUserId) {
             currentUser = messagesController.getUser(fwd_from.from_id);
         } else if (fwd_from != null && !TextUtils.isEmpty(fwd_from.from_name) && currentMessageObject.getDialogId() == currentUserId) {
-            currentUser = new TLRPC.TL_user();
+            currentUser = new User();
             currentUser.first_name = fwd_from.from_name;
         } else if (currentMessageObject.isFromUser()) {
             currentUser = messagesController.getUser(currentMessageObject.messageOwner.from_id);
@@ -8221,7 +7696,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     }
 
     private void setMessageObjectInternal(MessageObject messageObject) {
-        if ((messageObject.messageOwner.flags & Message_FLAG_HAS_VIEWS) != 0 && !currentMessageObject.scheduled) {
+        if ((messageObject.messageOwner.flags & Message.MESSAGE_FLAG_HAS_VIEWS) != 0 && !currentMessageObject.scheduled) {
             if (!currentMessageObject.viewsReloaded) {
                 MessagesController.getInstance(currentAccount).addToViewsQueue(currentMessageObject);
                 currentMessageObject.viewsReloaded = true;
@@ -9775,7 +9250,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             paint.setAlpha(oldAlpha);
 
             int additionalX = (int) (-timeLayout.getLineLeft(0));
-            if (ChatObject.isChannel(currentChat) && !currentChat.megagroup || (currentMessageObject.messageOwner.flags & Message_FLAG_HAS_VIEWS) != 0) {
+            if (ChatObject.isChannel(currentChat) && !currentChat.megagroup || (currentMessageObject.messageOwner.flags & Message.MESSAGE_FLAG_HAS_VIEWS) != 0) {
                 additionalX += (int) (timeWidth - timeLayout.getLineWidth(0));
 
                 if (currentMessageObject.isSending() || currentMessageObject.isEditing()) {
@@ -9826,7 +9301,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             Theme.chat_timePaint.setAlpha(255);
         } else {
             int additionalX = (int) (-timeLayout.getLineLeft(0));
-            if (ChatObject.isChannel(currentChat) && !currentChat.megagroup || (currentMessageObject.messageOwner.flags & Message_FLAG_HAS_VIEWS) != 0) {
+            if (ChatObject.isChannel(currentChat) && !currentChat.megagroup || (currentMessageObject.messageOwner.flags & Message.MESSAGE_FLAG_HAS_VIEWS) != 0) {
                 additionalX += (int) (timeWidth - timeLayout.getLineWidth(0));
 
                 if (currentMessageObject.isSending() || currentMessageObject.isEditing()) {
@@ -10335,303 +9810,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
 
             setDrawableBounds(phone, x + AndroidUtilities.dp(205), otherY = AndroidUtilities.dp(22));
             phone.draw(canvas);
-        } else if (currentMessageObject.type == MessageObject.TYPE_POLL) {
-            long newTime = System.currentTimeMillis();
-            long dt = newTime - voteLastUpdateTime;
-            if (dt > 17) {
-                dt = 17;
-            }
-            voteLastUpdateTime = newTime;
-
-            int color1;
-            int color2;
-            if (currentMessageObject.isOutOwner()) {
-                color1 = Theme.getColor(Theme.key_chat_messageTextOut);
-                color2 = Theme.getColor(isDrawSelectionBackground() ? Theme.key_chat_outTimeSelectedText : Theme.key_chat_outTimeText);
-            } else {
-                color1 = Theme.getColor(Theme.key_chat_messageTextIn);
-                color2 = Theme.getColor(isDrawSelectionBackground() ? Theme.key_chat_inTimeSelectedText : Theme.key_chat_inTimeText);
-            }
-            Theme.chat_audioTitlePaint.setColor(color1);
-            Theme.chat_audioPerformerPaint.setColor(color1);
-            Theme.chat_instantViewPaint.setColor(color1);
-            Theme.chat_timePaint.setColor(color2);
-            Theme.chat_livePaint.setColor(color2);
-            Theme.chat_locationAddressPaint.setColor(color2);
-
-            int x;
-            if (currentMessageObject.isOutOwner()) {
-                x = layoutWidth - backgroundWidth + AndroidUtilities.dp(11);
-            } else {
-                if (isChat && currentMessageObject.needDrawAvatar()) {
-                    x = AndroidUtilities.dp(68);
-                } else {
-                    x = AndroidUtilities.dp(20);
-                }
-            }
-            if (titleLayout != null) {
-                canvas.save();
-                canvas.translate(x + getExtraTextX(), AndroidUtilities.dp(15) + namesOffset);
-                titleLayout.draw(canvas);
-                canvas.restore();
-            }
-            int y = (titleLayout != null ? titleLayout.getHeight() : 0) + AndroidUtilities.dp(20) + namesOffset;
-            if (docTitleLayout != null) {
-                canvas.save();
-                canvas.translate(x + docTitleOffsetX + getExtraTextX(), y);
-                docTitleLayout.draw(canvas);
-                canvas.restore();
-
-                TLRPC.TL_messageMediaPoll media = (TLRPC.TL_messageMediaPoll) currentMessageObject.messageOwner.media;
-                if (lastPoll.quiz && (pollVoted || pollClosed) && !TextUtils.isEmpty(media.results.solution)) {
-                    Drawable drawable = Theme.chat_pollHintDrawable[currentMessageObject.isOutOwner() ? 1 : 0];
-                    if (pollVoteInProgress) {
-                        drawable.setAlpha((int) (255 * pollAnimationProgress));
-                    } else {
-                        drawable.setAlpha(255);
-                    }
-                    if (docTitleOffsetX < 0 || docTitleOffsetX == 0 && docTitleLayout.getLineLeft(0) == 0) {
-                        pollHintX = currentBackgroundDrawable.getBounds().right - drawable.getIntrinsicWidth() - AndroidUtilities.dp(currentMessageObject.isOutOwner() ? 17 : 11);
-                    } else {
-                        pollHintX = currentBackgroundDrawable.getBounds().left + AndroidUtilities.dp(11);
-                    }
-                    pollHintY = y - AndroidUtilities.dp(6);
-                    int cx = pollHintX + drawable.getIntrinsicWidth() / 2;
-                    int cy = pollHintY + drawable.getIntrinsicHeight() / 2;
-                    float scale = hintButtonVisible && hintButtonProgress < 1 ? AnimationProperties.overshootInterpolator.getInterpolation(hintButtonProgress) : hintButtonProgress;
-                    int w = (int) (drawable.getIntrinsicWidth() * scale);
-                    int h = (int) (drawable.getIntrinsicHeight() * scale);
-                    drawable.setBounds(cx - w / 2, cy - h / 2, cx + w / 2, cy + h / 2);
-                    drawable.draw(canvas);
-                } else {
-                    pollHintX = -1;
-                }
-
-                if (pollAvatarImages != null && !isBot) {
-                    int toAdd;
-                    int ax;
-                    int lineLeft = (int) Math.ceil(docTitleLayout.getLineLeft(0));
-                    if (docTitleOffsetX != 0 || lineLeft != 0) {
-                        toAdd = -AndroidUtilities.dp(13);
-                        if (docTitleOffsetX != 0) {
-                            ax = x + docTitleOffsetX - AndroidUtilities.dp(7 + 16) - getExtraTextX();
-                        } else {
-                            ax = x + lineLeft - AndroidUtilities.dp(7 + 16) - getExtraTextX();
-                        }
-                    } else {
-                        toAdd = AndroidUtilities.dp(13);
-                        ax = x + (int) Math.ceil(docTitleLayout.getLineWidth(0)) + AndroidUtilities.dp(7) + getExtraTextX();
-                    }
-                    for (int a = pollAvatarImages.length - 1; a >= 0; a--) {
-                        if (!pollAvatarImagesVisible[a] || !pollAvatarImages[a].hasImageSet()) {
-                            continue;
-                        }
-                        pollAvatarImages[a].setImageX(ax + toAdd * a);
-                        pollAvatarImages[a].setImageY(y - AndroidUtilities.dp(1));
-                        if (a != pollAvatarImages.length - 1) {
-                            canvas.drawCircle(pollAvatarImages[a].getCenterX(), pollAvatarImages[a].getCenterY(), AndroidUtilities.dp(9), currentBackgroundDrawable.getPaint());
-                        }
-                        if (animatePollAvatars && animatePollAnswerAlpha) {
-                            float alpha = Math.min(pollUnvoteInProgress ? (1.0f - pollAnimationProgress) / 0.3f : pollAnimationProgress, 1.0f);
-                            pollAvatarImages[a].setAlpha(alpha);
-                        }
-                        pollAvatarImages[a].draw(canvas);
-                    }
-                }
-            }
-            if ((!pollClosed && !pollVoted || pollVoteInProgress) && lastPoll.quiz && lastPoll.close_period != 0) {
-                long currentTime = ConnectionsManager.getInstance(currentAccount).getCurrentTimeMillis();
-                long time = Math.max(0, ((long) lastPoll.close_date) * 1000 - currentTime);
-                if (closeTimeText == null || lastPollCloseTime != time) {
-                    closeTimeText = AndroidUtilities.formatDurationNoHours((int) Math.ceil(time / 1000.0f), false);
-                    closeTimeWidth = (int) Math.ceil(Theme.chat_timePaint.measureText(closeTimeText));
-                    lastPollCloseTime = time;
-                }
-                if (time <= 0 && !pollClosed) {
-                    if (currentMessageObject.pollLastCheckTime + 1000 < SystemClock.elapsedRealtime()) {
-                        currentMessageObject.pollLastCheckTime = 0;
-                    }
-                    delegate.needReloadPolls();
-                }
-                int tx = currentBackgroundDrawable.getBounds().right - closeTimeWidth - AndroidUtilities.dp(currentMessageObject.isOutOwner() ? 40 : 34);
-                if (time <= 5000) {
-                    Theme.chat_timePaint.setColor(Theme.getColor(currentMessageObject.isOutOwner() ? Theme.key_chat_outPollWrongAnswer : Theme.key_chat_inPollWrongAnswer));
-                }
-                if (animatePollAnswer) {
-                    Theme.chat_timePaint.setAlpha((int) (255 * (1.0f - pollAnimationProgress)));
-                }
-                canvas.drawText(closeTimeText, tx, y + AndroidUtilities.dp(11), Theme.chat_timePaint);
-                Theme.chat_pollTimerPaint.setColor(Theme.chat_timePaint.getColor());
-                tx += closeTimeWidth + AndroidUtilities.dp(13);
-                int rad = AndroidUtilities.dp(5.1f);
-                int ty = y + AndroidUtilities.dp(6);
-                if (time <= 60000) {
-                    rect.set(tx - rad, ty - rad, tx + rad, ty + rad);
-                    float radProgress = -360 * (time / (Math.min(60, lastPoll.close_period) * 1000.0f));
-                    canvas.drawArc(rect, -90, radProgress, false, Theme.chat_pollTimerPaint);
-                    timerParticles.draw(canvas, Theme.chat_pollTimerPaint, rect, radProgress, pollVoteInProgress ? (1.0f - pollAnimationProgress) : 1.0f);
-                } else {
-                    canvas.drawCircle(tx, ty, rad, Theme.chat_pollTimerPaint);
-                }
-                if (time > 60000 || timerTransitionProgress != 0.0f) {
-                    Theme.chat_pollTimerPaint.setAlpha((int) (255 * timerTransitionProgress));
-                    canvas.drawLine(tx - AndroidUtilities.dp(2.1f) * timerTransitionProgress, ty - AndroidUtilities.dp(7.5f), tx + AndroidUtilities.dp(2.1f) * timerTransitionProgress, ty - AndroidUtilities.dp(7.5f), Theme.chat_pollTimerPaint);
-                    canvas.drawLine(tx, ty - AndroidUtilities.dp(3) * timerTransitionProgress, tx, ty, Theme.chat_pollTimerPaint);
-                    if (time <= 60000) {
-                        timerTransitionProgress -= dt / 180.0f;
-                        if (timerTransitionProgress < 0) {
-                            timerTransitionProgress = 0;
-                        }
-                    }
-                }
-                invalidate();
-            }
-            if (Build.VERSION.SDK_INT >= 21 && selectorDrawable != null && (selectorDrawableMaskType == 1 || selectorDrawableMaskType == 3)) {
-                if (selectorDrawableMaskType == 3) {
-                    canvas.save();
-                    canvas.scale(hintButtonProgress, hintButtonProgress, selectorDrawable.getBounds().centerX(), selectorDrawable.getBounds().centerY());
-                }
-                selectorDrawable.draw(canvas);
-                if (selectorDrawableMaskType == 3) {
-                    canvas.restore();
-                }
-            }
-            int lastVoteY = 0;
-            for (int a = 0, N = pollButtons.size(); a < N; a++) {
-                PollButton button = pollButtons.get(a);
-                button.x = x;
-                canvas.save();
-                canvas.translate(x + AndroidUtilities.dp(35), button.y + namesOffset);
-                button.title.draw(canvas);
-                int alpha = (int) (animatePollAnswerAlpha ? 255 * Math.min((pollUnvoteInProgress ? 1.0f - pollAnimationProgress : pollAnimationProgress) / 0.3f, 1.0f) : 255);
-                if (pollVoted || pollClosed || animatePollAnswerAlpha) {
-                    if (lastPoll.quiz && pollVoted && button.chosen) {
-                        String key;
-                        if (button.correct) {
-                            key = currentMessageObject.isOutOwner() ? Theme.key_chat_outPollCorrectAnswer : Theme.key_chat_inPollCorrectAnswer;
-                        } else {
-                            key = currentMessageObject.isOutOwner() ? Theme.key_chat_outPollWrongAnswer : Theme.key_chat_inPollWrongAnswer;
-                        }
-                        if (!currentBackgroundDrawable.hasGradient() || Theme.hasThemeKey(key)) {
-                            Theme.chat_docBackPaint.setColor(Theme.getColor(key));
-                        } else {
-                            Theme.chat_docBackPaint.setColor(Theme.getColor(currentMessageObject.isOutOwner() ? Theme.key_chat_outAudioSeekbarFill : Theme.key_chat_inAudioSeekbarFill));
-                        }
-                    } else {
-                        Theme.chat_docBackPaint.setColor(Theme.getColor(currentMessageObject.isOutOwner() ? Theme.key_chat_outAudioSeekbarFill : Theme.key_chat_inAudioSeekbarFill));
-                    }
-                    if (animatePollAnswerAlpha) {
-                        float oldAlpha = Theme.chat_instantViewPaint.getAlpha() / 255.0f;
-                        Theme.chat_instantViewPaint.setAlpha((int) (alpha * oldAlpha));
-                        oldAlpha = Theme.chat_docBackPaint.getAlpha() / 255.0f;
-                        Theme.chat_docBackPaint.setAlpha((int) (alpha * oldAlpha));
-                    }
-
-                    int currentPercent = (int) Math.ceil(button.prevPercent + (button.percent - button.prevPercent) * pollAnimationProgress);
-                    String text = String.format("%d%%", currentPercent);
-                    int width = (int) Math.ceil(Theme.chat_instantViewPaint.measureText(text));
-                    canvas.drawText(text, -AndroidUtilities.dp(6.5f) - width, AndroidUtilities.dp(14), Theme.chat_instantViewPaint);
-
-                    width = backgroundWidth - AndroidUtilities.dp(76);
-                    float currentPercentProgress = button.prevPercentProgress + (button.percentProgress - button.prevPercentProgress) * pollAnimationProgress;
-                    rect.set(0, button.height + AndroidUtilities.dp(6), width * currentPercentProgress, button.height + AndroidUtilities.dp(11));
-                    canvas.drawRoundRect(rect, AndroidUtilities.dp(2), AndroidUtilities.dp(2), Theme.chat_docBackPaint);
-
-                    if (button.chosen || button.prevChosen || lastPoll.quiz && button.correct && (pollVoted || pollClosed)) {
-                        float cx = rect.left - AndroidUtilities.dp(13.5f);
-                        float cy = rect.centerY();
-                        canvas.drawCircle(cx, cy, AndroidUtilities.dp(7), Theme.chat_docBackPaint);
-                        Drawable drawable;
-                        if (lastPoll.quiz && button.chosen && !button.correct) {
-                            drawable = Theme.chat_pollCrossDrawable[currentMessageObject.isOutOwner() ? 1 : 0];
-                        } else {
-                            drawable = Theme.chat_pollCheckDrawable[currentMessageObject.isOutOwner() ? 1 : 0];
-                        }
-                        drawable.setAlpha(alpha);
-                        setDrawableBounds(drawable, cx - drawable.getIntrinsicWidth() / 2, cy - drawable.getIntrinsicHeight() / 2);
-                        drawable.draw(canvas);
-                    }
-                }
-
-                if (!pollVoted && !pollClosed || animatePollAnswerAlpha) {
-                    if (isDrawSelectionBackground()) {
-                        Theme.chat_replyLinePaint.setColor(Theme.getColor(currentMessageObject.isOutOwner() ? Theme.key_chat_outVoiceSeekbarSelected : Theme.key_chat_inVoiceSeekbarSelected));
-                    } else {
-                        Theme.chat_replyLinePaint.setColor(Theme.getColor(currentMessageObject.isOutOwner() ? Theme.key_chat_outVoiceSeekbar : Theme.key_chat_inVoiceSeekbar));
-                    }
-                    if (animatePollAnswerAlpha) {
-                        float oldAlpha = Theme.chat_replyLinePaint.getAlpha() / 255.0f;
-                        Theme.chat_replyLinePaint.setAlpha((int) ((255 - alpha) * oldAlpha));
-                    }
-                    canvas.drawLine(-AndroidUtilities.dp(2), button.height + AndroidUtilities.dp(13), backgroundWidth - AndroidUtilities.dp(58), button.height + AndroidUtilities.dp(13), Theme.chat_replyLinePaint);
-                    if (pollVoteInProgress && a == pollVoteInProgressNum) {
-                        Theme.chat_instantViewRectPaint.setColor(Theme.getColor(currentMessageObject.isOutOwner() ? Theme.key_chat_outAudioSeekbarFill : Theme.key_chat_inAudioSeekbarFill));
-                        if (animatePollAnswerAlpha) {
-                            float oldAlpha = Theme.chat_instantViewRectPaint.getAlpha() / 255.0f;
-                            Theme.chat_instantViewRectPaint.setAlpha((int) ((255 - alpha) * oldAlpha));
-                        }
-                        rect.set(-AndroidUtilities.dp(22) - AndroidUtilities.dp(8.5f), AndroidUtilities.dp(9) - AndroidUtilities.dp(8.5f), -AndroidUtilities.dp(23) + AndroidUtilities.dp(8.5f), AndroidUtilities.dp(9) + AndroidUtilities.dp(8.5f));
-                        canvas.drawArc(rect, voteRadOffset, voteCurrentCircleLength, false, Theme.chat_instantViewRectPaint);
-                    } else {
-                        if (currentMessageObject.isOutOwner()) {
-                            Theme.chat_instantViewRectPaint.setColor(Theme.getColor(isDrawSelectionBackground() ? Theme.key_chat_outMenuSelected : Theme.key_chat_outMenu));
-                        } else {
-                            Theme.chat_instantViewRectPaint.setColor(Theme.getColor(isDrawSelectionBackground() ? Theme.key_chat_inMenuSelected : Theme.key_chat_inMenu));
-                        }
-                        if (animatePollAnswerAlpha) {
-                            float oldAlpha = Theme.chat_instantViewRectPaint.getAlpha() / 255.0f;
-                            Theme.chat_instantViewRectPaint.setAlpha((int) ((255 - alpha) * oldAlpha));
-                        }
-                        canvas.drawCircle(-AndroidUtilities.dp(22), AndroidUtilities.dp(9), AndroidUtilities.dp(8.5f), Theme.chat_instantViewRectPaint);
-                        if (lastPoll.multiple_choice) {
-                            int size = AndroidUtilities.dp(8.5f);
-                            String key = Theme.key_checkboxCheck;
-                            if (currentMessageObject.isOutOwner()) {
-                                if (Theme.getColor(key) == 0xffffffff) {
-                                    key = Theme.key_chat_outBubble;
-                                }
-                            }
-                            pollCheckBox[a].setColor(null, currentMessageObject.isOutOwner() ? Theme.key_chat_outAudioSeekbarFill : Theme.key_chat_inAudioSeekbarFill, key);
-                            pollCheckBox[a].setBounds(-AndroidUtilities.dp(22) - size / 2, AndroidUtilities.dp(9) - size / 2, size, size);
-                            pollCheckBox[a].draw(canvas);
-                        }
-                    }
-                }
-                canvas.restore();
-                if (a == N - 1) {
-                    lastVoteY = button.y + namesOffset + button.height;
-                }
-            }
-            if (drawInstantView) {
-                int textX = currentBackgroundDrawable.getBounds().left + AndroidUtilities.dp(currentMessageObject.isOutOwner() || mediaBackground || drawPinnedBottom ? 2 : 8);
-                int instantY = lastVoteY + AndroidUtilities.dp(13);
-                if (currentMessageObject.isOutOwner()) {
-                    Theme.chat_instantViewPaint.setColor(Theme.getColor(Theme.key_chat_outPreviewInstantText));
-                } else {
-                    Theme.chat_instantViewPaint.setColor(Theme.getColor(Theme.key_chat_inPreviewInstantText));
-                }
-
-                instantButtonRect.set(textX, instantY, textX + instantWidth, instantY + AndroidUtilities.dp(44));
-                if (selectorDrawable != null && selectorDrawableMaskType == 2) {
-                    selectorDrawable.setBounds(textX, instantY, textX + instantWidth, instantY + AndroidUtilities.dp(44));
-                    selectorDrawable.draw(canvas);
-                }
-                if (instantViewLayout != null) {
-                    canvas.save();
-                    canvas.translate(textX + instantTextX, instantY + AndroidUtilities.dp(14.5f));
-                    instantViewLayout.draw(canvas);
-                    canvas.restore();
-                }
-            } else if (infoLayout != null) {
-                if (lastPoll.public_voters || lastPoll.multiple_choice) {
-                    lastVoteY += AndroidUtilities.dp(6);
-                }
-                canvas.save();
-                canvas.translate(x + infoX, lastVoteY + AndroidUtilities.dp(22));
-                infoLayout.draw(canvas);
-                canvas.restore();
-            }
-            updatePollAnimations(dt);
         } else if (currentMessageObject.type == 12) {
             if (currentMessageObject.isOutOwner()) {
                 Theme.chat_contactNamePaint.setColor(Theme.getColor(Theme.key_chat_outContactNameText));
@@ -11069,28 +10247,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         sb.append(LocaleController.getString("AccDescrMsgNotPlayed", R.string.AccDescrMsgNotPlayed));
                     }
                 }
-                if (lastPoll != null) {
-                    sb.append(", ");
-                    sb.append(lastPoll.question);
-                    sb.append(", ");
-                    String title;
-                    if (pollClosed) {
-                        title = LocaleController.getString("FinalResults", R.string.FinalResults);
-                    } else {
-                        if (lastPoll.quiz) {
-                            if (lastPoll.public_voters) {
-                                title = LocaleController.getString("QuizPoll", R.string.QuizPoll);
-                            } else {
-                                title = LocaleController.getString("AnonymousQuizPoll", R.string.AnonymousQuizPoll);
-                            }
-                        } else if (lastPoll.public_voters) {
-                            title = LocaleController.getString("PublicPoll", R.string.PublicPoll);
-                        } else {
-                            title = LocaleController.getString("AnonymousPoll", R.string.AnonymousPoll);
-                        }
-                    }
-                    sb.append(title);
-                }
                 if (currentMessageObject.messageOwner.media != null && !TextUtils.isEmpty(currentMessageObject.caption)) {
                     sb.append("\n");
                     sb.append(currentMessageObject.caption);
@@ -11164,10 +10320,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     i++;
                 }
                 i = 0;
-                for (PollButton button : pollButtons) {
-                    info.addChild(ChatMessageCell.this, POLL_BUTTONS_START + i);
-                    i++;
-                }
                 if (drawInstantView) {
                     info.addChild(ChatMessageCell.this, INSTANT_VIEW);
                 }
@@ -11245,31 +10397,6 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     }
                     rect.offset(pos[0], pos[1]);
                     info.setBoundsInScreen(rect);
-                } else if (virtualViewId >= POLL_BUTTONS_START) {
-                    int buttonIndex = virtualViewId - POLL_BUTTONS_START;
-                    if (buttonIndex >= pollButtons.size()) {
-                        return null;
-                    }
-                    PollButton button = pollButtons.get(buttonIndex);
-                    info.setText(button.title.getText());
-                    if (!pollVoted) {
-                        info.setClassName("android.widget.Button");
-                    } else {
-                        info.setText(info.getText() + ", " + button.percent + "%");
-                    }
-                    info.setEnabled(true);
-                    info.addAction(AccessibilityNodeInfo.ACTION_CLICK);
-
-                    int width = backgroundWidth - AndroidUtilities.dp(76);
-                    rect.set(button.x, button.y, button.x + width, button.y + button.height);
-                    info.setBoundsInParent(rect);
-                    if (accessibilityVirtualViewBounds.get(virtualViewId) == null) {
-                        accessibilityVirtualViewBounds.put(virtualViewId, new Rect(rect));
-                    }
-                    rect.offset(pos[0], pos[1]);
-                    info.setBoundsInScreen(rect);
-
-                    info.setClickable(true);
                 } else if (virtualViewId == INSTANT_VIEW) {
                     info.setClassName("android.widget.Button");
                     info.setEnabled(true);

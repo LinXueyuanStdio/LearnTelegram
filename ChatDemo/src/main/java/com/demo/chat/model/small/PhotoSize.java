@@ -7,7 +7,7 @@ package com.demo.chat.model.small;
  * @description null
  * @usage null
  */
-public class PhotoSize {
+public class PhotoSize extends Media {
     public String type;
     public FileLocation location;
     public int w;

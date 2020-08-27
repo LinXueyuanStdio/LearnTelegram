@@ -1,4 +1,4 @@
-package com.demo.chat.model.small;
+package com.demo.chat.model.bot;
 
 import java.util.ArrayList;
 

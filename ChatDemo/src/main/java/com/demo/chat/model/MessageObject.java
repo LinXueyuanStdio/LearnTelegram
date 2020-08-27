@@ -36,13 +36,15 @@ import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.browser.Browser;
 import com.demo.chat.model.action.ChatObject;
-import com.demo.chat.model.small.BotInlineResult;
+import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.small.WebDocument;
+import com.demo.chat.model.small.WebFile;
 import com.demo.chat.model.sticker.InputStickerSet;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Cells.ChatMessageCell;
@@ -59,7 +61,6 @@ import java.io.StringReader;
 import java.net.URLEncoder;
 import java.util.AbstractMap;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.GregorianCalendar;
@@ -117,8 +118,8 @@ public class MessageObject {
     public int audioProgressSec;
     public int audioPlayerDuration;
     public boolean isDateObject;
-    public TLObject photoThumbsObject;
-    public TLObject photoThumbsObject2;
+    public Media photoThumbsObject;
+    public Media photoThumbsObject2;
     public ArrayList<PhotoSize> photoThumbs;
     public ArrayList<PhotoSize> photoThumbs2;
     public VideoEditedInfo videoEditedInfo;
@@ -1589,7 +1590,7 @@ public class MessageObject {
         messageOwner.to_id.channel_id = chat.id;
         messageOwner.unread = false;
         if (chat.megagroup) {
-            messageOwner.flags |= Message_FLAG_MEGAGROUP;
+            messageOwner.flags |= Message.MESSAGE_FLAG_MEGAGROUP;
         }
         MediaController mediaController = MediaController.getInstance();
 
@@ -1601,9 +1602,9 @@ public class MessageObject {
             message.out = false;
             message.id = mid[0]++;
             message.reply_to_msg_id = 0;
-            message.flags = message.flags &~ Message_FLAG_EDITED;
+            message.flags = message.flags &~ Message.MESSAGE_FLAG_EDITED;
             if (chat.megagroup) {
-                message.flags |= Message_FLAG_MEGAGROUP;
+                message.flags |= Message.MESSAGE_FLAG_MEGAGROUP;
             }
             MessageObject messageObject = new MessageObject(currentAccount, message, null, null, true, eventId);
             if (messageObject.contentType >= 0) {
@@ -1836,88 +1837,16 @@ public class MessageObject {
         return messageOwner.reactions != null && !messageOwner.reactions.results.isEmpty();
     }
 
-    public static void updatePollResults(TLRPC.TL_messageMediaPoll media, TLRPC.PollResults results) {
-        if (media == null || results == null) {
-            return;
-        }
-        if ((results.flags & 2) != 0) {
-            ArrayList<byte[]> chosen = null;
-            byte[] correct = null;
-            if (results.min && media.results.results != null) {
-                for (int b = 0, N2 = media.results.results.size(); b < N2; b++) {
-                    TLRPC.TL_pollAnswerVoters answerVoters = media.results.results.get(b);
-                    if (answerVoters.chosen) {
-                        if (chosen == null) {
-                            chosen = new ArrayList<>();
-                        }
-                        chosen.add(answerVoters.option);
-                    }
-                    if (answerVoters.correct) {
-                        correct = answerVoters.option;
-                    }
-                }
-            }
-            media.results.results = results.results;
-            if (chosen != null || correct != null) {
-                for (int b = 0, N2 = media.results.results.size(); b < N2; b++) {
-                    TLRPC.TL_pollAnswerVoters answerVoters = media.results.results.get(b);
-                    if (chosen != null) {
-                        for (int a = 0, N = chosen.size(); a < N; a++) {
-                            if (Arrays.equals(answerVoters.option, chosen.get(a))) {
-                                answerVoters.chosen = true;
-                                chosen.remove(a);
-                                break;
-                            }
-                        }
-                        if (chosen.isEmpty()) {
-                            chosen = null;
-                        }
-                    }
-                    if (correct != null && Arrays.equals(answerVoters.option, correct)) {
-                        answerVoters.correct = true;
-                        correct = null;
-                    }
-                    if (chosen == null && correct == null) {
-                        break;
-                    }
-                }
-            }
-            media.results.flags |= 2;
-        }
-        if ((results.flags & 4) != 0) {
-            media.results.total_voters = results.total_voters;
-            media.results.flags |= 4;
-        }
-        if ((results.flags & 8) != 0) {
-            media.results.recent_voters = results.recent_voters;
-            media.results.flags |= 8;
-        }
-        if ((results.flags & 16) != 0) {
-            media.results.solution = results.solution;
-            media.results.solution_entities = results.solution_entities;
-            media.results.flags |= 16;
-        }
-    }
-
     public boolean isPollClosed() {
-        if (type != TYPE_POLL) {
-            return false;
-        }
-        return ((TLRPC.TL_messageMediaPoll) messageOwner.media).poll.closed;
+        return false;
     }
 
     public boolean isQuiz() {
-        if (type != TYPE_POLL) {
-            return false;
-        }
-        return ((TLRPC.TL_messageMediaPoll) messageOwner.media).poll.quiz;
+        return false;
     }
 
     public boolean isPublicPoll() {
-        if (type != TYPE_POLL) {
-            return false;
-        }
-        return ((TLRPC.TL_messageMediaPoll) messageOwner.media).poll.public_voters;
+        return false;
     }
 
     public boolean isPoll() {
@@ -1925,44 +1854,15 @@ public class MessageObject {
     }
 
     public boolean canUnvote() {
-        if (type != TYPE_POLL) {
-            return false;
-        }
-        TLRPC.TL_messageMediaPoll mediaPoll = (TLRPC.TL_messageMediaPoll) messageOwner.media;
-        if (mediaPoll.results == null || mediaPoll.results.results.isEmpty() || mediaPoll.poll.quiz) {
-            return false;
-        }
-        for (int a = 0, N = mediaPoll.results.results.size(); a < N; a++) {
-            TLRPC.TL_pollAnswerVoters answer = mediaPoll.results.results.get(a);
-            if (answer.chosen) {
-                return true;
-            }
-        }
         return false;
     }
 
     public boolean isVoted() {
-        if (type != TYPE_POLL) {
-            return false;
-        }
-        TLRPC.TL_messageMediaPoll mediaPoll = (TLRPC.TL_messageMediaPoll) messageOwner.media;
-        if (mediaPoll.results == null || mediaPoll.results.results.isEmpty()) {
-            return false;
-        }
-        for (int a = 0, N = mediaPoll.results.results.size(); a < N; a++) {
-            TLRPC.TL_pollAnswerVoters answer = mediaPoll.results.results.get(a);
-            if (answer.chosen) {
-                return true;
-            }
-        }
         return false;
     }
 
     public long getPollId() {
-        if (type != TYPE_POLL) {
-            return 0;
-        }
-        return ((TLRPC.TL_messageMediaPoll) messageOwner.media).poll.id;
+        return 0;
     }
 
     private MessageMedia.Photo getPhotoWithId(MessageMedia.WebPage webPage, long id) {
@@ -1973,7 +1873,7 @@ public class MessageObject {
             return webPage.photo;
         }
         for (int a = 0; a < webPage.cached_page.photos.size(); a++) {
-            TLRPC.Photo photo = webPage.cached_page.photos.get(a);
+            MessageMedia.Photo photo = webPage.cached_page.photos.get(a);
             if (photo.id == id) {
                 return photo;
             }
@@ -2758,9 +2658,8 @@ public class MessageObject {
             if (isDocumentHasThumb(document) && (mime.equals("image/png") || mime.equals("image/jpg") || mime.equals("image/jpeg"))) {
                 for (int a = 0; a < document.attributes.size(); a++) {
                     Document.DocumentAttribute attribute = document.attributes.get(a);
-                    if (attribute instanceof TLRPC.TL_documentAttributeImageSize) {
-                        TLRPC.TL_documentAttributeImageSize size = (TLRPC.TL_documentAttributeImageSize) attribute;
-                        return size.w < 6000 && size.h < 6000;
+                    if (attribute.isImageSize()) {
+                        return attribute.w < 6000 && attribute.h < 6000;
                     }
                 }
             } else if (BuildVars.DEBUG_PRIVATE_VERSION) {
@@ -2782,7 +2681,7 @@ public class MessageObject {
             boolean round = false;
             for (int a = 0; a < document.attributes.size(); a++) {
                 Document.DocumentAttribute attribute = document.attributes.get(a);
-                if (attribute instanceof TLRPC.TL_documentAttributeVideo) {
+                if (attribute.isVideo()) {
                     width = attribute.w;
                     height = attribute.w;
                     round = attribute.round_message;
@@ -2802,14 +2701,12 @@ public class MessageObject {
             boolean animated = false;
             for (int a = 0; a < document.attributes.size(); a++) {
                 Document.DocumentAttribute attribute = document.attributes.get(a);
-                if (attribute instanceof TLRPC.TL_documentAttributeAnimated) {
-                    animated = true;
-                } else if (attribute instanceof TLRPC.TL_documentAttributeVideo) {
+                if (attribute.isVideo()) {
                     width = attribute.w;
                     height = attribute.h;
                 }
             }
-            if (/*animated && */width <= 1280 && height <= 1280) {
+            if (width <= 1280 && height <= 1280) {
                 return true;
             }
         }
@@ -2823,9 +2720,9 @@ public class MessageObject {
             boolean animated = false;
             for (int a = 0; a < document.attributes.size(); a++) {
                 Document.DocumentAttribute attribute = document.attributes.get(a);
-                if (attribute instanceof TLRPC.TL_documentAttributeAnimated) {
+                if (attribute.isAnimated()) {
                     animated = true;
-                } else if (attribute instanceof TLRPC.TL_documentAttributeVideo) {
+                } else if (attribute.isVideo()) {
                     width = attribute.w;
                     height = attribute.h;
                 }
@@ -4207,7 +4104,7 @@ public class MessageObject {
     }
 
     public static boolean isMegagroup(Message message) {
-        return (message.flags & Message_FLAG_MEGAGROUP) != 0;
+        return (message.flags & Message.MESSAGE_FLAG_MEGAGROUP) != 0;
     }
 
     public static boolean isOut(Message message) {
@@ -5018,15 +4915,15 @@ public class MessageObject {
     }
 
     public boolean needDrawForwarded() {
-        return (messageOwner.flags & Message_FLAG_FWD) != 0 && messageOwner.fwd_from != null && (messageOwner.fwd_from.saved_from_peer == null || messageOwner.fwd_from.saved_from_peer.channel_id != messageOwner.fwd_from.channel_id) && UserConfig.getInstance(currentAccount).getClientUserId() != getDialogId();
+        return (messageOwner.flags & Message.MESSAGE_FLAG_FWD) != 0 && messageOwner.fwd_from != null && (messageOwner.fwd_from.saved_from_peer == null || messageOwner.fwd_from.saved_from_peer.channel_id != messageOwner.fwd_from.channel_id) && UserConfig.getInstance(currentAccount).getClientUserId() != getDialogId();
     }
 
     public static boolean isForwardedMessage(Message message) {
-        return (message.flags & Message_FLAG_FWD) != 0 && message.fwd_from != null;
+        return (message.flags & Message.MESSAGE_FLAG_FWD) != 0 && message.fwd_from != null;
     }
 
     public boolean isReply() {
-        return !(replyMessageObject != null && replyMessageObject.messageOwner instanceof TLRPC.TL_messageEmpty) && (messageOwner.reply_to_msg_id != 0 || messageOwner.reply_to_random_id != 0) && (messageOwner.flags & Message_FLAG_REPLY) != 0;
+        return !(replyMessageObject != null && replyMessageObject.messageOwner instanceof TLRPC.TL_messageEmpty) && (messageOwner.reply_to_msg_id != 0 || messageOwner.reply_to_random_id != 0) && (messageOwner.flags & Message.MESSAGE_FLAG_REPLY) != 0;
     }
 
     public boolean isMediaEmpty() {

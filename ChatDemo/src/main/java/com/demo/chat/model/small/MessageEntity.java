@@ -12,8 +12,30 @@ public class MessageEntity {
     public int length;
     public String url;
     public String language;
+    public int user_id;//TODO isMentionName
 
     public boolean isMentionName() {
+        return false;
+    }
+    public boolean isCode() {
+        return false;
+    }
+    public boolean isPre() {
+        return false;
+    }
+    public boolean isBold() {
+        return false;
+    }
+    public boolean isItalic() {
+        return false;
+    }
+    public boolean isStrike() {
+        return false;
+    }
+    public boolean isUnderline() {
+        return false;
+    }
+    public boolean isTextUrl() {
         return false;
     }
 }

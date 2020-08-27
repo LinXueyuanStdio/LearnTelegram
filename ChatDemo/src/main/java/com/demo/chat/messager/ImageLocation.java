@@ -8,8 +8,11 @@ import com.demo.chat.model.User;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.small.WebFile;
+import com.demo.chat.model.sticker.InputStickerSet;
 import com.demo.chat.theme.Theme;
 
 /**
@@ -89,7 +92,7 @@ public class ImageLocation {
         return imageLocation;
     }
 
-    public static ImageLocation getForObject(PhotoSize photoSize, TLObject object) {
+    public static ImageLocation getForObject(PhotoSize photoSize, Media object) {
         if (object instanceof MessageMedia.Photo) {
             return getForPhoto(photoSize, (MessageMedia.Photo) object);
         } else if (object instanceof Document) {
@@ -216,7 +219,7 @@ public class ImageLocation {
         return imageLocation;
     }
 
-    private static ImageLocation getForPhoto(FileLocation location, int size, Photo photo, Document document, InputPeer photoPeer, boolean photoPeerBig, int dc_id, InputStickerSet stickerSet, String thumbSize) {
+    private static ImageLocation getForPhoto(FileLocation location, int size, MessageMedia.Photo photo, Document document, InputPeer photoPeer, boolean photoPeerBig, int dc_id, InputStickerSet stickerSet, String thumbSize) {
         if (location == null || photo == null && photoPeer == null && stickerSet == null && document == null) {
             return null;
         }
@@ -290,9 +293,7 @@ public class ImageLocation {
     }
 
     public String getKey(Object parentObject, Object fullObject, boolean url) {
-        if (secureDocument != null) {
-            return secureDocument.secureFile.dc_id + "_" + secureDocument.secureFile.id;
-        } else if (photoSize instanceof TL_photoStrippedSize) {
+        if (photoSize instanceof TL_photoStrippedSize) {
             if (photoSize.bytes.length > 0) {
                 return getStippedKey(parentObject, fullObject, photoSize);
             }
@@ -320,10 +321,6 @@ public class ImageLocation {
     public int getSize() {
         if (photoSize != null) {
             return photoSize.size;
-        } else if (secureDocument != null) {
-            if (secureDocument.secureFile != null) {
-                return secureDocument.secureFile.size;
-            }
         } else if (document != null) {
             return document.size;
         } else if (webFile != null) {

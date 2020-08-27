@@ -53,7 +53,7 @@ import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
-import com.demo.chat.model.small.BotInfo;
+import com.demo.chat.model.bot.BotInfo;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.DraftMessage;
 import com.demo.chat.model.small.MessageEntity;
@@ -4841,34 +4841,6 @@ public class MediaDataController extends BaseController {
         } else {
             dt = 60;
         }
-
-        TLRPC.TL_topPeer peer = null;
-        for (int a = 0; a < inlineBots.size(); a++) {
-            TLRPC.TL_topPeer p = inlineBots.get(a);
-            if (p.peer.user_id == uid) {
-                peer = p;
-                break;
-            }
-        }
-        if (peer == null) {
-            peer = new TLRPC.TL_topPeer();
-            peer.peer = new TLRPC.TL_peerUser();
-            peer.peer.user_id = uid;
-            inlineBots.add(peer);
-        }
-        peer.rating += Math.exp(dt / getMessagesController().ratingDecay);
-        Collections.sort(inlineBots, (lhs, rhs) -> {
-            if (lhs.rating > rhs.rating) {
-                return -1;
-            } else if (lhs.rating < rhs.rating) {
-                return 1;
-            }
-            return 0;
-        });
-        if (inlineBots.size() > 20) {
-            inlineBots.remove(inlineBots.size() - 1);
-        }
-        savePeer(uid, 1, peer.rating);
         getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
     }
 
