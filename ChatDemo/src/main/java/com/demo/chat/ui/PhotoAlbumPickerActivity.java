@@ -418,9 +418,6 @@ public class PhotoAlbumPickerActivity extends BaseFragment implements Notificati
             }
             Chat chat = chatActivity.getCurrentChat();
             User user = chatActivity.getCurrentUser();
-            if (chatActivity.getCurrentEncryptedChat() != null) {
-                return false;
-            }
 
             if (sendPopupLayout == null) {
                 sendPopupLayout = new ActionBarPopupWindow.ActionBarPopupWindowLayout(getParentActivity());

@@ -32,26 +32,26 @@ public class BaseController {
     protected final MessagesController getMessagesController() {
         return parentAccountInstance.getMessagesController();
     }
-//    //联系人
-//    protected final ContactsController getContactsController() {
-//        return parentAccountInstance.getContactsController();
-//    }
+    //联系人
+    protected final ContactsController getContactsController() {
+        return parentAccountInstance.getContactsController();
+    }
     //媒体数据
     protected final MediaDataController getMediaDataController() {
         return parentAccountInstance.getMediaDataController();
     }
-//    //连接管理
-//    protected final ConnectionsManager getConnectionsManager() {
-//        return parentAccountInstance.getConnectionsManager();
-//    }
+    //连接管理
+    protected final ConnectionsManager getConnectionsManager() {
+        return parentAccountInstance.getConnectionsManager();
+    }
 //    //位置
 //    protected final LocationController getLocationController() {
 //        return parentAccountInstance.getLocationController();
 //    }
-//    //通知
-//    protected final NotificationsController getNotificationsController() {
-//        return parentAccountInstance.getNotificationsController();
-//    }
+    //通知
+    protected final NotificationsController getNotificationsController() {
+        return parentAccountInstance.getNotificationsController();
+    }
     //通知中心
     protected final NotificationCenter getNotificationCenter() {
         return parentAccountInstance.getNotificationCenter();
@@ -60,14 +60,14 @@ public class BaseController {
     protected final MessagesStorage getMessagesStorage() {
         return parentAccountInstance.getMessagesStorage();
     }
-//    //下载
-//    protected final DownloadController getDownloadController() {
-//        return parentAccountInstance.getDownloadController();
-//    }
-//    //发送消息
-//    protected final SendMessagesHelper getSendMessagesHelper() {
-//        return parentAccountInstance.getSendMessagesHelper();
-//    }
+    //下载
+    protected final DownloadController getDownloadController() {
+        return parentAccountInstance.getDownloadController();
+    }
+    //发送消息
+    protected final SendMessagesHelper getSendMessagesHelper() {
+        return parentAccountInstance.getSendMessagesHelper();
+    }
 //    //私密聊天
 //    protected final SecretChatHelper getSecretChatHelper() {
 //        return parentAccountInstance.getSecretChatHelper();
@@ -76,10 +76,10 @@ public class BaseController {
 //    protected final StatsController getStatsController() {
 //        return parentAccountInstance.getStatsController();
 //    }
-//    //文件加载器
-//    protected final FileLoader getFileLoader() {
-//        return parentAccountInstance.getFileLoader();
-//    }
+    //文件加载器
+    protected final FileLoader getFileLoader() {
+        return parentAccountInstance.getFileLoader();
+    }
 //    //文件转发
 //    protected final FileRefController getFileRefController() {
 //        return parentAccountInstance.getFileRefController();

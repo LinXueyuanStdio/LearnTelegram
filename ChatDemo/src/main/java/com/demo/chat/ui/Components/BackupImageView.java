@@ -34,10 +34,6 @@ public class BackupImageView extends View {
         imageReceiver.setOrientation(angle, center);
     }
 
-    public void setImage(SecureDocument secureDocument, String filter) {
-        setImage(ImageLocation.getForSecureDocument(secureDocument), filter, null, null, null, null, null, 0, null);
-    }
-
     public void setImage(ImageLocation imageLocation, String imageFilter, String ext, Drawable thumb, Object parentObject) {
         setImage(imageLocation, imageFilter, null, null, thumb, null, ext, 0, parentObject);
     }

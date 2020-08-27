@@ -2,7 +2,6 @@ package com.demo.chat.controller;
 
 import android.app.Activity;
 import android.content.SharedPreferences;
-import android.database.sqlite.SQLiteCursor;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -13,11 +12,15 @@ import android.util.LongSparseArray;
 import android.util.SparseArray;
 
 import com.demo.chat.ApplicationLoader;
+import com.demo.chat.SQLite.SQLiteCursor;
+import com.demo.chat.SQLite.SQLiteDatabase;
+import com.demo.chat.SQLite.SQLitePreparedStatement;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.Emoji;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLoader;
+import com.demo.chat.messager.NativeByteBuffer;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SerializedData;
 import com.demo.chat.messager.Utilities;
@@ -26,6 +29,7 @@ import com.demo.chat.model.Message;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.BotInfo;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.ui.Components.TextStyleSpan;
@@ -1887,4 +1891,725 @@ public class MediaDataController extends BaseController {
         getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
     }
 
+
+
+    //region ---------------- MEDIA ----------------
+    public final static int MEDIA_PHOTOVIDEO = 0;
+    public final static int MEDIA_FILE = 1;
+    public final static int MEDIA_AUDIO = 2;
+    public final static int MEDIA_URL = 3;
+    public final static int MEDIA_MUSIC = 4;
+    public final static int MEDIA_GIF = 5;
+    public final static int MEDIA_TYPES_COUNT = 6;
+
+    public void loadMedia(long uid, int count, int max_id, int type, int fromCache, int classGuid) {
+        final boolean isChannel = (int) uid < 0 && ChatObject.isChannel(-(int) uid, currentAccount);
+
+        if (BuildVars.LOGS_ENABLED) {
+            FileLog.d("load media did " + uid + " count = " + count + " max_id " + max_id + " type = " + type + " cache = " + fromCache + " classGuid = " + classGuid);
+        }
+        int lower_part = (int)uid;
+        fromCache = 0;
+        if (fromCache != 0 || lower_part == 0) {
+            loadMediaDatabase(uid, count, max_id, type, classGuid, isChannel, fromCache);
+        } else {
+            TL_messages_search req = new TL_messages_search();
+            req.limit = count;
+            req.offset_id = max_id;
+            if (type == MEDIA_PHOTOVIDEO) {
+                req.filter = new TL_inputMessagesFilterPhotoVideo();
+            } else if (type == MEDIA_FILE) {
+                req.filter = new TL_inputMessagesFilterDocument();
+            } else if (type == MEDIA_AUDIO) {
+                req.filter = new TL_inputMessagesFilterRoundVoice();
+            } else if (type == MEDIA_URL) {
+                req.filter = new TL_inputMessagesFilterUrl();
+            } else if (type == MEDIA_MUSIC) {
+                req.filter = new TL_inputMessagesFilterMusic();
+            } else if (type == MEDIA_GIF) {
+                req.filter = new TL_inputMessagesFilterGif();
+            }
+            req.q = "";
+            req.peer = getMessagesController().getInputPeer(lower_part);
+            if (req.peer == null) {
+                return;
+            }
+            int reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
+                if (error == null) {
+                    final messages_Messages res = (messages_Messages) response;
+                    getMessagesController().removeDeletedMessagesFromArray(uid, res.messages);
+                    processLoadedMedia(res, uid, count, max_id, type, 0, classGuid, isChannel, res.messages.size() == 0);
+                }
+            });
+            getConnectionsManager().bindRequestToGuid(reqId, classGuid);
+        }
+    }
+
+    public void getMediaCounts(final long uid, final int classGuid) {
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                int[] counts = new int[] {-1, -1, -1, -1, -1, -1};
+                int[] countsFinal = new int[] {-1, -1, -1, -1, -1, -1};
+                int[] old = new int[] {0, 0, 0, 0, 0, 0};
+                SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT type, count, old FROM media_counts_v2 WHERE uid = %d", uid));
+                while (cursor.next()) {
+                    int type = cursor.intValue(0);
+                    if (type >= 0 && type < MEDIA_TYPES_COUNT) {
+                        countsFinal[type] = counts[type] = cursor.intValue(1);
+                        old[type] = cursor.intValue(2);
+                    }
+                }
+                cursor.dispose();
+                int lower_part = (int) uid;
+                if (lower_part == 0) {
+                    for (int a = 0; a < counts.length; a++) {
+                        if (counts[a] == -1) {
+                            cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT COUNT(mid) FROM media_v2 WHERE uid = %d AND type = %d LIMIT 1", uid, a));
+                            if (cursor.next()) {
+                                counts[a] = cursor.intValue(0);
+                            } else {
+                                counts[a] = 0;
+                            }
+                            cursor.dispose();
+                            putMediaCountDatabase(uid, a, counts[a]);
+                        }
+                    }
+                    AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.mediaCountsDidLoad, uid, counts));
+                } else {
+                    boolean missing = false;
+                    for (int a = 0; a < counts.length; a++) {
+                        if (counts[a] == -1 || old[a] == 1) {
+                            final int type = a;
+
+                            TL_messages_search req = new TL_messages_search();
+                            req.limit = 1;
+                            req.offset_id = 0;
+                            if (a == MEDIA_PHOTOVIDEO) {
+                                req.filter = new TL_inputMessagesFilterPhotoVideo();
+                            } else if (a == MEDIA_FILE) {
+                                req.filter = new TL_inputMessagesFilterDocument();
+                            } else if (a == MEDIA_AUDIO) {
+                                req.filter = new TL_inputMessagesFilterRoundVoice();
+                            } else if (a == MEDIA_URL) {
+                                req.filter = new TL_inputMessagesFilterUrl();
+                            } else if (a == MEDIA_MUSIC) {
+                                req.filter = new TL_inputMessagesFilterMusic();
+                            } else if (a == MEDIA_GIF) {
+                                req.filter = new TL_inputMessagesFilterGif();
+                            }
+                            req.q = "";
+                            req.peer = getMessagesController().getInputPeer(lower_part);
+                            if (req.peer == null) {
+                                counts[a] = 0;
+                                continue;
+                            }
+                            int reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
+                                if (error == null) {
+                                    final messages_Messages res = (messages_Messages) response;
+                                    if (res instanceof TL_messages_messages) {
+                                        counts[type] = res.messages.size();
+                                    } else {
+                                        counts[type] = res.count;
+                                    }
+                                    putMediaCountDatabase(uid, type, counts[type]);
+                                } else {
+                                    counts[type] = 0;
+                                }
+                                boolean finished = true;
+                                for (int b = 0; b < counts.length; b++) {
+                                    if (counts[b] == -1) {
+                                        finished = false;
+                                        break;
+                                    }
+                                }
+                                if (finished) {
+                                    AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.mediaCountsDidLoad, uid, counts));
+                                }
+                            });
+                            getConnectionsManager().bindRequestToGuid(reqId, classGuid);
+                            if (counts[a] == -1) {
+                                missing = true;
+                            } else if (old[a] == 1) {
+                                counts[a] = -1;
+                            }
+                        }
+                    }
+                    if (!missing) {
+                        AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.mediaCountsDidLoad, uid, countsFinal));
+                    }
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    public void getMediaCount(final long uid, final int type, final int classGuid, boolean fromCache) {
+        int lower_part = (int)uid;
+        if (fromCache || lower_part == 0) {
+            getMediaCountDatabase(uid, type, classGuid);
+        } else {
+            TL_messages_search req = new TL_messages_search();
+            req.limit = 1;
+            req.offset_id = 0;
+            if (type == MEDIA_PHOTOVIDEO) {
+                req.filter = new TL_inputMessagesFilterPhotoVideo();
+            } else if (type == MEDIA_FILE) {
+                req.filter = new TL_inputMessagesFilterDocument();
+            } else if (type == MEDIA_AUDIO) {
+                req.filter = new TL_inputMessagesFilterRoundVoice();
+            } else if (type == MEDIA_URL) {
+                req.filter = new TL_inputMessagesFilterUrl();
+            } else if (type == MEDIA_MUSIC) {
+                req.filter = new TL_inputMessagesFilterMusic();
+            } else if (type == MEDIA_GIF) {
+                req.filter = new TL_inputMessagesFilterGif();
+            }
+            req.q = "";
+            req.peer = getMessagesController().getInputPeer(lower_part);
+            if (req.peer == null) {
+                return;
+            }
+            int reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
+                if (error == null) {
+                    final messages_Messages res = (messages_Messages) response;
+                    getMessagesStorage().putUsersAndChats(res.users, res.chats, true, true);
+                    int count;
+                    if (res instanceof TL_messages_messages) {
+                        count = res.messages.size();
+                    } else {
+                        count = res.count;
+                    }
+                    AndroidUtilities.runOnUIThread(() -> {
+                        getMessagesController().putUsers(res.users, false);
+                        getMessagesController().putChats(res.chats, false);
+                    });
+
+                    processLoadedMediaCount(count, uid, type, classGuid, false, 0);
+                }
+            });
+            getConnectionsManager().bindRequestToGuid(reqId, classGuid);
+        }
+    }
+
+    public static int getMediaType(Message message) {
+        if (message == null) {
+            return -1;
+        }
+        if (message.media instanceof TL_messageMediaPhoto) {
+            return MEDIA_PHOTOVIDEO;
+        } else if (message.media instanceof TL_messageMediaDocument) {
+            if (MessageObject.isVoiceMessage(message) || MessageObject.isRoundVideoMessage(message)) {
+                return MEDIA_AUDIO;
+            } else if (MessageObject.isVideoMessage(message)) {
+                return MEDIA_PHOTOVIDEO;
+            } else if (MessageObject.isStickerMessage(message) || MessageObject.isAnimatedStickerMessage(message)) {
+                return -1;
+            } else if (MessageObject.isNewGifMessage(message)) {
+                return MEDIA_GIF;
+            } else if (MessageObject.isMusicMessage(message)) {
+                return MEDIA_MUSIC;
+            } else {
+                return MEDIA_FILE;
+            }
+        } else if (!message.entities.isEmpty()) {
+            for (int a = 0; a < message.entities.size(); a++) {
+                MessageEntity entity = message.entities.get(a);
+                if (entity instanceof TL_messageEntityUrl || entity instanceof TL_messageEntityTextUrl || entity instanceof TL_messageEntityEmail) {
+                    return MEDIA_URL;
+                }
+            }
+        }
+        return -1;
+    }
+
+    public static boolean canAddMessageToMedia(Message message) {
+        if (message instanceof TL_message_secret && (message.media instanceof TL_messageMediaPhoto || MessageObject.isVideoMessage(message) || MessageObject.isGifMessage(message)) && message.media.ttl_seconds != 0 && message.media.ttl_seconds <= 60) {
+            return false;
+        } else if (!(message instanceof TL_message_secret) && message instanceof TL_message && (message.media instanceof TL_messageMediaPhoto || message.media instanceof TL_messageMediaDocument) && message.media.ttl_seconds != 0) {
+            return false;
+        } else if (message.media instanceof TL_messageMediaPhoto ||
+                message.media instanceof TL_messageMediaDocument && !MessageObject.isGifDocument(message.media.document)) {
+            return true;
+        } else if (!message.entities.isEmpty()) {
+            for (int a = 0; a < message.entities.size(); a++) {
+                MessageEntity entity = message.entities.get(a);
+                if (entity instanceof TL_messageEntityUrl || entity instanceof TL_messageEntityTextUrl || entity instanceof TL_messageEntityEmail) {
+                    return true;
+                }
+            }
+        }
+        return MediaDataController.getMediaType(message) != -1;
+    }
+
+    private void processLoadedMedia(final messages_Messages res, final long uid, int count, int max_id, final int type, final int fromCache, final int classGuid, final boolean isChannel, final boolean topReached) {
+        if (BuildVars.LOGS_ENABLED) {
+            FileLog.d("process load media did " + uid + " count = " + count + " max_id " + max_id + " type = " + type + " cache = " + fromCache + " classGuid = " + classGuid);
+        }
+        int lower_part = (int)uid;
+        if (fromCache != 0 && res.messages.isEmpty() && lower_part != 0) {
+            if (fromCache == 2) {
+                return;
+            }
+            loadMedia(uid, count, max_id, type, 0, classGuid);
+        } else {
+            if (fromCache == 0) {
+                ImageLoader.saveMessagesThumbs(res.messages);
+                getMessagesStorage().putUsersAndChats(res.users, res.chats, true, true);
+                putMediaDatabase(uid, type, res.messages, max_id, topReached);
+            }
+
+            Utilities.searchQueue.postRunnable(() -> {
+                final SparseArray<User> usersDict = new SparseArray<>();
+                for (int a = 0; a < res.users.size(); a++) {
+                    User u = res.users.get(a);
+                    usersDict.put(u.id, u);
+                }
+                final ArrayList<MessageObject> objects = new ArrayList<>();
+                for (int a = 0; a < res.messages.size(); a++) {
+                    Message message = res.messages.get(a);
+                    objects.add(new MessageObject(currentAccount, message, usersDict, true));
+                }
+
+                AndroidUtilities.runOnUIThread(() -> {
+                    int totalCount = res.count;
+                    getMessagesController().putUsers(res.users, fromCache != 0);
+                    getMessagesController().putChats(res.chats, fromCache != 0);
+                    getNotificationCenter().postNotificationName(NotificationCenter.mediaDidLoad, uid, totalCount, objects, classGuid, type, topReached);
+                });
+            });
+        }
+    }
+
+    private void processLoadedMediaCount(final int count, final long uid, final int type, final int classGuid, final boolean fromCache, int old) {
+        AndroidUtilities.runOnUIThread(() -> {
+            int lower_part = (int) uid;
+            boolean reload = fromCache && (count == -1 || count == 0 && type == 2) && lower_part != 0;
+            if (reload || old == 1 && lower_part != 0) {
+                getMediaCount(uid, type, classGuid, false);
+            }
+            if (!reload) {
+                if (!fromCache) {
+                    putMediaCountDatabase(uid, type, count);
+                }
+                getNotificationCenter().postNotificationName(NotificationCenter.mediaCountDidLoad, uid, (fromCache && count == -1 ? 0 : count), fromCache, type);
+            }
+        });
+    }
+
+    private void putMediaCountDatabase(final long uid, final int type, final int count) {
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                SQLitePreparedStatement state2 = getMessagesStorage().getDatabase().executeFast("REPLACE INTO media_counts_v2 VALUES(?, ?, ?, ?)");
+                state2.requery();
+                state2.bindLong(1, uid);
+                state2.bindInteger(2, type);
+                state2.bindInteger(3, count);
+                state2.bindInteger(4, 0);
+                state2.step();
+                state2.dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    private void getMediaCountDatabase(final long uid, final int type, final int classGuid) {
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                int count = -1;
+                int old = 0;
+                SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT count, old FROM media_counts_v2 WHERE uid = %d AND type = %d LIMIT 1", uid, type));
+                if (cursor.next()) {
+                    count = cursor.intValue(0);
+                    old = cursor.intValue(1);
+                }
+                cursor.dispose();
+                int lower_part = (int)uid;
+                if (count == -1 && lower_part == 0) {
+                    cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT COUNT(mid) FROM media_v2 WHERE uid = %d AND type = %d LIMIT 1", uid, type));
+                    if (cursor.next()) {
+                        count = cursor.intValue(0);
+                    }
+                    cursor.dispose();
+
+                    if (count != -1) {
+                        putMediaCountDatabase(uid, type, count);
+                    }
+                }
+                processLoadedMediaCount(count, uid, type, classGuid, true, old);
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    private void loadMediaDatabase(final long uid, final int count, final int max_id, final int type, final int classGuid, final boolean isChannel, final int fromCache) {
+        Runnable runnable = new Runnable() {
+            @Override
+            public void run() {
+                boolean topReached = false;
+                TL_messages_messages res = new TL_messages_messages();
+                try {
+                    ArrayList<Integer> usersToLoad = new ArrayList<>();
+                    ArrayList<Integer> chatsToLoad = new ArrayList<>();
+                    int countToLoad = count + 1;
+
+                    SQLiteCursor cursor;
+                    SQLiteDatabase database = getMessagesStorage().getDatabase();
+                    boolean isEnd = false;
+                    if ((int) uid != 0) {
+                        int channelId = 0;
+                        long messageMaxId = max_id;
+                        if (isChannel) {
+                            channelId = -(int) uid;
+                        }
+                        if (messageMaxId != 0 && channelId != 0) {
+                            messageMaxId |= ((long) channelId) << 32;
+                        }
+
+                        cursor = database.queryFinalized(String.format(Locale.US, "SELECT start FROM media_holes_v2 WHERE uid = %d AND type = %d AND start IN (0, 1)", uid, type));
+                        if (cursor.next()) {
+                            isEnd = cursor.intValue(0) == 1;
+                            cursor.dispose();
+                        } else {
+                            cursor.dispose();
+                            cursor = database.queryFinalized(String.format(Locale.US, "SELECT min(mid) FROM media_v2 WHERE uid = %d AND type = %d AND mid > 0", uid, type));
+                            if (cursor.next()) {
+                                int mid = cursor.intValue(0);
+                                if (mid != 0) {
+                                    SQLitePreparedStatement state = database.executeFast("REPLACE INTO media_holes_v2 VALUES(?, ?, ?, ?)");
+                                    state.requery();
+                                    state.bindLong(1, uid);
+                                    state.bindInteger(2, type);
+                                    state.bindInteger(3, 0);
+                                    state.bindInteger(4, mid);
+                                    state.step();
+                                    state.dispose();
+                                }
+                            }
+                            cursor.dispose();
+                        }
+
+                        if (messageMaxId != 0) {
+                            long holeMessageId = 0;
+                            cursor = database.queryFinalized(String.format(Locale.US, "SELECT end FROM media_holes_v2 WHERE uid = %d AND type = %d AND end <= %d ORDER BY end DESC LIMIT 1", uid, type, max_id));
+                            if (cursor.next()) {
+                                holeMessageId = cursor.intValue(0);
+                                if (channelId != 0) {
+                                    holeMessageId |= ((long) channelId) << 32;
+                                }
+                            }
+                            cursor.dispose();
+                            if (holeMessageId > 1) {
+                                cursor = database.queryFinalized(String.format(Locale.US, "SELECT data, mid FROM media_v2 WHERE uid = %d AND mid > 0 AND mid < %d AND mid >= %d AND type = %d ORDER BY date DESC, mid DESC LIMIT %d", uid, messageMaxId, holeMessageId, type, countToLoad));
+                            } else {
+                                cursor = database.queryFinalized(String.format(Locale.US, "SELECT data, mid FROM media_v2 WHERE uid = %d AND mid > 0 AND mid < %d AND type = %d ORDER BY date DESC, mid DESC LIMIT %d", uid, messageMaxId, type, countToLoad));
+                            }
+                        } else {
+                            long holeMessageId = 0;
+                            cursor = database.queryFinalized(String.format(Locale.US, "SELECT max(end) FROM media_holes_v2 WHERE uid = %d AND type = %d", uid, type));
+                            if (cursor.next()) {
+                                holeMessageId = cursor.intValue(0);
+                                if (channelId != 0) {
+                                    holeMessageId |= ((long) channelId) << 32;
+                                }
+                            }
+                            cursor.dispose();
+                            if (holeMessageId > 1) {
+                                cursor = database.queryFinalized(String.format(Locale.US, "SELECT data, mid FROM media_v2 WHERE uid = %d AND mid >= %d AND type = %d ORDER BY date DESC, mid DESC LIMIT %d", uid, holeMessageId, type, countToLoad));
+                            } else {
+                                cursor = database.queryFinalized(String.format(Locale.US, "SELECT data, mid FROM media_v2 WHERE uid = %d AND mid > 0 AND type = %d ORDER BY date DESC, mid DESC LIMIT %d", uid, type, countToLoad));
+                            }
+                        }
+                    } else {
+                        isEnd = true;
+                        if (max_id != 0) {
+                            cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, r.random_id FROM media_v2 as m LEFT JOIN randoms as r ON r.mid = m.mid WHERE m.uid = %d AND m.mid > %d AND type = %d ORDER BY m.mid ASC LIMIT %d", uid, max_id, type, countToLoad));
+                        } else {
+                            cursor = database.queryFinalized(String.format(Locale.US, "SELECT m.data, m.mid, r.random_id FROM media_v2 as m LEFT JOIN randoms as r ON r.mid = m.mid WHERE m.uid = %d AND type = %d ORDER BY m.mid ASC LIMIT %d", uid, type, countToLoad));
+                        }
+                    }
+
+                    while (cursor.next()) {
+                        NativeByteBuffer data = cursor.byteBufferValue(0);
+                        if (data != null) {
+                            Message message = Message.TLdeserialize(data, data.readInt32(false), false);
+                            message.readAttachPath(data, getUserConfig().clientUserId);
+                            data.reuse();
+                            message.id = cursor.intValue(1);
+                            message.dialog_id = uid;
+                            if ((int) uid == 0) {
+                                message.random_id = cursor.longValue(2);
+                            }
+                            res.messages.add(message);
+                            MessagesStorage.addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad);
+                        }
+                    }
+                    cursor.dispose();
+
+                    if (!usersToLoad.isEmpty()) {
+                        getMessagesStorage().getUsersInternal(TextUtils.join(",", usersToLoad), res.users);
+                    }
+                    if (!chatsToLoad.isEmpty()) {
+                        getMessagesStorage().getChatsInternal(TextUtils.join(",", chatsToLoad), res.chats);
+                    }
+                    if (res.messages.size() > count) {
+                        topReached = false;
+                        res.messages.remove(res.messages.size() - 1);
+                    } else {
+                        topReached = isEnd;
+                    }
+                } catch (Exception e) {
+                    res.messages.clear();
+                    res.chats.clear();
+                    res.users.clear();
+                    FileLog.e(e);
+                } finally {
+                    Runnable task = this;
+                    AndroidUtilities.runOnUIThread(() -> getMessagesStorage().completeTaskForGuid(task, classGuid));
+                    processLoadedMedia(res, uid, count, max_id, type, fromCache, classGuid, isChannel, topReached);
+                }
+            }
+        };
+        MessagesStorage messagesStorage = getMessagesStorage();
+        messagesStorage.getStorageQueue().postRunnable(runnable);
+        messagesStorage.bindTaskToGuid(runnable, classGuid);
+    }
+
+    private void putMediaDatabase(final long uid, final int type, final ArrayList<Message> messages, final int max_id, final boolean topReached) {
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                if (messages.isEmpty() || topReached) {
+                    getMessagesStorage().doneHolesInMedia(uid, max_id, type);
+                    if (messages.isEmpty()) {
+                        return;
+                    }
+                }
+                getMessagesStorage().getDatabase().beginTransaction();
+                SQLitePreparedStatement state2 = getMessagesStorage().getDatabase().executeFast("REPLACE INTO media_v2 VALUES(?, ?, ?, ?, ?)");
+                for (Message message : messages) {
+                    if (canAddMessageToMedia(message)) {
+
+                        long messageId = message.id;
+                        if (message.to_id.channel_id != 0) {
+                            messageId |= ((long) message.to_id.channel_id) << 32;
+                        }
+
+                        state2.requery();
+                        NativeByteBuffer data = new NativeByteBuffer(message.getObjectSize());
+                        message.serializeToStream(data);
+                        state2.bindLong(1, messageId);
+                        state2.bindLong(2, uid);
+                        state2.bindInteger(3, message.date);
+                        state2.bindInteger(4, type);
+                        state2.bindByteBuffer(5, data);
+                        state2.step();
+                        data.reuse();
+                    }
+                }
+                state2.dispose();
+                if (!topReached || max_id != 0) {
+                    int minId = topReached ? 1 : messages.get(messages.size() - 1).id;
+                    if (max_id != 0) {
+                        getMessagesStorage().closeHolesInMedia(uid, minId, max_id, type);
+                    } else {
+                        getMessagesStorage().closeHolesInMedia(uid, minId, Integer.MAX_VALUE, type);
+                    }
+                }
+                getMessagesStorage().getDatabase().commitTransaction();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    public void loadMusic(final long uid, final long max_id) {
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            final ArrayList<MessageObject> arrayList = new ArrayList<>();
+            try {
+                int lower_id = (int) uid;
+                SQLiteCursor cursor;
+                if (lower_id != 0) {
+                    cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT data, mid FROM media_v2 WHERE uid = %d AND mid < %d AND type = %d ORDER BY date DESC, mid DESC LIMIT 1000", uid, max_id, MEDIA_MUSIC));
+                } else {
+                    cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT data, mid FROM media_v2 WHERE uid = %d AND mid > %d AND type = %d ORDER BY date DESC, mid DESC LIMIT 1000", uid, max_id, MEDIA_MUSIC));
+                }
+
+                while (cursor.next()) {
+                    NativeByteBuffer data = cursor.byteBufferValue(0);
+                    if (data != null) {
+                        Message message = Message.TLdeserialize(data, data.readInt32(false), false);
+                        message.readAttachPath(data, getUserConfig().clientUserId);
+                        data.reuse();
+                        if (MessageObject.isMusicMessage(message)) {
+                            message.id = cursor.intValue(1);
+                            message.dialog_id = uid;
+                            arrayList.add(0, new MessageObject(currentAccount, message, false));
+                        }
+                    }
+                }
+                cursor.dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+            AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.musicDidLoad, uid, arrayList));
+        });
+    }
+    //endregion ---------------- MEDIA END ----------------
+
+    //region ---------------- BOT ----------------
+    private SparseArray<BotInfo> botInfos = new SparseArray<>();
+    private LongSparseArray<Message> botKeyboards = new LongSparseArray<>();
+    private SparseLongArray botKeyboardsByMids = new SparseLongArray();
+
+    public void clearBotKeyboard(final long did, final ArrayList<Integer> messages) {
+        AndroidUtilities.runOnUIThread(() -> {
+            if (messages != null) {
+                for (int a = 0; a < messages.size(); a++) {
+                    long did1 = botKeyboardsByMids.get(messages.get(a));
+                    if (did1 != 0) {
+                        botKeyboards.remove(did1);
+                        botKeyboardsByMids.delete(messages.get(a));
+                        getNotificationCenter().postNotificationName(NotificationCenter.botKeyboardDidLoad, null, did1);
+                    }
+                }
+            } else {
+                botKeyboards.remove(did);
+                getNotificationCenter().postNotificationName(NotificationCenter.botKeyboardDidLoad, null, did);
+            }
+        });
+    }
+
+    public void loadBotKeyboard(final long did) {
+        Message keyboard = botKeyboards.get(did);
+        if (keyboard != null) {
+            getNotificationCenter().postNotificationName(NotificationCenter.botKeyboardDidLoad, keyboard, did);
+            return;
+        }
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                Message botKeyboard = null;
+                SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT info FROM bot_keyboard WHERE uid = %d", did));
+                if (cursor.next()) {
+                    NativeByteBuffer data;
+
+                    if (!cursor.isNull(0)) {
+                        data = cursor.byteBufferValue(0);
+                        if (data != null) {
+                            botKeyboard = Message.TLdeserialize(data, data.readInt32(false), false);
+                            data.reuse();
+                        }
+                    }
+                }
+                cursor.dispose();
+
+                if (botKeyboard != null) {
+                    final Message botKeyboardFinal = botKeyboard;
+                    AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.botKeyboardDidLoad, botKeyboardFinal, did));
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    public void loadBotInfo(final int uid, boolean cache, final int classGuid) {
+        if (cache) {
+            BotInfo botInfo = botInfos.get(uid);
+            if (botInfo != null) {
+                getNotificationCenter().postNotificationName(NotificationCenter.botInfoDidLoad, botInfo, classGuid);
+                return;
+            }
+        }
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                BotInfo botInfo = null;
+                SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT info FROM bot_info WHERE uid = %d", uid));
+                if (cursor.next()) {
+                    NativeByteBuffer data;
+
+                    if (!cursor.isNull(0)) {
+                        data = cursor.byteBufferValue(0);
+                        if (data != null) {
+                            botInfo = BotInfo.TLdeserialize(data, data.readInt32(false), false);
+                            data.reuse();
+                        }
+                    }
+                }
+                cursor.dispose();
+
+                if (botInfo != null) {
+                    final BotInfo botInfoFinal = botInfo;
+                    AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.botInfoDidLoad, botInfoFinal, classGuid));
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    public void putBotKeyboard(final long did, final Message message) {
+        if (message == null) {
+            return;
+        }
+        try {
+            int mid = 0;
+            SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT mid FROM bot_keyboard WHERE uid = %d", did));
+            if (cursor.next()) {
+                mid = cursor.intValue(0);
+            }
+            cursor.dispose();
+            if (mid >= message.id) {
+                return;
+            }
+
+            SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO bot_keyboard VALUES(?, ?, ?)");
+            state.requery();
+            NativeByteBuffer data = new NativeByteBuffer(message.getObjectSize());
+            message.serializeToStream(data);
+            state.bindLong(1, did);
+            state.bindInteger(2, message.id);
+            state.bindByteBuffer(3, data);
+            state.step();
+            data.reuse();
+            state.dispose();
+
+            AndroidUtilities.runOnUIThread(() -> {
+                Message old = botKeyboards.get(did);
+                botKeyboards.put(did, message);
+                if (old != null) {
+                    botKeyboardsByMids.delete(old.id);
+                }
+                botKeyboardsByMids.put(message.id, did);
+                getNotificationCenter().postNotificationName(NotificationCenter.botKeyboardDidLoad, message, did);
+            });
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+    }
+
+    public void putBotInfo(final BotInfo botInfo) {
+        if (botInfo == null) {
+            return;
+        }
+        botInfos.put(botInfo.user_id, botInfo);
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO bot_info(uid, info) VALUES(?, ?)");
+                state.requery();
+                NativeByteBuffer data = new NativeByteBuffer(botInfo.getObjectSize());
+                botInfo.serializeToStream(data);
+                state.bindInteger(1, botInfo.user_id);
+                state.bindByteBuffer(2, data);
+                state.step();
+                data.reuse();
+                state.dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    //endregion ---------------- BOT END ----------------
 }

@@ -48,42 +48,41 @@ public class AccountInstance {
     public MessagesStorage getMessagesStorage() {
         return MessagesStorage.getInstance(currentAccount);
     }
-//
-//    //联系人
-//    public ContactsController getContactsController() {
-//        return ContactsController.getInstance(currentAccount);
-//    }
-//
+
+    //联系人
+    public ContactsController getContactsController() {
+        return ContactsController.getInstance(currentAccount);
+    }
+
     //媒体数据
     public MediaDataController getMediaDataController() {
         return MediaDataController.getInstance(currentAccount);
     }
-//
-//    //连接管理
-//    public ConnectionsManager getConnectionsManager() {
-//        return ConnectionsManager.getInstance(currentAccount);
-//    }
+
+    //连接管理
+    public ConnectionsManager getConnectionsManager() {
+        return ConnectionsManager.getInstance(currentAccount);
+    }
 
     //通知
     public NotificationsController getNotificationsController() {
         return NotificationsController.getInstance(currentAccount);
     }
-//
+
     //通知中心
     public NotificationCenter getNotificationCenter() {
         return NotificationCenter.getInstance(currentAccount);
     }
-//
-//    //位置
-//    public LocationController getLocationController() {
-//        return LocationController.getInstance(currentAccount);
-//    }
-//
-//
-//    //下载
-//    public DownloadController getDownloadController() {
-//        return DownloadController.getInstance(currentAccount);
-//    }
+
+    //位置
+    public LocationController getLocationController() {
+        return LocationController.getInstance(currentAccount);
+    }
+
+    //下载
+    public DownloadController getDownloadController() {
+        return DownloadController.getInstance(currentAccount);
+    }
 
     //发送消息
     public SendMessagesHelper getSendMessagesHelper() {

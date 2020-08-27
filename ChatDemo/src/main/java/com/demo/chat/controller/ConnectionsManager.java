@@ -104,4 +104,13 @@ public class ConnectionsManager extends BaseController {
     public boolean isPushConnectionEnabled() {
         return false;
     }
+
+
+    public long getCurrentTimeMillis() {
+        return System.currentTimeMillis();
+    }
+
+    public int getCurrentTime() {
+        return (int) (getCurrentTimeMillis() / 1000);
+    }
 }

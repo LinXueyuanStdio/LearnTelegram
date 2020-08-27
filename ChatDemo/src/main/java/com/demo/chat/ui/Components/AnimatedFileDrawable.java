@@ -19,8 +19,10 @@ import android.view.View;
 
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.AnimatedFileDrawableStream;
 import com.demo.chat.messager.DispatchQueue;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.model.small.Document;
 
 import java.io.File;
 import java.util.concurrent.ScheduledThreadPoolExecutor;

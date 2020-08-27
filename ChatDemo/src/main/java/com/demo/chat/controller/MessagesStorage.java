@@ -2,8 +2,6 @@ package com.demo.chat.controller;
 
 import android.app.Dialog;
 import android.content.SharedPreferences;
-import android.database.sqlite.SQLiteCursor;
-import android.database.sqlite.SQLiteDatabase;
 import android.text.TextUtils;
 import android.util.LongSparseArray;
 import android.util.SparseArray;
@@ -11,10 +9,14 @@ import android.util.SparseIntArray;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.PhoneFormat.PhoneFormat;
+import com.demo.chat.SQLite.SQLiteCursor;
+import com.demo.chat.SQLite.SQLiteDatabase;
+import com.demo.chat.SQLite.SQLitePreparedStatement;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.DispatchQueue;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.NativeByteBuffer;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Chat;
@@ -25,6 +27,7 @@ import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.theme.Theme;
 
@@ -3380,62 +3383,6 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public void updateMessagePollResults(long pollId, Poll poll, PollResults results) {
-        storageQueue.postRunnable(() -> {
-            try {
-                ArrayList<Long> mids = null;
-                SQLiteCursor cursor = database.queryFinalized(String.format(Locale.US, "SELECT mid FROM polls WHERE id = %d", pollId));
-                while (cursor.next()) {
-                    if (mids == null) {
-                        mids = new ArrayList<>();
-                    }
-                    mids.add(cursor.longValue(0));
-                }
-                cursor.dispose();
-                if (mids != null) {
-                    database.beginTransaction();
-                    for (int a = 0, N = mids.size(); a < N; a++) {
-                        Long mid = mids.get(a);
-                        cursor = database.queryFinalized(String.format(Locale.US, "SELECT data FROM messages WHERE mid = %d", mid));
-                        if (cursor.next()) {
-                            NativeByteBuffer data = cursor.byteBufferValue(0);
-                            if (data != null) {
-                                Message message = Message.TLdeserialize(data, data.readInt32(false), false);
-                                message.readAttachPath(data, getUserConfig().clientUserId);
-                                data.reuse();
-                                if (message.media instanceof TL_messageMediaPoll) {
-                                    TL_messageMediaPoll media = (TL_messageMediaPoll) message.media;
-                                    if (poll != null) {
-                                        media.poll = poll;
-                                    }
-                                    if (results != null) {
-                                        MessageObject.updatePollResults(media, results);
-                                    }
-
-                                    SQLitePreparedStatement state = database.executeFast("UPDATE messages SET data = ? WHERE mid = ?");
-                                    data = new NativeByteBuffer(message.getObjectSize());
-                                    message.serializeToStream(data);
-                                    state.requery();
-                                    state.bindByteBuffer(1, data);
-                                    state.bindLong(2, mid);
-                                    state.step();
-                                    data.reuse();
-                                    state.dispose();
-                                }
-                            }
-                        } else {
-                            database.executeFast(String.format(Locale.US, "DELETE FROM polls WHERE mid = %d", mid)).stepThis().dispose();
-                        }
-                        cursor.dispose();
-                    }
-                    database.commitTransaction();
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-        });
-    }
-
     public void updateMessageReactions(long dialogId, int msgId, int channelId, TL_messageReactions reactions) {
         storageQueue.postRunnable(() -> {
             try {
@@ -6530,141 +6477,6 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public void updateEncryptedChatSeq(final EncryptedChat chat, final boolean cleanup) {
-        if (chat == null) {
-            return;
-        }
-        storageQueue.postRunnable(() -> {
-            SQLitePreparedStatement state = null;
-            try {
-                state = database.executeFast("UPDATE enc_chats SET seq_in = ?, seq_out = ?, use_count = ?, in_seq_no = ?, mtproto_seq = ? WHERE uid = ?");
-                state.bindInteger(1, chat.seq_in);
-                state.bindInteger(2, chat.seq_out);
-                state.bindInteger(3, (int) chat.key_use_count_in << 16 | chat.key_use_count_out);
-                state.bindInteger(4, chat.in_seq_no);
-                state.bindInteger(5, chat.mtproto_seq);
-                state.bindInteger(6, chat.id);
-                state.step();
-                if (cleanup && chat.in_seq_no != 0) {
-                    long did = ((long) chat.id) << 32;
-                    database.executeFast(String.format(Locale.US, "DELETE FROM messages WHERE mid IN (SELECT m.mid FROM messages as m LEFT JOIN messages_seq as s ON m.mid = s.mid WHERE m.uid = %d AND m.date = 0 AND m.mid < 0 AND s.seq_out <= %d)", did, chat.in_seq_no)).stepThis().dispose();
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-            } finally {
-                if (state != null) {
-                    state.dispose();
-                }
-            }
-        });
-    }
-
-    public void updateEncryptedChatTTL(final EncryptedChat chat) {
-        if (chat == null) {
-            return;
-        }
-        storageQueue.postRunnable(() -> {
-            SQLitePreparedStatement state = null;
-            try {
-                state = database.executeFast("UPDATE enc_chats SET ttl = ? WHERE uid = ?");
-                state.bindInteger(1, chat.ttl);
-                state.bindInteger(2, chat.id);
-                state.step();
-            } catch (Exception e) {
-                FileLog.e(e);
-            } finally {
-                if (state != null) {
-                    state.dispose();
-                }
-            }
-        });
-    }
-
-    public void updateEncryptedChatLayer(final EncryptedChat chat) {
-        if (chat == null) {
-            return;
-        }
-        storageQueue.postRunnable(() -> {
-            SQLitePreparedStatement state = null;
-            try {
-                state = database.executeFast("UPDATE enc_chats SET layer = ? WHERE uid = ?");
-                state.bindInteger(1, chat.layer);
-                state.bindInteger(2, chat.id);
-                state.step();
-            } catch (Exception e) {
-                FileLog.e(e);
-            } finally {
-                if (state != null) {
-                    state.dispose();
-                }
-            }
-        });
-    }
-
-    public void updateEncryptedChat(final EncryptedChat chat) {
-        if (chat == null) {
-            return;
-        }
-        storageQueue.postRunnable(() -> {
-            SQLitePreparedStatement state = null;
-            try {
-                if ((chat.key_hash == null || chat.key_hash.length < 16) && chat.auth_key != null) {
-                    chat.key_hash = AndroidUtilities.calcAuthKeyHash(chat.auth_key);
-                }
-
-                state = database.executeFast("UPDATE enc_chats SET data = ?, g = ?, authkey = ?, ttl = ?, layer = ?, seq_in = ?, seq_out = ?, use_count = ?, exchange_id = ?, key_date = ?, fprint = ?, fauthkey = ?, khash = ?, in_seq_no = ?, admin_id = ?, mtproto_seq = ? WHERE uid = ?");
-                NativeByteBuffer data = new NativeByteBuffer(chat.getObjectSize());
-                NativeByteBuffer data2 = new NativeByteBuffer(chat.a_or_b != null ? chat.a_or_b.length : 1);
-                NativeByteBuffer data3 = new NativeByteBuffer(chat.auth_key != null ? chat.auth_key.length : 1);
-                NativeByteBuffer data4 = new NativeByteBuffer(chat.future_auth_key != null ? chat.future_auth_key.length : 1);
-                NativeByteBuffer data5 = new NativeByteBuffer(chat.key_hash != null ? chat.key_hash.length : 1);
-                chat.serializeToStream(data);
-                state.bindByteBuffer(1, data);
-                if (chat.a_or_b != null) {
-                    data2.writeBytes(chat.a_or_b);
-                }
-                if (chat.auth_key != null) {
-                    data3.writeBytes(chat.auth_key);
-                }
-                if (chat.future_auth_key != null) {
-                    data4.writeBytes(chat.future_auth_key);
-                }
-                if (chat.key_hash != null) {
-                    data5.writeBytes(chat.key_hash);
-                }
-                state.bindByteBuffer(2, data2);
-                state.bindByteBuffer(3, data3);
-                state.bindInteger(4, chat.ttl);
-                state.bindInteger(5, chat.layer);
-                state.bindInteger(6, chat.seq_in);
-                state.bindInteger(7, chat.seq_out);
-                state.bindInteger(8, (int) chat.key_use_count_in << 16 | chat.key_use_count_out);
-                state.bindLong(9, chat.exchange_id);
-                state.bindInteger(10, chat.key_create_date);
-                state.bindLong(11, chat.future_key_fingerprint);
-                state.bindByteBuffer(12, data4);
-                state.bindByteBuffer(13, data5);
-                state.bindInteger(14, chat.in_seq_no);
-                state.bindInteger(15, chat.admin_id);
-                state.bindInteger(16, chat.mtproto_seq);
-                state.bindInteger(17, chat.id);
-
-                state.step();
-                data.reuse();
-                data2.reuse();
-                data3.reuse();
-                data4.reuse();
-                data5.reuse();
-            } catch (Exception e) {
-                FileLog.e(e);
-            } finally {
-                if (state != null) {
-                    state.dispose();
-                }
-            }
-        });
-    }
-
     public void isDialogHasTopMessage(long did, Runnable onDontExist) {
         storageQueue.postRunnable(() -> {
             boolean exists = false;
@@ -6748,87 +6560,6 @@ public class MessagesStorage extends BaseController {
                 FileLog.e(e);
             } finally {
                 countDownLatch.countDown();
-            }
-        });
-    }
-
-    public void putEncryptedChat(final EncryptedChat chat, final User user, final Dialog dialog) {
-        if (chat == null) {
-            return;
-        }
-        storageQueue.postRunnable(() -> {
-            try {
-                if ((chat.key_hash == null || chat.key_hash.length < 16) && chat.auth_key != null) {
-                    chat.key_hash = AndroidUtilities.calcAuthKeyHash(chat.auth_key);
-                }
-                SQLitePreparedStatement state = database.executeFast("REPLACE INTO enc_chats VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                NativeByteBuffer data = new NativeByteBuffer(chat.getObjectSize());
-                NativeByteBuffer data2 = new NativeByteBuffer(chat.a_or_b != null ? chat.a_or_b.length : 1);
-                NativeByteBuffer data3 = new NativeByteBuffer(chat.auth_key != null ? chat.auth_key.length : 1);
-                NativeByteBuffer data4 = new NativeByteBuffer(chat.future_auth_key != null ? chat.future_auth_key.length : 1);
-                NativeByteBuffer data5 = new NativeByteBuffer(chat.key_hash != null ? chat.key_hash.length : 1);
-
-                chat.serializeToStream(data);
-                state.bindInteger(1, chat.id);
-                state.bindInteger(2, user.id);
-                state.bindString(3, formatUserSearchName(user));
-                state.bindByteBuffer(4, data);
-                if (chat.a_or_b != null) {
-                    data2.writeBytes(chat.a_or_b);
-                }
-                if (chat.auth_key != null) {
-                    data3.writeBytes(chat.auth_key);
-                }
-                if (chat.future_auth_key != null) {
-                    data4.writeBytes(chat.future_auth_key);
-                }
-                if (chat.key_hash != null) {
-                    data5.writeBytes(chat.key_hash);
-                }
-                state.bindByteBuffer(5, data2);
-                state.bindByteBuffer(6, data3);
-                state.bindInteger(7, chat.ttl);
-                state.bindInteger(8, chat.layer);
-                state.bindInteger(9, chat.seq_in);
-                state.bindInteger(10, chat.seq_out);
-                state.bindInteger(11, (int) chat.key_use_count_in << 16 | chat.key_use_count_out);
-                state.bindLong(12, chat.exchange_id);
-                state.bindInteger(13, chat.key_create_date);
-                state.bindLong(14, chat.future_key_fingerprint);
-                state.bindByteBuffer(15, data4);
-                state.bindByteBuffer(16, data5);
-                state.bindInteger(17, chat.in_seq_no);
-                state.bindInteger(18, chat.admin_id);
-                state.bindInteger(19, chat.mtproto_seq);
-
-                state.step();
-                state.dispose();
-                data.reuse();
-                data2.reuse();
-                data3.reuse();
-                data4.reuse();
-                data5.reuse();
-                if (dialog != null) {
-                    state = database.executeFast("REPLACE INTO dialogs VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                    state.bindLong(1, dialog.id);
-                    state.bindInteger(2, dialog.last_message_date);
-                    state.bindInteger(3, dialog.unread_count);
-                    state.bindInteger(4, dialog.top_message);
-                    state.bindInteger(5, dialog.read_inbox_max_id);
-                    state.bindInteger(6, dialog.read_outbox_max_id);
-                    state.bindInteger(7, 0);
-                    state.bindInteger(8, dialog.unread_mentions_count);
-                    state.bindInteger(9, dialog.pts);
-                    state.bindInteger(10, 0);
-                    state.bindInteger(11, dialog.pinnedNum);
-                    state.bindInteger(12, dialog.flags);
-                    state.bindInteger(13, dialog.folder_id);
-                    state.bindNull(14);
-                    state.step();
-                    state.dispose();
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
             }
         });
     }
@@ -10347,20 +10078,6 @@ public class MessagesStorage extends BaseController {
             getChatsInternal("" + chat_id, chats);
             if (!chats.isEmpty()) {
                 chat = chats.get(0);
-            }
-        } catch (Exception e) {
-            FileLog.e(e);
-        }
-        return chat;
-    }
-
-    public EncryptedChat getEncryptedChat(final int chat_id) {
-        EncryptedChat chat = null;
-        try {
-            ArrayList<EncryptedChat> encryptedChats = new ArrayList<>();
-            getEncryptedChatsInternal("" + chat_id, encryptedChats, null);
-            if (!encryptedChats.isEmpty()) {
-                chat = encryptedChats.get(0);
             }
         } catch (Exception e) {
             FileLog.e(e);

@@ -40,7 +40,9 @@ import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Bitmaps;
 import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.google.android.exoplayer2.C;
@@ -2078,7 +2080,7 @@ public class WebPlayerView extends ViewGroup implements VideoPlayer.VideoPlayerD
         return id;
     }
 
-    public boolean loadVideo(String url, TLRPC.Photo thumb, Object parentObject, String originalUrl, boolean autoplay) {
+    public boolean loadVideo(String url, MessageMedia.Photo thumb, Object parentObject, String originalUrl, boolean autoplay) {
         String youtubeId = null;
         String vimeoId = null;
         String coubId = null;

@@ -51,6 +51,7 @@ import android.widget.ImageView;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
+import com.demo.chat.alerts.AlertsCreator;
 import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
@@ -66,6 +67,7 @@ import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.camera.CameraController;
 import com.demo.chat.messager.camera.CameraInfo;
 import com.demo.chat.messager.camera.CameraSession;
+import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ChatActivity;
@@ -234,7 +236,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
 
         baseFragment = parentFragment;
         recordingGuid = baseFragment.getClassGuid();
-        isSecretChat = baseFragment.getCurrentEncryptedChat() != null;
+        isSecretChat = false;
         paint = new Paint(Paint.ANTI_ALIAS_FLAG) {
             @Override
             public void setAlpha(int a) {

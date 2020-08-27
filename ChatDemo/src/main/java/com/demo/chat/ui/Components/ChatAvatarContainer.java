@@ -10,7 +10,6 @@ import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import com.demo.chat.R;
-import com.demo.chat.alerts.AlertsCreator;
 import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaDataController;
@@ -18,6 +17,7 @@ import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.User;
@@ -28,6 +28,7 @@ import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
 import com.demo.chat.ui.ActionBar.SimpleTextView;
 import com.demo.chat.ui.ChatActivity;
+import com.demo.chat.ui.MediaActivity;
 
 /**
  * @author 林学渊
@@ -52,7 +53,6 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
     private boolean[] isOnline = new boolean[1];
 
     private int onlineCount = -1;
-    private int currentConnectionState;
     private CharSequence lastSubtitle;
     private String lastSubtitleColorKey;
 
@@ -87,16 +87,6 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
         subtitleTextView.setTextSize(14);
         subtitleTextView.setGravity(Gravity.LEFT);
         addView(subtitleTextView);
-
-        if (needTime) {
-            timeItem = new ImageView(context);
-            timeItem.setPadding(AndroidUtilities.dp(10), AndroidUtilities.dp(10), AndroidUtilities.dp(5), AndroidUtilities.dp(5));
-            timeItem.setScaleType(ImageView.ScaleType.CENTER);
-            timeItem.setImageDrawable(timerDrawable = new TimerDrawable(context));
-            addView(timeItem);
-            timeItem.setOnClickListener(v -> parentFragment.showDialog(AlertsCreator.createTTLAlert(getContext(), parentFragment.getCurrentEncryptedChat()).create()));
-            timeItem.setContentDescription(LocaleController.getString("SetTimer", R.string.SetTimer));
-        }
 
         if (parentFragment != null && !parentFragment.isInScheduleMode()) {
             setOnClickListener(v -> openProfile(false));
@@ -134,18 +124,18 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
                 if (timeItem != null) {
                     args.putLong("dialog_id", parentFragment.getDialogId());
                 }
-                ProfileActivity fragment = new ProfileActivity(args, sharedMediaPreloader);
-                fragment.setUserInfo(parentFragment.getCurrentUserInfo());
-                fragment.setPlayProfileAnimation(byAvatar ? 2 : 1);
-                parentFragment.presentFragment(fragment);
+//                ProfileActivity fragment = new ProfileActivity(args, sharedMediaPreloader);
+//                fragment.setUserInfo(parentFragment.getCurrentUserInfo());
+//                fragment.setPlayProfileAnimation(byAvatar ? 2 : 1);
+//                parentFragment.presentFragment(fragment);
             }
         } else if (chat != null) {
             Bundle args = new Bundle();
             args.putInt("chat_id", chat.id);
-            ProfileActivity fragment = new ProfileActivity(args, sharedMediaPreloader);
-            fragment.setChatInfo(parentFragment.getCurrentChatInfo());
-            fragment.setPlayProfileAnimation(byAvatar ? 2 : 1);
-            parentFragment.presentFragment(fragment);
+//            ProfileActivity fragment = new ProfileActivity(args, sharedMediaPreloader);
+//            fragment.setChatInfo(parentFragment.getCurrentChatInfo());
+//            fragment.setPlayProfileAnimation(byAvatar ? 2 : 1);
+//            parentFragment.presentFragment(fragment);
         }
     }
 
@@ -477,7 +467,6 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
         super.onAttachedToWindow();
         if (parentFragment != null) {
             NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.didUpdateConnectionState);
-            currentConnectionState = ConnectionsManager.getInstance(currentAccount).getConnectionState();
             updateCurrentConnectionState();
         }
     }
@@ -493,41 +482,19 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.didUpdateConnectionState) {
-            int state = ConnectionsManager.getInstance(currentAccount).getConnectionState();
-            if (currentConnectionState != state) {
-                currentConnectionState = state;
-                updateCurrentConnectionState();
-            }
+
         }
     }
 
     private void updateCurrentConnectionState() {
         String title = null;
-        if (currentConnectionState == ConnectionsManager.ConnectionStateWaitingForNetwork) {
-            title = LocaleController.getString("WaitingForNetwork", R.string.WaitingForNetwork);
-        } else if (currentConnectionState == ConnectionsManager.ConnectionStateConnecting) {
-            title = LocaleController.getString("Connecting", R.string.Connecting);
-        } else if (currentConnectionState == ConnectionsManager.ConnectionStateUpdating) {
-            title = LocaleController.getString("Updating", R.string.Updating);
-        } else if (currentConnectionState == ConnectionsManager.ConnectionStateConnectingToProxy) {
-            title = LocaleController.getString("ConnectingToProxy", R.string.ConnectingToProxy);
-        }
-        if (title == null) {
-            if (lastSubtitle != null) {
-                subtitleTextView.setText(lastSubtitle);
-                lastSubtitle = null;
-                if (lastSubtitleColorKey != null) {
-                    subtitleTextView.setTextColor(Theme.getColor(lastSubtitleColorKey));
-                    subtitleTextView.setTag(lastSubtitleColorKey);
-                }
+        if (lastSubtitle != null) {
+            subtitleTextView.setText(lastSubtitle);
+            lastSubtitle = null;
+            if (lastSubtitleColorKey != null) {
+                subtitleTextView.setTextColor(Theme.getColor(lastSubtitleColorKey));
+                subtitleTextView.setTag(lastSubtitleColorKey);
             }
-        } else {
-            if (lastSubtitle == null) {
-                lastSubtitle = subtitleTextView.getText();
-            }
-            subtitleTextView.setText(title);
-            subtitleTextView.setTextColor(Theme.getColor(Theme.key_actionBarDefaultSubtitle));
-            subtitleTextView.setTag(Theme.key_actionBarDefaultSubtitle);
         }
     }
 }

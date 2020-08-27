@@ -99,17 +99,27 @@ import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
 import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.MessagesController;
+import com.demo.chat.controller.MessagesStorage;
+import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Bitmaps;
 import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.ImageLoader;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
 import com.demo.chat.model.VideoEditedInfo;
+import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
@@ -120,6 +130,7 @@ import com.demo.chat.ui.ActionBar.ActionBarPopupWindow;
 import com.demo.chat.ui.ActionBar.BottomSheet;
 import com.demo.chat.ui.ActionBar.SimpleTextView;
 import com.demo.chat.ui.Adapters.MentionsAdapter;
+import com.demo.chat.ui.Cells.CheckBoxCell;
 import com.demo.chat.ui.ChatActivity;
 import com.demo.chat.ui.Components.AnimatedFileDrawable;
 import com.demo.chat.ui.Components.AnimationProperties;
@@ -128,8 +139,12 @@ import com.demo.chat.ui.Components.ChatAttachAlert;
 import com.demo.chat.ui.Components.CheckBox;
 import com.demo.chat.ui.Components.ClippingImageView;
 import com.demo.chat.ui.Components.CombinedDrawable;
+import com.demo.chat.ui.Components.FadingTextViewLayout;
 import com.demo.chat.ui.Components.GestureDetector2;
+import com.demo.chat.ui.Components.GroupedPhotosListView;
 import com.demo.chat.ui.Components.LayoutHelper;
+import com.demo.chat.ui.Components.PaintingOverlay;
+import com.demo.chat.ui.Components.PhotoFilterView;
 import com.demo.chat.ui.Components.PickerBottomLayoutViewer;
 import com.demo.chat.ui.Components.PipVideoView;
 import com.demo.chat.ui.Components.RLottieDrawable;
@@ -144,6 +159,7 @@ import com.demo.chat.ui.Components.VideoPlayerSeekBar;
 import com.demo.chat.ui.Components.VideoSeekPreviewImage;
 import com.demo.chat.ui.Components.VideoTimelinePlayView;
 import com.demo.chat.ui.LaunchActivity;
+import com.demo.chat.ui.MediaActivity;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayer;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;
@@ -3740,9 +3756,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
             Chat chat = parentChatActivity.getCurrentChat();
             User user = parentChatActivity.getCurrentUser();
-            if (parentChatActivity.getCurrentEncryptedChat() != null) {
-                return false;
-            }
 
             sendPopupLayout = new ActionBarPopupWindow.ActionBarPopupWindowLayout(parentActivity);
             sendPopupLayout.setAnimationEnabled(false);
@@ -8488,7 +8501,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 }
                 if (!exists && a != 0 && messageObjectFinal != null && canStreamFinal) {
                     if (DownloadController.getInstance(currentAccount).canDownloadMedia(messageObjectFinal.messageOwner) != 0) {
-                        if ((parentChatActivity == null || parentChatActivity.getCurrentEncryptedChat() == null) && !messageObjectFinal.shouldEncryptPhotoOrVideo()) {
+                        if (!messageObjectFinal.shouldEncryptPhotoOrVideo()) {
                             final Document document = messageObjectFinal.getDocument();
                             if (document != null) {
                                 FileLoader.getInstance(currentAccount).loadFile(document, messageObjectFinal, 0, 10);
@@ -9005,11 +9018,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             } else {
                 windowLayoutParams.flags = WindowManager.LayoutParams.FLAG_ALT_FOCUSABLE_IM;
             }
-            if (chatActivity != null && chatActivity.getCurrentEncryptedChat() != null) {
-                windowLayoutParams.flags |= WindowManager.LayoutParams.FLAG_SECURE;
-            } else {
-                windowLayoutParams.flags &=~ WindowManager.LayoutParams.FLAG_SECURE;
-            }
+            windowLayoutParams.flags &=~ WindowManager.LayoutParams.FLAG_SECURE;
             windowLayoutParams.softInputMode = (useSmoothKeyboard ? WindowManager.LayoutParams.SOFT_INPUT_ADJUST_PAN : WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE) | WindowManager.LayoutParams.SOFT_INPUT_IS_FORWARD_NAVIGATION;
             windowView.setFocusable(false);
             containerView.setFocusable(false);

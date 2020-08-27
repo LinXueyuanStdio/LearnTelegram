@@ -1997,13 +1997,9 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             }
         });
         messageEditText.setWindowView(parentActivity.getWindow().getDecorView());
-        TLRPC.EncryptedChat encryptedChat = parentFragment != null ? parentFragment.getCurrentEncryptedChat() : null;
         messageEditText.setAllowTextEntitiesIntersection(supportsSendingNewEntities());
         updateFieldHint();
         int flags = EditorInfo.IME_FLAG_NO_EXTRACT_UI;
-        if (encryptedChat != null) {
-            flags |= 0x01000000; //EditorInfo.IME_FLAG_NO_PERSONALIZED_LEARNING;
-        }
         messageEditText.setImeOptions(flags);
         messageEditText.setInputType(messageEditText.getInputType() | EditorInfo.TYPE_TEXT_FLAG_CAP_SENTENCES | EditorInfo.TYPE_TEXT_FLAG_MULTI_LINE);
         messageEditText.setSingleLine(false);
@@ -2865,7 +2861,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     }
 
     private boolean onSendLongClick(View view) {
-        if (parentFragment == null || isInScheduleMode() || parentFragment.getCurrentEncryptedChat() != null) {
+        if (parentFragment == null || isInScheduleMode()) {
             return false;
         }
         Chat chat = parentFragment.getCurrentChat();
@@ -3870,8 +3866,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     }
 
     private boolean supportsSendingNewEntities() {
-        TLRPC.EncryptedChat encryptedChat = parentFragment != null ? parentFragment.getCurrentEncryptedChat() : null;
-        return encryptedChat == null || AndroidUtilities.getPeerLayerVersion(encryptedChat.layer) >= 101;
+        return true;
     }
 
     private void checkSendButton(boolean animated) {

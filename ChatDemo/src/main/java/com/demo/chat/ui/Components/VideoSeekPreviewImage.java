@@ -19,6 +19,7 @@ import com.demo.chat.controller.FileLoader;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Bitmaps;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.model.small.Document;
 
 import java.io.File;
 
@@ -175,14 +176,14 @@ public class VideoSeekPreviewImage extends View {
             if ("tg".equals(scheme)) {
                 int currentAccount = Utilities.parseInt(uri.getQueryParameter("account"));
                 Object parentObject = FileLoader.getInstance(currentAccount).getParentObject(Utilities.parseInt(uri.getQueryParameter("rid")));
-                TLRPC.TL_document document = new TLRPC.TL_document();
+                Document document = new Document();
                 document.access_hash = Utilities.parseLong(uri.getQueryParameter("hash"));
                 document.id = Utilities.parseLong(uri.getQueryParameter("id"));
                 document.size = Utilities.parseInt(uri.getQueryParameter("size"));
                 document.dc_id = Utilities.parseInt(uri.getQueryParameter("dc"));
                 document.mime_type = uri.getQueryParameter("mime");
                 document.file_reference = Utilities.hexToBytes(uri.getQueryParameter("reference"));
-                TLRPC.TL_documentAttributeFilename filename = new TLRPC.TL_documentAttributeFilename();
+                DocumentAttributeFilename filename = new TLRPC.TL_documentAttributeFilename();
                 filename.file_name = uri.getQueryParameter("name");
                 document.attributes.add(filename);
                 document.attributes.add(new TLRPC.TL_documentAttributeVideo());

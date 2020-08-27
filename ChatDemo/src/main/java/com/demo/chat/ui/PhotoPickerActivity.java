@@ -1011,9 +1011,6 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
                 }
                 Chat chat = chatActivity.getCurrentChat();
                 User user = chatActivity.getCurrentUser();
-                if (chatActivity.getCurrentEncryptedChat() != null) {
-                    return false;
-                }
 
                 if (sendPopupLayout == null) {
                     sendPopupLayout = new ActionBarPopupWindow.ActionBarPopupWindowLayout(getParentActivity());

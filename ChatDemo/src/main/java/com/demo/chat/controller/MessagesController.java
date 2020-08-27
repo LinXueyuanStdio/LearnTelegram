@@ -553,6 +553,16 @@ public class MessagesController extends BaseController implements NotificationCe
 
     //endregion
 
+    public void markMessageAsRead(final long dialog_id, final long random_id, int ttl) {
+        if (random_id == 0 || dialog_id == 0 || ttl <= 0 && ttl != Integer.MIN_VALUE) {
+            return;
+        }
+        int lower_part = (int) dialog_id;
+        int high_id = (int) (dialog_id >> 32);
+        if (lower_part != 0) {
+            return;
+        }
+    }
     public void markDialogAsRead(final long dialogId, final int maxPositiveId, final int maxNegativeId, final int maxDate, final boolean popup, final int countDiff, final boolean readNow, final int scheduledCount){}
 
     public void markMessageContentAsRead(final MessageObject messageObject) {
@@ -1017,6 +1027,11 @@ public class MessagesController extends BaseController implements NotificationCe
         }
     }
 
+    public void performLogout(int type) {
+        getUserConfig().clearConfig();
+        getNotificationCenter().postNotificationName(NotificationCenter.appDidLogout);
+        getMessagesStorage().cleanup(false);
+    }
 
     //region NotificationCenter.NotificationCenterDelegate
     @Override

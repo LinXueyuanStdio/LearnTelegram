@@ -40,6 +40,7 @@ import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
 import com.demo.chat.alerts.AlertsCreator;
 import com.demo.chat.controller.LocaleController;
+import com.demo.chat.controller.LocationController;
 import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
@@ -48,6 +49,7 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
 import com.demo.chat.ui.ActionBar.ActionBar;
@@ -363,7 +365,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         AndroidUtilities.fixGoogleMapsBug();
         ChatActivity chatActivity = (ChatActivity) parentAlert.baseFragment;
         dialogId = chatActivity.getDialogId();
-        if (chatActivity.getCurrentEncryptedChat() == null && !chatActivity.isInScheduleMode() && !UserObject.isUserSelf(chatActivity.getCurrentUser())) {
+        if (!chatActivity.isInScheduleMode() && !UserObject.isUserSelf(chatActivity.getCurrentUser())) {
             locationType = LOCATION_TYPE_SEND_WITH_LIVE;
         } else {
             locationType = LOCATION_TYPE_SEND;

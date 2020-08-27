@@ -770,7 +770,7 @@ public class FileLoader extends BaseController {
         fileLoaderQueue.postRunnable(() -> loadFileInternal(document, secureDocument, webDocument, location, imageLocation, parentObject, locationExt, locationSize, priority, null, 0, false, cacheType));
     }
 
-    protected FileLoadOperation loadStreamFile(final FileLoadOperationStream stream, final Document document, final Object parentObject, final int offset, final boolean priority) {
+    public FileLoadOperation loadStreamFile(final FileLoadOperationStream stream, final Document document, final Object parentObject, final int offset, final boolean priority) {
         final CountDownLatch semaphore = new CountDownLatch(1);
         final FileLoadOperation[] result = new FileLoadOperation[1];
         fileLoaderQueue.postRunnable(() -> {

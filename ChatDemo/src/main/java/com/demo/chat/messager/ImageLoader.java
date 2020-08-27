@@ -29,6 +29,7 @@ import com.demo.chat.messager.secretmedia.EncryptedFileInputStream;
 import com.demo.chat.messager.secretmedia.SecureDocumentKey;
 import com.demo.chat.model.Message;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;

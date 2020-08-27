@@ -15956,10 +15956,6 @@ public class ChatActivity extends BaseFragment
         return currentChat;
     }
 
-    public TLRPC.EncryptedChat getCurrentEncryptedChat() {
-        return currentEncryptedChat;
-    }
-
     public ChatFull getCurrentChatInfo() {
         return chatInfo;
     }

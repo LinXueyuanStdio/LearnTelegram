@@ -47,6 +47,7 @@ import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
@@ -1195,9 +1196,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
             ChatActivity chatActivity = (ChatActivity) baseFragment;
             Chat chat = chatActivity.getCurrentChat();
             User user = chatActivity.getCurrentUser();
-            if (chatActivity.getCurrentEncryptedChat() != null || chatActivity.isInScheduleMode()) {
-                return false;
-            }
 
             sendPopupLayout = new ActionBarPopupWindow.ActionBarPopupWindowLayout(getContext());
             sendPopupLayout.setAnimationEnabled(false);

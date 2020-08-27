@@ -43,9 +43,9 @@ import android.widget.Toast;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
+import com.demo.chat.controller.ContactsController;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
-import com.demo.chat.controller.LocationController;
 import com.demo.chat.controller.MediaController;
 import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.SendMessagesHelper;
@@ -847,26 +847,22 @@ public class LaunchActivity extends Activity
             UserConfig.getInstance(currentAccount).saveConfig(false);
         }
         super.onActivityResult(requestCode, resultCode, data);
-        if (requestCode == PLAY_SERVICES_REQUEST_CHECK_SETTINGS) {
-            LocationController.getInstance(currentAccount).startFusedLocationRequest(resultCode == Activity.RESULT_OK);
-        } else {
-            ThemeEditorView editorView = ThemeEditorView.getInstance();
-            if (editorView != null) {
-                editorView.onActivityResult(requestCode, resultCode, data);
-            }
-            if (actionBarLayout.fragmentsStack.size() != 0) {
-                BaseFragment fragment = actionBarLayout.fragmentsStack.get(actionBarLayout.fragmentsStack.size() - 1);
+        ThemeEditorView editorView = ThemeEditorView.getInstance();
+        if (editorView != null) {
+            editorView.onActivityResult(requestCode, resultCode, data);
+        }
+        if (actionBarLayout.fragmentsStack.size() != 0) {
+            BaseFragment fragment = actionBarLayout.fragmentsStack.get(actionBarLayout.fragmentsStack.size() - 1);
+            fragment.onActivityResultFragment(requestCode, resultCode, data);
+        }
+        if (AndroidUtilities.isTablet()) {
+            if (rightActionBarLayout.fragmentsStack.size() != 0) {
+                BaseFragment fragment = rightActionBarLayout.fragmentsStack.get(rightActionBarLayout.fragmentsStack.size() - 1);
                 fragment.onActivityResultFragment(requestCode, resultCode, data);
             }
-            if (AndroidUtilities.isTablet()) {
-                if (rightActionBarLayout.fragmentsStack.size() != 0) {
-                    BaseFragment fragment = rightActionBarLayout.fragmentsStack.get(rightActionBarLayout.fragmentsStack.size() - 1);
-                    fragment.onActivityResultFragment(requestCode, resultCode, data);
-                }
-                if (layersActionBarLayout.fragmentsStack.size() != 0) {
-                    BaseFragment fragment = layersActionBarLayout.fragmentsStack.get(layersActionBarLayout.fragmentsStack.size() - 1);
-                    fragment.onActivityResultFragment(requestCode, resultCode, data);
-                }
+            if (layersActionBarLayout.fragmentsStack.size() != 0) {
+                BaseFragment fragment = layersActionBarLayout.fragmentsStack.get(layersActionBarLayout.fragmentsStack.size() - 1);
+                fragment.onActivityResultFragment(requestCode, resultCode, data);
             }
         }
     }
@@ -1139,7 +1135,8 @@ public class LaunchActivity extends Activity
             if (reason != 2 && reason != 3) {
                 builder.setNegativeButton(LocaleController.getString("MoreInfo", R.string.MoreInfo), (dialogInterface, i) -> {
                     if (!mainFragmentsStack.isEmpty()) {
-                        MessagesController.getInstance(account).openByUserName("spambot", mainFragmentsStack.get(mainFragmentsStack.size() - 1), 1);
+                        //TODO
+//                        MessagesController.getInstance(account).openByUserName("spambot", mainFragmentsStack.get(mainFragmentsStack.size() - 1), 1);
                     }
                 });
             }
@@ -1195,8 +1192,7 @@ public class LaunchActivity extends Activity
                 }
             }
         } else if (id == NotificationCenter.reloadInterface) {
-            boolean last = mainFragmentsStack.size() > 1 && mainFragmentsStack.get(mainFragmentsStack.size() - 1) instanceof SettingsActivity;
-            rebuildAllFragments(last);
+            rebuildAllFragments(false);
         } else if (id == NotificationCenter.suggestedLangpack) {
             showLanguageAlert(false);
         } else if (id == NotificationCenter.openArticle) {

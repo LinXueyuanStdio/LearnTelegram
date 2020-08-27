@@ -8,6 +8,7 @@ import android.graphics.RectF;
 import android.view.View;
 
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
