@@ -6328,7 +6328,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                         boolean found = false;
                         for (int a = 0, count = currentDocument.attributes.size(); a < count; a++) {
                             DocumentAttribute attribute = currentDocument.attributes.get(a);
-                            if (attribute instanceof TLRPC.TL_documentAttributeVideo) {
+                            if (attribute.isVideo()) {
                                 scale = photoWidth / (float) attribute.w;
                                 height = (int) (scale * attribute.h);
                                 found = true;
@@ -6857,7 +6857,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             } else {
                 for (int a = 0; a < currentDocument.attributes.size(); a++) {
                     DocumentAttribute attribute = currentDocument.attributes.get(a);
-                    if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
+                    if (attribute.isAudio()) {
                         duration = attribute.duration;
                         break;
                     }

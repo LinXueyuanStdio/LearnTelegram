@@ -34,6 +34,7 @@ import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.small.VideoSize;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Components.BackupImageView;
 import com.demo.chat.ui.Components.CheckBox2;
@@ -234,8 +235,7 @@ public class PhotoAttachPhotoCell extends FrameLayout {
             }
             imageView.setImage(location, null, thumb, searchImage);
         } else if (searchImage.document != null) {
-            MessageObject.getDocumentVideoThumb(searchImage.document);
-            TLRPC.TL_videoSize videoSize = MessageObject.getDocumentVideoThumb(searchImage.document);
+            VideoSize videoSize = MessageObject.getDocumentVideoThumb(searchImage.document);
             if (videoSize != null) {
                 PhotoSize currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(searchImage.document.thumbs, 90);
                 imageView.setImage(ImageLocation.getForDocument(videoSize, searchImage.document), null, ImageLocation.getForDocument(currentPhotoObject, searchImage.document), "52_52", null, -1, 1, searchImage);

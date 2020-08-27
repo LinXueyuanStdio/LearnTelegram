@@ -167,7 +167,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
                     progress = 1;
                 }
             } else {
-                long msTime = System.currentTimeMillis() + ConnectionsManager.getInstance(currentAccount).getTimeDifference() * 1000;
+                long msTime = System.currentTimeMillis() + 1000;
                 progress = Math.max(0, destroyTime - msTime) / (destroyTtl * 1000.0f);
             }
 
@@ -669,8 +669,6 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
             return;
         }
 
-        //messageObject.messageOwner.destroyTime = (int) (System.currentTimeMillis() / 1000 + ConnectionsManager.getInstance().getTimeDifference()) + 4;
-
         currentProvider = provider;
         openTime = System.currentTimeMillis();
         closeTime = 0;
@@ -776,7 +774,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
                 isVideo = true;
                 centerImage.setImage(null, null, currentThumb != null ? new BitmapDrawable(currentThumb.bitmap) : null, -1, null, messageObject, 2);
                 long destroyTime = (long) messageObject.messageOwner.destroyTime * 1000;
-                long currentTime = System.currentTimeMillis() + ConnectionsManager.getInstance(currentAccount).getTimeDifference() * 1000;
+                long currentTime = System.currentTimeMillis() + 1000;
                 long timeToDestroy = destroyTime - currentTime;
                 long duration = messageObject.getDuration() * 1000;
                 if (duration > timeToDestroy) {
@@ -1120,7 +1118,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
         }
         closeTime = System.currentTimeMillis();
         final PhotoViewer.PlaceProviderObject object;
-        if (currentProvider == null || currentMessageObject.messageOwner.media.photo instanceof TLRPC.TL_photoEmpty || currentMessageObject.messageOwner.media.document instanceof TLRPC.TL_documentEmpty) {
+        if (currentProvider == null) {
             object = null;
         } else {
             object = currentProvider.getPlaceForPhoto(currentMessageObject, null, 0, true);

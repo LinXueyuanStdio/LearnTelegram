@@ -9565,7 +9565,7 @@ public class ChatActivity extends BaseFragment
                         }
                     } else if (type == 8) {
                         User user = getMessagesController().getUser(selectedObject.messageOwner.media.user_id);
-                        if (user != null && user.id != getUserConfig().getClientUserId() && getContactsController().contactsDict.get(user.id) == null) {
+                        if (user != null && user.id != getUserConfig().getClientUserId()) {
                             items.add(LocaleController.getString("AddContactTitle", R.string.AddContactTitle));
                             options.add(15);
                             icons.add(R.drawable.msg_addcontact);
@@ -11428,16 +11428,12 @@ public class ChatActivity extends BaseFragment
                 if (type == -1 || type == 0 || type == 10 || type == 11) {
                     if (messageObjectsToForward.size() == 1 && messageObjectsToForward.get(0).messageText != null) {
                         MessageObject messageObject = messageObjectsToForward.get(0);
-                        if (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGame) {
-                            replyObjectTextView.setText(Emoji.replaceEmoji(messageObject.messageOwner.media.game.title, replyObjectTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(14), false));
-                        } else {
-                            String mess = messageObject.messageText.toString();
-                            if (mess.length() > 150) {
-                                mess = mess.substring(0, 150);
-                            }
-                            mess = mess.replace('\n', ' ');
-                            replyObjectTextView.setText(Emoji.replaceEmoji(mess, replyObjectTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(14), false));
+                        String mess = messageObject.messageText.toString();
+                        if (mess.length() > 150) {
+                            mess = mess.substring(0, 150);
                         }
+                        mess = mess.replace('\n', ' ');
+                        replyObjectTextView.setText(Emoji.replaceEmoji(mess, replyObjectTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(14), false));
                     } else {
                         replyObjectTextView.setText(LocaleController.formatPluralString("ForwardedMessageCount", messageObjectsToForward.size()));
                     }
@@ -11523,7 +11519,7 @@ public class ChatActivity extends BaseFragment
             int size = 0;
             PhotoSize photoSize = null;
             PhotoSize thumbPhotoSize = null;
-            TLObject photoSizeObject = null;
+            Media photoSizeObject = null;
             if (thumbMediaMessageObject != null) {
                 photoSize = FileLoader.getClosestPhotoSizeWithSize(thumbMediaMessageObject.photoThumbs2, 320);
                 thumbPhotoSize = FileLoader.getClosestPhotoSizeWithSize(thumbMediaMessageObject.photoThumbs2, AndroidUtilities.dp(40));
@@ -11545,7 +11541,7 @@ public class ChatActivity extends BaseFragment
             if (photoSize == thumbPhotoSize) {
                 thumbPhotoSize = null;
             }
-            if (photoSize == null || photoSize instanceof TLRPC.TL_photoSizeEmpty || photoSize.location instanceof TLRPC.TL_fileLocationUnavailable || thumbMediaMessageObject.isAnyKindOfSticker() || thumbMediaMessageObject != null && thumbMediaMessageObject.isSecretMedia()) {
+            if (photoSize == null || thumbMediaMessageObject.isAnyKindOfSticker() || thumbMediaMessageObject != null && thumbMediaMessageObject.isSecretMedia()) {
                 replyImageView.setImageBitmap(null);
                 replyImageLocation = null;
                 replyImageLocationObject = null;

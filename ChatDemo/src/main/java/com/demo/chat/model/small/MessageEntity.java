@@ -14,27 +14,50 @@ public class MessageEntity {
     public String language;
     public int user_id;//TODO isMentionName
 
+    public void setMentionName(boolean isMentionName) {}
+
+    public void setCode(boolean isCode) {}
+
+    public void setPre(boolean isPre) {}
+
+    public void setBold(boolean isBold) {}
+
+    public void setItalic(boolean isItalic) {}
+
+    public void setStrike(boolean isStrike) {}
+
+    public void setUnderline(boolean isUnderline) {}
+
+    public void setTextUrl(boolean isTextUrl) {}
+
     public boolean isMentionName() {
         return false;
     }
+
     public boolean isCode() {
         return false;
     }
+
     public boolean isPre() {
         return false;
     }
+
     public boolean isBold() {
         return false;
     }
+
     public boolean isItalic() {
         return false;
     }
+
     public boolean isStrike() {
         return false;
     }
+
     public boolean isUnderline() {
         return false;
     }
+
     public boolean isTextUrl() {
         return false;
     }

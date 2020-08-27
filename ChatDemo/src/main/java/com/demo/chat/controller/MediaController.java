@@ -2978,7 +2978,7 @@ public class MediaController
                 if (waveform != null) {
                     for (int a = 0; a < messageObject1.getDocument().attributes.size(); a++) {
                         DocumentAttribute attribute = messageObject1.getDocument().attributes.get(a);
-                        if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
+                        if (attribute.isAudio()) {
                             attribute.waveform = waveform;
                             attribute.flags |= 4;
                             break;

@@ -286,7 +286,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
         if (documentAttach != null) {
             for (int b = 0; b < documentAttach.attributes.size(); b++) {
                 DocumentAttribute attribute = documentAttach.attributes.get(b);
-                if (attribute instanceof TLRPC.TL_documentAttributeImageSize || attribute instanceof TLRPC.TL_documentAttributeVideo) {
+                if (attribute.isImageSize() || attribute.isVideo()) {
                     w = attribute.w;
                     h = attribute.h;
                     break;
@@ -328,7 +328,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
 
             if (documentAttachType == DOCUMENT_ATTACH_TYPE_GIF) {
                 if (documentAttach != null) {
-                    TLRPC.TL_videoSize thumb = MessageObject.getDocumentVideoThumb(documentAttach);
+                    VideoSize thumb = MessageObject.getDocumentVideoThumb(documentAttach);
                     if (thumb != null) {
                         linkImageView.setImage(ImageLocation.getForDocument(thumb, documentAttach), null, ImageLocation.getForDocument(currentPhotoObject, documentAttach), currentPhotoFilter, -1, ext, parentObject, 1);
                     } else {

@@ -394,7 +394,7 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                             WallPaper wallPaper = (WallPaper) selectedWallPapers.valueAt(b);
 
                             TLRPC.TL_account_saveWallPaper req = new TLRPC.TL_account_saveWallPaper();
-                            req.settings = new WallPaperSettings();
+                            req.settings = new WallPaper.WallPaperSettings();
                             req.unsave = true;
 
                             TLRPC.TL_inputWallPaper inputWallPaper = new TLRPC.TL_inputWallPaper();
@@ -1291,8 +1291,8 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                                 continue;
                             }
                             for (int b = 0; b < result.content.attributes.size(); b++) {
-                                TLRPC.DocumentAttribute attribute = result.content.attributes.get(b);
-                                if (attribute instanceof TLRPC.TL_documentAttributeImageSize) {
+                                DocumentAttribute attribute = result.content.attributes.get(b);
+                                if (attribute.isImageSize()) {
                                     bingImage.width = attribute.w;
                                     bingImage.height = attribute.h;
                                     break;

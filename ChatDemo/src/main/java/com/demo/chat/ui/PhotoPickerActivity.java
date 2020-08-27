@@ -1602,7 +1602,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
                     if (gif && result.document != null) {
                         for (int b = 0; b < result.document.attributes.size(); b++) {
                             DocumentAttribute attribute = result.document.attributes.get(b);
-                            if (attribute instanceof TLRPC.TL_documentAttributeImageSize || attribute instanceof TLRPC.TL_documentAttributeVideo) {
+                            if (attribute.isImageSize() || attribute.isVideo()) {
                                 image.width = attribute.w;
                                 image.height = attribute.h;
                                 break;
@@ -1635,7 +1635,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
                         }
                         for (int b = 0; b < result.content.attributes.size(); b++) {
                             DocumentAttribute attribute = result.content.attributes.get(b);
-                            if (attribute instanceof TLRPC.TL_documentAttributeImageSize) {
+                            if (attribute.isImageSize()) {
                                 image.width = attribute.w;
                                 image.height = attribute.h;
                                 break;

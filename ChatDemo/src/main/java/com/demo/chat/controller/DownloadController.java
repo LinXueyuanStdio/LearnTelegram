@@ -6,18 +6,17 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
-import android.util.LongSparseArray;
 import android.util.SparseArray;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.messager.AndroidUtilities;
-import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Message;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 
@@ -44,7 +43,7 @@ public class DownloadController extends BaseController implements NotificationCe
     }
 
     public static class DownloadObject{
-        public TLObject object;
+        public Media object;
         public int type;
         public long id;
         public boolean secret;
@@ -430,40 +429,19 @@ public class DownloadController extends BaseController implements NotificationCe
         documentDownloadQueue.clear();
         videoDownloadQueue.clear();
         downloadQueueKeys.clear();
-        typingTimes.clear();
     }
 
     public int getMaxVideoBitrate() {
-        int networkType = ApplicationLoader.getAutodownloadNetworkType();
-        if (networkType == StatsController.TYPE_WIFI) {
-            return getCurrentWiFiPreset().maxVideoBitrate;
-        } else if (networkType == StatsController.TYPE_ROAMING) {
-            return getCurrentRoamingPreset().maxVideoBitrate;
-        } else {
-            return getCurrentMobilePreset().maxVideoBitrate;
-        }
+        return getCurrentMobilePreset().maxVideoBitrate;
     }
 
     public int getAutodownloadMask() {
         int result = 0;
         int[] masksArray;
-        int networkType = ApplicationLoader.getAutodownloadNetworkType();
-        if (networkType == StatsController.TYPE_WIFI) {
-            if (!wifiPreset.enabled) {
-                return 0;
-            }
-            masksArray = getCurrentWiFiPreset().mask;
-        } else if (networkType == StatsController.TYPE_ROAMING) {
-            if (!roamingPreset.enabled) {
-                return 0;
-            }
-            masksArray = getCurrentRoamingPreset().mask;
-        } else {
-            if (!mobilePreset.enabled) {
-                return 0;
-            }
-            masksArray = getCurrentMobilePreset().mask;
+        if (!mobilePreset.enabled) {
+            return 0;
         }
+        masksArray = getCurrentMobilePreset().mask;
         for (int a = 0; a < masksArray.length; a++) {
             int mask = 0;
             if ((masksArray[a] & AUTODOWNLOAD_TYPE_PHOTO) != 0) {
@@ -518,12 +496,12 @@ public class DownloadController extends BaseController implements NotificationCe
         } else {
             for (int a = 0; a < photoDownloadQueue.size(); a++) {
                 DownloadObject downloadObject = photoDownloadQueue.get(a);
-                if (downloadObject.object instanceof TLRPC.Photo) {
-                    TLRPC.Photo photo = (TLRPC.Photo) downloadObject.object;
-                    TLRPC.PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.getPhotoSize());
+                if (downloadObject.object instanceof MessageMedia.Photo) {
+                    MessageMedia.Photo photo = (MessageMedia.Photo) downloadObject.object;
+                    PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.getPhotoSize());
                     getFileLoader().cancelLoadFile(photoSize);
-                } else if (downloadObject.object instanceof TLRPC.Document) {
-                    getFileLoader().cancelLoadFile((TLRPC.Document) downloadObject.object);
+                } else if (downloadObject.object instanceof Document) {
+                    getFileLoader().cancelLoadFile((Document) downloadObject.object);
                 }
             }
             photoDownloadQueue.clear();
@@ -535,7 +513,7 @@ public class DownloadController extends BaseController implements NotificationCe
         } else {
             for (int a = 0; a < audioDownloadQueue.size(); a++) {
                 DownloadObject downloadObject = audioDownloadQueue.get(a);
-                getFileLoader().cancelLoadFile((TLRPC.Document) downloadObject.object);
+                getFileLoader().cancelLoadFile((Document) downloadObject.object);
             }
             audioDownloadQueue.clear();
         }
@@ -546,7 +524,7 @@ public class DownloadController extends BaseController implements NotificationCe
         } else {
             for (int a = 0; a < documentDownloadQueue.size(); a++) {
                 DownloadObject downloadObject = documentDownloadQueue.get(a);
-                TLRPC.Document document = (TLRPC.Document) downloadObject.object;
+                Document document = (Document) downloadObject.object;
                 getFileLoader().cancelLoadFile(document);
             }
             documentDownloadQueue.clear();
@@ -558,7 +536,7 @@ public class DownloadController extends BaseController implements NotificationCe
         } else {
             for (int a = 0; a < videoDownloadQueue.size(); a++) {
                 DownloadObject downloadObject = videoDownloadQueue.get(a);
-                getFileLoader().cancelLoadFile((TLRPC.Document) downloadObject.object);
+                getFileLoader().cancelLoadFile((Document) downloadObject.object);
             }
             videoDownloadQueue.clear();
         }
@@ -587,24 +565,10 @@ public class DownloadController extends BaseController implements NotificationCe
 
     public boolean canDownloadMedia(int type, int size) {
         Preset preset;
-        int networkType = ApplicationLoader.getAutodownloadNetworkType();
-        if (networkType == StatsController.TYPE_WIFI) {
-            if (!wifiPreset.enabled) {
-                return false;
-            }
-            preset = getCurrentWiFiPreset();
-
-        } else if (networkType == StatsController.TYPE_ROAMING) {
-            if (!roamingPreset.enabled) {
-                return false;
-            }
-            preset = getCurrentRoamingPreset();
-        } else {
-            if (!mobilePreset.enabled) {
-                return false;
-            }
-            preset = getCurrentMobilePreset();
+        if (!mobilePreset.enabled) {
+            return false;
         }
+        preset = getCurrentMobilePreset();
         int mask = preset.mask[1];
         int maxSize = preset.sizes[typeToIndex(type)];
         return (type == AUTODOWNLOAD_TYPE_PHOTO || size != 0 && size <= maxSize) && (type == AUTODOWNLOAD_TYPE_AUDIO || (mask & type) != 0);
@@ -627,54 +591,13 @@ public class DownloadController extends BaseController implements NotificationCe
         } else {
             return 0;
         }
-        int index;
-        TLRPC.Peer peer = message.to_id;
-        if (peer != null) {
-            if (peer.user_id != 0) {
-                if (getContactsController().contactsDict.containsKey(peer.user_id)) {
-                    index = 0;
-                } else {
-                    index = 1;
-                }
-            } else if (peer.chat_id != 0) {
-                if (message.from_id != 0 && getContactsController().contactsDict.containsKey(message.from_id)) {
-                    index = 0;
-                } else {
-                    index = 2;
-                }
-            } else {
-                if (MessageObject.isMegagroup(message)) {
-                    if (message.from_id != 0 && getContactsController().contactsDict.containsKey(message.from_id)) {
-                        index = 0;
-                    } else {
-                        index = 2;
-                    }
-                } else {
-                    index = 3;
-                }
-            }
-        } else {
-            index = 1;
-        }
+        int index = 1;
         Preset preset;
-        int networkType = ApplicationLoader.getAutodownloadNetworkType();
-        if (networkType == StatsController.TYPE_WIFI) {
-            if (!wifiPreset.enabled) {
-                return 0;
-            }
-            preset = getCurrentWiFiPreset();
-
-        } else if (networkType == StatsController.TYPE_ROAMING) {
-            if (!roamingPreset.enabled) {
-                return 0;
-            }
-            preset = getCurrentRoamingPreset();
-        } else {
-            if (!mobilePreset.enabled) {
-                return 0;
-            }
-            preset = getCurrentMobilePreset();
+        if (!mobilePreset.enabled) {
+            return 0;
         }
+        preset = getCurrentMobilePreset();
+
         int mask = preset.mask[index];
         int maxSize = preset.sizes[typeToIndex(type)];
         int size = MessageObject.getMessageSize(message);
@@ -686,91 +609,18 @@ public class DownloadController extends BaseController implements NotificationCe
     }
 
     protected boolean canDownloadNextTrack() {
-        int networkType = ApplicationLoader.getAutodownloadNetworkType();
-        if (networkType == StatsController.TYPE_WIFI) {
-            return wifiPreset.enabled && getCurrentWiFiPreset().preloadMusic;
-        } else if (networkType == StatsController.TYPE_ROAMING) {
-            return roamingPreset.enabled && getCurrentRoamingPreset().preloadMusic;
-        } else {
-            return mobilePreset.enabled && getCurrentMobilePreset().preloadMusic;
-        }
+        return mobilePreset.enabled && getCurrentMobilePreset().preloadMusic;
     }
 
     public int getCurrentDownloadMask() {
-        int networkType = ApplicationLoader.getAutodownloadNetworkType();
-        if (networkType == StatsController.TYPE_WIFI) {
-            if (!wifiPreset.enabled) {
-                return 0;
-            }
-            int mask = 0;
-            for (int a = 0; a < 4; a++) {
-                mask |= getCurrentWiFiPreset().mask[a];
-            }
-            return mask;
-        } else if (networkType == StatsController.TYPE_ROAMING) {
-            if (!roamingPreset.enabled) {
-                return 0;
-            }
-            int mask = 0;
-            for (int a = 0; a < 4; a++) {
-                mask |= getCurrentRoamingPreset().mask[a];
-            }
-            return mask;
-        } else {
-            if (!mobilePreset.enabled) {
-                return 0;
-            }
-            int mask = 0;
-            for (int a = 0; a < 4; a++) {
-                mask |= getCurrentMobilePreset().mask[a];
-            }
-            return mask;
+        if (!mobilePreset.enabled) {
+            return 0;
         }
-    }
-
-    public void savePresetToServer(int type) {
-        TLRPC.TL_account_saveAutoDownloadSettings req = new TLRPC.TL_account_saveAutoDownloadSettings();
-        Preset preset;
-        boolean enabled;
-        if (type == 0) {
-            preset = getCurrentMobilePreset();
-            enabled = mobilePreset.enabled;
-        } else if (type == 1) {
-            preset = getCurrentWiFiPreset();
-            enabled = wifiPreset.enabled;
-        } else {
-            preset = getCurrentRoamingPreset();
-            enabled = roamingPreset.enabled;
+        int mask = 0;
+        for (int a = 0; a < 4; a++) {
+            mask |= getCurrentMobilePreset().mask[a];
         }
-        req.settings = new TLRPC.TL_autoDownloadSettings();
-        req.settings.audio_preload_next = preset.preloadMusic;
-        req.settings.video_preload_large = preset.preloadVideo;
-        req.settings.phonecalls_less_data = preset.lessCallData;
-        req.settings.video_upload_maxbitrate = preset.maxVideoBitrate;
-        req.settings.disabled = !enabled;
-        boolean photo = false;
-        boolean video = false;
-        boolean document = false;
-        for (int a = 0; a < preset.mask.length; a++) {
-            if ((preset.mask[a] & AUTODOWNLOAD_TYPE_PHOTO) != 0) {
-                photo = true;
-            }
-            if ((preset.mask[a] & AUTODOWNLOAD_TYPE_VIDEO) != 0) {
-                video = true;
-            }
-            if ((preset.mask[a] & AUTODOWNLOAD_TYPE_DOCUMENT) != 0) {
-                document = true;
-            }
-            if (photo && video && document) {
-                break;
-            }
-        }
-        req.settings.photo_size_max = photo ? preset.sizes[PRESET_SIZE_NUM_PHOTO] : 0;
-        req.settings.video_size_max = video ? preset.sizes[PRESET_SIZE_NUM_VIDEO] : 0;
-        req.settings.file_size_max = document ? preset.sizes[PRESET_SIZE_NUM_DOCUMENT] : 0;
-        getConnectionsManager().sendRequest(req, (response, error) -> {
-
-        });
+        return mask;
     }
 
     protected void processDownloadObjects(int type, ArrayList<DownloadObject> objects) {

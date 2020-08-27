@@ -313,7 +313,7 @@ public class SharedDocumentCell extends FrameLayout implements DownloadControlle
             if (messageObject.isMusic()) {
                 for (int a = 0; a < document.attributes.size(); a++) {
                     Document.DocumentAttribute attribute = document.attributes.get(a);
-                    if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
+                    if (attribute.isAudio()) {
                         if (attribute.performer != null && attribute.performer.length() != 0 || attribute.title != null && attribute.title.length() != 0) {
                             name = messageObject.getMusicAuthor() + " - " + messageObject.getMusicTitle();
                         }

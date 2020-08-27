@@ -3733,20 +3733,6 @@ public class MediaDataController extends BaseController {
 
     //endregion ---------------- EMOJI END ----------------
 
-    public void increaseInlineRaiting(final int uid) {
-        if (!getUserConfig().suggestContacts) {
-            return;
-        }
-        int dt;
-        if (getUserConfig().botRatingLoadTime != 0) {
-            dt = Math.max(1, ((int) (System.currentTimeMillis() / 1000)) - getUserConfig().botRatingLoadTime);
-        } else {
-            dt = 60;
-        }
-
-        getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
-    }
-
     //region ---------------- MEDIA ----------------
     public final static int MEDIA_PHOTOVIDEO = 0;
     public final static int MEDIA_FILE = 1;

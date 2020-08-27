@@ -2938,7 +2938,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             if (currentPhotoObject != null && (currentPhotoObject.w == 0 || currentPhotoObject.h == 0)) {
                                 for (int a = 0; a < document.attributes.size(); a++) {
                                     DocumentAttribute attribute = document.attributes.get(a);
-                                    if (attribute instanceof TLRPC.TL_documentAttributeImageSize || attribute instanceof TLRPC.TL_documentAttributeVideo) {
+                                    if (attribute.isImageSize() || attribute.isVideo()) {
                                         currentPhotoObject.w = attribute.w;
                                         currentPhotoObject.h = attribute.h;
                                         break;
@@ -2972,7 +2972,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             if (currentPhotoObject != null && (currentPhotoObject.w == 0 || currentPhotoObject.h == 0 || currentPhotoObject instanceof TLRPC.TL_photoStrippedSize)) {
                                 for (int a = 0; a < document.attributes.size(); a++) {
                                     DocumentAttribute attribute = document.attributes.get(a);
-                                    if (attribute instanceof TLRPC.TL_documentAttributeVideo) {
+                                    if (attribute.isVideo()) {
                                         if (currentPhotoObject instanceof TLRPC.TL_photoStrippedSize) {
                                             float scale = Math.max(attribute.w, attribute.w) / 50.0f;
                                             currentPhotoObject.w = (int) (attribute.w / scale);
@@ -2995,7 +2995,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             if (currentPhotoObject != null && (currentPhotoObject.w == 0 || currentPhotoObject.h == 0)) {
                                 for (int a = 0; a < document.attributes.size(); a++) {
                                     DocumentAttribute attribute = document.attributes.get(a);
-                                    if (attribute instanceof TLRPC.TL_documentAttributeImageSize) {
+                                    if (attribute.isImageSize()) {
                                         currentPhotoObject.w = attribute.w;
                                         currentPhotoObject.h = attribute.h;
                                         break;
@@ -3013,7 +3013,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             if (currentPhotoObject != null && (currentPhotoObject.w == 0 || currentPhotoObject.h == 0)) {
                                 for (int a = 0; a < document.attributes.size(); a++) {
                                     DocumentAttribute attribute = document.attributes.get(a);
-                                    if (attribute instanceof TLRPC.TL_documentAttributeImageSize) {
+                                    if (attribute.isImageSize()) {
                                         currentPhotoObject.w = attribute.w;
                                         currentPhotoObject.h = attribute.h;
                                         break;
@@ -3035,7 +3035,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                             if (currentPhotoObject != null && (currentPhotoObject.w == 0 || currentPhotoObject.h == 0)) {
                                 for (int a = 0; a < document.attributes.size(); a++) {
                                     DocumentAttribute attribute = document.attributes.get(a);
-                                    if (attribute instanceof TLRPC.TL_documentAttributeImageSize) {
+                                    if (attribute.isImageSize()) {
                                         currentPhotoObject.w = attribute.w;
                                         currentPhotoObject.h = attribute.h;
                                         break;
@@ -3275,7 +3275,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                                     String filter = currentPhotoObject instanceof TLRPC.TL_photoStrippedSize || "s".equals(currentPhotoObject.type) ? currentPhotoFilterThumb : currentPhotoFilter;
                                     if (messageObject.mediaExists || autoDownload) {
                                         autoPlayingMedia = true;
-                                        TLRPC.TL_videoSize videoSize = MessageObject.getDocumentVideoThumb(document);
+                                        VideoSize videoSize = MessageObject.getDocumentVideoThumb(document);
                                         if (!messageObject.mediaExists && videoSize != null && (currentPhotoObject == null || currentPhotoObjectThumb == null)) {
                                             photoImage.setImage(ImageLocation.getForDocument(document), document.size < 1024 * 32 ? null : ImageLoader.AUTOPLAY_FILTER, ImageLocation.getForDocument(videoSize, documentAttach), null, ImageLocation.getForDocument(currentPhotoObject != null ? currentPhotoObject : currentPhotoObjectThumb, documentAttach), currentPhotoObject != null ? filter : currentPhotoFilterThumb, null, document.size, null, messageObject, 0);
                                         } else {
@@ -3771,7 +3771,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     boolean isWebpSticker = messageObject.type == MessageObject.TYPE_STICKER;
                     for (int a = 0; a < messageObject.getDocument().attributes.size(); a++) {
                         DocumentAttribute attribute = messageObject.getDocument().attributes.get(a);
-                        if (attribute instanceof TLRPC.TL_documentAttributeImageSize) {
+                        if (attribute.isImageSize()) {
                             photoWidth = attribute.w;
                             photoHeight = attribute.h;
                             break;
@@ -3906,7 +3906,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         } else if (documentAttach != null) {
                             for (int a = 0, N = documentAttach.attributes.size(); a < N; a++) {
                                 DocumentAttribute attribute = documentAttach.attributes.get(a);
-                                if (attribute instanceof TLRPC.TL_documentAttributeVideo) {
+                                if (attribute.isVideo()) {
                                     imageW = attribute.w;
                                     imageH = attribute.h;
                                 }
@@ -3945,7 +3945,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     if ((w == 0 || h == 0) && messageObject.type == 8) {
                         for (int a = 0; a < messageObject.getDocument().attributes.size(); a++) {
                             DocumentAttribute attribute = messageObject.getDocument().attributes.get(a);
-                            if (attribute instanceof TLRPC.TL_documentAttributeImageSize || attribute instanceof TLRPC.TL_documentAttributeVideo) {
+                            if (attribute.isImageSize() || attribute.isVideo()) {
                                 float scale = (float) attribute.w / (float) photoWidth;
                                 w = (int) (attribute.w / scale);
                                 h = (int) (attribute.h / scale);
@@ -4310,7 +4310,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         if (MessageObject.isGifDocument(document) || messageObject.type == MessageObject.TYPE_ROUND_VIDEO) {
                             autoDownload = DownloadController.getInstance(currentAccount).canDownloadMedia(currentMessageObject);
                         }
-                        TLRPC.TL_videoSize videoSize = MessageObject.getDocumentVideoThumb(document);
+                        VideoSize videoSize = MessageObject.getDocumentVideoThumb(document);
                         if (((MessageObject.isGifDocument(document) && messageObject.videoEditedInfo == null) || (!messageObject.isSending() && !messageObject.isEditing())) && (localFile != 0 || FileLoader.getInstance(currentAccount).isLoadingFile(fileName) || autoDownload)) {
                             if (localFile != 1 && !messageObject.needDrawBluredPreview() && (localFile != 0 || messageObject.canStreamVideo() && autoDownload)) {
                                 autoPlayingMedia = true;
@@ -4981,7 +4981,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             int duration = 0;
             for (int a = 0; a < documentAttach.attributes.size(); a++) {
                 DocumentAttribute attribute = documentAttach.attributes.get(a);
-                if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
+                if (attribute.isAudio()) {
                     duration = attribute.duration;
                     break;
                 }
@@ -5018,7 +5018,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             int duration = 0;
             for (int a = 0; a < documentAttach.attributes.size(); a++) {
                 DocumentAttribute attribute = documentAttach.attributes.get(a);
-                if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
+                if (attribute.isAudio()) {
                     duration = attribute.duration;
                     break;
                 }
@@ -9883,7 +9883,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
         if (buttonState == -1 && currentMessageObject.needDrawBluredPreview() && !MediaController.getInstance().isPlayingMessage(currentMessageObject) && photoImage.getVisible() && currentMessageObject.messageOwner.destroyTime != 0) {
             if (!currentMessageObject.isOutOwner()) {
-                long msTime = System.currentTimeMillis() + ConnectionsManager.getInstance(currentAccount).getTimeDifference() * 1000;
+                long msTime = System.currentTimeMillis() + 1000;
                 float progress = Math.max(0, (long) currentMessageObject.messageOwner.destroyTime * 1000 - msTime) / (currentMessageObject.messageOwner.ttl * 1000.0f);
                 Theme.chat_deleteProgressPaint.setAlpha((int) (255 * controlsAlpha));
                 canvas.drawArc(deleteProgressRect, -90, -360 * progress, true, Theme.chat_deleteProgressPaint);

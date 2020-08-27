@@ -53,7 +53,9 @@ import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
@@ -996,7 +998,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
                 @Override
                 protected Size getSizeForItem(int i) {
-                    TLRPC.Document document;
+                    Document document;
 
                     if (mediaPage.listView.getAdapter() == gifAdapter) {
                         document = sharedMediaData[5].messages.get(i).getDocument();
@@ -1005,15 +1007,15 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     }
                     size.width = size.height = 100;
                     if (document != null) {
-                        TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
+                        PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 90);
                         if (thumb != null && thumb.w != 0 && thumb.h != 0) {
                             size.width = thumb.w;
                             size.height = thumb.h;
                         }
-                        ArrayList<TLRPC.DocumentAttribute> attributes = document.attributes;
+                        ArrayList<Document.DocumentAttribute> attributes = document.attributes;
                         for (int b = 0; b < attributes.size(); b++) {
-                            TLRPC.DocumentAttribute attribute = attributes.get(b);
-                            if (attribute instanceof TLRPC.TL_documentAttributeImageSize || attribute instanceof TLRPC.TL_documentAttributeVideo) {
+                            Document.DocumentAttribute attribute = attributes.get(b);
+                            if (attribute.isImageSize() || attribute.isVideo()) {
                                 size.width = attribute.w;
                                 size.height = attribute.h;
                                 break;
@@ -2796,7 +2798,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             } else if (selectedMode == 1) {
                 if (view instanceof SharedDocumentCell) {
                     SharedDocumentCell cell = (SharedDocumentCell) view;
-                    TLRPC.Document document = message.getDocument();
+                    Document document = message.getDocument();
                     if (cell.isLoaded()) {
                         if (message.canPreviewDocument()) {
                             PhotoViewer.getInstance().setParentActivity(profileActivity.getParentActivity());
@@ -3473,7 +3475,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                                         break;
                                     }
                                     if (currentType == 4) {
-                                        TLRPC.Document document;
+                                        Document document;
                                         if (messageObject.type == 0) {
                                             document = messageObject.messageOwner.media.webpage.document;
                                         } else {
@@ -3481,8 +3483,8 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                                         }
                                         boolean ok = false;
                                         for (int c = 0; c < document.attributes.size(); c++) {
-                                            TLRPC.DocumentAttribute attribute = document.attributes.get(c);
-                                            if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
+                                            DocumentAttribute attribute = document.attributes.get(c);
+                                            if (attribute.isAudio()) {
                                                 if (attribute.performer != null) {
                                                     ok = attribute.performer.toLowerCase().contains(q);
                                                 }
@@ -3676,7 +3678,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             MessageObject messageObject = sharedMediaData[5].messages.get(position);
-            TLRPC.Document document = messageObject.getDocument();
+            Document document = messageObject.getDocument();
             if (document != null) {
                 ContextLinkCell cell = (ContextLinkCell) holder.itemView;
                 cell.setGif(document, messageObject, messageObject.messageOwner.date, false);

@@ -132,7 +132,7 @@ public class LaunchActivity extends Activity
     private FrameLayout shadowTablet;
     private FrameLayout shadowTabletSide;
     private View backgroundTablet;
-    protected DrawerLayoutContainer drawerLayoutContainer;
+    public DrawerLayoutContainer drawerLayoutContainer;
     private PasscodeView passcodeView;
     private AlertDialog visibleDialog;
     private AlertDialog proxyErrorDialog;

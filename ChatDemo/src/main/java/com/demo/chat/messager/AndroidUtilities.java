@@ -88,6 +88,7 @@ import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.WallPaper;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.Components.BackgroundGradientDrawable;
@@ -2900,8 +2901,8 @@ public class AndroidUtilities {
 
     public static String getWallPaperUrl(Object object) {
         String link;
-        if (object instanceof TLRPC.TL_wallPaper) {
-            TLRPC.TL_wallPaper wallPaper = (TLRPC.TL_wallPaper) object;
+        if (object instanceof WallPaper) {
+            WallPaper wallPaper = (WallPaper) object;
             link = "https://" + MessagesController.getInstance(UserConfig.selectedAccount).linkPrefix + "/bg/" + wallPaper.slug;
             StringBuilder modes = new StringBuilder();
             if (wallPaper.settings != null) {

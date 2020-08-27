@@ -586,7 +586,7 @@ public class Theme {
     public static class PatternsLoader implements NotificationCenter.NotificationCenterDelegate {
 
         private static class LoadingPattern {
-            public TLRPC.TL_wallPaper pattern;
+            public WallPaper pattern;
             public ArrayList<ThemeAccent> accents = new ArrayList<>();
         }
 
@@ -675,10 +675,10 @@ public class Theme {
                         ArrayList<ThemeAccent> createdAccents = null;
                         for (int b = 0, N2 = res.objects.size(); b < N2; b++) {
                             TLRPC.WallPaper object = (TLRPC.WallPaper) res.objects.get(b);
-                            if (!(object instanceof TLRPC.TL_wallPaper)) {
+                            if (!(object instanceof WallPaper)) {
                                 continue;
                             }
-                            TLRPC.TL_wallPaper wallPaper = (TLRPC.TL_wallPaper) object;
+                            WallPaper wallPaper = (WallPaper) object;
                             if (wallPaper.pattern) {
                                 File patternPath = FileLoader.getPathToAttach(wallPaper.document, true);
                                 Boolean exists = null;
@@ -829,7 +829,7 @@ public class Theme {
                 if (loadingPattern != null) {
                     Utilities.globalQueue.postRunnable(() -> {
                         ArrayList<ThemeAccent> createdAccents = null;
-                        TLRPC.TL_wallPaper wallPaper = loadingPattern.pattern;
+                        WallPaper wallPaper = loadingPattern.pattern;
                         File patternPath = FileLoader.getPathToAttach(wallPaper.document, true);
                         Bitmap patternBitmap = null;
                         for (int a = 0, N = loadingPattern.accents.size(); a < N; a++) {
@@ -1650,7 +1650,7 @@ public class Theme {
                     backgroundGradientOverrideColor = settings.wallpaper.settings.second_background_color;
                 }
                 backgroundRotation = AndroidUtilities.getWallpaperRotation(settings.wallpaper.settings.rotation, false);
-                if (!(settings.wallpaper instanceof TLRPC.TL_wallPaperNoFile) && settings.wallpaper.pattern) {
+                if (!(settings.wallpaper instanceof WallPaperNoFile) && settings.wallpaper.pattern) {
                     patternSlug = settings.wallpaper.slug;
                     patternIntensity = settings.wallpaper.settings.intensity / 100.0f;
                 }
@@ -1680,7 +1680,7 @@ public class Theme {
                     themeAccent.backgroundGradientOverrideColor = settings.wallpaper.settings.second_background_color;
                 }
                 themeAccent.backgroundRotation = AndroidUtilities.getWallpaperRotation(settings.wallpaper.settings.rotation, false);
-                if (!(settings.wallpaper instanceof TLRPC.TL_wallPaperNoFile) && settings.wallpaper.pattern) {
+                if (!(settings.wallpaper instanceof WallPaperNoFile) && settings.wallpaper.pattern) {
                     themeAccent.patternSlug = settings.wallpaper.slug;
                     themeAccent.patternIntensity = settings.wallpaper.settings.intensity / 100.0f;
                     themeAccent.patternMotion = settings.wallpaper.settings.motion;
@@ -1821,8 +1821,8 @@ public class Theme {
                                         inputWallPaperSlug.slug = themeInfo.slug;
                                         req.wallpaper = inputWallPaperSlug;
                                         ConnectionsManager.getInstance(themeInfo.account).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                                            if (response instanceof TLRPC.TL_wallPaper) {
-                                                TLRPC.TL_wallPaper wallPaper = (TLRPC.TL_wallPaper) response;
+                                            if (response instanceof WallPaper) {
+                                                WallPaper wallPaper = (WallPaper) response;
                                                 loadingThemeWallpaperName = FileLoader.getAttachFileName(wallPaper.document);
                                                 addObservers();
                                                 FileLoader.getInstance(themeInfo.account).loadFile(wallPaper.document, wallPaper, 1, 1);
