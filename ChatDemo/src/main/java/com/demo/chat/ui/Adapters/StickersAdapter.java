@@ -125,7 +125,7 @@ public class StickersAdapter extends RecyclerListView.SelectionAdapter implement
     private boolean isValidSticker(Document document, String emoji) {
         for (int b = 0, size2 = document.attributes.size(); b < size2; b++) {
             Document.DocumentAttribute attribute = document.attributes.get(b);
-            if (attribute instanceof TLRPC.TL_documentAttributeSticker) {
+            if (attribute.isSticker()) {
                 if (attribute.alt != null && attribute.alt.contains(emoji)) {
                     return true;
                 }

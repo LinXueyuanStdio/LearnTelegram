@@ -3,6 +3,7 @@ package com.demo.chat.messager;
 import android.net.Uri;
 
 import com.demo.chat.controller.FileLoader;
+import com.demo.chat.model.small.Document;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.upstream.BaseDataSource;
 import com.google.android.exoplayer2.upstream.DataSpec;
@@ -53,7 +54,7 @@ public class FileStreamLoadOperation extends BaseDataSource implements FileLoadO
         uri = dataSpec.uri;
         currentAccount = Utilities.parseInt(uri.getQueryParameter("account"));
         parentObject = FileLoader.getInstance(currentAccount).getParentObject(Utilities.parseInt(uri.getQueryParameter("rid")));
-        document = new TLRPC.TL_document();
+        document = new Document();
         document.access_hash = Utilities.parseLong(uri.getQueryParameter("hash"));
         document.id = Utilities.parseLong(uri.getQueryParameter("id"));
         document.size = Utilities.parseInt(uri.getQueryParameter("size"));

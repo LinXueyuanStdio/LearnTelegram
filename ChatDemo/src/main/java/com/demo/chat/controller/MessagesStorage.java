@@ -1431,7 +1431,6 @@ public class MessagesStorage extends BaseController {
 
                 final ArrayList<User> users = new ArrayList<>();
                 final ArrayList<Chat> chats = new ArrayList<>();
-                final ArrayList<EncryptedChat> encryptedChats = new ArrayList<>();
                 if (!encryptedChatIds.isEmpty()) {
                     getEncryptedChatsInternal(TextUtils.join(",", encryptedChatIds), encryptedChats, usersToLoad);
                 }

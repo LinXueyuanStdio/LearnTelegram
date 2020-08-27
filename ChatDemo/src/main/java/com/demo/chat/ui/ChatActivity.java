@@ -1148,7 +1148,7 @@ public class ChatActivity extends BaseFragment
         //region 4. 加载相关联的数据，如机器人、群组成员、消息记录
         loading = true;
         if (!inScheduleMode) {
-            //            getMediaDataController().loadBotKeyboard(dialog_id);TODO 加载机器人键盘
+            getMediaDataController().loadBotKeyboard(dialog_id);
             //            getMessagesController().loadPeerSettings(currentUser, currentChat);TODO 加载对等方设置
             //            getMessagesController().setLastCreatedDialogId(dialog_id, inScheduleMode, true);TODO
 
@@ -7602,10 +7602,7 @@ public class ChatActivity extends BaseFragment
         View minMessageChild = null;
         boolean foundTextureViewMessage = false;
 
-        Integer currentReadMaxId = getMessagesController().dialogs_read_inbox_max.get(dialog_id);
-        if (currentReadMaxId == null) {
-            currentReadMaxId = 0;
-        }
+        Integer currentReadMaxId = 0;
         int maxPositiveUnreadId = Integer.MIN_VALUE;
         int maxNegativeUnreadId = Integer.MAX_VALUE;
         int maxUnreadDate = Integer.MIN_VALUE;
@@ -12005,7 +12002,7 @@ public class ChatActivity extends BaseFragment
                 }
             } else if (messageObject != null && str.startsWith("video")) {
                 int seekTime = Utilities.parseInt(str);
-                TLRPC.WebPage webPage;
+                MessageMedia.WebPage webPage;
                 if (messageObject.isYouTubeVideo()) {
                     webPage = messageObject.messageOwner.media.webpage;
                 } else if (messageObject.replyMessageObject != null && messageObject.replyMessageObject.isYouTubeVideo()) {
@@ -12045,48 +12042,6 @@ public class ChatActivity extends BaseFragment
                     messageObject.forceSeekTo = seekTime / (float) messageObject.getDuration();
                     mediaController.playMessage(messageObject);
                 }
-            } else if (str.startsWith("card:")) {
-                String number = str.substring(5);
-                final AlertDialog[] progressDialog = new AlertDialog[]{new AlertDialog(getParentActivity(), 3)};
-                TLRPC.TL_payments_getBankCardData req = new TLRPC.TL_payments_getBankCardData();
-                req.number = number;
-                int requestId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                    try {
-                        progressDialog[0].dismiss();
-                    } catch (Throwable ignore) {
-
-                    }
-                    progressDialog[0] = null;
-                    if (response instanceof TLRPC.TL_payments_bankCardData) {
-                        if (getParentActivity() == null) {
-                            return;
-                        }
-                        TLRPC.TL_payments_bankCardData data = (TLRPC.TL_payments_bankCardData) response;
-                        BottomSheet.Builder builder = new BottomSheet.Builder(getParentActivity());
-                        ArrayList<CharSequence> arrayList = new ArrayList<>();
-                        for (int a = 0, N = data.open_urls.size(); a < N; a++) {
-                            arrayList.add(data.open_urls.get(a).name);
-                        }
-                        arrayList.add(LocaleController.getString("CopyCardNumber", R.string.CopyCardNumber));
-                        builder.setTitle(data.title);
-                        builder.setItems(arrayList.toArray(new CharSequence[0]), (dialog, which) -> {
-                            if (which < data.open_urls.size()) {
-                                Browser.openUrl(getParentActivity(), data.open_urls.get(which).url, inlineReturn == 0, false);
-                            } else {
-                                AndroidUtilities.addToClipboard(number);
-                                Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("CardNumberCopied", R.string.CardNumberCopied), Toast.LENGTH_SHORT).show();
-                            }
-                        });
-                        showDialog(builder.create());
-                    }
-                }), null, null, 0, getMessagesController().webFileDatacenterId, ConnectionsManager.ConnectionTypeGeneric, true);
-                AndroidUtilities.runOnUIThread(() -> {
-                    if (progressDialog[0] == null) {
-                        return;
-                    }
-                    progressDialog[0].setOnCancelListener(dialog -> getConnectionsManager().cancelRequest(requestId, true));
-                    showDialog(progressDialog[0]);
-                }, 500);
             } else {
                 if (longPress) {
                     BottomSheet.Builder builder = new BottomSheet.Builder(getParentActivity());
@@ -13685,7 +13640,6 @@ public class ChatActivity extends BaseFragment
                                     chatActivityEnterView.setSlowModeTimer(currentChat.slowmode_next_send_date);
                                 }
                             }
-                            getMessagesController().loadFullChat(currentChat.id, 0, true);
                         }
                     }
                     if (currentChat != null) {
@@ -15496,8 +15450,6 @@ public class ChatActivity extends BaseFragment
                 }
                 if (pinnedMessageObject.type == 14) {
                     pinnedMessageTextView.setText(String.format("%s - %s", pinnedMessageObject.getMusicAuthor(), pinnedMessageObject.getMusicTitle()));
-                } else if (pinnedMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGame) {
-                    pinnedMessageTextView.setText(Emoji.replaceEmoji(pinnedMessageObject.messageOwner.media.game.title, pinnedMessageTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(14), false));
                 } else if (!TextUtils.isEmpty(pinnedMessageObject.caption)) {
                     String mess = pinnedMessageObject.caption.toString();
                     if (mess.length() > 150) {
@@ -16246,9 +16198,9 @@ public class ChatActivity extends BaseFragment
                         } else if (uid != getUserConfig().getClientUserId()) {
                             Bundle args = new Bundle();
                             args.putInt("user_id", uid);
-                            ProfileActivity fragment = new ProfileActivity(args);
-                            fragment.setPlayProfileAnimation(currentUser != null && currentUser.id == uid ? 1 : 0);
-                            presentFragment(fragment);
+//                            ProfileActivity fragment = new ProfileActivity(args);TODO
+//                            fragment.setPlayProfileAnimation(currentUser != null && currentUser.id == uid ? 1 : 0);
+//                            presentFragment(fragment);
                         }
                     }
 
@@ -16277,9 +16229,9 @@ public class ChatActivity extends BaseFragment
                     if (url.startsWith("@")) {
                         getMessagesController().openByUserName(url.substring(1), ChatActivity.this, 0);
                     } else if (url.startsWith("#") || url.startsWith("$")) {
-                        DialogsActivity fragment = new DialogsActivity(null);
-                        fragment.setSearchString(url);
-                        presentFragment(fragment);
+//                        DialogsActivity fragment = new DialogsActivity(null);
+//                        fragment.setSearchString(url);
+//                        presentFragment(fragment);TODO
                     } else if (url.startsWith("/")) {
                         chatActivityEnterView.setCommand(null, url, false, false);
                         if (chatActivityEnterView.getFieldText() == null) {

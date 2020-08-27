@@ -8,6 +8,7 @@ import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.ui.Cells.DialogCell;
+import com.demo.chat.ui.Cells.LoadingCell;
 import com.demo.chat.ui.Components.RecyclerListView;
 
 import java.util.ArrayList;

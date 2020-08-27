@@ -49,6 +49,7 @@ import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.support.SparseLongArray;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.ui.LaunchActivity;
@@ -628,7 +629,7 @@ public class NotificationsController extends BaseController {
                 if (messageObject.isFcmMessage()) {
                     isChannel = messageObject.localChannel;
                 } else if (lower_id < 0) {
-                    TLRPC.Chat chat = getMessagesController().getChat(-lower_id);
+                    Chat chat = getMessagesController().getChat(-lower_id);
                     isChannel = ChatObject.isChannel(chat) && !chat.megagroup;
                 } else {
                     isChannel = false;
@@ -1189,7 +1190,7 @@ public class NotificationsController extends BaseController {
 
         String name = null;
         if (from_id > 0) {
-            TLRPC.User user = getMessagesController().getUser(from_id);
+            User user = getMessagesController().getUser(from_id);
             if (user != null) {
                 name = UserObject.getUserName(user);
                 if (chat_id != 0) {
@@ -1203,7 +1204,7 @@ public class NotificationsController extends BaseController {
                 }
             }
         } else {
-            TLRPC.Chat chat = getMessagesController().getChat(-from_id);
+            Chat chat = getMessagesController().getChat(-from_id);
             if (chat != null) {
                 name = chat.title;
                 userName[0] = name;
@@ -1257,7 +1258,7 @@ public class NotificationsController extends BaseController {
                                 if (singleUserId == getUserConfig().getClientUserId()) {
                                     return LocaleController.formatString("NotificationInvitedToGroup", R.string.NotificationInvitedToGroup, name, chat.title);
                                 } else {
-                                    TLRPC.User u2 = getMessagesController().getUser(singleUserId);
+                                    User u2 = getMessagesController().getUser(singleUserId);
                                     if (u2 == null) {
                                         return null;
                                     }
@@ -1275,7 +1276,7 @@ public class NotificationsController extends BaseController {
                         } else {
                             StringBuilder names = new StringBuilder();
                             for (int a = 0; a < messageObject.messageOwner.action.users.size(); a++) {
-                                TLRPC.User user = getMessagesController().getUser(messageObject.messageOwner.action.users.get(a));
+                                User user = getMessagesController().getUser(messageObject.messageOwner.action.users.get(a));
                                 if (user != null) {
                                     String name2 = UserObject.getUserName(user);
                                     if (names.length() != 0) {
@@ -1302,7 +1303,7 @@ public class NotificationsController extends BaseController {
                         } else if (messageObject.messageOwner.action.user_id == from_id) {
                             return LocaleController.formatString("NotificationGroupLeftMember", R.string.NotificationGroupLeftMember, name, chat.title);
                         } else {
-                            TLRPC.User u2 = getMessagesController().getUser(messageObject.messageOwner.action.user_id);
+                            User u2 = getMessagesController().getUser(messageObject.messageOwner.action.user_id);
                             if (u2 == null) {
                                 return null;
                             }
@@ -1608,13 +1609,13 @@ public class NotificationsController extends BaseController {
                     name = LocaleController.getString("NotificationMessageScheduledName", R.string.NotificationMessageScheduledName);
                 }
             } else {
-                TLRPC.User user = getMessagesController().getUser(from_id);
+                User user = getMessagesController().getUser(from_id);
                 if (user != null) {
                     name = UserObject.getUserName(user);
                 }
             }
         } else {
-            TLRPC.Chat chat = getMessagesController().getChat(-from_id);
+            Chat chat = getMessagesController().getChat(-from_id);
             if (chat != null) {
                 name = chat.title;
             }
@@ -1623,7 +1624,7 @@ public class NotificationsController extends BaseController {
         if (name == null) {
             return null;
         }
-        TLRPC.Chat chat = null;
+        Chat chat = null;
         if (chat_id != 0) {
             chat = getMessagesController().getChat(chat_id);
             if (chat == null) {
@@ -1760,7 +1761,7 @@ public class NotificationsController extends BaseController {
                                     if (singleUserId == selfUsedId) {
                                         msg = LocaleController.formatString("NotificationInvitedToGroup", R.string.NotificationInvitedToGroup, name, chat.title);
                                     } else {
-                                        TLRPC.User u2 = getMessagesController().getUser(singleUserId);
+                                        User u2 = getMessagesController().getUser(singleUserId);
                                         if (u2 == null) {
                                             return null;
                                         }
@@ -1778,7 +1779,7 @@ public class NotificationsController extends BaseController {
                             } else {
                                 StringBuilder names = new StringBuilder();
                                 for (int a = 0; a < messageObject.messageOwner.action.users.size(); a++) {
-                                    TLRPC.User user = getMessagesController().getUser(messageObject.messageOwner.action.users.get(a));
+                                    User user = getMessagesController().getUser(messageObject.messageOwner.action.users.get(a));
                                     if (user != null) {
                                         String name2 = UserObject.getUserName(user);
                                         if (names.length() != 0) {
@@ -1805,7 +1806,7 @@ public class NotificationsController extends BaseController {
                             } else if (messageObject.messageOwner.action.user_id == from_id) {
                                 msg = LocaleController.formatString("NotificationGroupLeftMember", R.string.NotificationGroupLeftMember, name, chat.title);
                             } else {
-                                TLRPC.User u2 = getMessagesController().getUser(messageObject.messageOwner.action.user_id);
+                                User u2 = getMessagesController().getUser(messageObject.messageOwner.action.user_id);
                                 if (u2 == null) {
                                     return null;
                                 }
@@ -3257,7 +3258,7 @@ public class NotificationsController extends BaseController {
 
             Person selfPerson = personCache.get(selfUserId);
             if (Build.VERSION.SDK_INT >= 28 && selfPerson == null) {
-                TLRPC.User sender = getMessagesController().getUser(selfUserId);
+                User sender = getMessagesController().getUser(selfUserId);
                 if (sender == null) {
                     sender = getUserConfig().getCurrentUser();
                 }
@@ -3359,7 +3360,7 @@ public class NotificationsController extends BaseController {
                             avatar = avatalFile;
                         } else if (lowerId < 0) {
                             int fromId = messageObject.getFromId();
-                            TLRPC.User sender = getMessagesController().getUser(fromId);
+                            User sender = getMessagesController().getUser(fromId);
                             if (sender == null) {
                                 sender = getMessagesStorage().getUserSync(fromId);
                                 if (sender != null) {
@@ -3444,7 +3445,7 @@ public class NotificationsController extends BaseController {
                         jmsg.put("text", message);
                         jmsg.put("date", messageObject.messageOwner.date);
                         if (messageObject.isFromUser() && lowerId < 0) {
-                            TLRPC.User sender = getMessagesController().getUser(messageObject.getFromId());
+                            User sender = getMessagesController().getUser(messageObject.getFromId());
                             if (sender != null) {
                                 jmsg.put("fname", sender.first_name);
                                 jmsg.put("lname", sender.last_name);

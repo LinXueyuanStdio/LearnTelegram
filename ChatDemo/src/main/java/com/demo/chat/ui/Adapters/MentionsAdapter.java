@@ -223,7 +223,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
         }
     }
 
-    public TLRPC.TL_inlineBotSwitchPM getBotContextSwitch() {
+    public InlineBotSwitchPM getBotContextSwitch() {
         return searchResultBotContextSwitch;
     }
 
