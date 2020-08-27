@@ -3519,14 +3519,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         }
         int lower_id = (int) dialog_id;
         int high_id = (int) (dialog_id >> 32);
-        if (lower_id == 0 && high_id != 0) {
-            TLRPC.EncryptedChat encryptedChat = accountInstance.getMessagesController().getEncryptedChat(high_id);
-            if (AndroidUtilities.getPeerLayerVersion(encryptedChat.layer) >= 66) {
-                hasRecordVideo = true;
-            }
-        } else {
-            hasRecordVideo = true;
-        }
+        hasRecordVideo = true;
         boolean isChannel = false;
         if ((int) dialog_id < 0) {
             Chat chat = accountInstance.getMessagesController().getChat(-(int) dialog_id);
@@ -3594,7 +3587,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         MediaController.getInstance().setReplyingMessage(messageObject);
     }
 
-    public void setWebPage(TLRPC.WebPage webPage, boolean searchWebPages) {
+    public void setWebPage(MessageMedia.WebPage webPage, boolean searchWebPages) {
         messageWebPage = webPage;
         messageWebPageSearch = searchWebPages;
     }

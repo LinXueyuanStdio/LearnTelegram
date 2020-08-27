@@ -46,6 +46,7 @@ import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.Cells.ChatMessageCell;
@@ -2365,7 +2366,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         sendMessage(null, caption, null, null, videoEditedInfo, null, document, null, null, peer, path, reply_to_msg, null, true, null, entities, replyMarkup, params, notify, scheduleDate, ttl, parentObject);
     }
 
-    public void sendMessage(String message, long peer, MessageObject reply_to_msg, TLRPC.WebPage webPage, boolean searchLinks, ArrayList<MessageEntity> entities, TLRPC.ReplyMarkup replyMarkup, HashMap<String, String> params, boolean notify, int scheduleDate) {
+    public void sendMessage(String message, long peer, MessageObject reply_to_msg, MessageMedia.WebPage webPage, boolean searchLinks, ArrayList<MessageEntity> entities, TLRPC.ReplyMarkup replyMarkup, HashMap<String, String> params, boolean notify, int scheduleDate) {
         sendMessage(message, null, null, null, null, null, null, null, null, peer, null, reply_to_msg, webPage, searchLinks, null, entities, replyMarkup, params, notify, scheduleDate, 0, null);
     }
 

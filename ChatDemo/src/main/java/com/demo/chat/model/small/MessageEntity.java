@@ -12,4 +12,8 @@ public class MessageEntity {
     public int length;
     public String url;
     public String language;
+
+    public boolean isMentionName() {
+        return false;
+    }
 }

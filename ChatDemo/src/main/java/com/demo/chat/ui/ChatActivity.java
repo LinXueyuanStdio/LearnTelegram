@@ -241,6 +241,8 @@ import androidx.recyclerview.widget.RecyclerView;
  *     - 对方正在编辑中
  *     - 投票
  *     - 私密聊天(涉及P2P，不想搞复杂)
+ *     - 表情包（需要下载的）
+ *     - 机器人的游戏和付款功能
  *   - 需要判断版本的代码直接返回true，因为我们只支持最高版本
  * 第二阶段简化目标：
  *   - 抽离网络请求，服务化
@@ -6368,7 +6370,6 @@ public class ChatActivity extends BaseFragment
     //endregion
 
     //region 消息操作
-
     /**
      * 转发
      */
@@ -7128,13 +7129,8 @@ public class ChatActivity extends BaseFragment
                     MediaDataController.sortEntities(draftMessage.entities);
                     for (int a = 0; a < draftMessage.entities.size(); a++) {
                         MessageEntity entity = draftMessage.entities.get(a);
-                        if (entity instanceof TLRPC.TL_inputMessageEntityMentionName || entity instanceof TLRPC.TL_messageEntityMentionName) {
-                            int user_id;
-                            if (entity instanceof TLRPC.TL_inputMessageEntityMentionName) {
-                                user_id = ((TLRPC.TL_inputMessageEntityMentionName) entity).user_id.user_id;
-                            } else {
-                                user_id = ((TLRPC.TL_messageEntityMentionName) entity).user_id;
-                            }
+                        if (entity.isMentionName()) {
+                            int user_id = entity.user_id;
                             if (entity.offset + entity.length < stringBuilder.length() && stringBuilder.charAt(entity.offset + entity.length) == ' ') {
                                 entity.length++;
                             }
@@ -11254,7 +11250,10 @@ public class ChatActivity extends BaseFragment
         showFieldPanel(show, null, messageObjectToEdit, null, null, true, 0, false, true);
     }
 
-    public void showFieldPanel(boolean show, MessageObject messageObjectToReply, MessageObject messageObjectToEdit, ArrayList<MessageObject> messageObjectsToForward, MessageMedia.WebPage webPage, boolean notify, int scheduleDate, boolean cancel, boolean animated) {
+    public void showFieldPanel(boolean show,
+            MessageObject messageObjectToReply, MessageObject messageObjectToEdit,
+            ArrayList<MessageObject> messageObjectsToForward, MessageMedia.WebPage webPage,
+            boolean notify, int scheduleDate, boolean cancel, boolean animated) {
         if (chatActivityEnterView == null) {
             return;
         }
@@ -11341,9 +11340,7 @@ public class ChatActivity extends BaseFragment
                 replyIconImageView.setContentDescription(LocaleController.getString("AccDescrReplying", R.string.AccDescrReplying));
                 replyCloseImageView.setContentDescription(LocaleController.getString("AccDescrCancelReply", R.string.AccDescrCancelReply));
 
-                if (messageObjectToReply.messageOwner.media instanceof TLRPC.TL_messageMediaGame) {
-                    replyObjectTextView.setText(Emoji.replaceEmoji(messageObjectToReply.messageOwner.media.game.title, replyObjectTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(14), false));
-                } else if (messageObjectToReply.messageText != null) {
+                if (messageObjectToReply.messageText != null) {
                     String mess = messageObjectToReply.messageText.toString();
                     if (mess.length() > 150) {
                         mess = mess.substring(0, 150);
