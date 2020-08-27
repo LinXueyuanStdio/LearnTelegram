@@ -17,12 +17,16 @@ import android.view.View;
 
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.ExtendedBitmapDrawable;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLoader;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.small.Document;
 import com.demo.chat.ui.Components.AnimatedFileDrawable;
 import com.demo.chat.ui.Components.RLottieDrawable;
+import com.demo.chat.ui.Components.RecyclableDrawable;
 
 import androidx.annotation.Keep;
 
@@ -33,7 +37,6 @@ import androidx.annotation.Keep;
  * @description null
  * @usage null
  */
-
 public class ImageReceiver implements NotificationCenter.NotificationCenterDelegate {
 
     public interface ImageReceiverDelegate {

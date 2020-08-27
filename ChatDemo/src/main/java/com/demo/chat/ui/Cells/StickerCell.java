@@ -15,6 +15,7 @@ import com.demo.chat.R;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.PhotoSize;
@@ -159,7 +160,7 @@ public class StickerCell extends FrameLayout {
             return;
         String emoji = null;
         for (int a = 0; a < sticker.attributes.size(); a++) {
-            DocumentAttribute attribute = sticker.attributes.get(a);
+            Document.DocumentAttribute attribute = sticker.attributes.get(a);
             if (attribute instanceof TLRPC.TL_documentAttributeSticker) {
                 emoji = attribute.alt != null && attribute.alt.length() > 0 ? attribute.alt : null;
             }

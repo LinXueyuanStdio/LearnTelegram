@@ -22,6 +22,7 @@ import com.demo.chat.controller.MediaController;
 import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.MessagesStorage;
+import com.demo.chat.controller.NotificationsController;
 import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.FileLog;
@@ -619,10 +620,10 @@ public class BaseFragment {
 //    public LocationController getLocationController() {
 //        return getAccountInstance().getLocationController();
 //    }
-//
-//    protected NotificationsController getNotificationsController() {
-//        return getAccountInstance().getNotificationsController();
-//    }
+
+    protected NotificationsController getNotificationsController() {
+        return getAccountInstance().getNotificationsController();
+    }
 
     public MessagesStorage getMessagesStorage() {
         return getAccountInstance().getMessagesStorage();

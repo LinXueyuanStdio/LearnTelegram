@@ -18,6 +18,7 @@ import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.MessagesController;
+import com.demo.chat.controller.MessagesStorage;
 import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
@@ -26,6 +27,8 @@ import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.BotInfo;
+import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Cells.BotSwitchCell;
 import com.demo.chat.ui.Cells.ContextLinkCell;
@@ -68,10 +71,10 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
     private ArrayList<MediaDataController.KeywordResult> searchResultSuggestions;
     private String[] lastSearchKeyboardLanguage;
     private ArrayList<User> searchResultCommandsUsers;
-    private ArrayList<TLRPC.BotInlineResult> searchResultBotContext;
+    private ArrayList<BotInlineResult> searchResultBotContext;
     private TLRPC.TL_inlineBotSwitchPM searchResultBotContextSwitch;
     private MentionsAdapter.MentionsAdapterDelegate delegate;
-    private SparseArray<TLRPC.BotInfo> botInfo;
+    private SparseArray<BotInfo> botInfo;
     private int resultStartPosition;
     private int resultLength;
     private String lastText;
@@ -125,7 +128,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
         }
     };
 
-    public MentionsAdapter(Context context, boolean darkTheme, long did, com.demo.chat.ui.MentionsAdapter.MentionsAdapterDelegate mentionsAdapterDelegate) {
+    public MentionsAdapter(Context context, boolean darkTheme, long did, MentionsAdapter.MentionsAdapterDelegate mentionsAdapterDelegate) {
         mContext = context;
         delegate = mentionsAdapterDelegate;
         isDarkTheme = darkTheme;
@@ -201,7 +204,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
         needBotContext = value;
     }
 
-    public void setBotInfo(SparseArray<TLRPC.BotInfo> info) {
+    public void setBotInfo(SparseArray<BotInfo> info) {
         botInfo = info;
     }
 

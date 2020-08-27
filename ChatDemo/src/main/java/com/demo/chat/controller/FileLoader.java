@@ -12,6 +12,7 @@ import com.demo.chat.messager.FileLoadOperationStream;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.FileUploadOperation;
 import com.demo.chat.messager.ImageLoader;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;

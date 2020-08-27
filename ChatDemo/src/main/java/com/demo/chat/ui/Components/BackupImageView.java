@@ -9,6 +9,7 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.view.View;
 
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.receiver.ImageReceiver;
 
 /**

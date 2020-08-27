@@ -29,9 +29,11 @@ import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Emoji;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLoader;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
+import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
@@ -94,7 +96,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
     private int descriptionY = AndroidUtilities.dp(27);
     private StaticLayout descriptionLayout;
 
-    private TLRPC.BotInlineResult inlineResult;
+    private BotInlineResult inlineResult;
     private User inlineBot;
     private Document documentAttach;
     private int currentDate;
@@ -925,7 +927,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
         delegate = contextLinkCellDelegate;
     }
 
-    public TLRPC.BotInlineResult getResult() {
+    public BotInlineResult getResult() {
         return inlineResult;
     }
 

@@ -24,15 +24,26 @@ import android.view.WindowManager;
 import android.widget.FrameLayout;
 
 import com.demo.chat.R;
+import com.demo.chat.alerts.AlertsCreator;
+import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
+import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.Emoji;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
+import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.small.BotInlineResult;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.BottomSheet;
+import com.demo.chat.ui.Cells.ContextLinkCell;
+import com.demo.chat.ui.Cells.StickerCell;
 import com.demo.chat.ui.Components.LayoutHelper;
 import com.demo.chat.ui.Components.RecyclerListView;
 
@@ -292,7 +303,7 @@ public class ContentPreviewViewer {
 
     private int currentContentType;
     private Document currentDocument;
-    private TLRPC.BotInlineResult inlineResult;
+    private BotInlineResult inlineResult;
     private TLRPC.InputStickerSet currentStickerSet;
     private Object parentObject;
 

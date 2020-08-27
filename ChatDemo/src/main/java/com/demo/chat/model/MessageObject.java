@@ -35,13 +35,16 @@ import com.demo.chat.messager.SerializedData;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.browser.Browser;
+import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Cells.ChatMessageCell;
 import com.demo.chat.ui.Components.TextStyleSpan;
+import com.demo.chat.ui.Components.URLSpanBotCommand;
 import com.demo.chat.ui.Components.URLSpanNoUnderline;
+import com.demo.chat.ui.Components.URLSpanReplacement;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -3368,7 +3371,7 @@ public class MessageObject {
         return 0;
     }
 
-    public static int[] getInlineResultWidthAndHeight(TLRPC.BotInlineResult inlineResult) {
+    public static int[] getInlineResultWidthAndHeight(BotInlineResult inlineResult) {
         int[] result = getWebDocumentWidthAndHeight(inlineResult.content);
         if (result == null) {
             result = getWebDocumentWidthAndHeight(inlineResult.thumb);
@@ -3379,7 +3382,7 @@ public class MessageObject {
         return result;
     }
 
-    public static int getInlineResultDuration(TLRPC.BotInlineResult inlineResult) {
+    public static int getInlineResultDuration(BotInlineResult inlineResult) {
         int result = getWebDocumentDuration(inlineResult.content);
         if (result == 0) {
             result = getWebDocumentDuration(inlineResult.thumb);

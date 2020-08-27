@@ -63,11 +63,11 @@ public class AccountInstance {
 //    public ConnectionsManager getConnectionsManager() {
 //        return ConnectionsManager.getInstance(currentAccount);
 //    }
-//
-//    //通知
-//    public NotificationsController getNotificationsController() {
-//        return NotificationsController.getInstance(currentAccount);
-//    }
+
+    //通知
+    public NotificationsController getNotificationsController() {
+        return NotificationsController.getInstance(currentAccount);
+    }
 //
     //通知中心
     public NotificationCenter getNotificationCenter() {

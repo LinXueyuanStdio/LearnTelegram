@@ -1,6 +1,10 @@
 package com.demo.chat.model;
 
+import com.demo.chat.model.small.BotInfo;
 import com.demo.chat.model.small.ChatPhoto;
+import com.demo.chat.model.small.MessageMedia;
+
+import java.util.ArrayList;
 
 /**
  * @author 林学渊
@@ -39,6 +43,41 @@ public class Chat {
     public boolean scam;
     public boolean has_link;
     public boolean explicit_content;
+
+    public ChatParticipants participants;
+    public MessageMedia.Photo chat_photo;
+    public PeerNotifySettings notify_settings;
+    public ExportedChatInvite exported_invite;
+    public ArrayList<BotInfo> bot_info = new ArrayList<>();
+    public boolean can_view_participants;
+    public boolean can_set_username;
+    public boolean has_scheduled;
+    public String about;
+    public int admins_count;
+    public int read_inbox_max_id;
+    public int read_outbox_max_id;
+    public int unread_count;
+    public int migrated_from_chat_id;
+    public int migrated_from_max_id;
+    public int pinned_msg_id;
+    public int kicked_count;
+    public int unread_important_count;
+    public int folder_id;
+    public boolean can_set_stickers;
+    public boolean hidden_prehistory;
+    public boolean can_view_stats;
+    public boolean can_set_location;
+    public int banned_count;
+    public int online_count;
+    public StickerSet stickerset;
+    public int available_min_id;
+    public int call_msg_id;
+    public int linked_chat_id;
+    public ChannelLocation location;
+    public int slowmode_seconds;
+    public int slowmode_next_send_date;
+    public int stats_dc;
+    public int pts;
 
     public TL_chatAdminRights admin_rights;
     public TL_chatBannedRights banned_rights;

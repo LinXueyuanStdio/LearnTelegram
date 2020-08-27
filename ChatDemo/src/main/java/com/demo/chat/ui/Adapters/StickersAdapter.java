@@ -11,11 +11,13 @@ import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Emoji;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.ui.Cells.EmojiReplacementCell;
 import com.demo.chat.ui.Cells.StickerCell;
 import com.demo.chat.ui.Components.RecyclerListView;
 
@@ -111,12 +113,10 @@ public class StickersAdapter extends RecyclerListView.SelectionAdapter implement
         for (int a = 0; a < size; a++) {
             StickerResult result = stickers.get(a);
             PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(result.sticker.thumbs, 90);
-            if (thumb instanceof TLRPC.TL_photoSize) {
-                File f = FileLoader.getPathToAttach(thumb, "webp", true);
-                if (!f.exists()) {
-                    stickersToLoad.add(FileLoader.getAttachFileName(thumb, "webp"));
-                    FileLoader.getInstance(currentAccount).loadFile(ImageLocation.getForDocument(thumb, result.sticker), result.parent, "webp", 1, 1);
-                }
+            File f = FileLoader.getPathToAttach(thumb, "webp", true);
+            if (!f.exists()) {
+                stickersToLoad.add(FileLoader.getAttachFileName(thumb, "webp"));
+                FileLoader.getInstance(currentAccount).loadFile(ImageLocation.getForDocument(thumb, result.sticker), result.parent, "webp", 1, 1);
             }
         }
         return stickersToLoad.isEmpty();
@@ -124,7 +124,7 @@ public class StickersAdapter extends RecyclerListView.SelectionAdapter implement
 
     private boolean isValidSticker(Document document, String emoji) {
         for (int b = 0, size2 = document.attributes.size(); b < size2; b++) {
-            DocumentAttribute attribute = document.attributes.get(b);
+            Document.DocumentAttribute attribute = document.attributes.get(b);
             if (attribute instanceof TLRPC.TL_documentAttributeSticker) {
                 if (attribute.alt != null && attribute.alt.contains(emoji)) {
                     return true;
@@ -166,7 +166,7 @@ public class StickersAdapter extends RecyclerListView.SelectionAdapter implement
                 stickersMap = new HashMap<>();
             }
             for (int b = 0, size2 = document.attributes.size(); b < size2; b++) {
-                DocumentAttribute attribute = document.attributes.get(b);
+                Document.DocumentAttribute attribute = document.attributes.get(b);
                 if (attribute instanceof TLRPC.TL_documentAttributeSticker) {
                     parent = attribute.stickerset;
                     break;

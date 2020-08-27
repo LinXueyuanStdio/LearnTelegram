@@ -1934,7 +1934,7 @@ public class MediaController
         playMessage(currentPlayList.get(currentPlaylistNum));
     }
 
-    protected void checkIsNextMediaFileDownloaded() {
+    public void checkIsNextMediaFileDownloaded() {
         if (playingMessageObject == null || !playingMessageObject.isMusic()) {
             return;
         }
