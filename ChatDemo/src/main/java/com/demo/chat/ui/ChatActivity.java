@@ -117,6 +117,7 @@ import com.demo.chat.model.bot.BotInfo;
 import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.bot.InlineBotSwitchPM;
 import com.demo.chat.model.bot.KeyboardButton;
+import com.demo.chat.model.reply.ReplyMarkup;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.DraftMessage;
 import com.demo.chat.model.small.FileLocation;
@@ -10035,7 +10036,7 @@ public class ChatActivity extends BaseFragment
         if (chatActivityEnterView == null || botButtons == null || userBlocked) {
             return;
         }
-        if (botButtons.messageOwner.reply_markup instanceof TLRPC.TL_replyKeyboardForceReply) {
+        if (botButtons.messageOwner.reply_markup.isKeyboardForceReply()) {
             SharedPreferences preferences = MessagesController.getMainSettings(currentAccount);
             if (preferences.getInt("answered_" + dialog_id, 0) != botButtons.getId() && (replyingMessageObject == null || chatActivityEnterView.getFieldText() == null)) {
                 botReplyButtons = botButtons;
@@ -11314,7 +11315,7 @@ public class ChatActivity extends BaseFragment
                     if (ChatObject.isChannel(currentChat) && currentChat.megagroup && messageObjectToReply.isForwardedChannelPost()) {
                         chat = getMessagesController().getChat(messageObjectToReply.messageOwner.fwd_from.channel_id);
                     } else {
-                        chat = getMessagesController().getChat(messageObjectToReply.messageOwner.to_id.channel_id);
+                        chat = getMessagesController().getChat(messageObjectToReply.messageOwner.to_id);
                     }
                     if (chat == null) {
                         return;
@@ -11355,11 +11356,11 @@ public class ChatActivity extends BaseFragment
                 if (object.isFromUser()) {
                     uids.add(object.messageOwner.from_id);
                 } else {
-                    Chat chat = getMessagesController().getChat(object.messageOwner.to_id.channel_id);
+                    Chat chat = getMessagesController().getChat(object.messageOwner.to_id);
                     if (ChatObject.isChannel(chat) && chat.megagroup && object.isForwardedChannelPost()) {
                         uids.add(-object.messageOwner.fwd_from.channel_id);
                     } else {
-                        uids.add(-object.messageOwner.to_id.channel_id);
+                        uids.add(-object.messageOwner.to_id);
                     }
                 }
 
@@ -11370,11 +11371,11 @@ public class ChatActivity extends BaseFragment
                     if (object.isFromUser()) {
                         uid = object.messageOwner.from_id;
                     } else {
-                        Chat chat = getMessagesController().getChat(object.messageOwner.to_id.channel_id);
+                        Chat chat = getMessagesController().getChat(object.messageOwner.to_id);
                         if (ChatObject.isChannel(chat) && chat.megagroup && object.isForwardedChannelPost()) {
                             uid = -object.messageOwner.fwd_from.channel_id;
                         } else {
-                            uid = -object.messageOwner.to_id.channel_id;
+                            uid = -object.messageOwner.to_id;
                         }
                     }
                     if (!uids.contains(uid)) {
@@ -11569,7 +11570,7 @@ public class ChatActivity extends BaseFragment
             if (replyingMessageObject == null && forwardingMessages == null && foundWebPage == null && editingMessageObject == null) {
                 return;
             }
-            if (replyingMessageObject != null && replyingMessageObject.messageOwner.reply_markup instanceof TLRPC.TL_replyKeyboardForceReply) {
+            if (replyingMessageObject != null && replyingMessageObject.messageOwner.reply_markup.isKeyboardForceReply()) {
                 SharedPreferences preferences = MessagesController.getMainSettings(currentAccount);
                 preferences.edit().putInt("answered_" + dialog_id, replyingMessageObject.getId()).commit();
             }
@@ -12155,7 +12156,6 @@ public class ChatActivity extends BaseFragment
         MediaController.getInstance().resetGoingToShowMessageObject();
     }
 
-
     /**
      * 打开url
      * @param urlFinal
@@ -12712,7 +12712,7 @@ public class ChatActivity extends BaseFragment
         selectedObjectToEditCaption = null;
     }
 
-    public boolean processSwitchButton(TLRPC.TL_keyboardButtonSwitchInline button) {
+    public boolean processSwitchButton(KeyboardButton button) {
         if (inlineReturn == 0 || button.same_peer || parentLayout == null) {
             return false;
         }
@@ -13640,11 +13640,11 @@ public class ChatActivity extends BaseFragment
                     } else if (inlineReturn != 0) {
                         if (messageObject.messageOwner.reply_markup != null) {
                             for (int b = 0; b < messageObject.messageOwner.reply_markup.rows.size(); b++) {
-                                TLRPC.TL_keyboardButtonRow row = messageObject.messageOwner.reply_markup.rows.get(b);
+                                ReplyMarkup.KeyboardButtonRow row = messageObject.messageOwner.reply_markup.rows.get(b);
                                 for (int c = 0; c < row.buttons.size(); c++) {
-                                    TLRPC.KeyboardButton button = row.buttons.get(c);
-                                    if (button instanceof TLRPC.TL_keyboardButtonSwitchInline) {
-                                        processSwitchButton((TLRPC.TL_keyboardButtonSwitchInline) button);
+                                    KeyboardButton button = row.buttons.get(c);
+                                    if (button.isSwitchInline()) {
+                                        processSwitchButton(button);
                                         break;
                                     }
                                 }
@@ -15384,7 +15384,7 @@ public class ChatActivity extends BaseFragment
                 int size = 0;
                 PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(pinnedMessageObject.photoThumbs2, AndroidUtilities.dp(320));
                 PhotoSize thumbPhotoSize = FileLoader.getClosestPhotoSizeWithSize(pinnedMessageObject.photoThumbs2, AndroidUtilities.dp(40));
-                TLObject photoSizeObject = pinnedMessageObject.photoThumbsObject2;
+                Media photoSizeObject = pinnedMessageObject.photoThumbsObject2;
                 if (photoSize == null) {
                     if (pinnedMessageObject.mediaExists) {
                         photoSize = FileLoader.getClosestPhotoSizeWithSize(pinnedMessageObject.photoThumbs, AndroidUtilities.getPhotoSize());
@@ -16273,7 +16273,7 @@ public class ChatActivity extends BaseFragment
                     }
                     int nextType = getItemViewType(nextPosition);
                     int prevType = getItemViewType(prevPosition);
-                    if (!message.hasReactions() && !(message.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup) && nextType == holder.getItemViewType()) {
+                    if (!message.hasReactions() && !(message.messageOwner.reply_markup.isInlineMarkup()) && nextType == holder.getItemViewType()) {
                         MessageObject nextMessage = messages.get(nextPosition - messagesStartRow);
                         pinnedBottom = nextMessage.isOutOwner() == message.isOutOwner() && Math.abs(nextMessage.messageOwner.date - message.messageOwner.date) <= 5 * 60;
                         if (pinnedBottom) {
@@ -16286,7 +16286,7 @@ public class ChatActivity extends BaseFragment
                     }
                     if (prevType == holder.getItemViewType()) {
                         MessageObject prevMessage = messages.get(prevPosition - messagesStartRow);
-                        pinnedTop = !prevMessage.hasReactions() && !(prevMessage.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup) && prevMessage.isOutOwner() == message.isOutOwner() && Math.abs(prevMessage.messageOwner.date - message.messageOwner.date) <= 5 * 60;
+                        pinnedTop = !prevMessage.hasReactions() && !(prevMessage.messageOwner.reply_markup.isInlineMarkup()) && prevMessage.isOutOwner() == message.isOutOwner() && Math.abs(prevMessage.messageOwner.date - message.messageOwner.date) <= 5 * 60;
                         if (pinnedTop) {
                             if (currentChat != null) {
                                 pinnedTop = prevMessage.messageOwner.from_id == message.messageOwner.from_id;

@@ -5,7 +5,6 @@ import android.text.TextUtils;
 import android.view.View;
 import android.view.ViewGroup;
 
-import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.UserConfig;
@@ -17,6 +16,7 @@ import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.sticker.MessagesStickerSet;
 import com.demo.chat.ui.Cells.EmojiReplacementCell;
 import com.demo.chat.ui.Cells.StickerCell;
 import com.demo.chat.ui.Components.RecyclerListView;
@@ -167,7 +167,7 @@ public class StickersAdapter extends RecyclerListView.SelectionAdapter implement
             }
             for (int b = 0, size2 = document.attributes.size(); b < size2; b++) {
                 Document.DocumentAttribute attribute = document.attributes.get(b);
-                if (attribute instanceof TLRPC.TL_documentAttributeSticker) {
+                if (attribute.isSticker()) {
                     parent = attribute.stickerset;
                     break;
                 }
@@ -239,7 +239,7 @@ public class StickersAdapter extends RecyclerListView.SelectionAdapter implement
         if (isValidEmoji) {
             Document animatedSticker = MediaDataController.getInstance(currentAccount).getEmojiAnimatedSticker(emoji);
             if (animatedSticker != null) {
-                ArrayList<TLRPC.TL_messages_stickerSet> sets = MediaDataController.getInstance(currentAccount).getStickerSets(MediaDataController.TYPE_EMOJI);
+                ArrayList<MessagesStickerSet> sets = MediaDataController.getInstance(currentAccount).getStickerSets(MediaDataController.TYPE_EMOJI);
                 File f = FileLoader.getPathToAttach(animatedSticker, true);
                 if (!f.exists()) {
                     FileLoader.getInstance(currentAccount).loadFile(ImageLocation.getForDocument(animatedSticker), sets.get(0), null, 1, 1);
@@ -260,10 +260,10 @@ public class StickersAdapter extends RecyclerListView.SelectionAdapter implement
         cancelEmojiSearch();
         stickers = null;
         stickersMap = null;
-        if (lastReqId != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(lastReqId, true);
-            lastReqId = 0;
-        }
+//        if (lastReqId != 0) {
+//            ConnectionsManager.getInstance(currentAccount).cancelRequest(lastReqId, true);
+//            lastReqId = 0;
+//        }TODO 取消请求
 
         delayLocalResults = false;
         final ArrayList<Document> recentStickers = MediaDataController.getInstance(currentAccount).getRecentStickersNoCopy(MediaDataController.TYPE_IMAGE);
@@ -356,32 +356,33 @@ public class StickersAdapter extends RecyclerListView.SelectionAdapter implement
     }
 
     private void searchServerStickers(final String emoji, final String originalEmoji) {
-        TLRPC.TL_messages_getStickers req = new TLRPC.TL_messages_getStickers();
-        req.emoticon = originalEmoji;
-        req.hash = 0;
-        lastReqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            lastReqId = 0;
-            if (!emoji.equals(lastSticker) || !(response instanceof TLRPC.TL_messages_stickers)) {
-                return;
-            }
-            delayLocalResults = false;
-            TLRPC.TL_messages_stickers res = (TLRPC.TL_messages_stickers) response;
-            int oldCount = stickers != null ? stickers.size() : 0;
-            addStickersToResult(res.stickers, "sticker_search_" + emoji);
-            int newCount = stickers != null ? stickers.size() : 0;
-            if (!visible && stickers != null && !stickers.isEmpty()) {
-                checkStickerFilesExistAndDownload();
-                boolean show = stickersToLoad.isEmpty();
-                if (show) {
-                    keywordResults = null;
-                }
-                delegate.needChangePanelVisibility(show);
-                visible = true;
-            }
-            if (oldCount != newCount) {
-                notifyDataSetChanged();
-            }
-        }));
+        //TODO 发起请求
+//        TLRPC.TL_messages_getStickers req = new TLRPC.TL_messages_getStickers();
+//        req.emoticon = originalEmoji;
+//        req.hash = 0;
+//        lastReqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//            lastReqId = 0;
+//            if (!emoji.equals(lastSticker) || !(response instanceof TLRPC.TL_messages_stickers)) {
+//                return;
+//            }
+//            delayLocalResults = false;
+//            TLRPC.TL_messages_stickers res = (TLRPC.TL_messages_stickers) response;
+//            int oldCount = stickers != null ? stickers.size() : 0;
+//            addStickersToResult(res.stickers, "sticker_search_" + emoji);
+//            int newCount = stickers != null ? stickers.size() : 0;
+//            if (!visible && stickers != null && !stickers.isEmpty()) {
+//                checkStickerFilesExistAndDownload();
+//                boolean show = stickersToLoad.isEmpty();
+//                if (show) {
+//                    keywordResults = null;
+//                }
+//                delegate.needChangePanelVisibility(show);
+//                visible = true;
+//            }
+//            if (oldCount != newCount) {
+//                notifyDataSetChanged();
+//            }
+//        }));
     }
 
     public void clearStickers() {
@@ -395,10 +396,10 @@ public class StickersAdapter extends RecyclerListView.SelectionAdapter implement
         }
         keywordResults = null;
         notifyDataSetChanged();
-        if (lastReqId != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(lastReqId, true);
-            lastReqId = 0;
-        }
+//        if (lastReqId != 0) {
+//            ConnectionsManager.getInstance(currentAccount).cancelRequest(lastReqId, true);
+//            lastReqId = 0;
+//        }TODO 取消请求
     }
 
     public boolean isShowingKeywords() {

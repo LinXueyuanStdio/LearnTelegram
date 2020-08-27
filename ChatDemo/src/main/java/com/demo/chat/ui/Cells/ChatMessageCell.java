@@ -4512,10 +4512,10 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 botButtonsByPosition.clear();
                 botButtonsLayout = null;
             }
-            if (currentPosition == null && (messageObject.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup || messageObject.messageOwner.reactions != null && !messageObject.messageOwner.reactions.results.isEmpty())) {
+            if (currentPosition == null && (messageObject.messageOwner.reply_markup.isInlineMarkup() || messageObject.messageOwner.reactions != null && !messageObject.messageOwner.reactions.results.isEmpty())) {
                 int rows;
 
-                if (messageObject.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup) {
+                if (messageObject.messageOwner.reply_markup.isInlineMarkup()) {
                     rows = messageObject.messageOwner.reply_markup.rows.size();
                 } else {
                     rows = 1;
@@ -4545,7 +4545,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                     oldByPosition = null;
                 }
                 botButtonsByData.clear();
-                if (messageObject.messageOwner.reply_markup instanceof TLRPC.TL_replyInlineMarkup) {
+                if (messageObject.messageOwner.reply_markup.isInlineMarkup()) {
                     for (int a = 0; a < rows; a++) {
                         TLRPC.TL_keyboardButtonRow row = messageObject.messageOwner.reply_markup.rows.get(a);
                         int buttonsCount = row.buttons.size();
@@ -7346,7 +7346,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             if (drawable instanceof RLottieDrawable) {
                 RLottieDrawable lottieDrawable = (RLottieDrawable) drawable;
                 String emoji = currentMessageObject.getDiceEmoji();
-                TLRPC.TL_messages_stickerSet stickerSet = MediaDataController.getInstance(currentAccount).getDiceStickerSetByEmoji(emoji);
+                MessagesStickerSet stickerSet = MediaDataController.getInstance(currentAccount).getDiceStickerSetByEmoji(emoji);
                 if (stickerSet != null) {
                     if (!lottieDrawable.hasBaseDice() && stickerSet.documents.size() > 0) {
                         Document document = stickerSet.documents.get(0);

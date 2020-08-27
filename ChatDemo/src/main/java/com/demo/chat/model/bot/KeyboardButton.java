@@ -19,4 +19,27 @@ public class KeyboardButton {
     public InputUser bot;
     public String fwd_text;
     public boolean quiz;
+
+    public boolean isSwitchInline() {
+        return false;
+    }
+
+    public boolean isKeyboardButton() {
+        return false;
+    }
+
+    public boolean isKeyboardButtonUrl() {
+        return false;
+    }
+
+    public boolean isRequestGeoLocation() {
+        return false;
+    }
+    public boolean isButtonUrlAuth() {
+        return false;
+    }
+    public boolean isButtonCallback() {
+        return false;
+    }
+
 }

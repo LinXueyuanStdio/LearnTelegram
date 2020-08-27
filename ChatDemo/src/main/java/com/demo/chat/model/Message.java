@@ -4,6 +4,7 @@ import android.text.TextUtils;
 
 import com.demo.chat.messager.AbstractSerializedData;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.model.reply.ReplyMarkup;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 
@@ -35,7 +36,7 @@ public class Message {
 
     public int id;
     public int from_id;
-    public Peer to_id;
+    public int to_id;
     public int date;
     public MessageAction action;
     public int reply_to_msg_id;

@@ -29,7 +29,7 @@ public class Document extends Media {
     public ArrayList<VideoSize> video_thumbs = new ArrayList<>();
     public ArrayList<DocumentAttribute> attributes = new ArrayList<>();
 
-    public static class DocumentAttribute{
+    public static class DocumentAttribute {
         public InputStickerSet stickerset;
         public TL_maskCoords mask_coords;
         public String alt;
@@ -46,18 +46,32 @@ public class Document extends Media {
         public boolean voice;
         public byte[] waveform;
 
+        public void setImageSize(boolean isImageSize) {}
+
+        public void setVideo(boolean isVideo) {}
+
+        public void setAudio(boolean isAudio) {}
+
+        public void setSticker(boolean isSticker) {}
+
+        public void setAnimated(boolean isAnimated) {}
+
         public boolean isImageSize() {
             return false;
         }
+
         public boolean isVideo() {
             return false;
         }
+
         public boolean isAudio() {
             return false;
         }
+
         public boolean isSticker() {
             return false;
         }
+
         public boolean isAnimated() {
             return false;
         }

@@ -1348,7 +1348,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 newMsg.fwd_msg_id = msgObj.getId();
                 newMsg.attachPath = msgObj.messageOwner.attachPath;
                 newMsg.entities = msgObj.messageOwner.entities;
-                if (msgObj.messageOwner.reply_markup instanceof TL_replyInlineMarkup) {
+                if (msgObj.messageOwner.reply_markup.isInlineMarkup()) {
                     newMsg.reply_markup = new TL_replyInlineMarkup();
                     boolean dropMarkup = false;
                     for (int b = 0, N = msgObj.messageOwner.reply_markup.rows.size(); b < N; b++) {

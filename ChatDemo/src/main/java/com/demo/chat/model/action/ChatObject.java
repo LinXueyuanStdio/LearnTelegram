@@ -63,7 +63,7 @@ public class ChatObject {
         return false;
     }
 
-    private static boolean getBannedRight(TL_chatBannedRights rights, int action) {
+    private static boolean getBannedRight(Chat.TL_chatBannedRights rights, int action) {
         if (rights == null) {
             return false;
         }
@@ -159,18 +159,6 @@ public class ChatObject {
         }
         if (isBannableAction(action)) {
             if (chat.admin_rights != null && !isAdminAction(action)) {
-                return true;
-            }
-            if (chat.default_banned_rights == null && (
-                    chat instanceof TL_chat_layer92 ||
-                            chat instanceof TL_chat_old ||
-                            chat instanceof TL_chat_old2 ||
-                            chat instanceof TL_channel_layer92 ||
-                            chat instanceof TL_channel_layer77 ||
-                            chat instanceof TL_channel_layer72 ||
-                            chat instanceof TL_channel_layer67 ||
-                            chat instanceof TL_channel_layer48 ||
-                            chat instanceof TL_channel_old)) {
                 return true;
             }
             if (chat.default_banned_rights == null || getBannedRight(chat.default_banned_rights, action)) {
@@ -276,7 +264,7 @@ public class ChatObject {
         return !isChannel(chat) || chat.creator || chat.admin_rights != null && chat.admin_rights.post_messages || !chat.broadcast;
     }
 
-    public static String getBannedRightsString(TL_chatBannedRights bannedRights) {
+    public static String getBannedRightsString(Chat.TL_chatBannedRights bannedRights) {
         String currentBannedRights = "";
         currentBannedRights += bannedRights.view_messages ? 1 : 0;
         currentBannedRights += bannedRights.send_messages ? 1 : 0;

@@ -59,6 +59,7 @@ import com.demo.chat.model.small.DraftMessage;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.sticker.InputStickerSet;
+import com.demo.chat.model.sticker.MessagesStickerSet;
 import com.demo.chat.model.sticker.StickerSet;
 import com.demo.chat.model.sticker.StickerSetCovered;
 import com.demo.chat.ui.ActionBar.BaseFragment;
@@ -147,13 +148,13 @@ public class MediaDataController extends BaseController {
     public static final int TYPE_EMOJI = 4;
 
     //region ---------------- STICKERS ----------------
-    private ArrayList<TL_messages_stickerSet>[] stickerSets = new ArrayList[]{new ArrayList<>(), new ArrayList<>(), new ArrayList<>(0), new ArrayList<>(), new ArrayList<>()};
+    private ArrayList<MessagesStickerSet>[] stickerSets = new ArrayList[]{new ArrayList<>(), new ArrayList<>(), new ArrayList<>(0), new ArrayList<>(), new ArrayList<>()};
     private LongSparseArray<Document>[] stickersByIds = new LongSparseArray[]{new LongSparseArray<>(), new LongSparseArray<>(), new LongSparseArray<>(), new LongSparseArray<>(), new LongSparseArray<>()};
-    private LongSparseArray<TL_messages_stickerSet> stickerSetsById = new LongSparseArray<>();
-    private LongSparseArray<TL_messages_stickerSet> installedStickerSetsById = new LongSparseArray<>();
-    private LongSparseArray<TL_messages_stickerSet> groupStickerSets = new LongSparseArray<>();
-    private ConcurrentHashMap<String, TL_messages_stickerSet> stickerSetsByName = new ConcurrentHashMap<>(100, 1.0f, 1);
-    private HashMap<String, TL_messages_stickerSet> diceStickerSetsByEmoji = new HashMap<>();
+    private LongSparseArray<MessagesStickerSet> stickerSetsById = new LongSparseArray<>();
+    private LongSparseArray<MessagesStickerSet> installedStickerSetsById = new LongSparseArray<>();
+    private LongSparseArray<MessagesStickerSet> groupStickerSets = new LongSparseArray<>();
+    private ConcurrentHashMap<String, MessagesStickerSet> stickerSetsByName = new ConcurrentHashMap<>(100, 1.0f, 1);
+    private HashMap<String, MessagesStickerSet> diceStickerSetsByEmoji = new HashMap<>();
     private LongSparseArray<String> diceEmojiStickerSetsById = new LongSparseArray<>();
     private HashSet<String> loadingDiceStickerSets = new HashSet<>();
     private LongSparseArray<Runnable> removingStickerSetsUndos = new LongSparseArray<>();
@@ -458,8 +459,8 @@ public class MediaDataController extends BaseController {
         return loadingStickers[type];
     }
 
-    public void replaceStickerSet(TL_messages_stickerSet set) {
-        TL_messages_stickerSet existingSet = stickerSetsById.get(set.set.id);
+    public void replaceStickerSet(MessagesStickerSet set) {
+        MessagesStickerSet existingSet = stickerSetsById.get(set.set.id);
         String emoji = diceEmojiStickerSetsById.get(set.set.id);
         if (emoji != null) {
             diceStickerSetsByEmoji.put(emoji, set);
@@ -520,20 +521,20 @@ public class MediaDataController extends BaseController {
         }
     }
 
-    public TL_messages_stickerSet getStickerSetByName(String name) {
+    public MessagesStickerSet getStickerSetByName(String name) {
         return stickerSetsByName.get(name);
     }
 
-    public TL_messages_stickerSet getDiceStickerSetByEmoji(String emoji) {
+    public MessagesStickerSet getDiceStickerSetByEmoji(String emoji) {
         return diceStickerSetsByEmoji.get(emoji);
     }
 
-    public TL_messages_stickerSet getStickerSetById(long id) {
+    public MessagesStickerSet getStickerSetById(long id) {
         return stickerSetsById.get(id);
     }
 
-    public TL_messages_stickerSet getGroupStickerSetById(StickerSet stickerSet) {
-        TL_messages_stickerSet set = stickerSetsById.get(stickerSet.id);
+    public MessagesStickerSet getGroupStickerSetById(StickerSet stickerSet) {
+        MessagesStickerSet set = stickerSetsById.get(stickerSet.id);
         if (set == null) {
             set = groupStickerSets.get(stickerSet.id);
             if (set == null || set.set == null) {
@@ -545,7 +546,7 @@ public class MediaDataController extends BaseController {
         return set;
     }
 
-    public void putGroupStickerSet(TL_messages_stickerSet stickerSet) {
+    public void putGroupStickerSet(MessagesStickerSet stickerSet) {
         groupStickerSets.put(stickerSet.set.id, stickerSet);
     }
 
@@ -553,12 +554,12 @@ public class MediaDataController extends BaseController {
         if (cache) {
             getMessagesStorage().getStorageQueue().postRunnable(() -> {
                 try {
-                    final TL_messages_stickerSet set;
+                    final MessagesStickerSet set;
                     SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized("SELECT document FROM web_recent_v3 WHERE id = 's_" + stickerSet.id + "'");
                     if (cursor.next() && !cursor.isNull(0)) {
                         NativeByteBuffer data = cursor.byteBufferValue(0);
                         if (data != null) {
-                            set = TL_messages_stickerSet.TLdeserialize(data, data.readInt32(false), false);
+                            set = MessagesStickerSet.TLdeserialize(data, data.readInt32(false), false);
                             data.reuse();
                         } else {
                             set = null;
@@ -587,7 +588,7 @@ public class MediaDataController extends BaseController {
             req.stickerset.access_hash = stickerSet.access_hash;
             getConnectionsManager().sendRequest(req, (response, error) -> {
                 if (response != null) {
-                    TL_messages_stickerSet set = (TL_messages_stickerSet) response;
+                    MessagesStickerSet set = (MessagesStickerSet) response;
                     AndroidUtilities.runOnUIThread(() -> {
                         groupStickerSets.put(set.set.id, set);
                         getNotificationCenter().postNotificationName(NotificationCenter.groupStickersDidLoad, set.set.id);
@@ -597,7 +598,7 @@ public class MediaDataController extends BaseController {
         }
     }
 
-    private void putSetToCache(TL_messages_stickerSet set) {
+    private void putSetToCache(MessagesStickerSet set) {
         getMessagesStorage().getStorageQueue().postRunnable(() -> {
             try {
                 SQLiteDatabase database = getMessagesStorage().getDatabase();
@@ -634,9 +635,9 @@ public class MediaDataController extends BaseController {
 
     public Document getEmojiAnimatedSticker(CharSequence message) {
         String emoji = message.toString().replace("\uFE0F", "");
-        ArrayList<TL_messages_stickerSet> arrayList = getStickerSets(MediaDataController.TYPE_EMOJI);
+        ArrayList<MessagesStickerSet> arrayList = getStickerSets(MediaDataController.TYPE_EMOJI);
         for (int a = 0, N = arrayList.size(); a < N; a++) {
-            TL_messages_stickerSet set = arrayList.get(a);
+            MessagesStickerSet set = arrayList.get(a);
             for (int b = 0, N2 = set.packs.size(); b < N2; b++) {
                 TL_stickerPack pack = set.packs.get(b);
                 if (!pack.documents.isEmpty() && TextUtils.equals(pack.emoticon, emoji)) {
@@ -652,7 +653,7 @@ public class MediaDataController extends BaseController {
         return !stickersLoaded[0] || stickerSets[0].size() >= 5 || !recentStickers[TYPE_FAVE].isEmpty();
     }
 
-    public ArrayList<TL_messages_stickerSet> getStickerSets(int type) {
+    public ArrayList<MessagesStickerSet> getStickerSets(int type) {
         if (type == TYPE_FEATURED) {
             return stickerSets[2];
         } else {
@@ -968,12 +969,12 @@ public class MediaDataController extends BaseController {
         loadHash[type] = calcStickersHash(stickerSets[type]);
     }
 
-    public void storeTempStickerSet(final TL_messages_stickerSet set) {
+    public void storeTempStickerSet(final MessagesStickerSet set) {
         stickerSetsById.put(set.set.id, set);
         stickerSetsByName.put(set.set.short_name, set);
     }
 
-    public void addNewStickerSet(final TL_messages_stickerSet set) {
+    public void addNewStickerSet(final MessagesStickerSet set) {
         if (stickerSetsById.indexOfKey(set.set.id) >= 0 || stickerSetsByName.containsKey(set.set.short_name)) {
             return;
         }
@@ -1249,7 +1250,7 @@ public class MediaDataController extends BaseController {
         if (TextUtils.isEmpty(name)) {
             return;
         }
-        TL_messages_stickerSet stickerSet = stickerSetsByName.get(name);
+        MessagesStickerSet stickerSet = stickerSetsByName.get(name);
         if (stickerSet != null) {
             for (int a = 0, N = stickerSet.documents.size(); a < N; a++) {
                 Document sticker = stickerSet.documents.get(a);
@@ -1279,7 +1280,7 @@ public class MediaDataController extends BaseController {
         getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
             ArrayList<Message> arrayList = verifyingMessages.get(name);
             if (response != null) {
-                TL_messages_stickerSet set = (TL_messages_stickerSet) response;
+                MessagesStickerSet set = (MessagesStickerSet) response;
                 storeTempStickerSet(set);
                 for (int b = 0, N2 = arrayList.size(); b < N2; b++) {
                     Message m = arrayList.get(b);
@@ -1332,15 +1333,15 @@ public class MediaDataController extends BaseController {
     }
 
     private void processLoadStickersResponse(final int type, final TL_messages_allStickers res) {
-        final ArrayList<TL_messages_stickerSet> newStickerArray = new ArrayList<>();
+        final ArrayList<MessagesStickerSet> newStickerArray = new ArrayList<>();
         if (res.sets.isEmpty()) {
             processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), res.hash);
         } else {
-            final LongSparseArray<TL_messages_stickerSet> newStickerSets = new LongSparseArray<>();
+            final LongSparseArray<MessagesStickerSet> newStickerSets = new LongSparseArray<>();
             for (int a = 0; a < res.sets.size(); a++) {
                 final StickerSet stickerSet = res.sets.get(a);
 
-                TL_messages_stickerSet oldSet = stickerSetsById.get(stickerSet.id);
+                MessagesStickerSet oldSet = stickerSetsById.get(stickerSet.id);
                 if (oldSet != null && oldSet.set.hash == stickerSet.hash) {
                     oldSet.set.archived = stickerSet.archived;
                     oldSet.set.installed = stickerSet.installed;
@@ -1363,7 +1364,7 @@ public class MediaDataController extends BaseController {
                 req.stickerset.access_hash = stickerSet.access_hash;
 
                 getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                    TL_messages_stickerSet res1 = (TL_messages_stickerSet) response;
+                    MessagesStickerSet res1 = (MessagesStickerSet) response;
                     newStickerArray.set(index, res1);
                     newStickerSets.put(stickerSet.id, res1);
                     if (newStickerSets.size() == res.sets.size()) {
@@ -1387,7 +1388,7 @@ public class MediaDataController extends BaseController {
         loadingDiceStickerSets.add(emoji);
         if (cache) {
             getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                TL_messages_stickerSet stickerSet = null;
+                MessagesStickerSet stickerSet = null;
                 int date = 0;
                 SQLiteCursor cursor = null;
                 try {
@@ -1395,7 +1396,7 @@ public class MediaDataController extends BaseController {
                     if (cursor.next()) {
                         NativeByteBuffer data = cursor.byteBufferValue(0);
                         if (data != null) {
-                            stickerSet = TL_messages_stickerSet.TLdeserialize(data, data.readInt32(false), false);
+                            stickerSet = MessagesStickerSet.TLdeserialize(data, data.readInt32(false), false);
                             data.reuse();
                         }
                         date = cursor.intValue(1);
@@ -1415,8 +1416,8 @@ public class MediaDataController extends BaseController {
             inputStickerSetDice.emoticon = emoji;
             req.stickerset = inputStickerSetDice;
             getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (response instanceof TL_messages_stickerSet) {
-                    processLoadedDiceStickers(emoji, (TL_messages_stickerSet) response, false, (int) (System.currentTimeMillis() / 1000));
+                if (response instanceof MessagesStickerSet) {
+                    processLoadedDiceStickers(emoji, (MessagesStickerSet) response, false, (int) (System.currentTimeMillis() / 1000));
                 } else {
                     processLoadedDiceStickers(emoji, null, false, (int) (System.currentTimeMillis() / 1000));
                 }
@@ -1424,7 +1425,7 @@ public class MediaDataController extends BaseController {
         }
     }
 
-    private void processLoadedDiceStickers(String emoji, TL_messages_stickerSet res, final boolean cache, final int date) {
+    private void processLoadedDiceStickers(String emoji, MessagesStickerSet res, final boolean cache, final int date) {
         AndroidUtilities.runOnUIThread(() -> loadingDiceStickerSets.remove(emoji));
         Utilities.stageQueue.postRunnable(() -> {
             if (cache && (res == null || Math.abs(System.currentTimeMillis() / 1000 - date) >= 60 * 60 * 24) || !cache && res == null) {
@@ -1448,7 +1449,7 @@ public class MediaDataController extends BaseController {
         });
     }
 
-    private void putDiceStickersToCache(final String emoji, TL_messages_stickerSet stickers, final int date) {
+    private void putDiceStickersToCache(final String emoji, MessagesStickerSet stickers, final int date) {
         if (TextUtils.isEmpty(emoji)) {
             return;
         }
@@ -1499,7 +1500,7 @@ public class MediaDataController extends BaseController {
         loadingStickers[type] = true;
         if (cache) {
             getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                ArrayList<TL_messages_stickerSet> newStickerArray = null;
+                ArrayList<MessagesStickerSet> newStickerArray = null;
                 int date = 0;
                 int hash = 0;
                 SQLiteCursor cursor = null;
@@ -1511,7 +1512,7 @@ public class MediaDataController extends BaseController {
                             newStickerArray = new ArrayList<>();
                             int count = data.readInt32(false);
                             for (int a = 0; a < count; a++) {
-                                TL_messages_stickerSet stickerSet = TL_messages_stickerSet.TLdeserialize(data, data.readInt32(false), false);
+                                MessagesStickerSet stickerSet = MessagesStickerSet.TLdeserialize(data, data.readInt32(false), false);
                                 newStickerArray.add(stickerSet);
                             }
                             data.reuse();
@@ -1540,9 +1541,9 @@ public class MediaDataController extends BaseController {
                 TL_messages_getStickerSet req = new TL_messages_getStickerSet();
                 req.stickerset = new TL_inputStickerSetAnimatedEmoji();
                 getConnectionsManager().sendRequest(req, (response, error) -> {
-                    if (response instanceof TL_messages_stickerSet) {
-                        final ArrayList<TL_messages_stickerSet> newStickerArray = new ArrayList<>();
-                        newStickerArray.add((TL_messages_stickerSet) response);
+                    if (response instanceof MessagesStickerSet) {
+                        final ArrayList<MessagesStickerSet> newStickerArray = new ArrayList<>();
+                        newStickerArray.add((MessagesStickerSet) response);
                         processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), calcStickersHash(newStickerArray));
                     } else {
                         processLoadedStickers(type, null, false, (int) (System.currentTimeMillis() / 1000), 0);
@@ -1569,8 +1570,8 @@ public class MediaDataController extends BaseController {
         }
     }
 
-    private void putStickersToCache(final int type, ArrayList<TL_messages_stickerSet> stickers, final int date, final int hash) {
-        final ArrayList<TL_messages_stickerSet> stickersFinal = stickers != null ? new ArrayList<>(stickers) : null;
+    private void putStickersToCache(final int type, ArrayList<MessagesStickerSet> stickers, final int date, final int hash) {
+        final ArrayList<MessagesStickerSet> stickersFinal = stickers != null ? new ArrayList<>(stickers) : null;
         getMessagesStorage().getStorageQueue().postRunnable(() -> {
             try {
                 if (stickersFinal != null) {
@@ -1606,7 +1607,7 @@ public class MediaDataController extends BaseController {
     }
 
     public String getStickerSetName(long setId) {
-        TL_messages_stickerSet stickerSet = stickerSetsById.get(setId);
+        MessagesStickerSet stickerSet = stickerSetsById.get(setId);
         if (stickerSet != null) {
             return stickerSet.set.short_name;
         }
@@ -1643,7 +1644,7 @@ public class MediaDataController extends BaseController {
         return null;
     }
 
-    private static int calcStickersHash(ArrayList<TL_messages_stickerSet> sets) {
+    private static int calcStickersHash(ArrayList<MessagesStickerSet> sets) {
         long acc = 0;
         for (int a = 0; a < sets.size(); a++) {
             StickerSet set = sets.get(a).set;
@@ -1655,7 +1656,7 @@ public class MediaDataController extends BaseController {
         return (int) acc;
     }
 
-    private void processLoadedStickers(final int type, final ArrayList<TL_messages_stickerSet> res, final boolean cache, final int date, final int hash) {
+    private void processLoadedStickers(final int type, final ArrayList<MessagesStickerSet> res, final boolean cache, final int date, final int hash) {
         AndroidUtilities.runOnUIThread(() -> {
             loadingStickers[type] = false;
             stickersLoaded[type] = true;
@@ -1678,15 +1679,15 @@ public class MediaDataController extends BaseController {
             }
             if (res != null) {
                 try {
-                    final ArrayList<TL_messages_stickerSet> stickerSetsNew = new ArrayList<>();
-                    final LongSparseArray<TL_messages_stickerSet> stickerSetsByIdNew = new LongSparseArray<>();
-                    final HashMap<String, TL_messages_stickerSet> stickerSetsByNameNew = new HashMap<>();
+                    final ArrayList<MessagesStickerSet> stickerSetsNew = new ArrayList<>();
+                    final LongSparseArray<MessagesStickerSet> stickerSetsByIdNew = new LongSparseArray<>();
+                    final HashMap<String, MessagesStickerSet> stickerSetsByNameNew = new HashMap<>();
                     final LongSparseArray<String> stickersByEmojiNew = new LongSparseArray<>();
                     final LongSparseArray<Document> stickersByIdNew = new LongSparseArray<>();
                     final HashMap<String, ArrayList<Document>> allStickersNew = new HashMap<>();
 
                     for (int a = 0; a < res.size(); a++) {
-                        TL_messages_stickerSet stickerSet = res.get(a);
+                        MessagesStickerSet stickerSet = res.get(a);
                         if (stickerSet == null || removingStickerSetsUndos.indexOfKey(stickerSet.set.id) >= 0) {
                             continue;
                         }
@@ -1778,7 +1779,7 @@ public class MediaDataController extends BaseController {
         }
     }
 
-    public void preloadStickerSetThumb(TL_messages_stickerSet stickerSet) {
+    public void preloadStickerSetThumb(MessagesStickerSet stickerSet) {
         if (stickerSet.set.thumb instanceof TL_photoSize) {
             final ArrayList<Document> documents = stickerSet.documents;
             if (documents != null && !documents.isEmpty()) {
@@ -1812,10 +1813,10 @@ public class MediaDataController extends BaseController {
     /** @param toggle 0 - remove, 1 - archive, 2 - add */
     public void toggleStickerSet(final Context context, final TLObject stickerSetObject, final int toggle, final BaseFragment baseFragment, final boolean showSettings, boolean showTooltip) {
         final StickerSet stickerSet;
-        final TL_messages_stickerSet messages_stickerSet;
+        final MessagesStickerSet messages_stickerSet;
 
-        if (stickerSetObject instanceof TL_messages_stickerSet) {
-            messages_stickerSet = ((TL_messages_stickerSet) stickerSetObject);
+        if (stickerSetObject instanceof MessagesStickerSet) {
+            messages_stickerSet = ((MessagesStickerSet) stickerSetObject);
             stickerSet = messages_stickerSet.set;
         } else if (stickerSetObject instanceof StickerSetCovered) {
             stickerSet = ((StickerSetCovered) stickerSetObject).set;
@@ -1837,7 +1838,7 @@ public class MediaDataController extends BaseController {
 
         int currentIndex = 0;
         for (int a = 0; a < stickerSets[type].size(); a++) {
-            TL_messages_stickerSet set = stickerSets[type].get(a);
+            MessagesStickerSet set = stickerSets[type].get(a);
             if (set.set.id == stickerSet.id) {
                 currentIndex = a;
                 stickerSets[type].remove(a);
@@ -1885,7 +1886,7 @@ public class MediaDataController extends BaseController {
     }
 
     private void toggleStickerSetInternal(Context context, int toggle, BaseFragment baseFragment, boolean showSettings, TLObject stickerSetObject, StickerSet stickerSet, int type, boolean showTooltip) {
-        TL_inputStickerSetID stickerSetID = new TL_inputStickerSetID();
+        InputStickerSet stickerSetID = new InputStickerSet();
         stickerSetID.access_hash = stickerSet.access_hash;
         stickerSetID.id = stickerSet.id;
 
@@ -1928,7 +1929,7 @@ public class MediaDataController extends BaseController {
                 stickerSet.archived = toggle == 1;
             }
             for (int a = 0, size = stickerSets[type].size(); a < size; a++) {
-                TL_messages_stickerSet set = stickerSets[type].get(a);
+                MessagesStickerSet set = stickerSets[type].get(a);
                 if (set.set.id == inputStickerSet.id) {
                     stickerSets[type].remove(a);
                     if (toggle == 2) {
@@ -2368,12 +2369,8 @@ public class MediaDataController extends BaseController {
         getMessagesStorage().getStorageQueue().postRunnable(() -> {
             try {
                 long dialogId;
-                if (result.to_id.channel_id != 0) {
-                    dialogId = -result.to_id.channel_id;
-                } else if (result.to_id.chat_id != 0) {
-                    dialogId = -result.to_id.chat_id;
-                } else if (result.to_id.user_id != 0) {
-                    dialogId = result.to_id.user_id;
+                if (result.to_id != 0) {
+                    dialogId = -result.to_id;
                 } else {
                     return;
                 }
@@ -2510,9 +2507,9 @@ public class MediaDataController extends BaseController {
                 if (messageObject.getId() > 0 && messageObject.isReply() && messageObject.replyMessageObject == null) {
                     int id = messageObject.messageOwner.reply_to_msg_id;
                     long messageId = id;
-                    if (messageObject.messageOwner.to_id.channel_id != 0) {
-                        messageId |= ((long) messageObject.messageOwner.to_id.channel_id) << 32;
-                        channelId = messageObject.messageOwner.to_id.channel_id;
+                    if (messageObject.messageOwner.to_id != 0) {
+                        messageId |= ((long) messageObject.messageOwner.to_id) << 32;
+                        channelId = messageObject.messageOwner.to_id;
                     }
                     if (stringBuilder.length() > 0) {
                         stringBuilder.append(',');
@@ -2635,8 +2632,8 @@ public class MediaDataController extends BaseController {
                             MessageObject messageObject = messageObjects.get(b);
                             state.requery();
                             long messageId = messageObject.getId();
-                            if (messageObject.messageOwner.to_id.channel_id != 0) {
-                                messageId |= ((long) messageObject.messageOwner.to_id.channel_id) << 32;
+                            if (messageObject.messageOwner.to_id != 0) {
+                                messageId |= ((long) messageObject.messageOwner.to_id) << 32;
                             }
                             state.bindByteBuffer(1, data);
                             state.bindLong(2, messageId);
@@ -4232,8 +4229,8 @@ public class MediaDataController extends BaseController {
                     if (canAddMessageToMedia(message)) {
 
                         long messageId = message.id;
-                        if (message.to_id.channel_id != 0) {
-                            messageId |= ((long) message.to_id.channel_id) << 32;
+                        if (message.to_id != 0) {
+                            messageId |= ((long) message.to_id) << 32;
                         }
 
                         state2.requery();

@@ -46,6 +46,7 @@ import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.sticker.InputStickerSet;
+import com.demo.chat.model.sticker.MessagesStickerSet;
 import com.demo.chat.model.sticker.StickerSetCovered;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
@@ -122,7 +123,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
     private Activity parentActivity;
     private int itemSize;
 
-    private TLRPC.TL_messages_stickerSet stickerSet;
+    private MessagesStickerSet stickerSet;
     private Document selectedSticker;
     private InputStickerSet inputStickerSet;
     private ArrayList<StickerSetCovered> stickerSetCovereds;
@@ -248,7 +249,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
         init(context);
     }
 
-    public StickersAlert(Context context, BaseFragment baseFragment, InputStickerSet set, TLRPC.TL_messages_stickerSet loadedSet, StickersAlertDelegate stickersAlertDelegate) {
+    public StickersAlert(Context context, BaseFragment baseFragment, InputStickerSet set, MessagesStickerSet loadedSet, StickersAlertDelegate stickersAlertDelegate) {
         super(context, false);
         delegate = stickersAlertDelegate;
         inputStickerSet = set;
@@ -282,7 +283,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                     reqId = 0;
                     if (error == null) {
                         optionsButton.setVisibility(View.VISIBLE);
-                        stickerSet = (TLRPC.TL_messages_stickerSet) response;
+                        stickerSet = (MessagesStickerSet) response;
                         showEmoji = !stickerSet.set.masks;
                         mediaDataController.preloadStickerSetThumb(stickerSet);
                         updateSendButton();
@@ -514,8 +515,8 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
 
                 boolean set = false;
                 for (int a = 0; a < selectedSticker.attributes.size(); a++) {
-                    DocumentAttribute attribute = selectedSticker.attributes.get(a);
-                    if (attribute instanceof TLRPC.TL_documentAttributeSticker) {
+                    Document.DocumentAttribute attribute = selectedSticker.attributes.get(a);
+                    if (attribute.isSticker()) {
                         if (attribute.alt != null && attribute.alt.length() > 0) {
                             stickerEmojiTextView.setText(Emoji.replaceEmoji(attribute.alt, stickerEmojiTextView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(30), false));
                             set = true;
@@ -745,8 +746,8 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                                 if (showTooltipWhenToggle) {
                                     Bulletin.make(parentFragment, new StickerSetBulletinLayout(pickerBottomLayout.getContext(), stickerSet, StickerSetBulletinLayout.TYPE_ADDED), Bulletin.DURATION_SHORT).show();
                                 }
-                                if (response instanceof TLRPC.TL_messages_stickerSetInstallResultArchive) {
-                                    MediaDataController.getInstance(currentAccount).processStickerSetInstallResultArchive(parentFragment, true, type, (TLRPC.TL_messages_stickerSetInstallResultArchive) response);
+                                if (response instanceof MessagesStickerSetInstallResultArchive) {
+                                    MediaDataController.getInstance(currentAccount).processStickerSetInstallResultArchive(parentFragment, true, type, (MessagesStickerSetInstallResultArchive) response);
                                 }
                             } else {
                                 Toast.makeText(getContext(), LocaleController.getString("ErrorOccurred", R.string.ErrorOccurred), Toast.LENGTH_SHORT).show();

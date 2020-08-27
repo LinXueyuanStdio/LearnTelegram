@@ -14,7 +14,6 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.demo.chat.R;
-import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.MessagesController;
@@ -41,6 +40,7 @@ import com.demo.chat.ui.Components.RecyclerListView;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -159,14 +159,14 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
             AndroidUtilities.cancelRunOnUIThread(contextQueryRunnable);
             contextQueryRunnable = null;
         }
-        if (contextUsernameReqid != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(contextUsernameReqid, true);
-            contextUsernameReqid = 0;
-        }
-        if (contextQueryReqid != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(contextQueryReqid, true);
-            contextQueryReqid = 0;
-        }
+//        if (contextUsernameReqid != 0) {
+//            ConnectionsManager.getInstance(currentAccount).cancelRequest(contextUsernameReqid, true);
+//            contextUsernameReqid = 0;
+//        }
+//        if (contextQueryReqid != 0) {
+//            ConnectionsManager.getInstance(currentAccount).cancelRequest(contextQueryReqid, true);
+//            contextQueryReqid = 0;
+//        }TODO 取消请求
         foundContextBot = null;
         inlineMediaEnabled = true;
         searchingContextUsername = null;
@@ -317,14 +317,14 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
             contextQueryRunnable = null;
         }
         if (TextUtils.isEmpty(username) || searchingContextUsername != null && !searchingContextUsername.equals(username)) {
-            if (contextUsernameReqid != 0) {
-                ConnectionsManager.getInstance(currentAccount).cancelRequest(contextUsernameReqid, true);
-                contextUsernameReqid = 0;
-            }
-            if (contextQueryReqid != 0) {
-                ConnectionsManager.getInstance(currentAccount).cancelRequest(contextQueryReqid, true);
-                contextQueryReqid = 0;
-            }
+//            if (contextUsernameReqid != 0) {
+//                ConnectionsManager.getInstance(currentAccount).cancelRequest(contextUsernameReqid, true);
+//                contextUsernameReqid = 0;
+//            }
+//            if (contextQueryReqid != 0) {
+//                ConnectionsManager.getInstance(currentAccount).cancelRequest(contextQueryReqid, true);
+//                contextQueryReqid = 0;
+//            }TODO 取消请求
             foundContextBot = null;
             inlineMediaEnabled = true;
             searchingContextUsername = null;
@@ -339,10 +339,10 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
             }
         }
         if (query == null) {
-            if (contextQueryReqid != 0) {
-                ConnectionsManager.getInstance(currentAccount).cancelRequest(contextQueryReqid, true);
-                contextQueryReqid = 0;
-            }
+//            if (contextQueryReqid != 0) {
+//                ConnectionsManager.getInstance(currentAccount).cancelRequest(contextQueryReqid, true);
+//                contextQueryReqid = 0;
+//            }TODO 取消请求
             searchingContextQuery = null;
             if (delegate != null) {
                 delegate.onContextSearch(false);
@@ -374,28 +374,28 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
                     searchForContextBotResults(true, foundContextBot, query, "");
                 } else {
                     searchingContextUsername = username;
-                    TLObject object = messagesController.getUserOrChat(searchingContextUsername);
-                    if (object instanceof User) {
-                        processFoundUser((User) object);
-                    } else {
-                        TLRPC.TL_contacts_resolveUsername req = new TLRPC.TL_contacts_resolveUsername();
-                        req.username = searchingContextUsername;
-                        contextUsernameReqid = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                            if (searchingContextUsername == null || !searchingContextUsername.equals(username)) {
-                                return;
-                            }
-                            User user = null;
-                            if (error == null) {
-                                TLRPC.TL_contacts_resolvedPeer res = (TLRPC.TL_contacts_resolvedPeer) response;
-                                if (!res.users.isEmpty()) {
-                                    user = res.users.get(0);
-                                    messagesController.putUser(user, false);
-                                    messagesStorage.putUsersAndChats(res.users, null, true, true);
-                                }
-                            }
-                            processFoundUser(user);
-                        }));
-                    }
+//                    TLObject object = messagesController.getUserOrChat(searchingContextUsername);
+//                    if (object instanceof User) {
+//                        processFoundUser((User) object);
+//                    } else {
+//                        TLRPC.TL_contacts_resolveUsername req = new TLRPC.TL_contacts_resolveUsername();
+//                        req.username = searchingContextUsername;
+//                        contextUsernameReqid = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                            if (searchingContextUsername == null || !searchingContextUsername.equals(username)) {
+//                                return;
+//                            }
+//                            User user = null;
+//                            if (error == null) {
+//                                TLRPC.TL_contacts_resolvedPeer res = (TLRPC.TL_contacts_resolvedPeer) response;
+//                                if (!res.users.isEmpty()) {
+//                                    user = res.users.get(0);
+//                                    messagesController.putUser(user, false);
+//                                    messagesStorage.putUsersAndChats(res.users, null, true, true);
+//                                }
+//                            }
+//                            processFoundUser(user);
+//                        }));
+//                    }TODO 发起请求
                 }
             }
         };
@@ -445,10 +445,10 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
     }
 
     private void searchForContextBotResults(final boolean cache, final User user, final String query, final String offset) {
-        if (contextQueryReqid != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(contextQueryReqid, true);
-            contextQueryReqid = 0;
-        }
+//        if (contextQueryReqid != 0) {
+//            ConnectionsManager.getInstance(currentAccount).cancelRequest(contextQueryReqid, true);
+//            contextQueryReqid = 0;
+//        }TODO 取消请求
         if (!inlineMediaEnabled) {
             if (delegate != null) {
                 delegate.onContextSearch(false);
@@ -464,88 +464,88 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
         }
         final String key = dialog_id + "_" + query + "_" + offset + "_" + dialog_id + "_" + user.id + "_" + (user.bot_inline_geo && lastKnownLocation != null && lastKnownLocation.getLatitude() != -1000 ? lastKnownLocation.getLatitude() + lastKnownLocation.getLongitude() : "");
         final MessagesStorage messagesStorage = MessagesStorage.getInstance(currentAccount);
-        RequestDelegate requestDelegate = (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            if (!query.equals(searchingContextQuery)) {
-                return;
-            }
-            contextQueryReqid = 0;
-            if (cache && response == null) {
-                searchForContextBotResults(false, user, query, offset);
-            } else if (delegate != null) {
-                delegate.onContextSearch(false);
-            }
-            if (response instanceof TLRPC.TL_messages_botResults) {
-                TLRPC.TL_messages_botResults res = (TLRPC.TL_messages_botResults) response;
-                if (!cache && res.cache_time != 0) {
-                    messagesStorage.saveBotCache(key, res);
-                }
-                nextQueryOffset = res.next_offset;
-                if (searchResultBotContextSwitch == null) {
-                    searchResultBotContextSwitch = res.switch_pm;
-                }
-                for (int a = 0; a < res.results.size(); a++) {
-                    BotInlineResult result = res.results.get(a);
-                    if (!(result.document instanceof TLRPC.TL_document) && !(result.photo instanceof TLRPC.TL_photo) && !"game".equals(result.type) && result.content == null && result.send_message instanceof TLRPC.TL_botInlineMessageMediaAuto) {
-                        res.results.remove(a);
-                        a--;
-                    }
-                    result.query_id = res.query_id;
-                }
-                boolean added = false;
-                if (searchResultBotContext == null || offset.length() == 0) {
-                    searchResultBotContext = res.results;
-                    contextMedia = res.gallery;
-                } else {
-                    added = true;
-                    searchResultBotContext.addAll(res.results);
-                    if (res.results.isEmpty()) {
-                        nextQueryOffset = "";
-                    }
-                }
-                if (cancelDelayRunnable != null) {
-                    AndroidUtilities.cancelRunOnUIThread(cancelDelayRunnable);
-                    cancelDelayRunnable = null;
-                }
-                searchResultHashtags = null;
-                searchResultUsernames = null;
-                searchResultUsernamesMap = null;
-                searchResultCommands = null;
-                searchResultSuggestions = null;
-                searchResultCommandsHelp = null;
-                searchResultCommandsUsers = null;
-                if (added) {
-                    boolean hasTop = searchResultBotContextSwitch != null;
-                    notifyItemChanged(searchResultBotContext.size() - res.results.size() + (hasTop ? 1 : 0) - 1);
-                    notifyItemRangeInserted(searchResultBotContext.size() - res.results.size() + (hasTop ? 1 : 0), res.results.size());
-                } else {
-                    notifyDataSetChanged();
-                }
-                delegate.needChangePanelVisibility(!searchResultBotContext.isEmpty() || searchResultBotContextSwitch != null);
-            }
-        });
+//        RequestDelegate requestDelegate = (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//            if (!query.equals(searchingContextQuery)) {
+//                return;
+//            }
+//            contextQueryReqid = 0;
+//            if (cache && response == null) {
+//                searchForContextBotResults(false, user, query, offset);
+//            } else if (delegate != null) {
+//                delegate.onContextSearch(false);
+//            }
+//            if (response instanceof TLRPC.TL_messages_botResults) {
+//                TLRPC.TL_messages_botResults res = (TLRPC.TL_messages_botResults) response;
+//                if (!cache && res.cache_time != 0) {
+//                    messagesStorage.saveBotCache(key, res);
+//                }
+//                nextQueryOffset = res.next_offset;
+//                if (searchResultBotContextSwitch == null) {
+//                    searchResultBotContextSwitch = res.switch_pm;
+//                }
+//                for (int a = 0; a < res.results.size(); a++) {
+//                    BotInlineResult result = res.results.get(a);
+//                    if (!(result.document instanceof TLRPC.TL_document) && !(result.photo instanceof TLRPC.TL_photo) && !"game".equals(result.type) && result.content == null && result.send_message instanceof TLRPC.TL_botInlineMessageMediaAuto) {
+//                        res.results.remove(a);
+//                        a--;
+//                    }
+//                    result.query_id = res.query_id;
+//                }
+//                boolean added = false;
+//                if (searchResultBotContext == null || offset.length() == 0) {
+//                    searchResultBotContext = res.results;
+//                    contextMedia = res.gallery;
+//                } else {
+//                    added = true;
+//                    searchResultBotContext.addAll(res.results);
+//                    if (res.results.isEmpty()) {
+//                        nextQueryOffset = "";
+//                    }
+//                }
+//                if (cancelDelayRunnable != null) {
+//                    AndroidUtilities.cancelRunOnUIThread(cancelDelayRunnable);
+//                    cancelDelayRunnable = null;
+//                }
+//                searchResultHashtags = null;
+//                searchResultUsernames = null;
+//                searchResultUsernamesMap = null;
+//                searchResultCommands = null;
+//                searchResultSuggestions = null;
+//                searchResultCommandsHelp = null;
+//                searchResultCommandsUsers = null;
+//                if (added) {
+//                    boolean hasTop = searchResultBotContextSwitch != null;
+//                    notifyItemChanged(searchResultBotContext.size() - res.results.size() + (hasTop ? 1 : 0) - 1);
+//                    notifyItemRangeInserted(searchResultBotContext.size() - res.results.size() + (hasTop ? 1 : 0), res.results.size());
+//                } else {
+//                    notifyDataSetChanged();
+//                }
+//                delegate.needChangePanelVisibility(!searchResultBotContext.isEmpty() || searchResultBotContextSwitch != null);
+//            }
+//        });
 
-        if (cache) {
-            messagesStorage.getBotCache(key, requestDelegate);
-        } else {
-            TLRPC.TL_messages_getInlineBotResults req = new TLRPC.TL_messages_getInlineBotResults();
-            req.bot = MessagesController.getInstance(currentAccount).getInputUser(user);
-            req.query = query;
-            req.offset = offset;
-            if (user.bot_inline_geo && lastKnownLocation != null && lastKnownLocation.getLatitude() != -1000) {
-                req.flags |= 1;
-                req.geo_point = new TLRPC.TL_inputGeoPoint();
-                req.geo_point.lat = AndroidUtilities.fixLocationCoord(lastKnownLocation.getLatitude());
-                req.geo_point._long = AndroidUtilities.fixLocationCoord(lastKnownLocation.getLongitude());
-            }
-            int lower_id = (int) dialog_id;
-            int high_id = (int) (dialog_id >> 32);
-            if (lower_id != 0) {
-                req.peer = MessagesController.getInstance(currentAccount).getInputPeer(lower_id);
-            } else {
-                req.peer = new TLRPC.TL_inputPeerEmpty();
-            }
-            contextQueryReqid = ConnectionsManager.getInstance(currentAccount).sendRequest(req, requestDelegate, ConnectionsManager.RequestFlagFailOnServerErrors);
-        }
+//        if (cache) {
+//            messagesStorage.getBotCache(key, requestDelegate);
+//        } else {TODO 取消请求
+//            TLRPC.TL_messages_getInlineBotResults req = new TLRPC.TL_messages_getInlineBotResults();
+//            req.bot = MessagesController.getInstance(currentAccount).getInputUser(user);
+//            req.query = query;
+//            req.offset = offset;
+//            if (user.bot_inline_geo && lastKnownLocation != null && lastKnownLocation.getLatitude() != -1000) {
+//                req.flags |= 1;
+//                req.geo_point = new TLRPC.TL_inputGeoPoint();
+//                req.geo_point.lat = AndroidUtilities.fixLocationCoord(lastKnownLocation.getLatitude());
+//                req.geo_point._long = AndroidUtilities.fixLocationCoord(lastKnownLocation.getLongitude());
+//            }
+//            int lower_id = (int) dialog_id;
+//            int high_id = (int) (dialog_id >> 32);
+//            if (lower_id != 0) {
+//                req.peer = MessagesController.getInstance(currentAccount).getInputPeer(lower_id);
+//            } else {
+//                req.peer = new TLRPC.TL_inputPeerEmpty();
+//            }
+//            contextQueryReqid = ConnectionsManager.getInstance(currentAccount).sendRequest(req, requestDelegate, ConnectionsManager.RequestFlagFailOnServerErrors);
+//        }
     }
 
     public void searchUsernameOrHashtag(String text, int position, ArrayList<MessageObject> messageObjects, boolean usernameOnly) {
@@ -553,10 +553,10 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
             AndroidUtilities.cancelRunOnUIThread(cancelDelayRunnable);
             cancelDelayRunnable = null;
         }
-        if (channelReqId != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(channelReqId, true);
-            channelReqId = 0;
-        }
+//        if (channelReqId != 0) {
+//            ConnectionsManager.getInstance(currentAccount).cancelRequest(channelReqId, true);
+//            channelReqId = 0;
+//        }TODO 取消请求
         if (searchGlobalRunnable != null) {
             AndroidUtilities.cancelRunOnUIThread(searchGlobalRunnable);
             searchGlobalRunnable = null;
@@ -714,7 +714,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
             }
             if (chat != null && info != null && info.participants != null && (!ChatObject.isChannel(chat) || chat.megagroup)) {
                 for (int a = 0; a < info.participants.participants.size(); a++) {
-                    ChatParticipant chatParticipant = info.participants.participants.get(a);
+                    Chat.ChatParticipant chatParticipant = info.participants.participants.get(a);
                     User user = messagesController.getUser(chatParticipant.user_id);
                     if (user == null || !usernameOnly && UserObject.isUserSelf(user) || newResultsHashMap.indexOfKey(user.id) >= 0) {
                         continue;
@@ -782,41 +782,42 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
                         if (searchGlobalRunnable != this) {
                             return;
                         }
-                        TLRPC.TL_channels_getParticipants req = new TLRPC.TL_channels_getParticipants();
-                        req.channel = MessagesController.getInputChannel(chat);
-                        req.limit = 20;
-                        req.offset = 0;
-                        TLRPC.TL_channelParticipantsSearch channelParticipantsSearch = new TLRPC.TL_channelParticipantsSearch();
-                        channelParticipantsSearch.q = usernameString;
-                        req.filter = channelParticipantsSearch;
-                        final int currentReqId = ++channelLastReqId;
-                        channelReqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                            if (channelReqId != 0 && currentReqId == channelLastReqId && searchResultUsernamesMap != null && searchResultUsernames != null) {
-                                showUsersResult(newResult, newMap, false);
-                                if (error == null) {
-                                    TLRPC.TL_channels_channelParticipants res = (TLRPC.TL_channels_channelParticipants) response;
-                                    messagesController.putUsers(res.users, false);
-                                    boolean hasResults = !searchResultUsernames.isEmpty();
-                                    if (!res.participants.isEmpty()) {
-                                        int currentUserId = UserConfig.getInstance(currentAccount).getClientUserId();
-                                        for (int a = 0; a < res.participants.size(); a++) {
-                                            TLRPC.ChannelParticipant participant = res.participants.get(a);
-                                            if (searchResultUsernamesMap.indexOfKey(participant.user_id) >= 0 || !isSearchingMentions && participant.user_id == currentUserId) {
-                                                continue;
-                                            }
-                                            User user = messagesController.getUser(participant.user_id);
-                                            if (user == null) {
-                                                return;
-                                            }
-                                            searchResultUsernames.add(user);
-                                        }
-                                    }
-                                }
-                                notifyDataSetChanged();
-                                delegate.needChangePanelVisibility(!searchResultUsernames.isEmpty());
-                            }
-                            channelReqId = 0;
-                        }));
+                        //TODO searchGlobal
+//                        TLRPC.TL_channels_getParticipants req = new TLRPC.TL_channels_getParticipants();
+//                        req.channel = MessagesController.getInputChannel(chat);
+//                        req.limit = 20;
+//                        req.offset = 0;
+//                        TLRPC.TL_channelParticipantsSearch channelParticipantsSearch = new TLRPC.TL_channelParticipantsSearch();
+//                        channelParticipantsSearch.q = usernameString;
+//                        req.filter = channelParticipantsSearch;
+//                        final int currentReqId = ++channelLastReqId;
+//                        channelReqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                            if (channelReqId != 0 && currentReqId == channelLastReqId && searchResultUsernamesMap != null && searchResultUsernames != null) {
+//                                showUsersResult(newResult, newMap, false);
+//                                if (error == null) {
+//                                    TLRPC.TL_channels_channelParticipants res = (TLRPC.TL_channels_channelParticipants) response;
+//                                    messagesController.putUsers(res.users, false);
+//                                    boolean hasResults = !searchResultUsernames.isEmpty();
+//                                    if (!res.participants.isEmpty()) {
+//                                        int currentUserId = UserConfig.getInstance(currentAccount).getClientUserId();
+//                                        for (int a = 0; a < res.participants.size(); a++) {
+//                                            TLRPC.ChannelParticipant participant = res.participants.get(a);
+//                                            if (searchResultUsernamesMap.indexOfKey(participant.user_id) >= 0 || !isSearchingMentions && participant.user_id == currentUserId) {
+//                                                continue;
+//                                            }
+//                                            User user = messagesController.getUser(participant.user_id);
+//                                            if (user == null) {
+//                                                return;
+//                                            }
+//                                            searchResultUsernames.add(user);
+//                                        }
+//                                    }
+//                                }
+//                                notifyDataSetChanged();
+//                                delegate.needChangePanelVisibility(!searchResultUsernames.isEmpty());
+//                            }
+//                            channelReqId = 0;
+//                        }));
                     }
                 }, 200);
             } else {
@@ -847,9 +848,9 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
             ArrayList<User> newResultUsers = new ArrayList<>();
             String command = result.toString().toLowerCase();
             for (int b = 0; b < botInfo.size(); b++) {
-                TLRPC.BotInfo info = botInfo.valueAt(b);
+                BotInfo info = botInfo.valueAt(b);
                 for (int a = 0; a < info.commands.size(); a++) {
-                    TLRPC.TL_botCommand botCommand = info.commands.get(a);
+                    BotInfo.BotCommand botCommand = info.commands.get(a);
                     if (botCommand != null && botCommand.command != null && botCommand.command.startsWith(command)) {
                         newResult.add("/" + botCommand.command);
                         newResultHelp.add(botCommand.description);
@@ -987,7 +988,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
             if (i < 0 || i >= searchResultCommands.size()) {
                 return null;
             }
-            if (searchResultCommandsUsers != null && (botsCount != 1 || info instanceof TLRPC.TL_channelFull)) {
+            if (searchResultCommandsUsers != null && (botsCount != 1 || info.isChannel())) {
                 if (searchResultCommandsUsers.get(i) != null) {
                     return String.format("%s@%s", searchResultCommands.get(i), searchResultCommandsUsers.get(i) != null ? searchResultCommandsUsers.get(i).username : "");
                 } else {

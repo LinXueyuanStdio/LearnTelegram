@@ -11,7 +11,6 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 
 import com.demo.chat.R;
-import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.UserConfig;
@@ -19,12 +18,15 @@ import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.sticker.InputStickerSet;
+import com.demo.chat.model.sticker.MessagesStickerSet;
 import com.demo.chat.model.sticker.StickerSet;
 import com.demo.chat.model.sticker.StickerSetCovered;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.Adapters.StickersSearchAdapter;
+import com.demo.chat.ui.Cells.EmptyCell;
+import com.demo.chat.ui.Cells.FeaturedStickerSetCell2;
 import com.demo.chat.ui.Cells.FeaturedStickerSetInfoCell;
 import com.demo.chat.ui.Cells.GraySectionCell;
 import com.demo.chat.ui.Cells.StickerEmojiCell;
@@ -667,7 +669,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
             boolean forceInstalled = false;
             for (int i = 0; i < primaryInstallingStickerSets.length; i++) {
                 if (primaryInstallingStickerSets[i] != null) {
-                    final TLRPC.TL_messages_stickerSet s = MediaDataController.getInstance(currentAccount).getStickerSetById(primaryInstallingStickerSets[i].set.id);
+                    final MessagesStickerSet s = MediaDataController.getInstance(currentAccount).getStickerSetById(primaryInstallingStickerSets[i].set.id);
                     if (s != null && !s.set.archived) {
                         primaryInstallingStickerSets[i] = null;
                         continue;
@@ -697,7 +699,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
         private void installStickerSet(StickerSetCovered pack, View view) {
             for (int i = 0; i < primaryInstallingStickerSets.length; i++) {
                 if (primaryInstallingStickerSets[i] != null) {
-                    final TLRPC.TL_messages_stickerSet s = MediaDataController.getInstance(currentAccount).getStickerSetById(primaryInstallingStickerSets[i].set.id);
+                    final MessagesStickerSet s = MediaDataController.getInstance(currentAccount).getStickerSetById(primaryInstallingStickerSets[i].set.id);
                     if (s != null && !s.set.archived) {
                         primaryInstallingStickerSets[i] = null;
                         break;
@@ -801,53 +803,53 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
                 return;
             }
             loadingMore = true;
-            final TLRPC.TL_messages_getOldFeaturedStickers req = new TLRPC.TL_messages_getOldFeaturedStickers();
-            req.offset = otherPacks.size();
-            req.limit = 40;
-            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                loadingMore = false;
-                if (error == null && response instanceof TLRPC.TL_messages_featuredStickers) {
-                    final TLRPC.TL_messages_featuredStickers stickersResponse = (TLRPC.TL_messages_featuredStickers) response;
-                    final List<StickerSetCovered> packs = stickersResponse.sets;
-                    if (packs.size() < 40) {
-                        endReached = true;
-                    }
-                    if (!packs.isEmpty()) {
-                        if (otherPacks.isEmpty()) {
-                            cache.put(totalItems++, ITEM_SECTION);
-                        }
-                        otherPacks.addAll(packs);
-                        int num = sets.size();
-                        for (int a = 0; a < packs.size(); a++) {
-                            StickerSetCovered pack = packs.get(a);
-                            if (pack.covers.isEmpty() && pack.cover == null) {
-                                continue;
-                            }
-                            sets.add(pack);
-                            positionsToSets.put(totalItems, pack);
-                            cache.put(totalItems++, num++);
-
-                            int count;
-                            if (!pack.covers.isEmpty()) {
-                                count = (int) Math.ceil(pack.covers.size() / (float) stickersPerRow);
-                                for (int b = 0; b < pack.covers.size(); b++) {
-                                    cache.put(b + totalItems, pack.covers.get(b));
-                                }
-                            } else {
-                                count = 1;
-                                cache.put(totalItems, pack.cover);
-                            }
-                            for (int b = 0; b < count * stickersPerRow; b++) {
-                                positionsToSets.put(totalItems + b, pack);
-                            }
-                            totalItems += count * stickersPerRow;
-                        }
-                        notifyDataSetChanged();
-                    }
-                } else {
-                    endReached = true;
-                }
-            }));
+//            final TLRPC.TL_messages_getOldFeaturedStickers req = new TLRPC.TL_messages_getOldFeaturedStickers();
+//            req.offset = otherPacks.size();TODO 加载表情包
+//            req.limit = 40;
+//            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                loadingMore = false;
+//                if (error == null && response instanceof TLRPC.TL_messages_featuredStickers) {
+//                    final TLRPC.TL_messages_featuredStickers stickersResponse = (TLRPC.TL_messages_featuredStickers) response;
+//                    final List<StickerSetCovered> packs = stickersResponse.sets;
+//                    if (packs.size() < 40) {
+//                        endReached = true;
+//                    }
+//                    if (!packs.isEmpty()) {
+//                        if (otherPacks.isEmpty()) {
+//                            cache.put(totalItems++, ITEM_SECTION);
+//                        }
+//                        otherPacks.addAll(packs);
+//                        int num = sets.size();
+//                        for (int a = 0; a < packs.size(); a++) {
+//                            StickerSetCovered pack = packs.get(a);
+//                            if (pack.covers.isEmpty() && pack.cover == null) {
+//                                continue;
+//                            }
+//                            sets.add(pack);
+//                            positionsToSets.put(totalItems, pack);
+//                            cache.put(totalItems++, num++);
+//
+//                            int count;
+//                            if (!pack.covers.isEmpty()) {
+//                                count = (int) Math.ceil(pack.covers.size() / (float) stickersPerRow);
+//                                for (int b = 0; b < pack.covers.size(); b++) {
+//                                    cache.put(b + totalItems, pack.covers.get(b));
+//                                }
+//                            } else {
+//                                count = 1;
+//                                cache.put(totalItems, pack.cover);
+//                            }
+//                            for (int b = 0; b < count * stickersPerRow; b++) {
+//                                positionsToSets.put(totalItems + b, pack);
+//                            }
+//                            totalItems += count * stickersPerRow;
+//                        }
+//                        notifyDataSetChanged();
+//                    }
+//                } else {
+//                    endReached = true;
+//                }
+//            }));
         }
 
         public void updateColors(RecyclerListView listView) {

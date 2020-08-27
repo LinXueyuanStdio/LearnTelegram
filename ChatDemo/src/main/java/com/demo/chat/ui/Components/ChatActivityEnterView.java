@@ -94,6 +94,7 @@ import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.bot.KeyboardButton;
+import com.demo.chat.model.reply.ReplyMarkup;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
@@ -345,7 +346,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     private boolean showKeyboardOnResume;
 
     private MessageObject botButtonsMessageObject;
-    private TLRPC.TL_replyKeyboardMarkup botReplyMarkup;
+    private ReplyMarkup botReplyMarkup;
     private int botCount;
     private boolean hasBotCommands;
 
@@ -5734,7 +5735,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             sizeNotifierLayout.addView(botKeyboardView, sizeNotifierLayout.getChildCount() - 1);
         }
         botButtonsMessageObject = messageObject;
-        botReplyMarkup = messageObject != null && messageObject.messageOwner.reply_markup instanceof TLRPC.TL_replyKeyboardMarkup ? (TLRPC.TL_replyKeyboardMarkup) messageObject.messageOwner.reply_markup : null;
+        botReplyMarkup = messageObject != null && messageObject.messageOwner.reply_markup.isKeyboardMarkup() ? messageObject.messageOwner.reply_markup : null;
 
         botKeyboardView.setPanelHeight(AndroidUtilities.displaySize.x > AndroidUtilities.displaySize.y ? keyboardHeightLand : keyboardHeight);
         botKeyboardView.setButtons(botReplyMarkup);
@@ -5766,11 +5767,11 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         if (button == null || messageObject == null) {
             return false;
         }
-        if (button instanceof TLRPC.TL_keyboardButton) {
+        if (button.isKeyboardButton()) {
             SendMessagesHelper.getInstance(currentAccount).sendMessage(button.text, dialog_id, replyMessageObject, null, false, null, null, null, true, 0);
-        } else if (button instanceof TLRPC.TL_keyboardButtonUrl) {
+        } else if (button.isKeyboardButtonUrl()) {
             AlertsCreator.showOpenUrlAlert(parentFragment, button.url, false, true);
-        } else if (button instanceof TLRPC.TL_keyboardButtonRequestGeoLocation) {
+        } else if (button.isRequestGeoLocation()) {
             AlertDialog.Builder builder = new AlertDialog.Builder(parentActivity);
             builder.setTitle(LocaleController.getString("ShareYouLocationTitle", R.string.ShareYouLocationTitle));
             builder.setMessage(LocaleController.getString("ShareYouLocationInfo", R.string.ShareYouLocationInfo));
@@ -5785,10 +5786,10 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             });
             builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
             parentFragment.showDialog(builder.create());
-        } else if (button instanceof TLRPC.TL_keyboardButtonCallback || button instanceof TLRPC.TL_keyboardButtonGame || button instanceof TLRPC.TL_keyboardButtonBuy || button instanceof TLRPC.TL_keyboardButtonUrlAuth) {
+        } else if (button.isButtonCallback() || button.isButtonUrlAuth()) {
             SendMessagesHelper.getInstance(currentAccount).sendCallback(true, messageObject, button, parentFragment);
-        } else if (button instanceof TLRPC.TL_keyboardButtonSwitchInline) {
-            if (parentFragment.processSwitchButton((TLRPC.TL_keyboardButtonSwitchInline) button)) {
+        } else if (button.isSwitchInline()) {
+            if (parentFragment.processSwitchButton(button)) {
                 return true;
             }
             if (button.same_peer) {
@@ -6739,7 +6740,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                 updateRecordIntefrace(RECORD_STATE_PREPARING);
                 checkSendButton(false);
             } else {
-                audioToSend = (TLRPC.TL_document) args[1];
+                audioToSend = (Document) args[1];
                 audioToSendPath = (String) args[2];
                 if (audioToSend != null) {
                     if (recordedAudioPanel == null) {

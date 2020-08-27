@@ -293,7 +293,7 @@ public class ScrollSlidingTabStrip extends HorizontalScrollView {
         tabTypes.put(key, tab);
     }
 
-    public View addStickerTab(Media thumb, Document sticker, TLRPC.TL_messages_stickerSet parentObject) {
+    public View addStickerTab(Media thumb, Document sticker, MessagesStickerSet parentObject) {
         String key = "set" + parentObject.set.id;
         final int position = tabCount++;
 

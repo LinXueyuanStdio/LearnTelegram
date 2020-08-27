@@ -408,7 +408,8 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
                             currentChat = MessagesController.getInstance(currentAccount).getChat(-lower_id);
                         }
                     }
-                    AlertsCreator.createDeleteMessagesAlert(MediaActivity.this, currentUser, currentChat, null, null, mergeDialogId, null, selectedFiles, null, false, 1, () -> {
+                    AlertsCreator.createDeleteMessagesAlert(MediaActivity.this, currentUser,
+                            currentChat, mergeDialogId, null, selectedFiles, null, false, 1, () -> {
                         actionBar.hideActionMode();
                         actionBar.closeSearchField();
                         cantDeleteMessagesCount = 0;

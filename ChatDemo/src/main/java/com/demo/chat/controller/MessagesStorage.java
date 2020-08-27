@@ -19,16 +19,19 @@ import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NativeByteBuffer;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.messager.support.SparseLongArray;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.bot.BotInfo;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.small.WallPaper;
 import com.demo.chat.theme.Theme;
 
 import java.io.File;
@@ -1333,8 +1336,8 @@ public class MessagesStorage extends BaseController {
                 message.messageOwner.serializeToStream(data);
 
                 long messageId = message.getId();
-                if (message.messageOwner.to_id.channel_id != 0) {
-                    messageId |= ((long) message.messageOwner.to_id.channel_id) << 32;
+                if (message.messageOwner.to_id != 0) {
+                    messageId |= ((long) message.messageOwner.to_id) << 32;
                 }
 
                 int flags = 0;
@@ -1529,8 +1532,8 @@ public class MessagesStorage extends BaseController {
                             }
                             if (message.replyMessage == null) {
                                 long messageId = message.reply_to_msg_id;
-                                if (message.to_id.channel_id != 0) {
-                                    messageId |= ((long) message.to_id.channel_id) << 32;
+                                if (message.to_id != 0) {
+                                    messageId |= ((long) message.to_id) << 32;
                                 }
                                 if (!replyMessages.contains(messageId)) {
                                     replyMessages.add(messageId);
@@ -2638,7 +2641,7 @@ public class MessagesStorage extends BaseController {
                             int lower_id = (int) message.dialog_id;
                             addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad);
                             message.send_state = cursor.intValue(2);
-                            if (message.to_id.channel_id == 0 && !MessageObject.isUnread(message) && lower_id != 0 || message.id > 0) {
+                            if (message.to_id == 0 && !MessageObject.isUnread(message) && lower_id != 0 || message.id > 0) {
                                 message.send_state = 0;
                             }
                             if (lower_id == 0 && !cursor.isNull(5)) {
@@ -2666,8 +2669,8 @@ public class MessagesStorage extends BaseController {
                                     }
                                     if (message.replyMessage == null) {
                                         long messageId = message.reply_to_msg_id;
-                                        if (message.to_id.channel_id != 0) {
-                                            messageId |= ((long) message.to_id.channel_id) << 32;
+                                        if (message.to_id != 0) {
+                                            messageId |= ((long) message.to_id) << 32;
                                         }
                                         if (!replyMessages.contains(messageId)) {
                                             replyMessages.add(messageId);
@@ -3221,36 +3224,14 @@ public class MessagesStorage extends BaseController {
                 totalDialogsLoadCount += dialogsRes.dialogs.size();
                 dialogsLoadOffsetId = lastMessage.id;
                 dialogsLoadOffsetDate = lastMessage.date;
-                if (lastMessage.to_id.channel_id != 0) {
-                    dialogsLoadOffsetChannelId = lastMessage.to_id.channel_id;
+                if (lastMessage.to_id != 0) {
+                    dialogsLoadOffsetChannelId = lastMessage.to_id;
                     dialogsLoadOffsetChatId = 0;
                     dialogsLoadOffsetUserId = 0;
                     for (int a = 0; a < dialogsRes.chats.size(); a++) {
                         Chat chat = dialogsRes.chats.get(a);
                         if (chat.id == dialogsLoadOffsetChannelId) {
                             dialogsLoadOffsetAccess = chat.access_hash;
-                            break;
-                        }
-                    }
-                } else if (lastMessage.to_id.chat_id != 0) {
-                    dialogsLoadOffsetChatId = lastMessage.to_id.chat_id;
-                    dialogsLoadOffsetChannelId = 0;
-                    dialogsLoadOffsetUserId = 0;
-                    for (int a = 0; a < dialogsRes.chats.size(); a++) {
-                        Chat chat = dialogsRes.chats.get(a);
-                        if (chat.id == dialogsLoadOffsetChatId) {
-                            dialogsLoadOffsetAccess = chat.access_hash;
-                            break;
-                        }
-                    }
-                } else if (lastMessage.to_id.user_id != 0) {
-                    dialogsLoadOffsetUserId = lastMessage.to_id.user_id;
-                    dialogsLoadOffsetChatId = 0;
-                    dialogsLoadOffsetChannelId = 0;
-                    for (int a = 0; a < dialogsRes.users.size(); a++) {
-                        User user = dialogsRes.users.get(a);
-                        if (user.id == dialogsLoadOffsetUserId) {
-                            dialogsLoadOffsetAccess = user.access_hash;
                             break;
                         }
                     }
@@ -4420,7 +4401,7 @@ public class MessagesStorage extends BaseController {
         }
     }
 
-    public void updateChatParticipants(final ChatParticipants participants) {
+    public void updateChatParticipants(final Chat.ChatParticipants participants) {
         if (participants == null) {
             return;
         }
@@ -5477,7 +5458,7 @@ public class MessagesStorage extends BaseController {
 
                             addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad);
 
-                            if (message.send_state != 3 && (message.to_id.channel_id == 0 && !MessageObject.isUnread(message) && lower_id != 0 || message.id > 0)) {
+                            if (message.send_state != 3 && (message.to_id == 0 && !MessageObject.isUnread(message) && lower_id != 0 || message.id > 0)) {
                                 message.send_state = 0;
                             }
                         }
@@ -5525,7 +5506,7 @@ public class MessagesStorage extends BaseController {
 
                             addUsersAndChatsFromMessage(message, usersToLoad, chatsToLoad);
 
-                            if (message.send_state != 3 && (message.to_id.channel_id == 0 && !MessageObject.isUnread(message) && lower_id != 0 || message.id > 0)) {
+                            if (message.send_state != 3 && (message.to_id == 0 && !MessageObject.isUnread(message) && lower_id != 0 || message.id > 0)) {
                                 message.send_state = 0;
                             }
                         }
@@ -5732,8 +5713,8 @@ public class MessagesStorage extends BaseController {
                             if (message.replyMessage == null) {
                                 if (message.reply_to_msg_id != 0) {
                                     long messageId = message.reply_to_msg_id;
-                                    if (message.to_id.channel_id != 0) {
-                                        messageId |= ((long) message.to_id.channel_id) << 32;
+                                    if (message.to_id != 0) {
+                                        messageId |= ((long) message.to_id) << 32;
                                     }
                                     if (!replyMessages.contains(messageId)) {
                                         replyMessages.add(messageId);
@@ -6185,8 +6166,8 @@ public class MessagesStorage extends BaseController {
                                 if (message.replyMessage == null) {
                                     if (message.reply_to_msg_id != 0) {
                                         long messageId = message.reply_to_msg_id;
-                                        if (message.to_id.channel_id != 0) {
-                                            messageId |= ((long) message.to_id.channel_id) << 32;
+                                        if (message.to_id != 0) {
+                                            messageId |= ((long) message.to_id) << 32;
                                         }
                                         if (!replyMessages.contains(messageId)) {
                                             replyMessages.add(messageId);
@@ -6955,7 +6936,7 @@ public class MessagesStorage extends BaseController {
         return -1;
     }
 
-    public void putWebPages(final LongSparseArray<WebPage> webPages) {
+    public void putWebPages(final LongSparseArray<MessageMedia.WebPage> webPages) {
         if (isEmpty(webPages)) {
             return;
         }
@@ -7007,8 +6988,8 @@ public class MessagesStorage extends BaseController {
                     message.serializeToStream(data);
 
                     long messageId = message.id;
-                    if (message.to_id.channel_id != 0) {
-                        messageId |= ((long) message.to_id.channel_id) << 32;
+                    if (message.to_id != 0) {
+                        messageId |= ((long) message.to_id) << 32;
                     }
 
                     state.requery();
@@ -7122,7 +7103,7 @@ public class MessagesStorage extends BaseController {
     }
 
     private boolean isValidKeyboardToSave(Message message) {
-        return message.reply_markup != null && !(message.reply_markup instanceof TL_replyInlineMarkup) && (!message.reply_markup.selective || message.mentioned);
+        return message.reply_markup != null && !(message.reply_markup.isInlineMarkup()) && (!message.reply_markup.selective || message.mentioned);
     }
 
     public void updateMessageVerifyFlags(ArrayList<Message> messages) {
@@ -7172,8 +7153,8 @@ public class MessagesStorage extends BaseController {
                     if (message.local_id != 0) {
                         messageId = message.local_id;
                     }
-                    if (message.to_id.channel_id != 0) {
-                        messageId |= ((long) message.to_id.channel_id) << 32;
+                    if (message.to_id != 0) {
+                        messageId |= ((long) message.to_id) << 32;
                     }
 
                     NativeByteBuffer data = new NativeByteBuffer(message.getObjectSize());
@@ -7260,8 +7241,8 @@ public class MessagesStorage extends BaseController {
                     if (message.dialog_id == 0) {
                         MessageObject.getDialogId(message);
                     }
-                    if (message.to_id.channel_id != 0) {
-                        messageId |= ((long) message.to_id.channel_id) << 32;
+                    if (message.to_id != 0) {
+                        messageId |= ((long) message.to_id) << 32;
                     }
                     if (message.mentioned && message.media_unread) {
                         mentionsIdsMap.put(messageId, message.dialog_id);
@@ -7405,8 +7386,8 @@ public class MessagesStorage extends BaseController {
                     if (message.local_id != 0) {
                         messageId = message.local_id;
                     }
-                    if (message.to_id.channel_id != 0) {
-                        messageId |= ((long) message.to_id.channel_id) << 32;
+                    if (message.to_id != 0) {
+                        messageId |= ((long) message.to_id) << 32;
                     }
 
                     NativeByteBuffer data = new NativeByteBuffer(message.getObjectSize());
@@ -7491,7 +7472,7 @@ public class MessagesStorage extends BaseController {
 
                     data.reuse();
 
-                    if (downloadMask != 0 && (message.to_id.channel_id == 0 || message.post) && message.date >= getConnectionsManager().getCurrentTime() - 60 * 60 && getDownloadController().canDownloadMedia(message) == 1) {
+                    if (downloadMask != 0 && (message.to_id == 0 || message.post) && message.date >= getConnectionsManager().getCurrentTime() - 60 * 60 && getDownloadController().canDownloadMedia(message) == 1) {
                         if (message.media instanceof TL_messageMediaPhoto || message.media instanceof TL_messageMediaDocument || message.media instanceof TL_messageMediaWebPage) {
                             int type = 0;
                             long id = 0;
@@ -7548,7 +7529,7 @@ public class MessagesStorage extends BaseController {
                                 state_download.bindInteger(2, type);
                                 state_download.bindInteger(3, message.date);
                                 state_download.bindByteBuffer(4, data);
-                                state_download.bindString(5, "sent_" + (message.to_id != null ? message.to_id.channel_id : 0) + "_" + message.id);
+                                state_download.bindString(5, "sent_" + (message.to_id != null ? message.to_id : 0) + "_" + message.id);
                                 state_download.step();
                                 data.reuse();
                             }
@@ -7578,7 +7559,7 @@ public class MessagesStorage extends BaseController {
 
                     int channelId = 0;
                     if (message != null) {
-                        channelId = message.to_id.channel_id;
+                        channelId = message.to_id;
                     }
 
                     SQLiteCursor cursor = database.queryFinalized("SELECT date, unread_count, last_mid, unread_count_i FROM dialogs WHERE did = " + key);
@@ -7720,8 +7701,8 @@ public class MessagesStorage extends BaseController {
         storageQueue.postRunnable(() -> {
             try {
                 long messageId = message.id;
-                if (message.to_id.channel_id != 0) {
-                    messageId |= ((long) message.to_id.channel_id) << 32;
+                if (message.to_id != 0) {
+                    messageId |= ((long) message.to_id) << 32;
                 }
                 if (scheduled) {
                     database.executeFast("UPDATE scheduled_messages SET send_state = 2 WHERE mid = " + messageId).stepThis().dispose();
@@ -8804,9 +8785,9 @@ public class MessagesStorage extends BaseController {
                 long messageId = message.id;
                 int channelId = 0;
                 if (channelId == 0) {
-                    channelId = message.to_id.channel_id;
+                    channelId = message.to_id;
                 }
-                if (message.to_id.channel_id != 0) {
+                if (message.to_id != 0) {
                     messageId |= ((long) channelId) << 32;
                 }
 
@@ -8910,9 +8891,9 @@ public class MessagesStorage extends BaseController {
 
                         long messageId = message.id;
                         if (channelId == 0) {
-                            channelId = message.to_id.channel_id;
+                            channelId = message.to_id;
                         }
-                        if (message.to_id.channel_id != 0) {
+                        if (message.to_id != 0) {
                             messageId |= ((long) channelId) << 32;
                         }
 
@@ -8982,9 +8963,9 @@ public class MessagesStorage extends BaseController {
 
                         long messageId = message.id;
                         if (channelId == 0) {
-                            channelId = message.to_id.channel_id;
+                            channelId = message.to_id;
                         }
-                        if (message.to_id.channel_id != 0) {
+                        if (message.to_id != 0) {
                             messageId |= ((long) channelId) << 32;
                         }
 
@@ -9408,8 +9389,8 @@ public class MessagesStorage extends BaseController {
                                         }
                                         if (message.replyMessage == null) {
                                             long messageId = message.reply_to_msg_id;
-                                            if (message.to_id.channel_id != 0) {
-                                                messageId |= ((long) message.to_id.channel_id) << 32;
+                                            if (message.to_id != 0) {
+                                                messageId |= ((long) message.to_id) << 32;
                                             }
                                             if (!replyMessages.contains(messageId)) {
                                                 replyMessages.add(messageId);
@@ -9607,8 +9588,8 @@ public class MessagesStorage extends BaseController {
                         message.serializeToStream(data);
 
                         long messageId = message.id;
-                        if (message.to_id.channel_id != 0) {
-                            messageId |= ((long) message.to_id.channel_id) << 32;
+                        if (message.to_id != 0) {
+                            messageId |= ((long) message.to_id) << 32;
                         }
 
                         state_messages.requery();

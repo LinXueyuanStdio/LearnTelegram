@@ -93,12 +93,20 @@ import android.widget.Toast;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
+import com.demo.chat.alerts.AlertsCreator;
 import com.demo.chat.controller.ConnectionsManager;
+import com.demo.chat.controller.DownloadController;
+import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
+import com.demo.chat.controller.MediaController;
+import com.demo.chat.controller.MediaDataController;
+import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.MessagesStorage;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.ImageLoader;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
@@ -106,7 +114,10 @@ import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
+import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;
+import com.demo.chat.model.small.MessageMedia;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
@@ -117,6 +128,7 @@ import com.demo.chat.ui.ActionBar.BackDrawable;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ActionBar.BottomSheet;
 import com.demo.chat.ui.ActionBar.SimpleTextView;
+import com.demo.chat.ui.Cells.HeaderCell;
 import com.demo.chat.ui.Cells.TextSelectionHelper;
 import com.demo.chat.ui.ChatActivity;
 import com.demo.chat.ui.Components.AnimatedArrowDrawable;
@@ -133,8 +145,11 @@ import com.demo.chat.ui.Components.LayoutHelper;
 import com.demo.chat.ui.Components.LineProgressView;
 import com.demo.chat.ui.Components.LinkPath;
 import com.demo.chat.ui.Components.MediaActionDrawable;
+import com.demo.chat.ui.Components.RadialProgress2;
 import com.demo.chat.ui.Components.RecyclerListView;
 import com.demo.chat.ui.Components.SeekBarView;
+import com.demo.chat.ui.Components.ShareAlert;
+import com.demo.chat.ui.Components.TextPaintUrlSpan;
 import com.demo.chat.ui.Components.WebPlayerView;
 import com.demo.chat.ui.LaunchActivity;
 import com.google.android.exoplayer2.C;
@@ -198,7 +213,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
     private Runnable animationEndRunnable;
     private long transitionAnimationStartTime;
 
-    private ArrayList<TLRPC.WebPage> pagesStack = new ArrayList<>();
+    private ArrayList<MessageMedia.WebPage> pagesStack = new ArrayList<>();
 
     private WindowManager.LayoutParams windowLayoutParams;
     private WindowView windowView;
@@ -313,25 +328,25 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
     private int selectedFont = 0;
     private FontCell[] fontCells = new FontCell[2];
 
-    private static class TL_pageBlockRelatedArticlesChild extends TLRPC.PageBlock {
+    private static class TL_pageBlockRelatedArticlesChild extends MessageMedia.PageBlock {
         private TLRPC.TL_pageBlockRelatedArticles parent;
         private int num;
     }
 
-    private static class TL_pageBlockRelatedArticlesShadow extends TLRPC.PageBlock {
+    private static class TL_pageBlockRelatedArticlesShadow extends MessageMedia.PageBlock {
         private TLRPC.TL_pageBlockRelatedArticles parent;
     }
 
-    private static class TL_pageBlockDetailsChild extends TLRPC.PageBlock {
-        private TLRPC.PageBlock parent;
-        private TLRPC.PageBlock block;
+    private static class TL_pageBlockDetailsChild extends MessageMedia.PageBlock {
+        private MessageMedia.PageBlock parent;
+        private MessageMedia.PageBlock block;
     }
 
-    private static class TL_pageBlockDetailsBottom extends TLRPC.PageBlock {
+    private static class TL_pageBlockDetailsBottom extends MessageMedia.PageBlock {
         private TLRPC.TL_pageBlockDetails parent;
     }
 
-    private class TL_pageBlockListParent extends TLRPC.PageBlock {
+    private class TL_pageBlockListParent extends MessageMedia.PageBlock {
         private TLRPC.TL_pageBlockList pageBlockList;
         private ArrayList<TL_pageBlockListItem> items = new ArrayList<>();
         private int maxNumWidth;
@@ -340,16 +355,16 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         private int level;
     }
 
-    private class TL_pageBlockListItem extends TLRPC.PageBlock {
+    private class TL_pageBlockListItem extends MessageMedia.PageBlock {
         private TL_pageBlockListParent parent;
-        private TLRPC.PageBlock blockItem;
+        private MessageMedia.PageBlock blockItem;
         private TLRPC.RichText textItem;
         private String num;
         private DrawingText numLayout;
         private int index = Integer.MAX_VALUE;
     }
 
-    private class TL_pageBlockOrderedListParent extends TLRPC.PageBlock {
+    private class TL_pageBlockOrderedListParent extends MessageMedia.PageBlock {
         private TLRPC.TL_pageBlockOrderedList pageBlockOrderedList;
         private ArrayList<TL_pageBlockOrderedListItem> items = new ArrayList<>();
         private int maxNumWidth;
@@ -358,9 +373,9 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         private int level;
     }
 
-    private class TL_pageBlockOrderedListItem extends TLRPC.PageBlock {
+    private class TL_pageBlockOrderedListItem extends MessageMedia.PageBlock {
         private TL_pageBlockOrderedListParent parent;
-        private TLRPC.PageBlock blockItem;
+        private MessageMedia.PageBlock blockItem;
         private TLRPC.RichText textItem;
         private String num;
         private DrawingText numLayout;
@@ -377,7 +392,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         public LinkPath markPath;
         public LinkPath searchPath;
         public int searchIndex = -1;
-        public TLRPC.PageBlock parentBlock;
+        public MessageMedia.PageBlock parentBlock;
         public Object parentText;
         public int x;
         public int y;
@@ -1307,7 +1322,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         popupWindow.startAnimation();
     }
 
-    private TLRPC.RichText getBlockCaption(TLRPC.PageBlock block, int type) {
+    private TLRPC.RichText getBlockCaption(MessageMedia.PageBlock block, int type) {
         if (type == 2) {
             TLRPC.RichText text1 = getBlockCaption(block, 0);
             if (text1 instanceof TLRPC.TL_textEmpty) {
@@ -1418,11 +1433,11 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return view;
     }
 
-    private boolean isListItemBlock(TLRPC.PageBlock block) {
+    private boolean isListItemBlock(MessageMedia.PageBlock block) {
         return block instanceof TL_pageBlockListItem || block instanceof TL_pageBlockOrderedListItem;
     }
 
-    private TLRPC.PageBlock getLastNonListPageBlock(TLRPC.PageBlock block) {
+    private MessageMedia.PageBlock getLastNonListPageBlock(MessageMedia.PageBlock block) {
         if (block instanceof TL_pageBlockListItem) {
             TL_pageBlockListItem blockListItem = (TL_pageBlockListItem) block;
             if (blockListItem.blockItem != null) {
@@ -1442,7 +1457,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
     }
 
     private boolean openAllParentBlocks(TL_pageBlockDetailsChild child) {
-        TLRPC.PageBlock parentBlock = getLastNonListPageBlock(child.parent);
+        MessageMedia.PageBlock parentBlock = getLastNonListPageBlock(child.parent);
         if (parentBlock instanceof TLRPC.TL_pageBlockDetails) {
             TLRPC.TL_pageBlockDetails blockDetails = (TLRPC.TL_pageBlockDetails) parentBlock;
             if (!blockDetails.open) {
@@ -1466,7 +1481,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return false;
     }
 
-    private TLRPC.PageBlock fixListBlock(TLRPC.PageBlock parentBlock, TLRPC.PageBlock childBlock) {
+    private MessageMedia.PageBlock fixListBlock(MessageMedia.PageBlock parentBlock, MessageMedia.PageBlock childBlock) {
         if (parentBlock instanceof TL_pageBlockListItem) {
             TL_pageBlockListItem blockListItem = (TL_pageBlockListItem) parentBlock;
             blockListItem.blockItem = childBlock;
@@ -1479,7 +1494,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return childBlock;
     }
 
-    private TLRPC.PageBlock wrapInTableBlock(TLRPC.PageBlock parentBlock, TLRPC.PageBlock childBlock) {
+    private MessageMedia.PageBlock wrapInTableBlock(MessageMedia.PageBlock parentBlock, MessageMedia.PageBlock childBlock) {
         if (parentBlock instanceof TL_pageBlockListItem) {
             TL_pageBlockListItem parent = (TL_pageBlockListItem) parentBlock;
 
@@ -1498,7 +1513,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return childBlock;
     }
 
-    private void updateInterfaceForCurrentPage(TLRPC.WebPage webPage, boolean previous, int order) {
+    private void updateInterfaceForCurrentPage(MessageMedia.WebPage webPage, boolean previous, int order) {
         if (webPage == null || webPage.cached_page == null) {
             return;
         }
@@ -1568,7 +1583,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             headerView.invalidate();
         }
         int index = previous ? 1 : 0;
-        TLRPC.WebPage page = previous ? pagesStack.get(pagesStack.size() - 2) : webPage;
+        MessageMedia.WebPage page = previous ? pagesStack.get(pagesStack.size() - 2) : webPage;
         adapter[index].isRtl = webPage.cached_page.rtl;
         adapter[index].cleanup();
         adapter[index].currentPage = page;
@@ -1576,7 +1591,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         int numBlocks = 0;
         int count = page.cached_page.blocks.size();
         for (int a = 0; a < count; a++) {
-            TLRPC.PageBlock block = page.cached_page.blocks.get(a);
+            MessageMedia.PageBlock block = page.cached_page.blocks.get(a);
             if (a == 0) {
                 block.first = true;
                 if (block instanceof TLRPC.TL_pageBlockCover) {
@@ -1584,7 +1599,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                     TLRPC.RichText caption = getBlockCaption(pageBlockCover, 0);
                     TLRPC.RichText credit = getBlockCaption(pageBlockCover, 1);
                     if ((caption != null && !(caption instanceof TLRPC.TL_textEmpty) || credit != null && !(credit instanceof TLRPC.TL_textEmpty)) && count > 1) {
-                        TLRPC.PageBlock next = page.cached_page.blocks.get(1);
+                        MessageMedia.PageBlock next = page.cached_page.blocks.get(1);
                         if (next instanceof TLRPC.TL_pageBlockChannel) {
                             adapter[index].channelBlock = (TLRPC.TL_pageBlockChannel) next;
                         }
@@ -1619,7 +1634,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         }
     }
 
-    private boolean addPageToStack(TLRPC.WebPage webPage, String anchor, int order) {
+    private boolean addPageToStack(MessageMedia.WebPage webPage, String anchor, int order) {
         saveCurrentPagePosition();
         pagesStack.add(webPage);
         showSearch(false);
@@ -1734,8 +1749,8 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 if (row < 0 || row >= adapter[0].blocks.size()) {
                     return false;
                 }
-                TLRPC.PageBlock originalBlock = adapter[0].blocks.get(row);
-                TLRPC.PageBlock block = getLastNonListPageBlock(originalBlock);
+                MessageMedia.PageBlock originalBlock = adapter[0].blocks.get(row);
+                MessageMedia.PageBlock block = getLastNonListPageBlock(originalBlock);
 
                 if (block instanceof TL_pageBlockDetailsChild) {
                     if (openAllParentBlocks((TL_pageBlockDetailsChild) block)) {
@@ -1931,7 +1946,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return richText;
     }
 
-    private CharSequence getText(WebpageAdapter adapter, View parentView, TLRPC.RichText parentRichText, TLRPC.RichText richText, TLRPC.PageBlock parentBlock, int maxWidth) {
+    private CharSequence getText(WebpageAdapter adapter, View parentView, TLRPC.RichText parentRichText, TLRPC.RichText richText, MessageMedia.PageBlock parentBlock, int maxWidth) {
         if (richText == null) {
             return null;
         }
@@ -2141,7 +2156,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return Theme.getColor(Theme.key_windowBackgroundWhiteGrayText);
     }
 
-    private TextPaint getTextPaint(TLRPC.RichText parentRichText, TLRPC.RichText richText, TLRPC.PageBlock parentBlock) {
+    private TextPaint getTextPaint(TLRPC.RichText parentRichText, TLRPC.RichText richText, MessageMedia.PageBlock parentBlock) {
         int flags = getTextFlags(richText);
         SparseArray<TextPaint> currentMap = null;
         int textSize = AndroidUtilities.dp(14);
@@ -2376,15 +2391,15 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return paint;
     }
 
-    private DrawingText createLayoutForText(View parentView, CharSequence plainText, TLRPC.RichText richText, int width, int textY, TLRPC.PageBlock parentBlock, Layout.Alignment align, WebpageAdapter parentAdapter) {
+    private DrawingText createLayoutForText(View parentView, CharSequence plainText, TLRPC.RichText richText, int width, int textY, MessageMedia.PageBlock parentBlock, Layout.Alignment align, WebpageAdapter parentAdapter) {
         return createLayoutForText(parentView, plainText, richText, width, 0, parentBlock, align, 0, parentAdapter);
     }
 
-    private DrawingText createLayoutForText(View parentView, CharSequence plainText, TLRPC.RichText richText, int width, int textY, TLRPC.PageBlock parentBlock, WebpageAdapter parentAdapter) {
+    private DrawingText createLayoutForText(View parentView, CharSequence plainText, TLRPC.RichText richText, int width, int textY, MessageMedia.PageBlock parentBlock, WebpageAdapter parentAdapter) {
         return createLayoutForText(parentView, plainText, richText, width, textY, parentBlock, Layout.Alignment.ALIGN_NORMAL, 0, parentAdapter);
     }
 
-    private DrawingText createLayoutForText(View parentView, CharSequence plainText, TLRPC.RichText richText, int width, int textY, TLRPC.PageBlock parentBlock, Layout.Alignment align, int maxLines, WebpageAdapter parentAdapter) {
+    private DrawingText createLayoutForText(View parentView, CharSequence plainText, TLRPC.RichText richText, int width, int textY, MessageMedia.PageBlock parentBlock, Layout.Alignment align, int maxLines, WebpageAdapter parentAdapter) {
         if (plainText == null && (richText == null || richText instanceof TLRPC.TL_textEmpty)) {
             return null;
         }
@@ -3245,8 +3260,8 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                         }));
                     }
                 } else if (position >= 0 && position < webpageAdapter.localBlocks.size()) {
-                    TLRPC.PageBlock pageBlock = webpageAdapter.localBlocks.get(position);
-                    TLRPC.PageBlock originalBlock = pageBlock;
+                    MessageMedia.PageBlock pageBlock = webpageAdapter.localBlocks.get(position);
+                    MessageMedia.PageBlock originalBlock = pageBlock;
                     pageBlock = getLastNonListPageBlock(pageBlock);
                     if (pageBlock instanceof TL_pageBlockDetailsChild) {
                         TL_pageBlockDetailsChild detailsChild = (TL_pageBlockDetailsChild) pageBlock;
@@ -3838,7 +3853,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             }
 
             @Override
-            public ArrayList<TLRPC.PageBlock> getPageBlockArr() {
+            public ArrayList<MessageMedia.PageBlock> getPageBlockArr() {
                 return imagesArr;
             }
 
@@ -4143,7 +4158,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
     private static class SearchResult {
         private int index;
         private Object text;
-        private TLRPC.PageBlock block;
+        private MessageMedia.PageBlock block;
     }
 
     private void processSearch(final String text) {
@@ -4163,14 +4178,14 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         }
         int searchIndex = ++lastSearchIndex;
         AndroidUtilities.runOnUIThread(searchRunnable = () -> {
-            HashMap<Object, TLRPC.PageBlock> copy = new HashMap<>(adapter[0].textToBlocks);
+            HashMap<Object, MessageMedia.PageBlock> copy = new HashMap<>(adapter[0].textToBlocks);
             ArrayList<Object> array = new ArrayList<>(adapter[0].textBlocks);
             searchRunnable = null;
             Utilities.searchQueue.postRunnable(() -> {
                 ArrayList<SearchResult> results = new ArrayList<>();
                 for (int b = 0, N = array.size(); b < N; b++) {
                     Object object = array.get(b);
-                    TLRPC.PageBlock block = copy.get(object);
+                    MessageMedia.PageBlock block = copy.get(object);
                     String textToSearchIn = null;
                     if (object instanceof TLRPC.RichText) {
                         TLRPC.RichText richText = (TLRPC.RichText) object;
@@ -4219,11 +4234,11 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         currentSearchIndex = index;
         updateSearchButtons();
         SearchResult result = searchResults.get(index);
-        TLRPC.PageBlock block = getLastNonListPageBlock(result.block);
+        MessageMedia.PageBlock block = getLastNonListPageBlock(result.block);
 
         int row = -1;
         for (int a = 0, N = adapter[0].blocks.size(); a < N; a++) {
-            TLRPC.PageBlock localBlock = adapter[0].blocks.get(a);
+            MessageMedia.PageBlock localBlock = adapter[0].blocks.get(a);
             if (localBlock instanceof TL_pageBlockDetailsChild) {
                 TL_pageBlockDetailsChild child = (TL_pageBlockDetailsChild) localBlock;
                 if (child.block == result.block || child.block == block) {
@@ -4236,7 +4251,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             }
         }
         for (int a = 0, N = adapter[0].localBlocks.size(); a < N; a++) {
-            TLRPC.PageBlock localBlock = adapter[0].localBlocks.get(a);
+            MessageMedia.PageBlock localBlock = adapter[0].localBlocks.get(a);
             if (localBlock == result.block || localBlock == block) {
                 row = a;
                 break;
@@ -4355,7 +4370,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return open(null, webpage, url, true);
     }
 
-    private boolean open(final MessageObject messageObject, TLRPC.WebPage webpage, String url, boolean first) {
+    private boolean open(final MessageObject messageObject, MessageMedia.WebPage webpage, String url, boolean first) {
         if (parentActivity == null || isVisible && !collapsed || messageObject == null && webpage == null) {
             return false;
         }
@@ -4429,7 +4444,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             } else {
                 req.hash = webpage.hash;
             }
-            final TLRPC.WebPage webPageFinal = webpage;
+            final MessageMedia.WebPage webPageFinal = webpage;
             final int currentAccount = UserConfig.selectedAccount;
             ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                 if (response instanceof TLRPC.TL_webPage) {
@@ -4455,7 +4470,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                         }
                     }
 
-                    LongSparseArray<TLRPC.WebPage> webpages = new LongSparseArray<>(1);
+                    LongSparseArray<MessageMedia.WebPage> webpages = new LongSparseArray<>(1);
                     webpages.put(webPage.id, webPage);
                     MessagesStorage.getInstance(currentAccount).putWebPages(webpages);
                 } else if (response instanceof TLRPC.TL_webPageNotModified) {
@@ -5085,19 +5100,19 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
     private class WebpageAdapter extends RecyclerListView.SelectionAdapter {
 
         private Context context;
-        private ArrayList<TLRPC.PageBlock> localBlocks = new ArrayList<>();
-        private ArrayList<TLRPC.PageBlock> blocks = new ArrayList<>();
-        private ArrayList<TLRPC.PageBlock> photoBlocks = new ArrayList<>();
+        private ArrayList<MessageMedia.PageBlock> localBlocks = new ArrayList<>();
+        private ArrayList<MessageMedia.PageBlock> blocks = new ArrayList<>();
+        private ArrayList<MessageMedia.PageBlock> photoBlocks = new ArrayList<>();
         private HashMap<String, Integer> anchors = new HashMap<>();
         private HashMap<String, Integer> anchorsOffset = new HashMap<>();
         private HashMap<String, TLRPC.TL_textAnchor> anchorsParent = new HashMap<>();
         private HashMap<TLRPC.TL_pageBlockAudio, MessageObject> audioBlocks = new HashMap<>();
         private ArrayList<MessageObject> audioMessages = new ArrayList<>();
-        private HashMap<Object, TLRPC.PageBlock> textToBlocks = new HashMap<>();
+        private HashMap<Object, MessageMedia.PageBlock> textToBlocks = new HashMap<>();
         private ArrayList<Object> textBlocks = new ArrayList<>();
         private HashMap<String, Integer> searchTextOffset = new HashMap<>();
 
-        private TLRPC.WebPage currentPage;
+        private MessageMedia.WebPage currentPage;
         private TLRPC.TL_pageBlockChannel channelBlock;
         private boolean isRtl;
 
@@ -5105,7 +5120,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             context = ctx;
         }
 
-        private TLRPC.Photo getPhotoWithId(long id) {
+        private MessageMedia.Photo getPhotoWithId(long id) {
             if (currentPage == null || currentPage.cached_page == null) {
                 return null;
             }
@@ -5113,7 +5128,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 return currentPage.photo;
             }
             for (int a = 0; a < currentPage.cached_page.photos.size(); a++) {
-                TLRPC.Photo photo = currentPage.cached_page.photos.get(a);
+                MessageMedia.Photo photo = currentPage.cached_page.photos.get(a);
                 if (photo.id == id) {
                     return photo;
                 }
@@ -5186,7 +5201,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             }
         }
 
-        private void addTextBlock(Object text, TLRPC.PageBlock block) {
+        private void addTextBlock(Object text, MessageMedia.PageBlock block) {
             if (text instanceof TLRPC.TL_textEmpty || textToBlocks.containsKey(text)) {
                 return;
             }
@@ -5194,7 +5209,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             textBlocks.add(text);
         }
 
-        private void setRichTextParents(TLRPC.PageBlock block) {
+        private void setRichTextParents(MessageMedia.PageBlock block) {
             if (block instanceof TLRPC.TL_pageBlockEmbedPost) {
                 TLRPC.TL_pageBlockEmbedPost blockEmbedPost = (TLRPC.TL_pageBlockEmbedPost) block;
                 setRichTextParents(null, blockEmbedPost.caption.text);
@@ -5342,8 +5357,8 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             }
         }
 
-        private void addBlock(WebpageAdapter adapter, TLRPC.PageBlock block, int level, int listLevel, int position) {
-            TLRPC.PageBlock originalBlock = block;
+        private void addBlock(WebpageAdapter adapter, MessageMedia.PageBlock block, int level, int listLevel, int position) {
+            MessageMedia.PageBlock originalBlock = block;
             if (block instanceof TL_pageBlockDetailsChild) {
                 TL_pageBlockDetailsChild blockDetailsChild = (TL_pageBlockDetailsChild) block;
                 block = blockDetailsChild.block;
@@ -5365,7 +5380,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
             if (block instanceof TLRPC.TL_pageBlockAudio) {
                 TLRPC.TL_pageBlockAudio blockAudio = (TLRPC.TL_pageBlockAudio) block;
-                TLRPC.TL_message message = new TLRPC.TL_message();
+                Message message = new Message();
                 message.out = true;
                 message.id = block.mid = -((Long) blockAudio.audio_id).hashCode();
                 message.to_id = new TLRPC.TL_peerUser();
@@ -5399,7 +5414,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 if (!pageBlockEmbedPost.blocks.isEmpty()) {
                     block.level = -1;
                     for (int b = 0; b < pageBlockEmbedPost.blocks.size(); b++) {
-                        TLRPC.PageBlock innerBlock = pageBlockEmbedPost.blocks.get(b);
+                        MessageMedia.PageBlock innerBlock = pageBlockEmbedPost.blocks.get(b);
                         if (innerBlock instanceof TLRPC.TL_pageBlockUnsupported) {
                             continue;
                         } else if (innerBlock instanceof TLRPC.TL_pageBlockAnchor) {
@@ -5505,7 +5520,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                         child.block = pageBlockListItem;
                         addBlock(adapter, child, level, listLevel + 1, position);
                     } else {
-                        TLRPC.PageBlock finalBlock;
+                        MessageMedia.PageBlock finalBlock;
                         if (b == 0) {
                             finalBlock = fixListBlock(originalBlock, pageBlockListItem);
                         } else {
@@ -5599,7 +5614,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                         child.block = pageBlockOrderedListItem;
                         addBlock(adapter, child, level, listLevel + 1, position);
                     } else {
-                        TLRPC.PageBlock finalBlock;
+                        MessageMedia.PageBlock finalBlock;
                         if (b == 0) {
                             finalBlock = fixListBlock(originalBlock, pageBlockOrderedListItem);
                         } else {
@@ -5631,10 +5646,10 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             }
         }
 
-        private void addAllMediaFromBlock(WebpageAdapter adapter, TLRPC.PageBlock block) {
+        private void addAllMediaFromBlock(WebpageAdapter adapter, MessageMedia.PageBlock block) {
             if (block instanceof TLRPC.TL_pageBlockPhoto) {
                 TLRPC.TL_pageBlockPhoto pageBlockPhoto = (TLRPC.TL_pageBlockPhoto) block;
-                TLRPC.Photo photo = getPhotoWithId(pageBlockPhoto.photo_id);
+                MessageMedia.Photo photo = getPhotoWithId(pageBlockPhoto.photo_id);
                 if (photo != null) {
                     pageBlockPhoto.thumb = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, 56, true);
                     pageBlockPhoto.thumbObject = photo;
@@ -5652,7 +5667,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 TLRPC.TL_pageBlockSlideshow slideshow = (TLRPC.TL_pageBlockSlideshow) block;
                 int count = slideshow.items.size();
                 for (int a = 0; a < count; a++) {
-                    TLRPC.PageBlock innerBlock = slideshow.items.get(a);
+                    MessageMedia.PageBlock innerBlock = slideshow.items.get(a);
                     innerBlock.groupId = lastBlockNum;
                     addAllMediaFromBlock(adapter, innerBlock);
                 }
@@ -5661,7 +5676,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 TLRPC.TL_pageBlockCollage collage = (TLRPC.TL_pageBlockCollage) block;
                 int count = collage.items.size();
                 for (int a = 0; a < count; a++) {
-                    TLRPC.PageBlock innerBlock = collage.items.get(a);
+                    MessageMedia.PageBlock innerBlock = collage.items.get(a);
                     innerBlock.groupId = lastBlockNum;
                     addAllMediaFromBlock(adapter, innerBlock);
                 }
@@ -5823,7 +5838,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             if (position < localBlocks.size()) {
-                TLRPC.PageBlock block = localBlocks.get(position);
+                MessageMedia.PageBlock block = localBlocks.get(position);
                 bindBlockToHolder(holder.getItemViewType(), holder, block, position, localBlocks.size());
             }
         }
@@ -5836,8 +5851,8 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             }
         }
 
-        private void bindBlockToHolder(int type, RecyclerView.ViewHolder holder, TLRPC.PageBlock block, int position, int total) {
-            TLRPC.PageBlock originalBlock = block;
+        private void bindBlockToHolder(int type, RecyclerView.ViewHolder holder, MessageMedia.PageBlock block, int position, int total) {
+            MessageMedia.PageBlock originalBlock = block;
             if (block instanceof TLRPC.TL_pageBlockCover) {
                 block = ((TLRPC.TL_pageBlockCover) block).cover;
             } else if (block instanceof TL_pageBlockDetailsChild) {
@@ -5993,7 +6008,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             }
         }
 
-        private int getTypeForBlock(TLRPC.PageBlock block) {
+        private int getTypeForBlock(MessageMedia.PageBlock block) {
             if (block instanceof TLRPC.TL_pageBlockParagraph) {
                 return 0;
             } else if (block instanceof TLRPC.TL_pageBlockHeader) {
@@ -6071,7 +6086,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             return getTypeForBlock(localBlocks.get(position));
         }
 
-        public TLRPC.PageBlock getItem(int position) {
+        public MessageMedia.PageBlock getItem(int position) {
             return localBlocks.get(position);
         }
 
@@ -6081,7 +6096,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         }
 
         private boolean isBlockOpened(TL_pageBlockDetailsChild child) {
-            TLRPC.PageBlock parentBlock = getLastNonListPageBlock(child.parent);
+            MessageMedia.PageBlock parentBlock = getLastNonListPageBlock(child.parent);
             if (parentBlock instanceof TLRPC.TL_pageBlockDetails) {
                 return ((TLRPC.TL_pageBlockDetails) parentBlock).open;
             } else if (parentBlock instanceof TL_pageBlockDetailsChild) {
@@ -6098,8 +6113,8 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         private void updateRows() {
             localBlocks.clear();
             for (int a = 0, size = blocks.size(); a < size; a++) {
-                TLRPC.PageBlock originalBlock = blocks.get(a);
-                TLRPC.PageBlock block = getLastNonListPageBlock(originalBlock);
+                MessageMedia.PageBlock originalBlock = blocks.get(a);
+                MessageMedia.PageBlock block = getLastNonListPageBlock(originalBlock);
                 if (block instanceof TL_pageBlockDetailsChild) {
                     TL_pageBlockDetailsChild pageBlockDetailsChild = (TL_pageBlockDetailsChild) block;
                     if (!isBlockOpened(pageBlockDetailsChild)) {
@@ -6208,7 +6223,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         private int TAG;
 
         private TLRPC.TL_pageBlockVideo currentBlock;
-        private TLRPC.PageBlock parentBlock;
+        private MessageMedia.PageBlock parentBlock;
         private Document currentDocument;
         private boolean isGif;
 
@@ -6248,7 +6263,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             requestLayout();
         }
 
-        public void setParentBlock(TLRPC.TL_pageBlockChannel channelBlock, TLRPC.PageBlock block) {
+        public void setParentBlock(TLRPC.TL_pageBlockChannel channelBlock, MessageMedia.PageBlock block) {
             parentBlock = block;
             if (channelBlock != null && parentBlock instanceof TLRPC.TL_pageBlockCover) {
                 channelCell.setBlock(channelBlock);
@@ -7060,7 +7075,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                     }
                 } else {
                     if (avatarVisible = (currentBlock.author_photo_id != 0)) {
-                        TLRPC.Photo photo = parentAdapter.getPhotoWithId(currentBlock.author_photo_id);
+                        MessageMedia.Photo photo = parentAdapter.getPhotoWithId(currentBlock.author_photo_id);
                         if (avatarVisible = (photo instanceof TLRPC.TL_photo)) {
                             avatarDrawable.setInfo(0, currentBlock.author, null);
                             PhotoSize image = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.dp(40), true);
@@ -7547,7 +7562,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                         videoView.loadVideo(null, null, null, null, false);
                         webView.setVisibility(VISIBLE);
                     } else {
-                        TLRPC.Photo thumb = currentBlock.poster_photo_id != 0 ? parentAdapter.getPhotoWithId(currentBlock.poster_photo_id) : null;
+                        MessageMedia.Photo thumb = currentBlock.poster_photo_id != 0 ? parentAdapter.getPhotoWithId(currentBlock.poster_photo_id) : null;
                         boolean handled = videoView.loadVideo(block.url, thumb, parentAdapter.currentPage, null, false);
                         if (handled) {
                             webView.setVisibility(INVISIBLE);
@@ -8064,7 +8079,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                     TLObject object = currentBlock.items.get(a);
                     if (object instanceof TLRPC.TL_pageBlockPhoto) {
                         TLRPC.TL_pageBlockPhoto pageBlockPhoto = (TLRPC.TL_pageBlockPhoto) object;
-                        TLRPC.Photo photo = parentAdapter.getPhotoWithId(pageBlockPhoto.photo_id);
+                        MessageMedia.Photo photo = parentAdapter.getPhotoWithId(pageBlockPhoto.photo_id);
                         if (photo == null) {
                             continue;
                         }
@@ -8447,7 +8462,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
                 @Override
                 public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-                    TLRPC.PageBlock pageBlock = currentBlock.items.get(currentBlock.items.size() - position - 1);
+                    MessageMedia.PageBlock pageBlock = currentBlock.items.get(currentBlock.items.size() - position - 1);
                     switch (holder.getItemViewType()) {
                         case 0: {
                             BlockPhotoCell cell = (BlockPhotoCell) holder.itemView;
@@ -8475,7 +8490,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
                 @Override
                 public int getItemViewType(int position) {
-                    TLRPC.PageBlock block = currentBlock.items.get(currentBlock.items.size() - position - 1);
+                    MessageMedia.PageBlock block = currentBlock.items.get(currentBlock.items.size() - position - 1);
                     if (block instanceof TLRPC.TL_pageBlockPhoto) {
                         return 0;
                     } else {
@@ -8661,7 +8676,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             innerListView.setAdapter(innerAdapter = new PagerAdapter() {
 
                 class ObjectContainer {
-                    private TLRPC.PageBlock block;
+                    private MessageMedia.PageBlock block;
                     private View view;
                 }
 
@@ -8690,7 +8705,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 @Override
                 public Object instantiateItem(ViewGroup container, int position) {
                     View view;
-                    TLRPC.PageBlock block = currentBlock.items.get(position);
+                    MessageMedia.PageBlock block = currentBlock.items.get(position);
                     if (block instanceof TLRPC.TL_pageBlockPhoto) {
                         view = new BlockPhotoCell(getContext(), parentAdapter, 1);
                         ((BlockPhotoCell) view).setBlock((TLRPC.TL_pageBlockPhoto) block, true, true);
@@ -9563,7 +9578,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
             int additionalHeight = AndroidUtilities.dp(SharedConfig.ivFontSize - 16);
 
-            TLRPC.Photo photo = item.photo_id != 0 ? parentAdapter.getPhotoWithId(item.photo_id) : null;
+            MessageMedia.Photo photo = item.photo_id != 0 ? parentAdapter.getPhotoWithId(item.photo_id) : null;
             if (photo != null) {
                 drawImage = true;
                 PhotoSize image = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.getPhotoSize());
@@ -10076,12 +10091,12 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         private String currentFilter;
         private PhotoSize currentPhotoObjectThumb;
         private String currentThumbFilter;
-        private TLRPC.Photo currentPhoto;
+        private MessageMedia.Photo currentPhoto;
 
         private int TAG;
 
         private TLRPC.TL_pageBlockPhoto currentBlock;
-        private TLRPC.PageBlock parentBlock;
+        private MessageMedia.PageBlock parentBlock;
 
         private MessageObject.GroupedMessagePosition groupPosition;
         private Drawable linkDrawable;
@@ -10114,7 +10129,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 linkDrawable = getResources().getDrawable(R.drawable.instant_link);
             }
             if (currentBlock != null) {
-                TLRPC.Photo photo = parentAdapter.getPhotoWithId(currentBlock.photo_id);
+                MessageMedia.Photo photo = parentAdapter.getPhotoWithId(currentBlock.photo_id);
                 if (photo != null) {
                     currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.getPhotoSize());
                 } else {
@@ -10127,7 +10142,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             requestLayout();
         }
 
-        public void setParentBlock(TLRPC.PageBlock block) {
+        public void setParentBlock(MessageMedia.PageBlock block) {
             parentBlock = block;
             if (parentAdapter.channelBlock != null && parentBlock instanceof TLRPC.TL_pageBlockCover) {
                 channelCell.setBlock(parentAdapter.channelBlock);
@@ -11530,7 +11545,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
     private ImageReceiver centerImage = new ImageReceiver();
     private ImageReceiver rightImage = new ImageReceiver();
     private int currentIndex;
-    private TLRPC.PageBlock currentMedia;
+    private MessageMedia.PageBlock currentMedia;
     private String[] currentFileNames = new String[3];
     private PlaceProviderObject currentPlaceObject;
     private ImageReceiver.BitmapHolder currentThumb;
@@ -11578,7 +11593,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
     private Scroller scroller;
     private WebpageAdapter photoAdapter;
 
-    private ArrayList<TLRPC.PageBlock> imagesArr = new ArrayList<>();
+    private ArrayList<MessageMedia.PageBlock> imagesArr = new ArrayList<>();
 
     private final static int gallery_menu_save = 1;
     private final static int gallery_menu_share = 2;
@@ -12022,8 +12037,8 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
     private String getFileName(int index) {
         TLObject media = getMedia(photoAdapter, index);
-        if (media instanceof TLRPC.Photo) {
-            media = FileLoader.getClosestPhotoSizeWithSize(((TLRPC.Photo) media).sizes, AndroidUtilities.getPhotoSize());
+        if (media instanceof MessageMedia.Photo) {
+            media = FileLoader.getClosestPhotoSizeWithSize(((MessageMedia.Photo) media).sizes, AndroidUtilities.getPhotoSize());
         }
         return FileLoader.getAttachFileName(media);
     }
@@ -12032,7 +12047,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         if (imagesArr.isEmpty() || index >= imagesArr.size() || index < 0) {
             return null;
         }
-        TLRPC.PageBlock block = imagesArr.get(index);
+        MessageMedia.PageBlock block = imagesArr.get(index);
         if (block instanceof TLRPC.TL_pageBlockPhoto) {
             return adapter.getPhotoWithId(((TLRPC.TL_pageBlockPhoto) block).photo_id);
         } else if (block instanceof TLRPC.TL_pageBlockVideo) {
@@ -12045,9 +12060,9 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         if (imagesArr.isEmpty() || index >= imagesArr.size() || index < 0) {
             return null;
         }
-        TLRPC.PageBlock block = imagesArr.get(index);
+        MessageMedia.PageBlock block = imagesArr.get(index);
         if (block instanceof TLRPC.TL_pageBlockPhoto) {
-            TLRPC.Photo photo = adapter.getPhotoWithId(((TLRPC.TL_pageBlockPhoto) block).photo_id);
+            MessageMedia.Photo photo = adapter.getPhotoWithId(((TLRPC.TL_pageBlockPhoto) block).photo_id);
             if (photo != null) {
                 PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.getPhotoSize());
                 if (sizeFull != null) {
@@ -12063,7 +12078,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return null;
     }
 
-    private boolean isVideoBlock(WebpageAdapter adapter, TLRPC.PageBlock block) {
+    private boolean isVideoBlock(WebpageAdapter adapter, MessageMedia.PageBlock block) {
         if (block instanceof TLRPC.TL_pageBlockVideo) {
             Document document = adapter.getDocumentWithId(((TLRPC.TL_pageBlockVideo) block).video_id);
             if (document != null) {
@@ -12081,7 +12096,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         if (index >= imagesArr.size() || index < 0) {
             return "image/jpeg";
         }
-        TLRPC.PageBlock block = imagesArr.get(index);
+        MessageMedia.PageBlock block = imagesArr.get(index);
         if (block instanceof TLRPC.TL_pageBlockVideo) {
             TLRPC.TL_pageBlockVideo pageBlockVideo = (TLRPC.TL_pageBlockVideo) block;
             Document document = adapter.getDocumentWithId(pageBlockVideo.video_id);
@@ -12093,8 +12108,8 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
     }
 
     private PhotoSize getFileLocation(TLObject media, int[] size) {
-        if (media instanceof TLRPC.Photo) {
-            TLRPC.Photo photo = (TLRPC.Photo) media;
+        if (media instanceof MessageMedia.Photo) {
+            MessageMedia.Photo photo = (MessageMedia.Photo) media;
             PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(photo.sizes, AndroidUtilities.getPhotoSize());
             if (sizeFull != null) {
                 size[0] = sizeFull.size;
@@ -12179,7 +12194,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
                 closePhoto(false);
                 return;
             }
-            TLRPC.PageBlock newMedia = imagesArr.get(currentIndex);
+            MessageMedia.PageBlock newMedia = imagesArr.get(currentIndex);
             sameImage = currentMedia != null && currentMedia == newMedia;
             currentMedia = newMedia;
             isVideo = isMediaVideo(photoAdapter, currentIndex);
@@ -12422,8 +12437,8 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         PhotoSize fileLocation = getFileLocation(media, size);
 
         if (fileLocation != null) {
-            if (media instanceof TLRPC.Photo) {
-                TLRPC.Photo photo = (TLRPC.Photo) media;
+            if (media instanceof MessageMedia.Photo) {
+                MessageMedia.Photo photo = (MessageMedia.Photo) media;
                 ImageReceiver.BitmapHolder placeHolder = null;
                 if (currentThumb != null && imageReceiver == centerImage) {
                     placeHolder = currentThumb;
@@ -12456,7 +12471,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         }
     }
 
-    public boolean isShowingImage(TLRPC.PageBlock object) {
+    public boolean isShowingImage(MessageMedia.PageBlock object) {
         return isPhotoVisible && !disableShowCheck && object != null && currentMedia == object;
     }
 
@@ -12473,7 +12488,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return photoAnimationInProgress != 0;
     }
 
-    public boolean openPhoto(TLRPC.PageBlock block, WebpageAdapter adapter) {
+    public boolean openPhoto(MessageMedia.PageBlock block, WebpageAdapter adapter) {
         if (pageSwitchAnimation != null || parentActivity == null || isPhotoVisible || checkPhotoAnimation() || block == null) {
             return false;
         }
@@ -13521,7 +13536,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return false;
     }
 
-    private ImageReceiver getImageReceiverView(View view, TLRPC.PageBlock pageBlock, int[] coords) {
+    private ImageReceiver getImageReceiverView(View view, MessageMedia.PageBlock pageBlock, int[] coords) {
         if (view instanceof BlockPhotoCell) {
             BlockPhotoCell cell = (BlockPhotoCell) view;
             if (cell.currentBlock == pageBlock) {
@@ -13564,7 +13579,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return null;
     }
 
-    private ImageReceiver getImageReceiverFromListView(ViewGroup listView, TLRPC.PageBlock pageBlock, int[] coords) {
+    private ImageReceiver getImageReceiverFromListView(ViewGroup listView, MessageMedia.PageBlock pageBlock, int[] coords) {
         int count = listView.getChildCount();
         for (int a = 0; a < count; a++) {
             ImageReceiver imageReceiver = getImageReceiverView(listView.getChildAt(a), pageBlock, coords);
@@ -13575,7 +13590,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return null;
     }
 
-    private PlaceProviderObject getPlaceForPhoto(TLRPC.PageBlock pageBlock) {
+    private PlaceProviderObject getPlaceForPhoto(MessageMedia.PageBlock pageBlock) {
         ImageReceiver imageReceiver = getImageReceiverFromListView(listView[0], pageBlock, coords);
         if (imageReceiver == null) {
             return null;

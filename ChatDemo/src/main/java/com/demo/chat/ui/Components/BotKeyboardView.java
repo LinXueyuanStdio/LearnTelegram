@@ -9,6 +9,9 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.Emoji;
+import com.demo.chat.model.bot.KeyboardButton;
+import com.demo.chat.model.reply.ReplyMarkup;
 import com.demo.chat.theme.Theme;
 
 import java.util.ArrayList;
@@ -23,7 +26,7 @@ import java.util.ArrayList;
 public class BotKeyboardView extends LinearLayout {
 
     private LinearLayout container;
-    private TLRPC.TL_replyKeyboardMarkup botButtons;
+    private ReplyMarkup botButtons;
     private BotKeyboardViewDelegate delegate;
     private int panelHeight;
     private boolean isFullSize;
@@ -32,7 +35,7 @@ public class BotKeyboardView extends LinearLayout {
     private ScrollView scrollView;
 
     public interface BotKeyboardViewDelegate {
-        void didPressedButton(TLRPC.KeyboardButton button);
+        void didPressedButton(KeyboardButton button);
     }
 
     public BotKeyboardView(Context context) {
@@ -81,7 +84,7 @@ public class BotKeyboardView extends LinearLayout {
         return isFullSize;
     }
 
-    public void setButtons(TLRPC.TL_replyKeyboardMarkup buttons) {
+    public void setButtons(ReplyMarkup buttons) {
         botButtons = buttons;
         container.removeAllViews();
         buttonViews.clear();
@@ -91,7 +94,7 @@ public class BotKeyboardView extends LinearLayout {
             isFullSize = !buttons.resize;
             buttonHeight = !isFullSize ? 42 : (int) Math.max(42, (panelHeight - AndroidUtilities.dp(30) - (botButtons.rows.size() - 1) * AndroidUtilities.dp(10)) / botButtons.rows.size() / AndroidUtilities.density);
             for (int a = 0; a < buttons.rows.size(); a++) {
-                TLRPC.TL_keyboardButtonRow row = buttons.rows.get(a);
+                ReplyMarkup.KeyboardButtonRow row = buttons.rows.get(a);
 
                 LinearLayout layout = new LinearLayout(getContext());
                 layout.setOrientation(LinearLayout.HORIZONTAL);
@@ -99,7 +102,7 @@ public class BotKeyboardView extends LinearLayout {
 
                 float weight = 1.0f / row.buttons.size();
                 for (int b = 0; b < row.buttons.size(); b++) {
-                    TLRPC.KeyboardButton button = row.buttons.get(b);
+                    KeyboardButton button = row.buttons.get(b);
                     TextView textView = new TextView(getContext());
                     textView.setTag(button);
                     textView.setTextColor(Theme.getColor(Theme.key_chat_botKeyboardButtonText));
@@ -109,7 +112,7 @@ public class BotKeyboardView extends LinearLayout {
                     textView.setPadding(AndroidUtilities.dp(4), 0, AndroidUtilities.dp(4), 0);
                     textView.setText(Emoji.replaceEmoji(button.text, textView.getPaint().getFontMetricsInt(), AndroidUtilities.dp(16), false));
                     layout.addView(textView, LayoutHelper.createLinear(0, LayoutHelper.MATCH_PARENT, weight, 0, 0, b != row.buttons.size() - 1 ? 10 : 0, 0));
-                    textView.setOnClickListener(v -> delegate.didPressedButton((TLRPC.KeyboardButton) v.getTag()));
+                    textView.setOnClickListener(v -> delegate.didPressedButton((KeyboardButton) v.getTag()));
                     buttonViews.add(textView);
                 }
             }

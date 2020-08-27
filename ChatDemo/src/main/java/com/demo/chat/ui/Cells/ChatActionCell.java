@@ -6,7 +6,6 @@ import android.graphics.Canvas;
 import android.graphics.ColorFilter;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
-import android.provider.Browser;
 import android.text.Layout;
 import android.text.Spannable;
 import android.text.StaticLayout;
@@ -22,7 +21,12 @@ import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.ImageLocation;
+import com.demo.chat.messager.browser.Browser;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.bot.KeyboardButton;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
@@ -48,7 +52,7 @@ public class ChatActionCell extends BaseCell {
         default void needOpenUserProfile(int uid) {
         }
 
-        default void didPressBotButton(MessageObject messageObject, TLRPC.KeyboardButton button) {
+        default void didPressBotButton(MessageObject messageObject, KeyboardButton button) {
         }
 
         default void didPressReplyMessage(ChatActionCell cell, int id) {
@@ -145,17 +149,8 @@ public class ChatActionCell extends BaseCell {
         previousWidth = 0;
         if (currentMessageObject.type == 11) {
             int id = 0;
-            if (messageObject.messageOwner.to_id != null) {
-                if (messageObject.messageOwner.to_id.chat_id != 0) {
-                    id = messageObject.messageOwner.to_id.chat_id;
-                } else if (messageObject.messageOwner.to_id.channel_id != 0) {
-                    id = messageObject.messageOwner.to_id.channel_id;
-                } else {
-                    id = messageObject.messageOwner.to_id.user_id;
-                    if (id == UserConfig.getInstance(currentAccount).getClientUserId()) {
-                        id = messageObject.messageOwner.from_id;
-                    }
-                }
+            if (messageObject.messageOwner.to_id != 0) {
+                id = messageObject.messageOwner.to_id;
             }
             avatarDrawable.setInfo(id, null, null);
             if (currentMessageObject.messageOwner.action instanceof TLRPC.TL_messageActionUserUpdatedPhoto) {
@@ -359,9 +354,9 @@ public class ChatActionCell extends BaseCell {
         CharSequence text;
         if (currentMessageObject != null) {
             if (currentMessageObject.messageOwner != null && currentMessageObject.messageOwner.media != null && currentMessageObject.messageOwner.media.ttl_seconds != 0) {
-                if (currentMessageObject.messageOwner.media.photo instanceof TLRPC.TL_photoEmpty) {
+                if (currentMessageObject.messageOwner.media.photo instanceof MessageMedia.Photo) {
                     text = LocaleController.getString("AttachPhotoExpired", R.string.AttachPhotoExpired);
-                } else if (currentMessageObject.messageOwner.media.document instanceof TLRPC.TL_documentEmpty) {
+                } else if (currentMessageObject.messageOwner.media.document instanceof Document) {
                     text = LocaleController.getString("AttachVideoExpired", R.string.AttachVideoExpired);
                 } else {
                     text = currentMessageObject.messageText;
