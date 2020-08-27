@@ -28,10 +28,16 @@ public class Document extends Media {
     public ArrayList<PhotoSize> thumbs = new ArrayList<>();
     public ArrayList<VideoSize> video_thumbs = new ArrayList<>();
     public ArrayList<DocumentAttribute> attributes = new ArrayList<>();
+    public static class MaskCoords{
 
+        public int n;
+        public double x;
+        public double y;
+        public double zoom;
+    }
     public static class DocumentAttribute {
         public InputStickerSet stickerset;
-        public TL_maskCoords mask_coords;
+        public MaskCoords mask_coords;
         public String alt;
         public int duration;
         public int flags;

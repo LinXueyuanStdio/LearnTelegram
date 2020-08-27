@@ -38,7 +38,6 @@ import android.widget.TextView;
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
 import com.demo.chat.alerts.AlertsCreator;
-import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
@@ -2581,65 +2580,65 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
             if (uid == 0) {
                 return;
             }
-            if (reqId != 0) {
-                ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
-                reqId = 0;
-                searchesInProgress--;
-            }
+//            if (reqId != 0) {
+//                ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
+//                reqId = 0;//TODO 取消请求
+//                searchesInProgress--;
+//            }
             if (query == null || query.length() == 0) {
                 globalSearch.clear();
                 lastReqId = 0;
                 notifyDataSetChanged();
                 return;
             }
-            TLRPC.TL_messages_search req = new TLRPC.TL_messages_search();
-            req.limit = 50;
-            req.offset_id = max_id;
-            if (currentType == 1) {
-                req.filter = new TLRPC.TL_inputMessagesFilterDocument();
-            } else if (currentType == 3) {
-                req.filter = new TLRPC.TL_inputMessagesFilterUrl();
-            } else if (currentType == 4) {
-                req.filter = new TLRPC.TL_inputMessagesFilterMusic();
-            }
-            req.q = query;
-            req.peer = MessagesController.getInstance(currentAccount).getInputPeer(uid);
-            if (req.peer == null) {
-                return;
-            }
-            final int currentReqId = ++lastReqId;
-            searchesInProgress++;
-            reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-                final ArrayList<MessageObject> messageObjects = new ArrayList<>();
-                if (error == null) {
-                    TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
-                    for (int a = 0; a < res.messages.size(); a++) {
-                        TLRPC.Message message = res.messages.get(a);
-                        if (max_id != 0 && message.id > max_id) {
-                            continue;
-                        }
-                        messageObjects.add(new MessageObject(currentAccount, message, false));
-                    }
-                }
-                AndroidUtilities.runOnUIThread(() -> {
-                    if (reqId != 0) {
-                        if (currentReqId == lastReqId) {
-                            globalSearch = messageObjects;
-                            searchesInProgress--;
-                            int count = getItemCount();
-                            notifyDataSetChanged();
-                            for (int a = 0; a < mediaPages.length; a++) {
-                                if (mediaPages[a].listView.getAdapter() == this && count == 0 && actionBar.getTranslationY() != 0) {
-                                    mediaPages[a].layoutManager.scrollToPositionWithOffset(0, (int) actionBar.getTranslationY());
-                                    break;
-                                }
-                            }
-                        }
-                        reqId = 0;
-                    }
-                });
-            }, ConnectionsManager.RequestFlagFailOnServerErrors);
-            ConnectionsManager.getInstance(currentAccount).bindRequestToGuid(reqId, classGuid);
+//            TLRPC.TL_messages_search req = new TLRPC.TL_messages_search();
+//            req.limit = 50;TODO 发起请求
+//            req.offset_id = max_id;
+//            if (currentType == 1) {
+//                req.filter = new TLRPC.TL_inputMessagesFilterDocument();
+//            } else if (currentType == 3) {
+//                req.filter = new TLRPC.TL_inputMessagesFilterUrl();
+//            } else if (currentType == 4) {
+//                req.filter = new TLRPC.TL_inputMessagesFilterMusic();
+//            }
+//            req.q = query;
+//            req.peer = MessagesController.getInstance(currentAccount).getInputPeer(uid);
+//            if (req.peer == null) {
+//                return;
+//            }
+//            final int currentReqId = ++lastReqId;
+//            searchesInProgress++;
+//            reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
+//                final ArrayList<MessageObject> messageObjects = new ArrayList<>();
+//                if (error == null) {
+//                    TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
+//                    for (int a = 0; a < res.messages.size(); a++) {
+//                        TLRPC.Message message = res.messages.get(a);
+//                        if (max_id != 0 && message.id > max_id) {
+//                            continue;
+//                        }
+//                        messageObjects.add(new MessageObject(currentAccount, message, false));
+//                    }
+//                }
+//                AndroidUtilities.runOnUIThread(() -> {
+//                    if (reqId != 0) {
+//                        if (currentReqId == lastReqId) {
+//                            globalSearch = messageObjects;
+//                            searchesInProgress--;
+//                            int count = getItemCount();
+//                            notifyDataSetChanged();
+//                            for (int a = 0; a < mediaPages.length; a++) {
+//                                if (mediaPages[a].listView.getAdapter() == this && count == 0 && actionBar.getTranslationY() != 0) {
+//                                    mediaPages[a].layoutManager.scrollToPositionWithOffset(0, (int) actionBar.getTranslationY());
+//                                    break;
+//                                }
+//                            }
+//                        }
+//                        reqId = 0;
+//                    }
+//                });
+//            }, ConnectionsManager.RequestFlagFailOnServerErrors);
+//            ConnectionsManager.getInstance(currentAccount).bindRequestToGuid(reqId, classGuid);
         }
 
         public void search(final String query) {
@@ -2651,11 +2650,11 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
                 if (!searchResult.isEmpty() || !globalSearch.isEmpty() || searchesInProgress != 0) {
                     searchResult.clear();
                     globalSearch.clear();
-                    if (reqId != 0) {
-                        ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
-                        reqId = 0;
-                        searchesInProgress--;
-                    }
+//                    if (reqId != 0) {
+//                        ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
+//                        reqId = 0;//TODO 取消请求
+//                        searchesInProgress--;
+//                    }
                 }
                 notifyDataSetChanged();
             } else {

@@ -2608,8 +2608,6 @@ public class ImageLoader {
             } else if (object.webFile != null) {
                 String defaultExt = FileLoader.getMimeTypePart(object.webFile.mime_type);
                 url = url + "." + getHttpUrlExtension(object.webFile.url, defaultExt);
-            } else if (object.secureDocument != null) {
-                url = url + "." + ext;
             } else if (object.document != null) {
                 if (a == 0 && qualityThumb) {
                     key = "q_" + key;

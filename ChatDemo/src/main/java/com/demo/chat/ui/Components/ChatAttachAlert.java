@@ -88,10 +88,15 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
 
     public interface ChatAttachViewDelegate {
         void didPressedButton(int button, boolean arg, boolean notify, int scheduleDate);
+
         View getRevealView();
+
         void didSelectBot(User user);
+
         void onCameraOpened();
+
         void needEnterComment();
+
         void doOnIdle(Runnable runnable);
     }
 
@@ -2211,7 +2216,9 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     position -= buttonsCount;
                     AttachBotButton child = (AttachBotButton) holder.itemView;
                     child.setTag(position);
-                    child.setUser(MessagesController.getInstance(currentAccount).getUser(MediaDataController.getInstance(currentAccount).inlineBots.get(position).peer.user_id));
+                    int user_id = MediaDataController.getInstance(currentAccount).inlineBots.get(position).peer.user_id;
+                    User user = MessagesController.getInstance(currentAccount).getUser(user_id);
+                    child.setUser(user);
                     break;
             }
         }

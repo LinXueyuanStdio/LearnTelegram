@@ -1383,7 +1383,7 @@ public class PhotoPaintView extends FrameLayout implements EntityView.EntityView
     }
 
     private StickerPosition calculateStickerPosition(Document document) {
-        TLRPC.TL_maskCoords maskCoords = null;
+        MaskCoords maskCoords = null;
 
         for (int a = 0; a < document.attributes.size(); a++) {
             Document.DocumentAttribute attribute = document.attributes.get(a);
@@ -1425,7 +1425,7 @@ public class PhotoPaintView extends FrameLayout implements EntityView.EntityView
         }
     }
 
-    private PhotoFace getRandomFaceWithVacantAnchor(int anchor, long documentId, TLRPC.TL_maskCoords maskCoords) {
+    private PhotoFace getRandomFaceWithVacantAnchor(int anchor, long documentId, MaskCoords maskCoords) {
         if (anchor < 0 || anchor > 3 || faces.isEmpty()) {
             return null;
         }
@@ -1445,7 +1445,7 @@ public class PhotoPaintView extends FrameLayout implements EntityView.EntityView
         return selectedFace;
     }
 
-    private boolean isFaceAnchorOccupied(PhotoFace face, int anchor, long documentId, TLRPC.TL_maskCoords maskCoords) {
+    private boolean isFaceAnchorOccupied(PhotoFace face, int anchor, long documentId, MaskCoords maskCoords) {
         Point anchorPoint = face.getPointForAnchor(anchor);
         if (anchorPoint == null) {
             return true;

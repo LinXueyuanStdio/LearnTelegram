@@ -5233,10 +5233,10 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         if (audioToSend != null || videoToSendMessageObject != null || editingMessageObject == messageObject) {
             return;
         }
-        if (editingMessageReqId != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(editingMessageReqId, true);
-            editingMessageReqId = 0;
-        }
+//        if (editingMessageReqId != 0) {
+//            ConnectionsManager.getInstance(currentAccount).cancelRequest(editingMessageReqId, true);
+//            editingMessageReqId = 0;
+//        }TODO 取消发送
         editingMessageObject = messageObject;
         editingCaption = caption;
         if (editingMessageObject != null) {
@@ -6750,12 +6750,11 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     Message message = new Message();
                     message.out = true;
                     message.id = 0;
-                    message.to_id = new TLRPC.TL_peerUser();
-                    message.to_id.user_id = message.from_id = UserConfig.getInstance(currentAccount).getClientUserId();
+                    message.to_id = message.from_id = UserConfig.getInstance(currentAccount).getClientUserId();
                     message.date = (int) (System.currentTimeMillis() / 1000);
                     message.message = "";
                     message.attachPath = audioToSendPath;
-                    message.media = new TLRPC.TL_messageMediaDocument();
+                    message.media = new MessageMedia().setDocument(true);
                     message.media.flags |= 3;
                     message.media.document = audioToSend;
                     message.flags |= Message.MESSAGE_FLAG_HAS_MEDIA | Message.MESSAGE_FLAG_HAS_FROM_ID;

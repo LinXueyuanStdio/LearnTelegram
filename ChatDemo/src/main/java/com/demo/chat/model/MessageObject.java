@@ -1718,51 +1718,8 @@ public class MessageObject {
         return !ChatObject.isActionBanned(chat, ChatObject.ACTION_SEND_STICKERS);
     }
 
-    public void generateGameMessageText(User fromUser) {
-        if (fromUser == null) {
-            if (messageOwner.from_id > 0) {
-                fromUser = MessagesController.getInstance(currentAccount).getUser(messageOwner.from_id);
-            }
-        }
-        TLRPC.TL_game game = null;
-        if (replyMessageObject != null && replyMessageObject.messageOwner.media != null && replyMessageObject.messageOwner.media.game != null) {
-            game = replyMessageObject.messageOwner.media.game;
-        }
-        if (game == null) {
-            if (fromUser != null && fromUser.id == UserConfig.getInstance(currentAccount).getClientUserId()) {
-                messageText = LocaleController.formatString("ActionYouScored", R.string.ActionYouScored, LocaleController.formatPluralString("Points", messageOwner.action.score));
-            } else {
-                messageText = replaceWithLink(LocaleController.formatString("ActionUserScored", R.string.ActionUserScored, LocaleController.formatPluralString("Points", messageOwner.action.score)), "un1", fromUser);
-            }
-        } else {
-            if (fromUser != null && fromUser.id == UserConfig.getInstance(currentAccount).getClientUserId()) {
-                messageText = LocaleController.formatString("ActionYouScoredInGame", R.string.ActionYouScoredInGame, LocaleController.formatPluralString("Points", messageOwner.action.score));
-            } else {
-                messageText = replaceWithLink(LocaleController.formatString("ActionUserScoredInGame", R.string.ActionUserScoredInGame, LocaleController.formatPluralString("Points", messageOwner.action.score)), "un1", fromUser);
-            }
-            messageText = replaceWithLink(messageText, "un2", game);
-        }
-    }
-
     public boolean hasValidReplyMessageObject() {
         return !(replyMessageObject == null || replyMessageObject.messageOwner instanceof TLRPC.TL_messageEmpty || replyMessageObject.messageOwner.action instanceof TLRPC.TL_messageActionHistoryClear);
-    }
-
-    public void generatePaymentSentMessageText(User fromUser) {
-        if (fromUser == null) {
-            fromUser = MessagesController.getInstance(currentAccount).getUser((int) getDialogId());
-        }
-        String name;
-        if (fromUser != null) {
-            name = UserObject.getFirstName(fromUser);
-        } else {
-            name = "";
-        }
-        if (replyMessageObject != null && replyMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaInvoice) {
-            messageText = LocaleController.formatString("PaymentSuccessfullyPaid", R.string.PaymentSuccessfullyPaid, LocaleController.getInstance().formatCurrencyString(messageOwner.action.total_amount, messageOwner.action.currency), name, replyMessageObject.messageOwner.media.title);
-        } else {
-            messageText = LocaleController.formatString("PaymentSuccessfullyPaidNoItem", R.string.PaymentSuccessfullyPaidNoItem, LocaleController.getInstance().formatCurrencyString(messageOwner.action.total_amount, messageOwner.action.currency), name);
-        }
     }
 
     public void generatePinMessageText(User fromUser, Chat chat) {

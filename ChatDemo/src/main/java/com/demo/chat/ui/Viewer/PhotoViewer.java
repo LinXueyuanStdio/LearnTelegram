@@ -8,7 +8,6 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -94,6 +93,7 @@ import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
 import com.demo.chat.alerts.AlertsCreator;
 import com.demo.chat.controller.ConnectionsManager;
+import com.demo.chat.controller.DownloadController;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
@@ -121,15 +121,20 @@ import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.model.small.Media;
+import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.small.WebDocument;
+import com.demo.chat.model.small.WebFile;
 import com.demo.chat.receiver.ImageReceiver;
+import com.demo.chat.service.BringAppForegroundService;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
 import com.demo.chat.ui.ActionBar.ActionBarMenu;
 import com.demo.chat.ui.ActionBar.ActionBarMenuItem;
 import com.demo.chat.ui.ActionBar.ActionBarMenuSubItem;
 import com.demo.chat.ui.ActionBar.ActionBarPopupWindow;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.ActionBar.BottomSheet;
 import com.demo.chat.ui.ActionBar.SimpleTextView;
 import com.demo.chat.ui.Adapters.MentionsAdapter;
@@ -143,6 +148,7 @@ import com.demo.chat.ui.Components.CheckBox;
 import com.demo.chat.ui.Components.ClippingImageView;
 import com.demo.chat.ui.Components.CombinedDrawable;
 import com.demo.chat.ui.Components.FadingTextViewLayout;
+import com.demo.chat.ui.Components.FilterShaders;
 import com.demo.chat.ui.Components.GestureDetector2;
 import com.demo.chat.ui.Components.GroupedPhotosListView;
 import com.demo.chat.ui.Components.LayoutHelper;
@@ -161,6 +167,7 @@ import com.demo.chat.ui.Components.StickersAlert;
 import com.demo.chat.ui.Components.TextViewSwitcher;
 import com.demo.chat.ui.Components.Tooltip;
 import com.demo.chat.ui.Components.URLSpanNoUnderline;
+import com.demo.chat.ui.Components.VideoEditTextureView;
 import com.demo.chat.ui.Components.VideoForwardDrawable;
 import com.demo.chat.ui.Components.VideoPlayer;
 import com.demo.chat.ui.Components.VideoPlayerSeekBar;
@@ -3247,22 +3254,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                                     setImageIndex(index);
                                 }
                             }
-                        } else if (!secureDocuments.isEmpty()) {
-                            if (placeProvider == null) {
-                                return;
-                            }
-                            secureDocuments.remove(currentIndex);
-                            placeProvider.deleteImageAtIndex(currentIndex);
-                            if (secureDocuments.isEmpty()) {
-                                closePhoto(false, false);
-                            } else {
-                                int index = currentIndex;
-                                if (index >= secureDocuments.size()) {
-                                    index = secureDocuments.size() - 1;
-                                }
-                                currentIndex = -1;
-                                setImageIndex(index);
-                            }
                         }
                     });
                     builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
@@ -3425,7 +3416,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
 
             @Override
-            public ArrayList<TLRPC.PageBlock> getPageBlockArr() {
+            public ArrayList<MessageMedia.PageBlock> getPageBlockArr() {
                 return null;
             }
 
@@ -4977,7 +4968,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     }
 
     private boolean supportsSendingNewEntities() {
-        return parentChatActivity != null && (parentChatActivity.currentEncryptedChat == null || AndroidUtilities.getPeerLayerVersion(parentChatActivity.currentEncryptedChat.layer) >= 101);
+        return parentChatActivity != null;
     }
 
     private void closeCaptionEnter(boolean apply) {
@@ -6942,13 +6933,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         if (index < 0) {
             return null;
         }
-        if (!secureDocuments.isEmpty()) {
-            if (index >= secureDocuments.size()) {
-                return null;
-            }
-            SecureDocument location = secureDocuments.get(index);
-            return location.secureFile.dc_id + "_" + location.secureFile.id + ".jpg";
-        } else if (!imagesArrLocations.isEmpty() || !imagesArr.isEmpty()) {
+        if (!imagesArrLocations.isEmpty() || !imagesArr.isEmpty()) {
             if (!imagesArrLocations.isEmpty()) {
                 if (index >= imagesArrLocations.size()) {
                     return null;
@@ -6979,7 +6964,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 }  else if (botInlineResult.photo != null) {
                     PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(botInlineResult.photo.sizes, AndroidUtilities.getPhotoSize());
                     return FileLoader.getAttachFileName(sizeFull);
-                } else if (botInlineResult.content instanceof TLRPC.TL_webDocument) {
+                } else if (botInlineResult.content instanceof WebDocument) {
                     return Utilities.MD5(botInlineResult.content.url) + "." + ImageLoader.getHttpUrlExtension(botInlineResult.content.url, FileLoader.getMimeTypePart(botInlineResult.content.mime_type));
                 }
             }
@@ -6991,15 +6976,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         if (index < 0) {
             return null;
         }
-        if (!secureDocuments.isEmpty()) {
-            if (index >= secureDocuments.size()) {
-                return null;
-            }
-            if (size != null) {
-                size[0] = secureDocuments.get(index).secureFile.size;
-            }
-            return ImageLocation.getForSecureDocument(secureDocuments.get(index));
-        } else if (!imagesArrLocations.isEmpty()) {
+        if (!imagesArrLocations.isEmpty()) {
             if (index >= imagesArrLocations.size()) {
                 return null;
             }
@@ -7072,15 +7049,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         if (index < 0) {
             return null;
         }
-        if (!secureDocuments.isEmpty()) {
-            if (index >= secureDocuments.size()) {
-                return null;
-            }
-            if (size != null) {
-                size[0] = secureDocuments.get(index).secureFile.size;
-            }
-            return secureDocuments.get(index);
-        } else if (!imagesArrLocations.isEmpty()) {
+        if (!imagesArrLocations.isEmpty()) {
             if (index >= imagesArrLocations.size()) {
                 return null;
             }
@@ -7177,7 +7146,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         }
     }
 
-    private void onPhotoShow(final MessageObject messageObject, final FileLocation fileLocation, ImageLocation imageLocation, final ArrayList<MessageObject> messages, final ArrayList<SecureDocument> documents, final ArrayList<Object> photos, int index, final PlaceProviderObject object) {
+    private void onPhotoShow(final MessageObject messageObject, final FileLocation fileLocation, ImageLocation imageLocation, final ArrayList<MessageObject> messages, final ArrayList<Object> photos, int index, final PlaceProviderObject object) {
         classGuid = ConnectionsManager.generateClassGuid();
         currentMessageObject = null;
         currentFileLocation = null;
@@ -7207,7 +7176,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         imagesArrLocations.clear();
         imagesArrLocationsSizes.clear();
         avatarsArr.clear();
-        secureDocuments.clear();
         imagesArrLocals.clear();
         for (int a = 0; a < 2; a++) {
             imagesByIds[a].clear();
@@ -7366,9 +7334,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 }
                 setImageIndex(0);
             }
-        } else if (documents != null) {
-            secureDocuments.addAll(documents);
-            setImageIndex(index);
         } else if (fileLocation != null) {
             avatarsDialogId = object.dialogId;
             if (imageLocation == null) {
@@ -7723,13 +7688,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 }
             }
             groupedPhotosListView.fillList();
-        } else if (!secureDocuments.isEmpty()) {
-            allowShare = false;
-            menuItem.hideSubItem(gallery_menu_save);
-            nameTextView.setText("");
-            dateTextView.setText("");
-            actionBar.setTitle(LocaleController.formatString("Of", R.string.Of, switchingToIndex + 1, secureDocuments.size()));
-        } else if (!imagesArrLocations.isEmpty()) {
+       } else if (!imagesArrLocations.isEmpty()) {
             if (index < 0 || index >= imagesArrLocations.size()) {
                 return;
             }
@@ -7972,12 +7931,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     setDoubleTapEnabled(false);
                 }
             }
-        } else if (!secureDocuments.isEmpty()) {
-            if (index < 0 || index >= secureDocuments.size()) {
-                closePhoto(false, false);
-                return;
-            }
-            currentSecureDocument = secureDocuments.get(index);
         } else if (!imagesArrLocations.isEmpty()) {
             if (index < 0 || index >= imagesArrLocations.size()) {
                 closePhoto(false, false);
@@ -8474,13 +8427,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 }
                 ImageLocation location = imagesArrLocations.get(index);
                 f1 = FileLoader.getPathToAttach(location.location, avatarsDialogId != 0 || isEvent);
-            } else if (currentSecureDocument != null) {
-                if (index < 0 || index >= secureDocuments.size()) {
-                    photoProgressViews[a].setBackgroundState(PROGRESS_NONE, animated);
-                    return;
-                }
-                SecureDocument location = secureDocuments.get(index);
-                f1 = FileLoader.getPathToAttach(location, true);
             } else if (currentPathObject != null) {
                 f1 = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_DOCUMENT), currentFileNames[a]);
                 f2 = new File(FileLoader.getDirectory(FileLoader.MEDIA_DIR_CACHE), currentFileNames[a]);
@@ -8573,22 +8519,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
     private void setIndexToImage(ImageReceiver imageReceiver, int index) {
         imageReceiver.setOrientation(0, false);
-        if (!secureDocuments.isEmpty()) {
-            if (index >= 0 && index < secureDocuments.size()) {
-                Object object = secureDocuments.get(index);
-                int size = (int) (AndroidUtilities.getPhotoSize() / AndroidUtilities.density);
-                ImageReceiver.BitmapHolder placeHolder = null;
-                if (currentThumb != null && imageReceiver == centerImage) {
-                    placeHolder = currentThumb;
-                }
-                if (placeHolder == null) {
-                    placeHolder = placeProvider.getThumbForPhoto(null, null, index);
-                }
-                SecureDocument document = secureDocuments.get(index);
-                int imageSize = document.secureFile.size;
-                imageReceiver.setImage(ImageLocation.getForSecureDocument(document), "d", null, null, placeHolder != null ? new BitmapDrawable(placeHolder.bitmap) : null, imageSize, null, null, 0);
-            }
-        } else if (!imagesArrLocals.isEmpty()) {
+        if (!imagesArrLocals.isEmpty()) {
             if (index >= 0 && index < imagesArrLocals.size()) {
                 Object object = imagesArrLocals.get(index);
                 int size = (int) (AndroidUtilities.getPhotoSize() / AndroidUtilities.density);

@@ -32,7 +32,6 @@ import android.widget.FrameLayout;
 import android.widget.Scroller;
 
 import com.demo.chat.R;
-import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.UserConfig;
@@ -742,7 +741,7 @@ public class SecretMediaViewer implements NotificationCenter.NotificationCenterD
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.messagesDeleted);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.updateMessageMedia);
         NotificationCenter.getInstance(currentAccount).addObserver(this, NotificationCenter.didCreatedNewDeleteTask);
-        currentChannelId = messageObject.messageOwner.to_id != null ? messageObject.messageOwner.to_id.channel_id : 0;
+        currentChannelId = messageObject.messageOwner.to_id;
         toggleActionBar(true, false);
 
         currentMessageObject = messageObject;

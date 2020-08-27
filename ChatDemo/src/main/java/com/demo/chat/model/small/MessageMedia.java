@@ -133,4 +133,8 @@ public class MessageMedia {
         public PhotoSize thumb; //custom
         public Media thumbObject; //custom
     }
+
+    public MessageMedia setDocument(boolean isDocument){return this;}
+    public boolean isDocument(){return false;}
+//    public boolean is(){return false;}
 }

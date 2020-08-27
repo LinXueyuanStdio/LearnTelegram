@@ -396,10 +396,6 @@ public class UndoView extends FrameLayout {
                 MessagesController.DialogFilter filter = (MessagesController.DialogFilter) infoObject2;
                 if (did != 0) {
                     int lowerId = (int) did;
-                    if (lowerId == 0) {
-                        TLRPC.EncryptedChat encryptedChat = MessagesController.getInstance(currentAccount).getEncryptedChat((int) (did >> 32));
-                        lowerId = encryptedChat.user_id;
-                    }
                     if (lowerId > 0) {
                         User user = MessagesController.getInstance(currentAccount).getUser(lowerId);
                         if (action == ACTION_ADDED_TO_FOLDER) {

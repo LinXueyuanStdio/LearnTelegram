@@ -4,6 +4,8 @@ import android.text.TextUtils;
 
 import com.demo.chat.messager.AbstractSerializedData;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.model.message.MessageAction;
+import com.demo.chat.model.message.MessageFwdHeader;
 import com.demo.chat.model.reply.ReplyMarkup;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;

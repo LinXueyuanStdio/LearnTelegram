@@ -87,7 +87,6 @@ import com.demo.chat.ApplicationLoader;
 import com.demo.chat.PhoneFormat.PhoneFormat;
 import com.demo.chat.R;
 import com.demo.chat.alerts.AlertsCreator;
-import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
@@ -117,6 +116,8 @@ import com.demo.chat.model.bot.BotInfo;
 import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.bot.InlineBotSwitchPM;
 import com.demo.chat.model.bot.KeyboardButton;
+import com.demo.chat.model.message.MessageAction;
+import com.demo.chat.model.message.MessageFwdHeader;
 import com.demo.chat.model.reply.ReplyMarkup;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.DraftMessage;
@@ -9287,7 +9288,7 @@ public class ChatActivity extends BaseFragment
         }
         final int type = getMessageType(message);
         if (single) {
-            if (message.messageOwner.action instanceof TLRPC.TL_messageActionPinMessage) {
+            if (message.messageOwner.action.isPinMessage()) {
                 scrollToMessageId(message.messageOwner.reply_to_msg_id, message.messageOwner.id, true, 0, true);
                 return;
             }
@@ -9322,7 +9323,7 @@ public class ChatActivity extends BaseFragment
         } else {
             allowPin = true;
         }
-        allowPin = allowPin && message.getId() > 0 && (message.messageOwner.action == null || message.messageOwner.action instanceof TLRPC.TL_messageActionEmpty);
+        allowPin = allowPin && message.getId() > 0 && (message.messageOwner.action == null || message.messageOwner.action.isEmpty());
         boolean allowUnpin = message.getDialogId() != mergeDialogId && allowPin && (currentChat.pinned_msg_id == message.getId());
         boolean allowEdit = message.canEditMessage(currentChat) && !chatActivityEnterView.hasAudioToSend() && message.getDialogId() != mergeDialogId;
         if (allowEdit && groupedMessages != null) {
@@ -9340,7 +9341,7 @@ public class ChatActivity extends BaseFragment
         }
         if (inScheduleMode ||
                 type == 1 && message.getDialogId() == mergeDialogId ||
-                message.messageOwner.action instanceof TLRPC.TL_messageActionSecureValuesSent ||
+                message.messageOwner.action.isSecureValuesSent() ||
                 message.getId() < 0 ||
                 bottomOverlayChat != null && bottomOverlayChat.getVisibility() == View.VISIBLE ||
                 currentChat != null && (ChatObject.isNotInChat(currentChat) || ChatObject.isChannel(currentChat) && !ChatObject.canPost(currentChat) && !currentChat.megagroup || !ChatObject.canSendMessages(currentChat))) {
@@ -9471,7 +9472,9 @@ public class ChatActivity extends BaseFragment
                             }
                         }
                     } else if (type == 3) {
-                        if (selectedObject.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && MessageObject.isNewGifDocument(selectedObject.messageOwner.media.webpage.document)) {
+                        MessageMedia media = selectedObject.messageOwner.media;
+                        if (media instanceof TLRPC.TL_messageMediaWebPage
+                                && MessageObject.isNewGifDocument(media.webpage.document)) {
                             items.add(LocaleController.getString("SaveToGIFs", R.string.SaveToGIFs));
                             options.add(11);
                             icons.add(R.drawable.msg_gif);
@@ -12067,20 +12070,14 @@ public class ChatActivity extends BaseFragment
                 showDialog(builder.create());
             } else {
                 boolean punycode = false;
-                if (url instanceof URLSpanReplacement && (urlFinal == null || !urlFinal.startsWith("mailto:")) || (punycode = AndroidUtilities.shouldShowUrlInAlert(urlFinal))) {
+                if (url instanceof URLSpanReplacement
+                        && (urlFinal == null
+                        || !urlFinal.startsWith("mailto:"))
+                        || (punycode = AndroidUtilities.shouldShowUrlInAlert(urlFinal))) {
                     if (!openLinkInternally(urlFinal, messageObject != null ? messageObject.getId() : 0)) {
                         AlertsCreator.showOpenUrlAlert(ChatActivity.this, urlFinal, punycode, true);
                     }
                 } else if (url instanceof URLSpan) {
-                    if (messageObject != null && messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && messageObject.messageOwner.media.webpage != null && messageObject.messageOwner.media.webpage.cached_page != null) {
-                        String lowerUrl = urlFinal.toLowerCase();
-                        String lowerUrl2 = messageObject.messageOwner.media.webpage.url.toLowerCase();
-                        if ((lowerUrl.contains("telegram.org/blog") || lowerUrl.contains("telegra.ph") || lowerUrl.contains("t.me/iv")) && (lowerUrl.contains(lowerUrl2) || lowerUrl2.contains(lowerUrl))) {
-                            ArticleViewer.getInstance().setParentActivity(getParentActivity(), ChatActivity.this);
-                            ArticleViewer.getInstance().open(messageObject);
-                            return;
-                        }
-                    }
                     if (openLinkInternally(urlFinal, messageObject != null ? messageObject.getId() : 0)) {
                         return;
                     }
@@ -12599,26 +12596,27 @@ public class ChatActivity extends BaseFragment
                 break;
             }
             case 22: {
-                TLRPC.TL_channels_exportMessageLink req = new TLRPC.TL_channels_exportMessageLink();
-                req.id = selectedObject.getId();
-                req.channel = MessagesController.getInputChannel(currentChat);
-                getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                    if (response != null) {
-                        TLRPC.TL_exportedMessageLink exportedMessageLink = (TLRPC.TL_exportedMessageLink) response;
-                        try {
-                            android.content.ClipboardManager clipboard = (android.content.ClipboardManager) ApplicationLoader.applicationContext.getSystemService(Context.CLIPBOARD_SERVICE);
-                            ClipData clip = ClipData.newPlainText("label", exportedMessageLink.link);
-                            clipboard.setPrimaryClip(clip); if (exportedMessageLink.link.contains("/c/")) {
-                                Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("LinkCopiedPrivate", R.string.LinkCopiedPrivate), Toast.LENGTH_SHORT).show();
-                            } else {
-                                Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("LinkCopied", R.string.LinkCopied), Toast.LENGTH_SHORT).show();
-                            }
-                        } catch (Exception e) {
-                            FileLog.e(e);
-                        }
-                    }
-
-                }));
+                //TODO 发起请求
+//                TLRPC.TL_channels_exportMessageLink req = new TLRPC.TL_channels_exportMessageLink();
+//                req.id = selectedObject.getId();
+//                req.channel = MessagesController.getInputChannel(currentChat);
+//                getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                    if (response != null) {
+//                        TLRPC.TL_exportedMessageLink exportedMessageLink = (TLRPC.TL_exportedMessageLink) response;
+//                        try {
+//                            android.content.ClipboardManager clipboard = (android.content.ClipboardManager) ApplicationLoader.applicationContext.getSystemService(Context.CLIPBOARD_SERVICE);
+//                            ClipData clip = ClipData.newPlainText("label", exportedMessageLink.link);
+//                            clipboard.setPrimaryClip(clip); if (exportedMessageLink.link.contains("/c/")) {
+//                                Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("LinkCopiedPrivate", R.string.LinkCopiedPrivate), Toast.LENGTH_SHORT).show();
+//                            } else {
+//                                Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("LinkCopied", R.string.LinkCopied), Toast.LENGTH_SHORT).show();
+//                            }
+//                        } catch (Exception e) {
+//                            FileLog.e(e);
+//                        }
+//                    }
+//
+//                }));
                 break;
             }
             case 23: {
@@ -12636,24 +12634,7 @@ public class ChatActivity extends BaseFragment
                 break;
             }
             case 25: {
-                final AlertDialog[] progressDialog = new AlertDialog[]{new AlertDialog(getParentActivity(), 3)};
-                int requestId = getSendMessagesHelper().sendVote(selectedObject, null, () -> {
-                    try {
-                        progressDialog[0].dismiss();
-                    } catch (Throwable ignore) {
-
-                    }
-                    progressDialog[0] = null;
-                });
-                if (requestId != 0) {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        if (progressDialog[0] == null) {
-                            return;
-                        }
-                        progressDialog[0].setOnCancelListener(dialog -> getConnectionsManager().cancelRequest(requestId, true));
-                        showDialog(progressDialog[0]);
-                    }, 500);
-                }
+                //投票，去除
                 break;
             }
             case 26: {
@@ -12665,32 +12646,33 @@ public class ChatActivity extends BaseFragment
                     if (getMediaController().isPlayingMessage(selectedObject)) {
                         getMediaController().cleanupPlayer(true, true);
                     }
-                    TLRPC.TL_messages_sendScheduledMessages req = new TLRPC.TL_messages_sendScheduledMessages();
-                    req.peer = MessagesController.getInstance(currentAccount).getInputPeer((int) dialog_id);
-                    if (selectedObjectGroup != null) {
-                        for (int a = 0; a < selectedObjectGroup.messages.size(); a++) {
-                            req.id.add(selectedObjectGroup.messages.get(a).getId());
-                        }
-                    } else {
-                        req.id.add(selectedObject.getId());
-                    }
-                    ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-                        if (error == null) {
-                            TLRPC.Updates updates = (TLRPC.Updates) response;
-                            MessagesController.getInstance(currentAccount).processUpdates(updates, false);
-                            AndroidUtilities.runOnUIThread(() -> NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.messagesDeleted, req.id, (int) -dialog_id, true));
-                        } else if (error.text != null) {
-                            AndroidUtilities.runOnUIThread(() -> {
-                                if (error.text.startsWith("SLOWMODE_WAIT_")) {
-                                    AlertsCreator.showSimpleToast(ChatActivity.this, LocaleController.getString("SlowmodeSendError", R.string.SlowmodeSendError));
-                                } else if (error.text.equals("CHAT_SEND_MEDIA_FORBIDDEN")) {
-                                    AlertsCreator.showSimpleToast(ChatActivity.this, LocaleController.getString("AttachMediaRestrictedForever", R.string.AttachMediaRestrictedForever));
-                                } else {
-                                    AlertsCreator.showSimpleToast(ChatActivity.this, error.text);
-                                }
-                            });
-                        }
-                    });
+                    //TODO 发起请求
+//                    TLRPC.TL_messages_sendScheduledMessages req = new TLRPC.TL_messages_sendScheduledMessages();
+//                    req.peer = MessagesController.getInstance(currentAccount).getInputPeer((int) dialog_id);
+//                    if (selectedObjectGroup != null) {
+//                        for (int a = 0; a < selectedObjectGroup.messages.size(); a++) {
+//                            req.id.add(selectedObjectGroup.messages.get(a).getId());
+//                        }
+//                    } else {
+//                        req.id.add(selectedObject.getId());
+//                    }
+//                    ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
+//                        if (error == null) {
+//                            TLRPC.Updates updates = (TLRPC.Updates) response;
+//                            MessagesController.getInstance(currentAccount).processUpdates(updates, false);
+//                            AndroidUtilities.runOnUIThread(() -> NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.messagesDeleted, req.id, (int) -dialog_id, true));
+//                        } else if (error.text != null) {
+//                            AndroidUtilities.runOnUIThread(() -> {
+//                                if (error.text.startsWith("SLOWMODE_WAIT_")) {
+//                                    AlertsCreator.showSimpleToast(ChatActivity.this, LocaleController.getString("SlowmodeSendError", R.string.SlowmodeSendError));
+//                                } else if (error.text.equals("CHAT_SEND_MEDIA_FORBIDDEN")) {
+//                                    AlertsCreator.showSimpleToast(ChatActivity.this, LocaleController.getString("AttachMediaRestrictedForever", R.string.AttachMediaRestrictedForever));
+//                                } else {
+//                                    AlertsCreator.showSimpleToast(ChatActivity.this, error.text);
+//                                }
+//                            });
+//                        }
+//                    });
                     break;
                 }
             }
@@ -12980,11 +12962,11 @@ public class ChatActivity extends BaseFragment
                 for (int a = 0, N = messArr.size(); a < N; a++) {
                     MessageObject obj = messArr.get(N - a - 1);
                     MessageAction action = obj.messageOwner.action;
-                    if (a == 0 && action instanceof TLRPC.TL_messageActionChatCreate) {
+                    if (a == 0 && action.isChatCreate()) {
                         createdWas = true;
                     } else if (!createdWas) {
                         break;
-                    } else if (a < 2 && action instanceof TLRPC.TL_messageActionChatEditPhoto) {
+                    } else if (a < 2 && action.isChatEditPhoto()) {
                         dropPhotoAction = action;
                     }
                 }
@@ -13033,14 +13015,7 @@ public class ChatActivity extends BaseFragment
                     }
 
                     MessageAction action = obj.messageOwner.action;
-                    if (obj.type < 0 || loadIndex == 1 && action instanceof TLRPC.TL_messageActionChatMigrateTo) {
-                        continue;
-                    }
-
-                    if (currentChat != null && currentChat.creator && (action instanceof TLRPC.TL_messageActionChatCreate || dropPhotoAction != null && action == dropPhotoAction)) {
-                        continue;
-                    }
-                    if (obj.messageOwner.action instanceof TLRPC.TL_messageActionChannelMigrateFrom) {
+                    if (currentChat != null && currentChat.creator && (action.isChatCreate() || dropPhotoAction != null && action == dropPhotoAction)) {
                         continue;
                     }
 
@@ -13150,7 +13125,7 @@ public class ChatActivity extends BaseFragment
                     }
                     if (load_type == 2 && messageId == first_unread_id) {
                         if (approximateHeightSum > AndroidUtilities.displaySize.y / 2 || !forwardEndReached[0]) {
-                            Message dateMsg = new TLRPC.TL_message();
+                            Message dateMsg = new Message();
                             dateMsg.message = "";
                             dateMsg.id = 0;
                             MessageObject dateObj = new MessageObject(currentAccount, dateMsg, false);
@@ -13181,7 +13156,7 @@ public class ChatActivity extends BaseFragment
                         }
                     }
                     if (load_type != 2 && unreadMessageObject == null && createUnreadMessageAfterId != 0 && (!obj.isOut() || obj.messageOwner.from_scheduled) && messageId >= createUnreadMessageAfterId && (load_type == 1 || prevObj != null || prevObj == null && createUnreadLoading && a == messArr.size() - 1)) {
-                        Message dateMsg = new TLRPC.TL_message();
+                        Message dateMsg = new Message();
                         dateMsg.message = "";
                         dateMsg.id = 0;
                         MessageObject dateObj = new MessageObject(currentAccount, dateMsg, false);
@@ -13499,10 +13474,6 @@ public class ChatActivity extends BaseFragment
                 editText.setTextColor(color);
             }
         } else if (id == NotificationCenter.didUpdateConnectionState) {
-            int state = ConnectionsManager.getInstance(account).getConnectionState();
-            if (state == ConnectionsManager.ConnectionStateConnected) {
-                checkAutoDownloadMessages(false);
-            }
         } else if (id == NotificationCenter.chatOnlineCountDidLoad) {
             Integer chatId = (Integer) args[0];
             if (currentChat == null || currentChat.id != chatId) {
@@ -13625,8 +13596,8 @@ public class ChatActivity extends BaseFragment
                         }
                     }
                     if (currentChat != null) {
-                        if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionChatDeleteUser && messageObject.messageOwner.action.user_id == currentUserId ||
-                                messageObject.messageOwner.action instanceof TLRPC.TL_messageActionChatAddUser && messageObject.messageOwner.action.users.contains(currentUserId)) {
+                        if (messageObject.messageOwner.action.isChatDeleteUser() && messageObject.messageOwner.action.user_id == currentUserId ||
+                                messageObject.messageOwner.action.isChatAddUser() && messageObject.messageOwner.action.users.contains(currentUserId)) {
                             Chat newChat = getMessagesController().getChat(currentChat.id);
                             if (newChat != null) {
                                 currentChat = newChat;
@@ -13653,12 +13624,8 @@ public class ChatActivity extends BaseFragment
                     }
                     if (messageObject.messageOwner.reply_to_msg_id != 0 && messageObject.replyMessageObject == null) {
                         messageObject.replyMessageObject = messagesDict[0].get(messageObject.messageOwner.reply_to_msg_id);
-                        if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPinMessage) {
+                        if (messageObject.messageOwner.action.isPinMessage()) {
                             messageObject.generatePinMessageText(null, null);
-                        } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGameScore) {
-                            messageObject.generateGameMessageText(null);
-                        } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSent) {
-                            messageObject.generatePaymentSentMessageText(null);
                         }
                         if (messageObject.isMegagroup() && messageObject.replyMessageObject != null && messageObject.replyMessageObject.messageOwner != null) {
                             messageObject.replyMessageObject.messageOwner.flags |= Message.MESSAGE_FLAG_MEGAGROUP;
@@ -13691,7 +13658,7 @@ public class ChatActivity extends BaseFragment
                             obj.setIsRead();
                         }
                         MessageAction action = obj.messageOwner.action;
-                        if (currentChat != null && currentChat.megagroup && (action instanceof TLRPC.TL_messageActionChatAddUser || action instanceof TLRPC.TL_messageActionChatDeleteUser)) {
+                        if (currentChat != null && currentChat.megagroup && (action.isChatAddUser() || action.isChatDeleteUser())) {
                             reloadMegagroup = true;
                         }
                         if (a == 0 && obj.messageOwner.id < 0 && obj.type == MessageObject.TYPE_ROUND_VIDEO && !inScheduleMode) {
@@ -13704,7 +13671,7 @@ public class ChatActivity extends BaseFragment
                         if (obj.type < 0 || messagesDict[0].indexOfKey(messageId) >= 0) {
                             continue;
                         }
-                        if (currentChat != null && currentChat.creator && (action instanceof TLRPC.TL_messageActionChatCreate || action instanceof TLRPC.TL_messageActionChatEditPhoto && messages.size() < 4)) {
+                        if (currentChat != null && currentChat.creator && (action.isChatCreate() || action.isChatEditPhoto() && messages.size() < 4)) {
                             continue;
                         }
                         obj.checkLayout();
@@ -13786,10 +13753,7 @@ public class ChatActivity extends BaseFragment
                         if (obj.type < 0 || messagesDict[0].indexOfKey(messageId) >= 0) {
                             continue;
                         }
-                        if (currentChat != null && currentChat.creator && (action instanceof TLRPC.TL_messageActionChatCreate || action instanceof TLRPC.TL_messageActionChatEditPhoto && messages.size() < 4)) {
-                            continue;
-                        }
-                        if (action instanceof TLRPC.TL_messageActionChannelMigrateFrom) {
+                        if (currentChat != null && currentChat.creator && (action.isChatCreate() || action.isChatEditPhoto() && messages.size() < 4)) {
                             continue;
                         }
                         if (a == 0 && obj.messageOwner.id < 0 && obj.type == MessageObject.TYPE_ROUND_VIDEO && !inScheduleMode) {
@@ -13854,7 +13818,7 @@ public class ChatActivity extends BaseFragment
                             }
                         }
                         obj.checkLayout();
-                        if (currentChat != null && currentChat.megagroup && (action instanceof TLRPC.TL_messageActionChatAddUser || action instanceof TLRPC.TL_messageActionChatDeleteUser)) {
+                        if (currentChat != null && currentChat.megagroup && (action.isChatAddUser() || action.isChatDeleteUser())) {
                             reloadMegagroup = true;
                         }
                         if (minDate[0] == 0 || obj.messageOwner.date < minDate[0]) {
@@ -13879,7 +13843,7 @@ public class ChatActivity extends BaseFragment
                         if (dayArray == null) {
                             dayArray = new ArrayList<>();
                             messagesByDays.put(obj.dateKey, dayArray);
-                            Message dateMsg = new TLRPC.TL_message();
+                            Message dateMsg = new Message();
                             if (inScheduleMode) {
                                 if (obj.messageOwner.date == 0x7ffffffe) {
                                     dateMsg.message = LocaleController.getString("MessageScheduledUntilOnline", R.string.MessageScheduledUntilOnline);
@@ -13915,7 +13879,7 @@ public class ChatActivity extends BaseFragment
                                     unreadMessageObject = null;
                                 }
                                 if (unreadMessageObject == null) {
-                                    Message dateMsg = new TLRPC.TL_message();
+                                    Message dateMsg = new Message();
                                     dateMsg.message = "";
                                     dateMsg.id = 0;
                                     MessageObject dateObj = new MessageObject(currentAccount, dateMsg, false);
@@ -14449,10 +14413,6 @@ public class ChatActivity extends BaseFragment
                     }
                     obj.generateThumbs(true);
                     obj.setType();
-
-                    if (newMsgObj.media instanceof TLRPC.TL_messageMediaGame) {
-                        obj.applyNewText();
-                    }
                 }
                 if (updatedForward) {
                     obj.measureInlineBotButtons();
@@ -14960,9 +14920,9 @@ public class ChatActivity extends BaseFragment
             }
         } else if (id == NotificationCenter.didReceivedWebpagesInUpdates) {
             if (foundWebPage != null) {
-                LongSparseArray<TLRPC.WebPage> hashMap = (LongSparseArray<TLRPC.WebPage>) args[0];
+                LongSparseArray<MessageMedia.WebPage> hashMap = (LongSparseArray<MessageMedia.WebPage>) args[0];
                 for (int a = 0; a < hashMap.size(); a++) {
-                    TLRPC.WebPage webPage = hashMap.valueAt(a);
+                    MessageMedia.WebPage webPage = hashMap.valueAt(a);
                     if (webPage.id == foundWebPage.id) {
                         showFieldPanelForWebPage(!(webPage instanceof TLRPC.TL_webPageEmpty), webPage, false);
                         break;
@@ -15006,7 +14966,7 @@ public class ChatActivity extends BaseFragment
         } else if (id == NotificationCenter.botInfoDidLoad) {
             int guid = (Integer) args[1];
             if (classGuid == guid) {
-                TLRPC.BotInfo info = (TLRPC.BotInfo) args[0];
+                BotInfo info = (BotInfo) args[0];
                 if (!info.commands.isEmpty() && !ChatObject.isChannel(currentChat)) {
                     hasBotsCommands = true;
                 }

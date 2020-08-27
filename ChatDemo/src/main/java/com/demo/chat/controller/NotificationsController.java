@@ -48,10 +48,12 @@ import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.support.SparseLongArray;
 import com.demo.chat.model.Chat;
+import com.demo.chat.model.Message;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.ui.LaunchActivity;
 
 import org.json.JSONArray;
@@ -315,7 +317,7 @@ public class NotificationsController extends BaseController {
         for (int a = 0; a < pushMessages.size(); a++) {
             MessageObject messageObject = pushMessages.get(a);
             long dialog_id = messageObject.getDialogId();
-            if (messageObject.messageOwner.mentioned && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPinMessage ||
+            if (messageObject.messageOwner.mentioned && messageObject.messageOwner.action.isPinMessage() ||
                     (int) dialog_id == 0 || messageObject.messageOwner.to_id != 0 && !messageObject.isMegagroup()) {
                 continue;
             }
@@ -330,7 +332,7 @@ public class NotificationsController extends BaseController {
             for (int a = 0; a < pushMessages.size(); a++) {
                 MessageObject messageObject = pushMessages.get(a);
                 long dialog_id = messageObject.getDialogId();
-                if (messageObject.messageOwner.mentioned && messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPinMessage ||
+                if (messageObject.messageOwner.mentioned && messageObject.messageOwner.action.isPinMessage() ||
                         (int) dialog_id == 0 || messageObject.messageOwner.to_id != 0 && !messageObject.isMegagroup()) {
                     continue;
                 }
@@ -907,7 +909,7 @@ public class NotificationsController extends BaseController {
         });
     }
 
-    public void processLoadedUnreadMessages(final LongSparseArray<Integer> dialogs, final ArrayList<TLRPC.Message> messages, ArrayList<MessageObject> push, final ArrayList<TLRPC.User> users, final ArrayList<TLRPC.Chat> chats, final ArrayList<TLRPC.EncryptedChat> encryptedChats) {
+    public void processLoadedUnreadMessages(final LongSparseArray<Integer> dialogs, final ArrayList<Message> messages, ArrayList<MessageObject> push, final ArrayList<User> users, final ArrayList<TLRPC.Chat> chats, final ArrayList<TLRPC.EncryptedChat> encryptedChats) {
         getMessagesController().putUsers(users, true);
         getMessagesController().putChats(chats, true);
         getMessagesController().putEncryptedChats(encryptedChats, true);
@@ -1133,8 +1135,8 @@ public class NotificationsController extends BaseController {
             return LocaleController.getString("NotificationHiddenMessage", R.string.NotificationHiddenMessage);
         }
         long dialog_id = messageObject.messageOwner.dialog_id;
-        int chat_id = messageObject.messageOwner.to_id.chat_id != 0 ? messageObject.messageOwner.to_id.chat_id : messageObject.messageOwner.to_id;
-        int from_id = messageObject.messageOwner.to_id.user_id;
+        int chat_id = messageObject.messageOwner.to_id;
+        int from_id = messageObject.messageOwner.to_id;
         if (preview != null) {
             preview[0] = true;
         }
@@ -1214,7 +1216,7 @@ public class NotificationsController extends BaseController {
         if (name == null) {
             return null;
         }
-        TLRPC.Chat chat = null;
+        Chat chat = null;
         if (chat_id != 0) {
             chat = getMessagesController().getChat(chat_id);
             if (chat == null) {
@@ -1366,13 +1368,6 @@ public class NotificationsController extends BaseController {
                                 } else if (object.messageOwner.media instanceof TLRPC.TL_messageMediaContact) {
                                     TLRPC.TL_messageMediaContact mediaContact = (TLRPC.TL_messageMediaContact) object.messageOwner.media;
                                     return LocaleController.formatString("NotificationActionPinnedContact2", R.string.NotificationActionPinnedContact2, name, chat.title, ContactsController.formatName(mediaContact.first_name, mediaContact.last_name));
-                                } else if (object.messageOwner.media instanceof TLRPC.TL_messageMediaPoll) {
-                                    TLRPC.TL_messageMediaPoll mediaPoll = (TLRPC.TL_messageMediaPoll) object.messageOwner.media;
-                                    if (mediaPoll.poll.quiz) {
-                                        return LocaleController.formatString("NotificationActionPinnedQuiz2", R.string.NotificationActionPinnedQuiz2, name, chat.title, mediaPoll.poll.question);
-                                    } else {
-                                        return LocaleController.formatString("NotificationActionPinnedPoll2", R.string.NotificationActionPinnedPoll2, name, chat.title, mediaPoll.poll.question);
-                                    }
                                 } else if (object.messageOwner.media instanceof TLRPC.TL_messageMediaPhoto) {
                                     if (Build.VERSION.SDK_INT >= 19 && !TextUtils.isEmpty(object.messageOwner.message)) {
                                         String message = "\uD83D\uDDBC " + object.messageOwner.message;
@@ -1380,8 +1375,6 @@ public class NotificationsController extends BaseController {
                                     } else {
                                         return LocaleController.formatString("NotificationActionPinnedPhoto", R.string.NotificationActionPinnedPhoto, name, chat.title);
                                     }
-                                } else if (object.messageOwner.media instanceof TLRPC.TL_messageMediaGame) {
-                                    return LocaleController.formatString("NotificationActionPinnedGame", R.string.NotificationActionPinnedGame, name, chat.title);
                                 } else if (object.messageText != null && object.messageText.length() > 0) {
                                     CharSequence message = object.messageText;
                                     if (message.length() > 20) {
@@ -1551,8 +1544,8 @@ public class NotificationsController extends BaseController {
             return LocaleController.getString("YouHaveNewMessage", R.string.YouHaveNewMessage);
         }
         long dialog_id = messageObject.messageOwner.dialog_id;
-        int chat_id = messageObject.messageOwner.to_id.chat_id != 0 ? messageObject.messageOwner.to_id.chat_id : messageObject.messageOwner.to_id;
-        int from_id = messageObject.messageOwner.to_id.user_id;
+        int chat_id = messageObject.messageOwner.to_id;
+        int from_id = messageObject.messageOwner.to_id;
         if (preview != null) {
             preview[0] = true;
         }
@@ -1869,13 +1862,6 @@ public class NotificationsController extends BaseController {
                                     } else if (object.messageOwner.media instanceof TLRPC.TL_messageMediaContact) {
                                         TLRPC.TL_messageMediaContact mediaContact = (TLRPC.TL_messageMediaContact) messageObject.messageOwner.media;
                                         msg = LocaleController.formatString("NotificationActionPinnedContact2", R.string.NotificationActionPinnedContact2, name, chat.title, ContactsController.formatName(mediaContact.first_name, mediaContact.last_name));
-                                    } else if (object.messageOwner.media instanceof TLRPC.TL_messageMediaPoll) {
-                                        TLRPC.TL_messageMediaPoll mediaPoll = (TLRPC.TL_messageMediaPoll) object.messageOwner.media;
-                                        if (mediaPoll.poll.quiz) {
-                                            msg = LocaleController.formatString("NotificationActionPinnedQuiz2", R.string.NotificationActionPinnedQuiz2, name, chat.title, mediaPoll.poll.question);
-                                        } else {
-                                            msg = LocaleController.formatString("NotificationActionPinnedPoll2", R.string.NotificationActionPinnedPoll2, name, chat.title, mediaPoll.poll.question);
-                                        }
                                     } else if (object.messageOwner.media instanceof TLRPC.TL_messageMediaPhoto) {
                                         if (Build.VERSION.SDK_INT >= 19 && !TextUtils.isEmpty(object.messageOwner.message)) {
                                             String message = "\uD83D\uDDBC " + object.messageOwner.message;
@@ -2520,8 +2506,8 @@ public class NotificationsController extends BaseController {
                 user_id = lastMessageObject.messageOwner.from_id;
             }
 
-            TLRPC.User user = getMessagesController().getUser(user_id);
-            TLRPC.Chat chat = null;
+            User user = getMessagesController().getUser(user_id);
+            Chat chat = null;
             if (chat_id != 0) {
                 chat = getMessagesController().getChat(chat_id);
                 if (chat == null && lastMessageObject.isFcmMessage()) {
@@ -2530,7 +2516,7 @@ public class NotificationsController extends BaseController {
                     isChannel = ChatObject.isChannel(chat) && !chat.megagroup;
                 }
             }
-            TLRPC.FileLocation photoPath = null;
+            FileLocation photoPath = null;
 
             boolean notifyDisabled = false;
             int needVibrate = 0;
@@ -3112,12 +3098,12 @@ public class NotificationsController extends BaseController {
             lastWearNotifiedMessageId.put(dialog_id, max_id);*/
             MessageObject lastMessageObject = messageObjects.get(0);
             int max_date = lastMessageObject.messageOwner.date;
-            TLRPC.Chat chat = null;
-            TLRPC.User user = null;
+            Chat chat = null;
+            User user = null;
             boolean isChannel = false;
             boolean isSupergroup = false;
             String name;
-            TLRPC.FileLocation photoPath = null;
+            FileLocation photoPath = null;
             Bitmap avatarBitmap = null;
             File avatalFile = null;
             boolean canReply;

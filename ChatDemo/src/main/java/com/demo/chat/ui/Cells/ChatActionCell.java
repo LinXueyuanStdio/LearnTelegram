@@ -153,7 +153,7 @@ public class ChatActionCell extends BaseCell {
                 id = messageObject.messageOwner.to_id;
             }
             avatarDrawable.setInfo(id, null, null);
-            if (currentMessageObject.messageOwner.action instanceof TLRPC.TL_messageActionUserUpdatedPhoto) {
+            if (currentMessageObject.messageOwner.action.isUserUpdatedPhoto()) {
                 imageReceiver.setImage(null, null, avatarDrawable, null, currentMessageObject, 0);
             } else {
                 PhotoSize photo = FileLoader.getClosestPhotoSizeWithSize(currentMessageObject.photoThumbs, AndroidUtilities.dp(64));
