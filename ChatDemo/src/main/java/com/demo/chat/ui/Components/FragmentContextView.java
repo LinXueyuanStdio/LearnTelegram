@@ -7,7 +7,6 @@ import android.animation.ObjectAnimator;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.Intent;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.Typeface;
@@ -42,6 +41,7 @@ import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ChatActivity;
 import com.demo.chat.ui.LaunchActivity;
+import com.demo.chat.ui.LocationActivity;
 
 import java.util.ArrayList;
 
@@ -224,9 +224,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                     }
                 }
             } else if (currentStyle == 1) {
-                Intent intent = new Intent(getContext(), VoIPActivity.class);
-                intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_SINGLE_TOP);
-                getContext().startActivity(intent);
+                //打电话，移除
             } else if (currentStyle == 2) {
                 long did = 0;
                 int account = UserConfig.selectedAccount;
@@ -414,12 +412,8 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
             if (additionalContextView != null) {
                 additionalContextView.checkVisibility();
             }
-            if (VoIPService.getSharedInstance() != null && VoIPService.getSharedInstance().getCallState() != VoIPService.STATE_WAITING_INCOMING) {
-                checkCall(true);
-            } else {
-                checkPlayer(true);
-                updatePlaybackButton();
-            }
+            checkPlayer(true);
+            updatePlaybackButton();
         }
     }
 
@@ -643,11 +637,6 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
         }
         if (messageObject == null || messageObject.getId() == 0 || messageObject.isVideo()) {
             lastMessageObject = null;
-            boolean callAvailable = VoIPService.getSharedInstance() != null && VoIPService.getSharedInstance().getCallState() != VoIPService.STATE_WAITING_INCOMING;
-            if (callAvailable) {
-                checkCall(false);
-                return;
-            }
             if (visible) {
                 visible = false;
                 if (create) {
@@ -760,80 +749,4 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
         }
     }
 
-    private void checkCall(boolean create) {
-        View fragmentView = fragment.getFragmentView();
-        if (!create && fragmentView != null) {
-            if (fragmentView.getParent() == null || ((View) fragmentView.getParent()).getVisibility() != VISIBLE) {
-                create = true;
-            }
-        }
-        boolean callAvailable = VoIPService.getSharedInstance() != null && VoIPService.getSharedInstance().getCallState() != VoIPService.STATE_WAITING_INCOMING;
-        if (!callAvailable) {
-            if (visible) {
-                visible = false;
-                if (create) {
-                    if (getVisibility() != GONE) {
-                        setVisibility(GONE);
-                    }
-                    setTopPadding(0);
-                } else {
-                    if (animatorSet != null) {
-                        animatorSet.cancel();
-                        animatorSet = null;
-                    }
-                    animatorSet = new AnimatorSet();
-                    animatorSet.playTogether(ObjectAnimator.ofFloat(this, "topPadding", 0));
-                    animatorSet.setDuration(200);
-                    animatorSet.addListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            if (animatorSet != null && animatorSet.equals(animation)) {
-                                setVisibility(GONE);
-                                animatorSet = null;
-                            }
-                        }
-                    });
-                    animatorSet.start();
-                }
-            }
-        } else {
-            updateStyle(1);
-            if (create && topPadding == 0) {
-                setTopPadding(AndroidUtilities.dp2(36));
-                if (additionalContextView != null && additionalContextView.getVisibility() == VISIBLE) {
-                    ((LayoutParams) getLayoutParams()).topMargin = -AndroidUtilities.dp(72);
-                } else {
-                    ((LayoutParams) getLayoutParams()).topMargin = -AndroidUtilities.dp(36);
-                }
-                yPosition = 0;
-            }
-            if (!visible) {
-                if (!create) {
-                    if (animatorSet != null) {
-                        animatorSet.cancel();
-                        animatorSet = null;
-                    }
-                    animatorSet = new AnimatorSet();
-                    if (additionalContextView != null && additionalContextView.getVisibility() == VISIBLE) {
-                        ((LayoutParams) getLayoutParams()).topMargin = -AndroidUtilities.dp(72);
-                    } else {
-                        ((LayoutParams) getLayoutParams()).topMargin = -AndroidUtilities.dp(36);
-                    }
-                    animatorSet.playTogether(ObjectAnimator.ofFloat(this, "topPadding", AndroidUtilities.dp2(36)));
-                    animatorSet.setDuration(200);
-                    animatorSet.addListener(new AnimatorListenerAdapter() {
-                        @Override
-                        public void onAnimationEnd(Animator animation) {
-                            if (animatorSet != null && animatorSet.equals(animation)) {
-                                animatorSet = null;
-                            }
-                        }
-                    });
-                    animatorSet.start();
-                }
-                visible = true;
-                setVisibility(VISIBLE);
-            }
-        }
-    }
 }

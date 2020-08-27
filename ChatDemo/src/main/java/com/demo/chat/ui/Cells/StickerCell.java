@@ -161,7 +161,7 @@ public class StickerCell extends FrameLayout {
         String emoji = null;
         for (int a = 0; a < sticker.attributes.size(); a++) {
             Document.DocumentAttribute attribute = sticker.attributes.get(a);
-            if (attribute instanceof TLRPC.TL_documentAttributeSticker) {
+            if (attribute.isSticker()) {
                 emoji = attribute.alt != null && attribute.alt.length() > 0 ? attribute.alt : null;
             }
         }

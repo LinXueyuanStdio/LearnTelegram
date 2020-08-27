@@ -11,11 +11,11 @@ import android.os.Build;
 import android.provider.MediaStore;
 
 import com.demo.chat.R;
-import com.demo.chat.BuildConfig;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.BuildConfig;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLoader;
 import com.demo.chat.messager.Utilities;

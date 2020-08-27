@@ -17,10 +17,12 @@ import android.widget.FrameLayout;
 
 import com.demo.chat.PhoneFormat.PhoneFormat;
 import com.demo.chat.R;
+import com.demo.chat.controller.ContactsController;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.User;

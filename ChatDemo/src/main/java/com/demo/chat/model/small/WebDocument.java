@@ -9,7 +9,7 @@ import java.util.ArrayList;
  * @description null
  * @usage null
  */
-class WebDocument {
+public class WebDocument {
     public String url;
     public long access_hash;
     public int size;

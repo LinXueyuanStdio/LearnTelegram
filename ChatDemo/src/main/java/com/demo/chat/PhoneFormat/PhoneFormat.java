@@ -24,8 +24,8 @@
 
 package com.demo.chat.PhoneFormat;
 
-import org.telegram.messenger.ApplicationLoader;
-import org.telegram.messenger.FileLog;
+import com.demo.chat.ApplicationLoader;
+import com.demo.chat.messager.FileLog;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;

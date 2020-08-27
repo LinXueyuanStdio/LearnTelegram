@@ -35,10 +35,14 @@ import com.demo.chat.messager.SerializedData;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.browser.Browser;
+import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.model.small.MessageEntity;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.small.WebDocument;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Cells.ChatMessageCell;
 import com.demo.chat.ui.Components.TextStyleSpan;
@@ -1966,7 +1970,7 @@ public class MessageObject {
         return ((TLRPC.TL_messageMediaPoll) messageOwner.media).poll.id;
     }
 
-    private TLRPC.Photo getPhotoWithId(TLRPC.WebPage webPage, long id) {
+    private MessageMedia.Photo getPhotoWithId(MessageMedia.WebPage webPage, long id) {
         if (webPage == null || webPage.cached_page == null) {
             return null;
         }
@@ -1982,7 +1986,7 @@ public class MessageObject {
         return null;
     }
 
-    private Document getDocumentWithId(TLRPC.WebPage webPage, long id) {
+    private Document getDocumentWithId(MessageMedia.WebPage webPage, long id) {
         if (webPage == null || webPage.cached_page == null) {
             return null;
         }
@@ -1998,7 +2002,7 @@ public class MessageObject {
         return null;
     }
 
-    private MessageObject getMessageObjectForBlock(TLRPC.WebPage webPage, TLRPC.PageBlock pageBlock) {
+    private MessageObject getMessageObjectForBlock(MessageMedia.WebPage webPage, MessageMedia.PageBlock pageBlock) {
         TLRPC.TL_message message = null;
         if (pageBlock instanceof TLRPC.TL_pageBlockPhoto) {
             TLRPC.TL_pageBlockPhoto pageBlockPhoto = (TLRPC.TL_pageBlockPhoto) pageBlock;
@@ -2029,7 +2033,7 @@ public class MessageObject {
         return new MessageObject(currentAccount, message, false);
     }
 
-    public ArrayList<MessageObject> getWebPagePhotos(ArrayList<MessageObject> array, ArrayList<TLRPC.PageBlock> blocksToSearch) {
+    public ArrayList<MessageObject> getWebPagePhotos(ArrayList<MessageObject> array, ArrayList<MessageMedia.PageBlock> blocksToSearch) {
         ArrayList<MessageObject> messageObjects = array == null ? new ArrayList<>() : array;
         if (messageOwner.media == null || messageOwner.media.webpage == null) {
             return messageObjects;
@@ -2714,7 +2718,7 @@ public class MessageObject {
         if (document != null) {
             return document.mime_type;
         } else if (messageOwner.media instanceof TLRPC.TL_messageMediaInvoice) {
-            TLRPC.WebDocument photo = ((TLRPC.TL_messageMediaInvoice) messageOwner.media).photo;
+            WebDocument photo = ((TLRPC.TL_messageMediaInvoice) messageOwner.media).photo;
             if (photo != null) {
                 return photo.mime_type;
             }
@@ -2841,7 +2845,7 @@ public class MessageObject {
     public void generateThumbs(boolean update) {
         if (messageOwner instanceof TLRPC.TL_messageService) {
             if (messageOwner.action instanceof TLRPC.TL_messageActionChatEditPhoto) {
-                TLRPC.Photo photo = messageOwner.action.photo;
+                MessageMedia.Photo photo = messageOwner.action.photo;
                 if (!update) {
                     photoThumbs = new ArrayList<>(photo.sizes);
                 } else if (photoThumbs != null && !photoThumbs.isEmpty()) {
@@ -2926,7 +2930,7 @@ public class MessageObject {
                         photoThumbsObject = document;
                     }
                 }
-                TLRPC.Photo photo = messageOwner.media.game.photo;
+                MessageMedia.Photo photo = messageOwner.media.game.photo;
                 if (photo != null) {
                     if (!update || photoThumbs2 == null) {
                         photoThumbs2 = new ArrayList<>(photo.sizes);
@@ -2942,7 +2946,7 @@ public class MessageObject {
                     photoThumbsObject2 = null;
                 }
             } else if (messageOwner.media instanceof TLRPC.TL_messageMediaWebPage) {
-                TLRPC.Photo photo = messageOwner.media.webpage.photo;
+                MessageMedia.Photo photo = messageOwner.media.webpage.photo;
                 Document document = messageOwner.media.webpage.document;
                 if (photo != null) {
                     if (!update || photoThumbs == null) {
@@ -4448,7 +4452,7 @@ public class MessageObject {
         return message.media != null ? message.media.document : null;
     }
 
-    public static TLRPC.Photo getPhoto(Message message) {
+    public static MessageMedia.Photo getPhoto(Message message) {
         if (message.media instanceof TLRPC.TL_messageMediaWebPage) {
             return message.media.webpage.photo;
         }

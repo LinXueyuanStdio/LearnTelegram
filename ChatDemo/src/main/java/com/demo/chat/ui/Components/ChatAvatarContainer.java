@@ -451,7 +451,7 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
         int currentTime = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
         if (info instanceof TLRPC.TL_chatFull || info instanceof TLRPC.TL_channelFull && info.participants_count <= 200 && info.participants != null) {
             for (int a = 0; a < info.participants.participants.size(); a++) {
-                ChatParticipant participant = info.participants.participants.get(a);
+                Chat.ChatParticipant participant = info.participants.participants.get(a);
                 User user = MessagesController.getInstance(currentAccount).getUser(participant.user_id);
                 if (user != null && user.status != null && (user.status.expires > currentTime || user.id == UserConfig.getInstance(currentAccount).getClientUserId()) && user.status.expires > 10000) {
                     onlineCount++;

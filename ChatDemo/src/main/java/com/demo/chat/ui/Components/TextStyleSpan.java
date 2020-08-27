@@ -6,6 +6,7 @@ import android.text.TextPaint;
 import android.text.style.MetricAffectingSpan;
 
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.model.small.MessageEntity;
 
 /**
  * @author 林学渊

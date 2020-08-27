@@ -37,6 +37,9 @@ public class Chat {
         return type == ChannelType;
     }
 
+    public boolean isForbidden() {
+        return false;
+    }
     public int type = 0;
     public int id = 0;
     public String title;

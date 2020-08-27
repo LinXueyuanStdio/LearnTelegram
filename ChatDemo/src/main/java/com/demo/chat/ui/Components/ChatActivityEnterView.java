@@ -93,6 +93,7 @@ import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
 import com.demo.chat.ui.ActionBar.ActionBarMenuSubItem;
@@ -373,7 +374,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     private int innerTextChange;
     private MessageObject replyingMessageObject;
     private MessageObject botMessageObject;
-    private TLRPC.WebPage messageWebPage;
+    private MessageMedia.WebPage messageWebPage;
     private boolean messageWebPageSearch = true;
     private ChatActivityEnterViewDelegate delegate;
     private TrendingStickersAlert trendingStickersAlert;

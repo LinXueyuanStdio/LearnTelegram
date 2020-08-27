@@ -50,5 +50,11 @@ public class Document {
         public boolean isVideo() {
             return false;
         }
+        public boolean isAudio() {
+            return false;
+        }
+        public boolean isSticker() {
+            return false;
+        }
     }
 }

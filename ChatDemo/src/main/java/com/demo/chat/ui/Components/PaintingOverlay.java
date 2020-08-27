@@ -10,7 +10,6 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.text.LineBreaker;
 import android.os.Build;
-import android.text.Layout;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -19,6 +18,7 @@ import android.widget.FrameLayout;
 
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;

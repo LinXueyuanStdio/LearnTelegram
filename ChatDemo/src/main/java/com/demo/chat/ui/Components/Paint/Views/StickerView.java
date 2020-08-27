@@ -10,6 +10,7 @@ import android.widget.FrameLayout;
 
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
@@ -58,7 +59,7 @@ public class StickerView extends EntityView {
 
         for (int a = 0; a < sticker.attributes.size(); a++) {
             Document.DocumentAttribute attribute = sticker.attributes.get(a);
-            if (attribute instanceof TLRPC.TL_documentAttributeSticker) {
+            if (attribute.isSticker()) {
                 if (attribute.mask_coords != null) {
                     anchor = attribute.mask_coords.n;
                 }

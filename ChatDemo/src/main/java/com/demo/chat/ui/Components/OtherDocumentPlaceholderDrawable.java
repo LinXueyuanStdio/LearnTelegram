@@ -12,11 +12,13 @@ import android.view.View;
 import android.view.animation.DecelerateInterpolator;
 
 import com.demo.chat.R;
+import com.demo.chat.controller.DownloadController;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.ImageLoader;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.small.Document;
 
 import java.io.File;
 
@@ -101,7 +103,7 @@ public class OtherDocumentPlaceholderDrawable extends RecyclableDrawable impleme
         parentMessageObject = messageObject;
         TAG = DownloadController.getInstance(messageObject.currentAccount).generateObserverTag();
 
-        TLRPC.Document document = messageObject.getDocument();
+        Document document = messageObject.getDocument();
         if (document != null) {
             fileName = FileLoader.getDocumentFileName(messageObject.getDocument());
             if (TextUtils.isEmpty(fileName)) {

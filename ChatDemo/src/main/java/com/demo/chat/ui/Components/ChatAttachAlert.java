@@ -113,9 +113,6 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     nextAttachLayout.setAlpha(0.0f);
                 }
             }
-            if (nextAttachLayout == pollLayout || currentAttachLayout == pollLayout) {
-                updateSelectedPosition(nextAttachLayout == pollLayout ? 1 : 0);
-            }
             nextAttachLayout.setTranslationY(AndroidUtilities.dp(78) * value);
             currentAttachLayout.onHideShowProgress(1.0f - Math.min(1.0f, value / 0.7f));
             currentAttachLayout.onContainerTranslationUpdated();

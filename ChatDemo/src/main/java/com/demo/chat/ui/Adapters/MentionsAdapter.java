@@ -29,6 +29,7 @@ import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.BotInfo;
 import com.demo.chat.model.small.BotInlineResult;
+import com.demo.chat.model.small.InlineBotSwitchPM;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.Cells.BotSwitchCell;
@@ -55,7 +56,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
     public interface MentionsAdapterDelegate {
         void needChangePanelVisibility(boolean show);
         void onContextSearch(boolean searching);
-        void onContextClick(TLRPC.BotInlineResult result);
+        void onContextClick(BotInlineResult result);
     }
 
     private int currentAccount = UserConfig.selectedAccount;
@@ -73,7 +74,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
     private String[] lastSearchKeyboardLanguage;
     private ArrayList<User> searchResultCommandsUsers;
     private ArrayList<BotInlineResult> searchResultBotContext;
-    private TLRPC.TL_inlineBotSwitchPM searchResultBotContextSwitch;
+    private InlineBotSwitchPM searchResultBotContextSwitch;
     private MentionsAdapter.MentionsAdapterDelegate delegate;
     private SparseArray<BotInfo> botInfo;
     private int resultStartPosition;

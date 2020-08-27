@@ -118,6 +118,7 @@ import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.DraftMessage;
 import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.InlineBotSwitchPM;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
@@ -461,7 +462,6 @@ public class ChatActivity extends BaseFragment
     private PhotoSize pinnedImageThumbLocation;
     private TLObject pinnedImageLocationObject;
 
-    private int linkSearchRequestId;
     private MessageMedia.WebPage foundWebPage;
     private ArrayList<CharSequence> foundUrls;
     private String pendingLinkSearchString;
@@ -4466,7 +4466,7 @@ public class ChatActivity extends BaseFragment
                 }
             }
         }));
-        if (!ChatObject.isChannel(currentChat) || currentChat != null && currentChat.megagroup) {
+        if (!ChatObject.isChannel(currentChat) || currentChat.megagroup) {
             mentionsAdapter.setBotInfo(botInfo);
         }
         mentionsAdapter.setParentFragment(this);
@@ -4532,11 +4532,11 @@ public class ChatActivity extends BaseFragment
                 } else {
                     chatActivityEnterView.replaceWithText(start, len, object + " ", false);
                 }
-            } else if (object instanceof TLRPC.BotInlineResult) {
+            } else if (object instanceof BotInlineResult) {
                 if (chatActivityEnterView.getFieldText() == null || !inScheduleMode && checkSlowMode(view)) {
                     return;
                 }
-                TLRPC.BotInlineResult result = (TLRPC.BotInlineResult) object;
+                BotInlineResult result = (BotInlineResult) object;
                 if ((result.type.equals("photo") && (result.photo != null || result.content != null) ||
                         result.type.equals("gif") && (result.document != null || result.content != null) ||
                         result.type.equals("video") && (result.document != null/* || result.content_url != null*/))) {
@@ -4550,8 +4550,8 @@ public class ChatActivity extends BaseFragment
                         sendBotInlineResult(result, true, 0);
                     }
                 }
-            } else if (object instanceof TLRPC.TL_inlineBotSwitchPM) {
-                processInlineBotContextPM((TLRPC.TL_inlineBotSwitchPM) object);
+            } else if (object instanceof InlineBotSwitchPM) {
+                processInlineBotContextPM((InlineBotSwitchPM) object);
             } else if (object instanceof MediaDataController.KeywordResult) {
                 String code = ((MediaDataController.KeywordResult) object).emoji;
                 chatActivityEnterView.addEmojiToRecent(code);
@@ -5590,7 +5590,7 @@ public class ChatActivity extends BaseFragment
                 botUser = null;
                 updateBottomOverlay();
             } else {
-                if (ChatObject.isChannel(currentChat) && !(currentChat instanceof TLRPC.TL_channelForbidden)) {
+                if (ChatObject.isChannel(currentChat) && !currentChat.isForbidden()) {
                     if (ChatObject.isNotInChat(currentChat)) {
                         showBottomOverlayProgress(true, true);
                         getMessagesController().addUserToChat(currentChat.id, getUserConfig().getCurrentUser(), null, 0, null, ChatActivity.this, null);
@@ -6897,11 +6897,6 @@ public class ChatActivity extends BaseFragment
             if (messageObject.type >= 0) {
                 if (old.replyMessageObject != null) {
                     messageObject.replyMessageObject = old.replyMessageObject;
-                    if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionGameScore) {
-                        messageObject.generateGameMessageText(null);
-                    } else if (messageObject.messageOwner.action instanceof TLRPC.TL_messageActionPaymentSent) {
-                        messageObject.generatePaymentSentMessageText(null);
-                    }
                 }
                 if (!old.isEditing()) {
                     if (old.getFileName().equals(messageObject.getFileName())) {
@@ -9456,17 +9451,6 @@ public class ChatActivity extends BaseFragment
                         options.add(100);
                         icons.add(R.drawable.outline_send);
                     }
-                    if (selectedObject.messageOwner.action instanceof TLRPC.TL_messageActionPhoneCall) {
-                        TLRPC.TL_messageActionPhoneCall call = (TLRPC.TL_messageActionPhoneCall) message.messageOwner.action;
-                        items.add((call.reason instanceof TLRPC.TL_phoneCallDiscardReasonMissed || call.reason instanceof TLRPC.TL_phoneCallDiscardReasonBusy) && !message.isOutOwner() ? LocaleController.getString("CallBack", R.string.CallBack) : LocaleController.getString("CallAgain", R.string.CallAgain));
-                        options.add(18);
-                        icons.add(R.drawable.msg_callback);
-                        if (VoIPHelper.canRateCall(call)) {
-                            items.add(LocaleController.getString("CallMessageReportProblem", R.string.CallMessageReportProblem));
-                            options.add(19);
-                            icons.add(R.drawable.msg_fave);
-                        }
-                    }
                     if (allowChatActions) {
                         items.add(LocaleController.getString("Reply", R.string.Reply));
                         options.add(8);
@@ -10085,7 +10069,7 @@ public class ChatActivity extends BaseFragment
         }
     }
 
-    public void processInlineBotContextPM(TLRPC.TL_inlineBotSwitchPM object) {
+    public void processInlineBotContextPM(InlineBotSwitchPM object) {
         if (object == null) {
             return;
         }
@@ -11772,11 +11756,6 @@ public class ChatActivity extends BaseFragment
                 flags = 1;
                 getMessagesStorage().setDialogFlags(dialog_id, flags);
                 editor.commit();
-                TLRPC.Dialog dialog = getMessagesController().dialogs_dict.get(dialog_id);
-                if (dialog != null) {
-                    dialog.notify_settings = new TLRPC.TL_peerNotifySettings();
-                    dialog.notify_settings.mute_until = Integer.MAX_VALUE;
-                }
                 getNotificationsController().updateServerNotificationsSettings(dialog_id);
                 getNotificationsController().removeNotificationsForDialog(dialog_id);
             } else {
@@ -11788,10 +11767,6 @@ public class ChatActivity extends BaseFragment
             editor.putInt("notify2_" + dialog_id, 0);
             getMessagesStorage().setDialogFlags(dialog_id, 0);
             editor.commit();
-            TLRPC.Dialog dialog = getMessagesController().dialogs_dict.get(dialog_id);
-            if (dialog != null) {
-                dialog.notify_settings = new TLRPC.TL_peerNotifySettings();
-            }
             getNotificationsController().updateServerNotificationsSettings(dialog_id);
         }
     }
@@ -11827,10 +11802,6 @@ public class ChatActivity extends BaseFragment
         }
         final MessagesController messagesController = getMessagesController();
         Utilities.searchQueue.postRunnable(() -> {
-            if (linkSearchRequestId != 0) {
-                getConnectionsManager().cancelRequest(linkSearchRequestId, true);
-                linkSearchRequestId = 0;
-            }
             ArrayList<CharSequence> urls = null;
             CharSequence textToCheck;
             try {
@@ -11893,39 +11864,7 @@ public class ChatActivity extends BaseFragment
                 }
                 textToCheck = charSequence;
             }
-
-            final TLRPC.TL_messages_getWebPagePreview req = new TLRPC.TL_messages_getWebPagePreview();
-            if (textToCheck instanceof String) {
-                req.message = (String) textToCheck;
-            } else {
-                req.message = textToCheck.toString();
-            }
-            linkSearchRequestId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                linkSearchRequestId = 0;
-                if (error == null) {
-                    if (response instanceof TLRPC.TL_messageMediaWebPage) {
-                        foundWebPage = ((TLRPC.TL_messageMediaWebPage) response).webpage;
-                        if (foundWebPage instanceof TLRPC.TL_webPage || foundWebPage instanceof TLRPC.TL_webPagePending) {
-                            if (foundWebPage instanceof TLRPC.TL_webPagePending) {
-                                pendingLinkSearchString = req.message;
-                            }
-                            showFieldPanelForWebPage(true, foundWebPage, false);
-                        } else {
-                            if (foundWebPage != null) {
-                                showFieldPanelForWebPage(false, foundWebPage, false);
-                                foundWebPage = null;
-                            }
-                        }
-                    } else {
-                        if (foundWebPage != null) {
-                            showFieldPanelForWebPage(false, foundWebPage, false);
-                            foundWebPage = null;
-                        }
-                    }
-                }
-            }));
-
-            getConnectionsManager().bindRequestToGuid(linkSearchRequestId, classGuid);
+            //TODO search link for "textToCheck"
         });
     }
 
@@ -12408,7 +12347,6 @@ public class ChatActivity extends BaseFragment
             updateBottomOverlay();
         }
     }
-
 
     private void processSelectedOption(int option) {
         if (selectedObject == null || getParentActivity() == null) {
@@ -16031,15 +15969,17 @@ public class ChatActivity extends BaseFragment
                         if (user != null && user.id != getUserConfig().getClientUserId()) {
                             Bundle args = new Bundle();
                             args.putInt("user_id", user.id);
-                            ProfileActivity fragment = new ProfileActivity(args);
-                            fragment.setPlayProfileAnimation(currentUser != null && currentUser.id == user.id ? 1 : 0);
-                            presentFragment(fragment);
+                            //TODO
+//                            ProfileActivity fragment = new ProfileActivity(args);
+//                            fragment.setPlayProfileAnimation(currentUser != null && currentUser.id == user.id ? 1 : 0);
+//                            presentFragment(fragment);
                         }
                     }
 
                     @Override
                     public void didPressBotButton(ChatMessageCell cell, TLRPC.KeyboardButton button) {
-                        if (getParentActivity() == null || bottomOverlayChat.getVisibility() == View.VISIBLE &&
+                        if (getParentActivity() == null
+                                || bottomOverlayChat.getVisibility() == View.VISIBLE &&
                                 !(button instanceof TLRPC.TL_keyboardButtonSwitchInline) && !(button instanceof TLRPC.TL_keyboardButtonCallback) &&
                                 !(button instanceof TLRPC.TL_keyboardButtonGame) && !(button instanceof TLRPC.TL_keyboardButtonUrl) &&
                                 !(button instanceof TLRPC.TL_keyboardButtonBuy) && !(button instanceof TLRPC.TL_keyboardButtonUrlAuth)) {

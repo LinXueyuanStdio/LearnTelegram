@@ -39,6 +39,7 @@ import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.VideoEditedInfo;
+import com.demo.chat.model.small.Document;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
 import com.demo.chat.ui.ActionBar.ActionBarPopupWindow;
@@ -940,7 +941,7 @@ public class PhotoPaintView extends FrameLayout implements EntityView.EntityView
         undoStore.registerUndo(entityView.getUUID(), () -> removeEntity(entityView));
     }
 
-    private StickerView createSticker(Object parentObject, TLRPC.Document sticker, boolean select) {
+    private StickerView createSticker(Object parentObject, Document sticker, boolean select) {
         StickerPosition position = calculateStickerPosition(sticker);
         StickerView view = new StickerView(getContext(), position.position, position.angle, position.scale, baseStickerSize(), sticker, parentObject);
         view.setDelegate(this);
@@ -1380,7 +1381,7 @@ public class PhotoPaintView extends FrameLayout implements EntityView.EntityView
         });
     }
 
-    private StickerPosition calculateStickerPosition(TLRPC.Document document) {
+    private StickerPosition calculateStickerPosition(Document document) {
         TLRPC.TL_maskCoords maskCoords = null;
 
         for (int a = 0; a < document.attributes.size(); a++) {
