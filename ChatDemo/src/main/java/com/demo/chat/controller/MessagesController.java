@@ -23,6 +23,7 @@ import com.demo.chat.model.Chat;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.Document;
 import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ChatActivity;
@@ -1146,6 +1147,36 @@ public class MessagesController extends BaseController implements NotificationCe
         if (cache) {
             getMessagesStorage().loadChannelAdmins(chatId);
         }
+    }
+
+    public void saveGif(Object parentObject, Document document) {
+        if (parentObject == null || !MessageObject.isGifDocument(document)) {
+            return;
+        }
+    }
+    public void reloadWebPages(final long dialog_id, HashMap<String, ArrayList<MessageObject>> webpagesToReload, boolean scheduled) {
+        HashMap<String, ArrayList<MessageObject>> map = scheduled ? reloadingScheduledWebpages : reloadingWebpages;
+        LongSparseArray<ArrayList<MessageObject>> array = scheduled ? reloadingScheduledWebpagesPending : reloadingWebpagesPending;
+
+        for (HashMap.Entry<String, ArrayList<MessageObject>> entry : webpagesToReload.entrySet()) {
+            final String url = entry.getKey();
+            final ArrayList<MessageObject> messages = entry.getValue();
+            ArrayList<MessageObject> arrayList = map.get(url);
+            if (arrayList == null) {
+                arrayList = new ArrayList<>();
+                map.put(url, arrayList);
+            }
+            arrayList.addAll(messages);
+        }
+    }
+    public void loadChannelParticipants(final Integer chat_id) {
+        if (loadingFullParticipants.contains(chat_id) || loadedFullParticipants.contains(chat_id)) {
+            return;
+        }
+        loadingFullParticipants.add(chat_id);
+    }
+    public boolean isJoiningChannel(final int chat_id) {
+        return joiningToChannels.contains(chat_id);
     }
 
     //region NotificationCenter.NotificationCenterDelegate
