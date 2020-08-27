@@ -1483,39 +1483,35 @@ public class ChatActivity extends BaseFragment
                     //                        }
                     //                    });
                 } else if (id == share_contact) {
-                    //TODO
-                    //                    if (currentUser == null || getParentActivity() == null) {
-                    //                        return;
-                    //                    }
-                    //                    if (addToContactsButton.getTag() != null) {
-                    //                        shareMyContact((Integer) addToContactsButton.getTag(), null);
-                    //                    } else {
-                    //                        Bundle args = new Bundle();
-                    //                        args.putInt("user_id", currentUser.id);
-                    //                        args.putBoolean("addContact", true);
-                    //                        presentFragment(new ContactAddActivity(args));
-                    //                    }
+                    if (currentUser == null || getParentActivity() == null) {
+                        return;
+                    }
+                    if (addToContactsButton.getTag() != null) {
+                        shareMyContact((Integer) addToContactsButton.getTag(), null);
+                    } else {
+                        Bundle args = new Bundle();
+                        args.putInt("user_id", currentUser.id);
+                        args.putBoolean("addContact", true);
+                        presentFragment(new ContactAddActivity(args));
+                    }
                 } else if (id == mute) {
                     toggleMute(false);
                 } else if (id == add_shortcut) {
-                    //TODO
-                    //                    try {
-                    //                        getMediaDataController().installShortcut(currentUser.id);
-                    //                    } catch (Exception e) {
-                    //                        FileLog.e(e);
-                    //                    }
+                    try {
+                        getMediaDataController().installShortcut(currentUser.id);
+                    } catch (Exception e) {
+                        FileLog.e(e);
+                    }
                 } else if (id == report) {
-                    //TODO
-                    //                    AlertsCreator.createReportAlert(getParentActivity(), dialog_id, 0, ChatActivity.this);
+                    AlertsCreator.createReportAlert(getParentActivity(), dialog_id, 0, ChatActivity.this);
                 } else if (id == star) {
-                    //TODO
-                    //                    for (int a = 0; a < 2; a++) {
-                    //                        for (int b = 0; b < selectedMessagesCanStarIds[a].size(); b++) {
-                    //                            MessageObject msg = selectedMessagesCanStarIds[a].valueAt(b);
-                    //                            getMediaDataController().addRecentSticker(MediaDataController.TYPE_FAVE, msg, msg.getDocument(), (int) (System.currentTimeMillis() / 1000), !hasUnfavedSelected);
-                    //                        }
-                    //                    }
-                    //                    clearSelectionMode();
+                    for (int a = 0; a < 2; a++) {
+                        for (int b = 0; b < selectedMessagesCanStarIds[a].size(); b++) {
+                            MessageObject msg = selectedMessagesCanStarIds[a].valueAt(b);
+                            getMediaDataController().addRecentSticker(MediaDataController.TYPE_FAVE, msg, msg.getDocument(), (int) (System.currentTimeMillis() / 1000), !hasUnfavedSelected);
+                        }
+                    }
+                    clearSelectionMode();
                 } else if (id == edit) {
                     MessageObject messageObject = null;
                     for (int a = 1; a >= 0; a--) {
@@ -1540,17 +1536,12 @@ public class ChatActivity extends BaseFragment
                     }
                     openAttachMenu();
                 } else if (id == bot_help) {
-                    //TODO
-                    //                    getSendMessagesHelper().sendMessage("/help", dialog_id, null, null, false, null, null, null, true, 0);
+                    getSendMessagesHelper().sendMessage("/help", dialog_id, null, null, false, null, null, null, true, 0);
                 } else if (id == bot_settings) {
-                    //TODO
-                    //                    getSendMessagesHelper().sendMessage("/settings", dialog_id, null, null, false, null, null, null, true, 0);
+                    getSendMessagesHelper().sendMessage("/settings", dialog_id, null, null, false, null, null, null, true, 0);
                 } else if (id == search) {
                     openSearchWithText(null);
                 } else if (id == call) {
-                    //                    if (currentUser != null && getParentActivity() != null) {
-                    //                        VoIPHelper.startCall(currentUser, getParentActivity(), getMessagesController().getUserFull(currentUser.id));
-                    //                    }TODO 打电话
                 } else if (id == text_bold) {
                     if (chatActivityEnterView != null) {
                         chatActivityEnterView.getEditField().setSelectionOverride(editTextStart, editTextEnd);
@@ -11618,7 +11609,6 @@ public class ChatActivity extends BaseFragment
     //endregion
 
     //region 业务
-
     /**
      * 分享我的帐户
      * @param type
@@ -12232,7 +12222,6 @@ public class ChatActivity extends BaseFragment
         }
         return false;
     }
-
 
     /**
      * 清空历史记录
@@ -15419,7 +15408,7 @@ public class ChatActivity extends BaseFragment
                 if (photoSize == thumbPhotoSize) {
                     thumbPhotoSize = null;
                 }
-                if (photoSize == null || photoSize instanceof TLRPC.TL_photoSizeEmpty || photoSize.location instanceof TLRPC.TL_fileLocationUnavailable || pinnedMessageObject.isAnyKindOfSticker()) {
+                if (photoSize == null || pinnedMessageObject.isAnyKindOfSticker()) {
                     pinnedMessageImageView.setImageBitmap(null);
                     pinnedImageLocation = null;
                     pinnedImageLocationObject = null;
@@ -16354,7 +16343,7 @@ public class ChatActivity extends BaseFragment
                                     messageCell.getViewTreeObserver().removeOnPreDrawListener(this);
                                     ImageReceiver imageReceiver = messageCell.getPhotoImage();
                                     float w = imageReceiver.getImageWidth();
-                                    org.telegram.ui.Components.Rect rect = instantCameraView.getCameraRect();
+                                    com.demo.chat.ui.Components.Rect rect = instantCameraView.getCameraRect();
                                     float scale = w / rect.width;
                                     int[] position = new int[2];
                                     messageCell.getTransitionParams().ignoreAlpha = true;

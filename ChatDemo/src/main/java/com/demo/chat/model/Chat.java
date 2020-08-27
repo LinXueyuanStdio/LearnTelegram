@@ -3,6 +3,7 @@ package com.demo.chat.model;
 import com.demo.chat.model.small.BotInfo;
 import com.demo.chat.model.small.ChatPhoto;
 import com.demo.chat.model.small.MessageMedia;
+import com.demo.chat.model.sticker.StickerSet;
 
 import java.util.ArrayList;
 

@@ -1,7 +1,25 @@
 package com.demo.chat.controller;
 
 import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ShortcutInfo;
+import android.content.pm.ShortcutManager;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.BitmapShader;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffXfermode;
+import android.graphics.RectF;
+import android.graphics.Shader;
+import android.graphics.drawable.Drawable;
+import android.graphics.drawable.Icon;
+import android.os.Build;
 import android.text.Spannable;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
@@ -10,8 +28,10 @@ import android.text.TextUtils;
 import android.text.style.CharacterStyle;
 import android.util.LongSparseArray;
 import android.util.SparseArray;
+import android.widget.Toast;
 
 import com.demo.chat.ApplicationLoader;
+import com.demo.chat.R;
 import com.demo.chat.SQLite.SQLiteCursor;
 import com.demo.chat.SQLite.SQLiteDatabase;
 import com.demo.chat.SQLite.SQLitePreparedStatement;
@@ -20,29 +40,45 @@ import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.Emoji;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLoader;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NativeByteBuffer;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SerializedData;
+import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.messager.support.SparseLongArray;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.BotInfo;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.DraftMessage;
 import com.demo.chat.model.small.MessageEntity;
+import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.sticker.InputStickerSet;
+import com.demo.chat.model.sticker.StickerSet;
+import com.demo.chat.model.sticker.StickerSetCovered;
+import com.demo.chat.ui.ActionBar.BaseFragment;
+import com.demo.chat.ui.Components.AvatarDrawable;
+import com.demo.chat.ui.Components.Bulletin;
 import com.demo.chat.ui.Components.TextStyleSpan;
 import com.demo.chat.ui.Components.URLSpanReplacement;
 import com.demo.chat.ui.Components.URLSpanUserMention;
+import com.demo.chat.ui.LaunchActivity;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
 
 /**
@@ -103,19 +139,139 @@ public class MediaDataController extends BaseController {
         }
     }
 
+
     public static final int TYPE_IMAGE = 0;
     public static final int TYPE_MASK = 1;
     public static final int TYPE_FAVE = 2;
     public static final int TYPE_FEATURED = 3;
     public static final int TYPE_EMOJI = 4;
 
-    //region TODO 这里只是复制过来，还需要初始化等处理
+    //region ---------------- STICKERS ----------------
+    private ArrayList<TL_messages_stickerSet>[] stickerSets = new ArrayList[]{new ArrayList<>(), new ArrayList<>(), new ArrayList<>(0), new ArrayList<>(), new ArrayList<>()};
+    private LongSparseArray<Document>[] stickersByIds = new LongSparseArray[]{new LongSparseArray<>(), new LongSparseArray<>(), new LongSparseArray<>(), new LongSparseArray<>(), new LongSparseArray<>()};
+    private LongSparseArray<TL_messages_stickerSet> stickerSetsById = new LongSparseArray<>();
+    private LongSparseArray<TL_messages_stickerSet> installedStickerSetsById = new LongSparseArray<>();
+    private LongSparseArray<TL_messages_stickerSet> groupStickerSets = new LongSparseArray<>();
+    private ConcurrentHashMap<String, TL_messages_stickerSet> stickerSetsByName = new ConcurrentHashMap<>(100, 1.0f, 1);
+    private HashMap<String, TL_messages_stickerSet> diceStickerSetsByEmoji = new HashMap<>();
+    private LongSparseArray<String> diceEmojiStickerSetsById = new LongSparseArray<>();
+    private HashSet<String> loadingDiceStickerSets = new HashSet<>();
+    private LongSparseArray<Runnable> removingStickerSetsUndos = new LongSparseArray<>();
+    private Runnable[] scheduledLoadStickers = new Runnable[5];
+    private boolean[] loadingStickers = new boolean[5];
     private boolean[] stickersLoaded = new boolean[5];
+    private int[] loadHash = new int[5];
+    private int[] loadDate = new int[5];
 
-    public boolean canAddStickerToFavorites() {
-        return !stickersLoaded[0] || !recentStickers[TYPE_FAVE].isEmpty();
-    }
+    private HashMap<String, ArrayList<Message>> verifyingMessages = new HashMap<>();
+
+    private int[] archivedStickersCount = new int[2];
+
+    private LongSparseArray<String> stickersByEmoji = new LongSparseArray<>();
+    private HashMap<String, ArrayList<Document>> allStickers = new HashMap<>();
+    private HashMap<String, ArrayList<Document>> allStickersFeatured = new HashMap<>();
+
     private ArrayList<Document>[] recentStickers = new ArrayList[]{new ArrayList<>(), new ArrayList<>(), new ArrayList<>()};
+    private boolean[] loadingRecentStickers = new boolean[3];
+    private boolean[] recentStickersLoaded = new boolean[3];
+
+    private ArrayList<Document> recentGifs = new ArrayList<>();
+    private boolean loadingRecentGifs;
+    private boolean recentGifsLoaded;
+
+    private int loadFeaturedHash;
+    private int loadFeaturedDate;
+    private ArrayList<StickerSetCovered> featuredStickerSets = new ArrayList<>();
+    private LongSparseArray<StickerSetCovered> featuredStickerSetsById = new LongSparseArray<>();
+    private ArrayList<Long> unreadStickerSets = new ArrayList<>();
+    private ArrayList<Long> readingStickerSets = new ArrayList<>();
+    private boolean loadingFeaturedStickers;
+    private boolean featuredStickersLoaded;
+
+    public void cleanup() {
+        for (int a = 0; a < 3; a++) {
+            recentStickers[a].clear();
+            loadingRecentStickers[a] = false;
+            recentStickersLoaded[a] = false;
+        }
+        for (int a = 0; a < 4; a++) {
+            loadHash[a] = 0;
+            loadDate[a] = 0;
+            stickerSets[a].clear();
+            loadingStickers[a] = false;
+            stickersLoaded[a] = false;
+        }
+        featuredStickerSets.clear();
+        loadFeaturedDate = 0;
+        loadFeaturedHash = 0;
+        allStickers.clear();
+        allStickersFeatured.clear();
+        stickersByEmoji.clear();
+        featuredStickerSetsById.clear();
+        featuredStickerSets.clear();
+        unreadStickerSets.clear();
+        recentGifs.clear();
+        stickerSetsById.clear();
+        installedStickerSetsById.clear();
+        stickerSetsByName.clear();
+        diceStickerSetsByEmoji.clear();
+        diceEmojiStickerSetsById.clear();
+        loadingDiceStickerSets.clear();
+        loadingFeaturedStickers = false;
+        featuredStickersLoaded = false;
+        loadingRecentGifs = false;
+        recentGifsLoaded = false;
+
+        currentFetchingEmoji.clear();
+        if (Build.VERSION.SDK_INT >= 25) {
+            Utilities.globalQueue.postRunnable(() -> {
+                try {
+                    ShortcutManager shortcutManager = ApplicationLoader.applicationContext.getSystemService(ShortcutManager.class);
+                    shortcutManager.removeAllDynamicShortcuts();
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
+            });
+        }
+        verifyingMessages.clear();
+
+        loading = false;
+        loaded = false;
+        hints.clear();
+        inlineBots.clear();
+        getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
+        getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
+
+        drafts.clear();
+        draftMessages.clear();
+        preferences.edit().clear().commit();
+
+        botInfos.clear();
+        botKeyboards.clear();
+        botKeyboardsByMids.clear();
+    }
+
+    public void checkStickers(int type) {
+        if (!loadingStickers[type] && (!stickersLoaded[type] || Math.abs(System.currentTimeMillis() / 1000 - loadDate[type]) >= 60 * 60)) {
+            loadStickers(type, true, false);
+        }
+    }
+
+    public void checkFeaturedStickers() {
+        if (!loadingFeaturedStickers && (!featuredStickersLoaded || Math.abs(System.currentTimeMillis() / 1000 - loadFeaturedDate) >= 60 * 60)) {
+            loadFeaturedStickers(true, false);
+        }
+    }
+
+    public ArrayList<Document> getRecentStickers(int type) {
+        ArrayList<Document> arrayList = recentStickers[type];
+        return new ArrayList<>(arrayList.subList(0, Math.min(arrayList.size(), 20)));
+    }
+
+    public ArrayList<Document> getRecentStickersNoCopy(int type) {
+        return recentStickers[type];
+    }
+
     public boolean isStickerInFavorites(Document document) {
         if (document == null) {
             return false;
@@ -128,7 +284,1706 @@ public class MediaDataController extends BaseController {
         }
         return false;
     }
-    //endregion
+
+    public void addRecentSticker(final int type, Object parentObject, Document document, int date, boolean remove) {
+        if (!MessageObject.isStickerDocument(document) && !MessageObject.isAnimatedStickerDocument(document, true)) {
+            return;
+        }
+        boolean found = false;
+        for (int a = 0; a < recentStickers[type].size(); a++) {
+            Document image = recentStickers[type].get(a);
+            if (image.id == document.id) {
+                recentStickers[type].remove(a);
+                if (!remove) {
+                    recentStickers[type].add(0, image);
+                }
+                found = true;
+                break;
+            }
+        }
+        if (!found && !remove) {
+            recentStickers[type].add(0, document);
+        }
+        int maxCount;
+        if (type == TYPE_FAVE) {
+            if (remove) {
+                Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("RemovedFromFavorites", R.string.RemovedFromFavorites), Toast.LENGTH_SHORT).show();
+            } else {
+                Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("AddedToFavorites", R.string.AddedToFavorites), Toast.LENGTH_SHORT).show();
+            }
+            TL_messages_faveSticker req = new TL_messages_faveSticker();
+            req.id = new TL_inputDocument();
+            req.id.id = document.id;
+            req.id.access_hash = document.access_hash;
+            req.id.file_reference = document.file_reference;
+            if (req.id.file_reference == null) {
+                req.id.file_reference = new byte[0];
+            }
+            req.unfave = remove;
+            getConnectionsManager().sendRequest(req, (response, error) -> {
+                if (error != null && FileRefController.isFileRefError(error.text) && parentObject != null) {
+                    getFileRefController().requestReference(parentObject, req);
+                } else {
+                    AndroidUtilities.runOnUIThread(() -> getMediaDataController().loadRecents(MediaDataController.TYPE_FAVE, false, false, true));
+                }
+            });
+            maxCount = getMessagesController().maxFaveStickersCount;
+        } else {
+            if (type == TYPE_IMAGE && remove) {
+                Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("RemovedFromRecent", R.string.RemovedFromRecent), Toast.LENGTH_SHORT).show();
+                TL_messages_saveRecentSticker req = new TL_messages_saveRecentSticker();
+                req.id = new TL_inputDocument();
+                req.id.id = document.id;
+                req.id.access_hash = document.access_hash;
+                req.id.file_reference = document.file_reference;
+                if (req.id.file_reference == null) {
+                    req.id.file_reference = new byte[0];
+                }
+                req.unsave = true;
+                getConnectionsManager().sendRequest(req, (response, error) -> {
+                    if (error != null && FileRefController.isFileRefError(error.text) && parentObject != null) {
+                        getFileRefController().requestReference(parentObject, req);
+                    }
+                });
+            }
+            maxCount = getMessagesController().maxRecentStickersCount;
+        }
+        if (recentStickers[type].size() > maxCount || remove) {
+            final Document old = remove ? document : recentStickers[type].remove(recentStickers[type].size() - 1);
+            getMessagesStorage().getStorageQueue().postRunnable(() -> {
+                int cacheType;
+                if (type == TYPE_IMAGE) {
+                    cacheType = 3;
+                } else if (type == TYPE_MASK) {
+                    cacheType = 4;
+                } else {
+                    cacheType = 5;
+                }
+                try {
+                    getMessagesStorage().getDatabase().executeFast("DELETE FROM web_recent_v3 WHERE id = '" + old.id + "' AND type = " + cacheType).stepThis().dispose();
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
+            });
+        }
+        if (!remove) {
+            ArrayList<Document> arrayList = new ArrayList<>();
+            arrayList.add(document);
+            processLoadedRecentDocuments(type, arrayList, false, date, false);
+        }
+        if (type == TYPE_FAVE || type == TYPE_IMAGE && remove) {
+            getNotificationCenter().postNotificationName(NotificationCenter.recentDocumentsDidLoad, false, type);
+        }
+    }
+
+    public ArrayList<Document> getRecentGifs() {
+        return new ArrayList<>(recentGifs);
+    }
+
+    public void removeRecentGif(final Document document) {
+        for (int i = 0, N = recentGifs.size(); i < N; i++) {
+            if (recentGifs.get(i).id == document.id) {
+                recentGifs.remove(i);
+                break;
+            }
+        }
+        TL_messages_saveGif req = new TL_messages_saveGif();
+        req.id = new TL_inputDocument();
+        req.id.id = document.id;
+        req.id.access_hash = document.access_hash;
+        req.id.file_reference = document.file_reference;
+        if (req.id.file_reference == null) {
+            req.id.file_reference = new byte[0];
+        }
+        req.unsave = true;
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+            if (error != null && FileRefController.isFileRefError(error.text)) {
+                getFileRefController().requestReference("gif", req);
+            }
+        });
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                getMessagesStorage().getDatabase().executeFast("DELETE FROM web_recent_v3 WHERE id = '" + document.id + "' AND type = 2").stepThis().dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    public boolean hasRecentGif(Document document) {
+        for (int a = 0; a < recentGifs.size(); a++) {
+            Document image = recentGifs.get(a);
+            if (image.id == document.id) {
+                recentGifs.remove(a);
+                recentGifs.add(0, image);
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public void addRecentGif(Document document, int date) {
+        if (document == null) {
+            return;
+        }
+        boolean found = false;
+        for (int a = 0; a < recentGifs.size(); a++) {
+            Document image = recentGifs.get(a);
+            if (image.id == document.id) {
+                recentGifs.remove(a);
+                recentGifs.add(0, image);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            recentGifs.add(0, document);
+        }
+        if (recentGifs.size() > getMessagesController().maxRecentGifsCount) {
+            final Document old = recentGifs.remove(recentGifs.size() - 1);
+            getMessagesStorage().getStorageQueue().postRunnable(() -> {
+                try {
+                    getMessagesStorage().getDatabase().executeFast("DELETE FROM web_recent_v3 WHERE id = '" + old.id + "' AND type = 2").stepThis().dispose();
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
+            });
+        }
+        ArrayList<Document> arrayList = new ArrayList<>();
+        arrayList.add(document);
+        processLoadedRecentDocuments(0, arrayList, true, date, false);
+    }
+
+    public boolean isLoadingStickers(int type) {
+        return loadingStickers[type];
+    }
+
+    public void replaceStickerSet(TL_messages_stickerSet set) {
+        TL_messages_stickerSet existingSet = stickerSetsById.get(set.set.id);
+        String emoji = diceEmojiStickerSetsById.get(set.set.id);
+        if (emoji != null) {
+            diceStickerSetsByEmoji.put(emoji, set);
+            putDiceStickersToCache(emoji, set, (int) (System.currentTimeMillis() / 1000));
+        }
+        boolean isGroupSet = false;
+        if (existingSet == null) {
+            existingSet = stickerSetsByName.get(set.set.short_name);
+        }
+        if (existingSet == null) {
+            existingSet = groupStickerSets.get(set.set.id);
+            if (existingSet != null) {
+                isGroupSet = true;
+            }
+        }
+        if (existingSet == null) {
+            return;
+        }
+        boolean changed = false;
+        if ("AnimatedEmojies".equals(set.set.short_name)) {
+            changed = true;
+            existingSet.documents = set.documents;
+            existingSet.packs = set.packs;
+            existingSet.set = set.set;
+            AndroidUtilities.runOnUIThread(() -> {
+                LongSparseArray<Document> stickersById = getStickerByIds(TYPE_EMOJI);
+                for (int b = 0; b < set.documents.size(); b++) {
+                    Document document = set.documents.get(b);
+                    stickersById.put(document.id, document);
+                }
+            });
+        } else {
+            LongSparseArray<Document> documents = new LongSparseArray<>();
+            for (int a = 0, size = set.documents.size(); a < size; a++) {
+                Document document = set.documents.get(a);
+                documents.put(document.id, document);
+            }
+            for (int a = 0, size = existingSet.documents.size(); a < size; a++) {
+                Document document = existingSet.documents.get(a);
+                Document newDocument = documents.get(document.id);
+                if (newDocument != null) {
+                    existingSet.documents.set(a, newDocument);
+                    changed = true;
+                }
+            }
+        }
+        if (changed) {
+            if (isGroupSet) {
+                putSetToCache(existingSet);
+            } else {
+                int type = set.set.masks ? TYPE_MASK : TYPE_IMAGE;
+                putStickersToCache(type, stickerSets[type], loadDate[type], loadHash[type]);
+                if ("AnimatedEmojies".equals(set.set.short_name)) {
+                    type = TYPE_EMOJI;
+                    putStickersToCache(type, stickerSets[type], loadDate[type], loadHash[type]);
+                }
+            }
+        }
+    }
+
+    public TL_messages_stickerSet getStickerSetByName(String name) {
+        return stickerSetsByName.get(name);
+    }
+
+    public TL_messages_stickerSet getDiceStickerSetByEmoji(String emoji) {
+        return diceStickerSetsByEmoji.get(emoji);
+    }
+
+    public TL_messages_stickerSet getStickerSetById(long id) {
+        return stickerSetsById.get(id);
+    }
+
+    public TL_messages_stickerSet getGroupStickerSetById(StickerSet stickerSet) {
+        TL_messages_stickerSet set = stickerSetsById.get(stickerSet.id);
+        if (set == null) {
+            set = groupStickerSets.get(stickerSet.id);
+            if (set == null || set.set == null) {
+                loadGroupStickerSet(stickerSet, true);
+            } else if (set.set.hash != stickerSet.hash) {
+                loadGroupStickerSet(stickerSet, false);
+            }
+        }
+        return set;
+    }
+
+    public void putGroupStickerSet(TL_messages_stickerSet stickerSet) {
+        groupStickerSets.put(stickerSet.set.id, stickerSet);
+    }
+
+    private void loadGroupStickerSet(final StickerSet stickerSet, boolean cache) {
+        if (cache) {
+            getMessagesStorage().getStorageQueue().postRunnable(() -> {
+                try {
+                    final TL_messages_stickerSet set;
+                    SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized("SELECT document FROM web_recent_v3 WHERE id = 's_" + stickerSet.id + "'");
+                    if (cursor.next() && !cursor.isNull(0)) {
+                        NativeByteBuffer data = cursor.byteBufferValue(0);
+                        if (data != null) {
+                            set = TL_messages_stickerSet.TLdeserialize(data, data.readInt32(false), false);
+                            data.reuse();
+                        } else {
+                            set = null;
+                        }
+                    } else {
+                        set = null;
+                    }
+                    cursor.dispose();
+                    if (set == null || set.set == null || set.set.hash != stickerSet.hash) {
+                        loadGroupStickerSet(stickerSet, false);
+                    }
+                    if (set != null && set.set != null) {
+                        AndroidUtilities.runOnUIThread(() -> {
+                            groupStickerSets.put(set.set.id, set);
+                            getNotificationCenter().postNotificationName(NotificationCenter.groupStickersDidLoad, set.set.id);
+                        });
+                    }
+                } catch (Throwable e) {
+                    FileLog.e(e);
+                }
+            });
+        } else {
+            TL_messages_getStickerSet req = new TL_messages_getStickerSet();
+            req.stickerset = new TL_inputStickerSetID();
+            req.stickerset.id = stickerSet.id;
+            req.stickerset.access_hash = stickerSet.access_hash;
+            getConnectionsManager().sendRequest(req, (response, error) -> {
+                if (response != null) {
+                    TL_messages_stickerSet set = (TL_messages_stickerSet) response;
+                    AndroidUtilities.runOnUIThread(() -> {
+                        groupStickerSets.put(set.set.id, set);
+                        getNotificationCenter().postNotificationName(NotificationCenter.groupStickersDidLoad, set.set.id);
+                    });
+                }
+            });
+        }
+    }
+
+    private void putSetToCache(TL_messages_stickerSet set) {
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                SQLiteDatabase database = getMessagesStorage().getDatabase();
+                SQLitePreparedStatement state = database.executeFast("REPLACE INTO web_recent_v3 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                state.requery();
+                state.bindString(1, "s_" + set.set.id);
+                state.bindInteger(2, 6);
+                state.bindString(3, "");
+                state.bindString(4, "");
+                state.bindString(5, "");
+                state.bindInteger(6, 0);
+                state.bindInteger(7, 0);
+                state.bindInteger(8, 0);
+                state.bindInteger(9, 0);
+                NativeByteBuffer data = new NativeByteBuffer(set.getObjectSize());
+                set.serializeToStream(data);
+                state.bindByteBuffer(10, data);
+                state.step();
+                data.reuse();
+                state.dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    public HashMap<String, ArrayList<Document>> getAllStickers() {
+        return allStickers;
+    }
+
+    public HashMap<String, ArrayList<Document>> getAllStickersFeatured() {
+        return allStickersFeatured;
+    }
+
+    public Document getEmojiAnimatedSticker(CharSequence message) {
+        String emoji = message.toString().replace("\uFE0F", "");
+        ArrayList<TL_messages_stickerSet> arrayList = getStickerSets(MediaDataController.TYPE_EMOJI);
+        for (int a = 0, N = arrayList.size(); a < N; a++) {
+            TL_messages_stickerSet set = arrayList.get(a);
+            for (int b = 0, N2 = set.packs.size(); b < N2; b++) {
+                TL_stickerPack pack = set.packs.get(b);
+                if (!pack.documents.isEmpty() && TextUtils.equals(pack.emoticon, emoji)) {
+                    LongSparseArray<Document> stickerByIds = getStickerByIds(MediaDataController.TYPE_EMOJI);
+                    return stickerByIds.get(pack.documents.get(0));
+                }
+            }
+        }
+        return null;
+    }
+
+    public boolean canAddStickerToFavorites() {
+        return !stickersLoaded[0] || stickerSets[0].size() >= 5 || !recentStickers[TYPE_FAVE].isEmpty();
+    }
+
+    public ArrayList<TL_messages_stickerSet> getStickerSets(int type) {
+        if (type == TYPE_FEATURED) {
+            return stickerSets[2];
+        } else {
+            return stickerSets[type];
+        }
+    }
+
+    public LongSparseArray<Document> getStickerByIds(int type) {
+        return stickersByIds[type];
+    }
+
+    public ArrayList<StickerSetCovered> getFeaturedStickerSets() {
+        return featuredStickerSets;
+    }
+
+    public ArrayList<Long> getUnreadStickerSets() {
+        return unreadStickerSets;
+    }
+
+    public boolean areAllTrendingStickerSetsUnread() {
+        for (int a = 0, N = featuredStickerSets.size(); a < N; a++) {
+            StickerSetCovered pack = featuredStickerSets.get(a);
+            if (isStickerPackInstalled(pack.set.id) || pack.covers.isEmpty() && pack.cover == null) {
+                continue;
+            }
+            if (!unreadStickerSets.contains(pack.set.id)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public boolean isStickerPackInstalled(long id) {
+        return installedStickerSetsById.indexOfKey(id) >= 0;
+    }
+
+    public boolean isStickerPackUnread(long id) {
+        return unreadStickerSets.contains(id);
+    }
+
+    public boolean isStickerPackInstalled(String name) {
+        return stickerSetsByName.containsKey(name);
+    }
+
+    public String getEmojiForSticker(long id) {
+        String value = stickersByEmoji.get(id);
+        return value != null ? value : "";
+    }
+
+    public static int calcDocumentsHash(ArrayList<Document> arrayList) {
+        if (arrayList == null) {
+            return 0;
+        }
+        long acc = 0;
+        for (int a = 0; a < Math.min(200, arrayList.size()); a++) {
+            Document document = arrayList.get(a);
+            if (document == null) {
+                continue;
+            }
+            int high_id = (int) (document.id >> 32);
+            int lower_id = (int) document.id;
+            acc = ((acc * 20261) + 0x80000000L + high_id) % 0x80000000L;
+            acc = ((acc * 20261) + 0x80000000L + lower_id) % 0x80000000L;
+        }
+        return (int) acc;
+    }
+
+    public void loadRecents(final int type, final boolean gif, boolean cache, boolean force) {
+        if (gif) {
+            if (loadingRecentGifs) {
+                return;
+            }
+            loadingRecentGifs = true;
+            if (recentGifsLoaded) {
+                cache = false;
+            }
+        } else {
+            if (loadingRecentStickers[type]) {
+                return;
+            }
+            loadingRecentStickers[type] = true;
+            if (recentStickersLoaded[type]) {
+                cache = false;
+            }
+        }
+        if (cache) {
+            getMessagesStorage().getStorageQueue().postRunnable(() -> {
+                try {
+                    final int cacheType;
+                    if (gif) {
+                        cacheType = 2;
+                    } else if (type == TYPE_IMAGE) {
+                        cacheType = 3;
+                    } else if (type == TYPE_MASK) {
+                        cacheType = 4;
+                    } else {
+                        cacheType = 5;
+                    }
+                    SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized("SELECT document FROM web_recent_v3 WHERE type = " + cacheType + " ORDER BY date DESC");
+                    final ArrayList<Document> arrayList = new ArrayList<>();
+                    while (cursor.next()) {
+                        if (!cursor.isNull(0)) {
+                            NativeByteBuffer data = cursor.byteBufferValue(0);
+                            if (data != null) {
+                                Document document = Document.TLdeserialize(data, data.readInt32(false), false);
+                                if (document != null) {
+                                    arrayList.add(document);
+                                }
+                                data.reuse();
+                            }
+                        }
+                    }
+                    cursor.dispose();
+                    AndroidUtilities.runOnUIThread(() -> {
+                        if (gif) {
+                            recentGifs = arrayList;
+                            loadingRecentGifs = false;
+                            recentGifsLoaded = true;
+                        } else {
+                            recentStickers[type] = arrayList;
+                            loadingRecentStickers[type] = false;
+                            recentStickersLoaded[type] = true;
+                        }
+                        getNotificationCenter().postNotificationName(NotificationCenter.recentDocumentsDidLoad, gif, type);
+                        loadRecents(type, gif, false, false);
+                    });
+                } catch (Throwable e) {
+                    FileLog.e(e);
+                }
+            });
+        } else {
+            SharedPreferences preferences = MessagesController.getEmojiSettings(currentAccount);
+            if (!force) {
+                long lastLoadTime;
+                if (gif) {
+                    lastLoadTime = preferences.getLong("lastGifLoadTime", 0);
+                } else if (type == TYPE_IMAGE) {
+                    lastLoadTime = preferences.getLong("lastStickersLoadTime", 0);
+                } else if (type == TYPE_MASK) {
+                    lastLoadTime = preferences.getLong("lastStickersLoadTimeMask", 0);
+                } else {
+                    lastLoadTime = preferences.getLong("lastStickersLoadTimeFavs", 0);
+                }
+                if (Math.abs(System.currentTimeMillis() - lastLoadTime) < 60 * 60 * 1000) {
+                    if (gif) {
+                        loadingRecentGifs = false;
+                    } else {
+                        loadingRecentStickers[type] = false;
+                    }
+                    return;
+                }
+            }
+            if (gif) {
+                TL_messages_getSavedGifs req = new TL_messages_getSavedGifs();
+                req.hash = calcDocumentsHash(recentGifs);
+                getConnectionsManager().sendRequest(req, (response, error) -> {
+                    ArrayList<Document> arrayList = null;
+                    if (response instanceof TL_messages_savedGifs) {
+                        TL_messages_savedGifs res = (TL_messages_savedGifs) response;
+                        arrayList = res.gifs;
+                    }
+                    processLoadedRecentDocuments(type, arrayList, gif, 0, true);
+                });
+            } else {
+                TLObject request;
+                if (type == TYPE_FAVE) {
+                    TL_messages_getFavedStickers req = new TL_messages_getFavedStickers();
+                    req.hash = calcDocumentsHash(recentStickers[type]);
+                    request = req;
+                } else {
+                    TL_messages_getRecentStickers req = new TL_messages_getRecentStickers();
+                    req.hash = calcDocumentsHash(recentStickers[type]);
+                    req.attached = type == TYPE_MASK;
+                    request = req;
+                }
+                getConnectionsManager().sendRequest(request, (response, error) -> {
+                    ArrayList<Document> arrayList = null;
+                    if (type == TYPE_FAVE) {
+                        if (response instanceof TL_messages_favedStickers) {
+                            TL_messages_favedStickers res = (TL_messages_favedStickers) response;
+                            arrayList = res.stickers;
+                        }
+                    } else {
+                        if (response instanceof TL_messages_recentStickers) {
+                            TL_messages_recentStickers res = (TL_messages_recentStickers) response;
+                            arrayList = res.stickers;
+                        }
+                    }
+                    processLoadedRecentDocuments(type, arrayList, gif, 0, true);
+                });
+            }
+        }
+    }
+
+    protected void processLoadedRecentDocuments(final int type, final ArrayList<Document> documents, final boolean gif, final int date, boolean replace) {
+        if (documents != null) {
+            getMessagesStorage().getStorageQueue().postRunnable(() -> {
+                try {
+                    SQLiteDatabase database = getMessagesStorage().getDatabase();
+                    int maxCount;
+                    if (gif) {
+                        maxCount = getMessagesController().maxRecentGifsCount;
+                    } else {
+                        if (type == TYPE_FAVE) {
+                            maxCount = getMessagesController().maxFaveStickersCount;
+                        } else {
+                            maxCount = getMessagesController().maxRecentStickersCount;
+                        }
+                    }
+                    database.beginTransaction();
+
+                    SQLitePreparedStatement state = database.executeFast("REPLACE INTO web_recent_v3 VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                    int count = documents.size();
+                    int cacheType;
+                    if (gif) {
+                        cacheType = 2;
+                    } else if (type == TYPE_IMAGE) {
+                        cacheType = 3;
+                    } else if (type == TYPE_MASK) {
+                        cacheType = 4;
+                    } else {
+                        cacheType = 5;
+                    }
+                    if (replace) {
+                        database.executeFast("DELETE FROM web_recent_v3 WHERE type = " + cacheType).stepThis().dispose();
+                    }
+                    for (int a = 0; a < count; a++) {
+                        if (a == maxCount) {
+                            break;
+                        }
+                        Document document = documents.get(a);
+                        state.requery();
+                        state.bindString(1, "" + document.id);
+                        state.bindInteger(2, cacheType);
+                        state.bindString(3, "");
+                        state.bindString(4, "");
+                        state.bindString(5, "");
+                        state.bindInteger(6, 0);
+                        state.bindInteger(7, 0);
+                        state.bindInteger(8, 0);
+                        state.bindInteger(9, date != 0 ? date : count - a);
+                        NativeByteBuffer data = new NativeByteBuffer(document.getObjectSize());
+                        document.serializeToStream(data);
+                        state.bindByteBuffer(10, data);
+                        state.step();
+                        if (data != null) {
+                            data.reuse();
+                        }
+                    }
+                    state.dispose();
+                    database.commitTransaction();
+                    if (documents.size() >= maxCount) {
+                        database.beginTransaction();
+                        for (int a = maxCount; a < documents.size(); a++) {
+                            database.executeFast("DELETE FROM web_recent_v3 WHERE id = '" + documents.get(a).id + "' AND type = " + cacheType).stepThis().dispose();
+                        }
+                        database.commitTransaction();
+                    }
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
+            });
+        }
+        if (date == 0) {
+            AndroidUtilities.runOnUIThread(() -> {
+                SharedPreferences.Editor editor = MessagesController.getEmojiSettings(currentAccount).edit();
+                if (gif) {
+                    loadingRecentGifs = false;
+                    recentGifsLoaded = true;
+                    editor.putLong("lastGifLoadTime", System.currentTimeMillis()).commit();
+                } else {
+                    loadingRecentStickers[type] = false;
+                    recentStickersLoaded[type] = true;
+                    if (type == TYPE_IMAGE) {
+                        editor.putLong("lastStickersLoadTime", System.currentTimeMillis()).commit();
+                    } else if (type == TYPE_MASK) {
+                        editor.putLong("lastStickersLoadTimeMask", System.currentTimeMillis()).commit();
+                    } else {
+                        editor.putLong("lastStickersLoadTimeFavs", System.currentTimeMillis()).commit();
+                    }
+                }
+                if (documents != null) {
+                    if (gif) {
+                        recentGifs = documents;
+                    } else {
+                        recentStickers[type] = documents;
+                    }
+                    getNotificationCenter().postNotificationName(NotificationCenter.recentDocumentsDidLoad, gif, type);
+                } else {
+
+                }
+            });
+        }
+    }
+
+    public void reorderStickers(int type, final ArrayList<Long> order) {
+        Collections.sort(stickerSets[type], (lhs, rhs) -> {
+            int index1 = order.indexOf(lhs.set.id);
+            int index2 = order.indexOf(rhs.set.id);
+            if (index1 > index2) {
+                return 1;
+            } else if (index1 < index2) {
+                return -1;
+            }
+            return 0;
+        });
+        loadHash[type] = calcStickersHash(stickerSets[type]);
+        getNotificationCenter().postNotificationName(NotificationCenter.stickersDidLoad, type);
+        loadStickers(type, false, true);
+    }
+
+    public void calcNewHash(int type) {
+        loadHash[type] = calcStickersHash(stickerSets[type]);
+    }
+
+    public void storeTempStickerSet(final TL_messages_stickerSet set) {
+        stickerSetsById.put(set.set.id, set);
+        stickerSetsByName.put(set.set.short_name, set);
+    }
+
+    public void addNewStickerSet(final TL_messages_stickerSet set) {
+        if (stickerSetsById.indexOfKey(set.set.id) >= 0 || stickerSetsByName.containsKey(set.set.short_name)) {
+            return;
+        }
+        int type = set.set.masks ? TYPE_MASK : TYPE_IMAGE;
+        stickerSets[type].add(0, set);
+        stickerSetsById.put(set.set.id, set);
+        installedStickerSetsById.put(set.set.id, set);
+        stickerSetsByName.put(set.set.short_name, set);
+        LongSparseArray<Document> stickersById = new LongSparseArray<>();
+        for (int a = 0; a < set.documents.size(); a++) {
+            Document document = set.documents.get(a);
+            stickersById.put(document.id, document);
+        }
+        for (int a = 0; a < set.packs.size(); a++) {
+            TL_stickerPack stickerPack = set.packs.get(a);
+            stickerPack.emoticon = stickerPack.emoticon.replace("\uFE0F", "");
+            ArrayList<Document> arrayList = allStickers.get(stickerPack.emoticon);
+            if (arrayList == null) {
+                arrayList = new ArrayList<>();
+                allStickers.put(stickerPack.emoticon, arrayList);
+            }
+            for (int c = 0; c < stickerPack.documents.size(); c++) {
+                Long id = stickerPack.documents.get(c);
+                if (stickersByEmoji.indexOfKey(id) < 0) {
+                    stickersByEmoji.put(id, stickerPack.emoticon);
+                }
+                Document sticker = stickersById.get(id);
+                if (sticker != null) {
+                    arrayList.add(sticker);
+                }
+            }
+        }
+        loadHash[type] = calcStickersHash(stickerSets[type]);
+        getNotificationCenter().postNotificationName(NotificationCenter.stickersDidLoad, type);
+        loadStickers(type, false, true);
+    }
+
+    public void loadFeaturedStickers(boolean cache, boolean force) {
+        if (loadingFeaturedStickers) {
+            return;
+        }
+        loadingFeaturedStickers = true;
+        if (cache) {
+            getMessagesStorage().getStorageQueue().postRunnable(() -> {
+                ArrayList<StickerSetCovered> newStickerArray = null;
+                ArrayList<Long> unread = new ArrayList<>();
+                int date = 0;
+                int hash = 0;
+                SQLiteCursor cursor = null;
+                try {
+                    cursor = getMessagesStorage().getDatabase().queryFinalized("SELECT data, unread, date, hash FROM stickers_featured WHERE 1");
+                    if (cursor.next()) {
+                        NativeByteBuffer data = cursor.byteBufferValue(0);
+                        if (data != null) {
+                            newStickerArray = new ArrayList<>();
+                            int count = data.readInt32(false);
+                            for (int a = 0; a < count; a++) {
+                                StickerSetCovered stickerSet = StickerSetCovered.TLdeserialize(data, data.readInt32(false), false);
+                                newStickerArray.add(stickerSet);
+                            }
+                            data.reuse();
+                        }
+                        data = cursor.byteBufferValue(1);
+                        if (data != null) {
+                            int count = data.readInt32(false);
+                            for (int a = 0; a < count; a++) {
+                                unread.add(data.readInt64(false));
+                            }
+                            data.reuse();
+                        }
+                        date = cursor.intValue(2);
+                        hash = calcFeaturedStickersHash(newStickerArray);
+                    }
+                } catch (Throwable e) {
+                    FileLog.e(e);
+                } finally {
+                    if (cursor != null) {
+                        cursor.dispose();
+                    }
+                }
+                processLoadedFeaturedStickers(newStickerArray, unread, true, date, hash);
+            });
+        } else {
+            final TL_messages_getFeaturedStickers req = new TL_messages_getFeaturedStickers();
+            req.hash = force ? 0 : loadFeaturedHash;
+            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+                if (response instanceof TL_messages_featuredStickers) {
+                    TL_messages_featuredStickers res = (TL_messages_featuredStickers) response;
+                    processLoadedFeaturedStickers(res.sets, res.unread, false, (int) (System.currentTimeMillis() / 1000), res.hash);
+                } else {
+                    processLoadedFeaturedStickers(null, null, false, (int) (System.currentTimeMillis() / 1000), req.hash);
+                }
+            }));
+        }
+    }
+
+    private void processLoadedFeaturedStickers(final ArrayList<StickerSetCovered> res, final ArrayList<Long> unreadStickers, final boolean cache, final int date, final int hash) {
+        AndroidUtilities.runOnUIThread(() -> {
+            loadingFeaturedStickers = false;
+            featuredStickersLoaded = true;
+        });
+        Utilities.stageQueue.postRunnable(() -> {
+            if (cache && (res == null || Math.abs(System.currentTimeMillis() / 1000 - date) >= 60 * 60) || !cache && res == null && hash == 0) {
+                AndroidUtilities.runOnUIThread(() -> {
+                    if (res != null && hash != 0) {
+                        loadFeaturedHash = hash;
+                    }
+                    loadFeaturedStickers(false, false);
+                }, res == null && !cache ? 1000 : 0);
+                if (res == null) {
+                    return;
+                }
+            }
+            if (res != null) {
+                try {
+                    final ArrayList<StickerSetCovered> stickerSetsNew = new ArrayList<>();
+                    final LongSparseArray<StickerSetCovered> stickerSetsByIdNew = new LongSparseArray<>();
+
+                    for (int a = 0; a < res.size(); a++) {
+                        StickerSetCovered stickerSet = res.get(a);
+                        stickerSetsNew.add(stickerSet);
+                        stickerSetsByIdNew.put(stickerSet.set.id, stickerSet);
+                    }
+
+                    if (!cache) {
+                        putFeaturedStickersToCache(stickerSetsNew, unreadStickers, date, hash);
+                    }
+                    AndroidUtilities.runOnUIThread(() -> {
+                        unreadStickerSets = unreadStickers;
+                        featuredStickerSetsById = stickerSetsByIdNew;
+                        featuredStickerSets = stickerSetsNew;
+                        loadFeaturedHash = hash;
+                        loadFeaturedDate = date;
+                        loadStickers(TYPE_FEATURED, true, false);
+                        getNotificationCenter().postNotificationName(NotificationCenter.featuredStickersDidLoad);
+                    });
+                } catch (Throwable e) {
+                    FileLog.e(e);
+                }
+            } else if (!cache) {
+                AndroidUtilities.runOnUIThread(() -> loadFeaturedDate = date);
+                putFeaturedStickersToCache(null, null, date, 0);
+            }
+        });
+    }
+
+    private void putFeaturedStickersToCache(ArrayList<StickerSetCovered> stickers, final ArrayList<Long> unreadStickers, final int date, final int hash) {
+        final ArrayList<StickerSetCovered> stickersFinal = stickers != null ? new ArrayList<>(stickers) : null;
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                if (stickersFinal != null) {
+                    SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO stickers_featured VALUES(?, ?, ?, ?, ?)");
+                    state.requery();
+                    int size = 4;
+                    for (int a = 0; a < stickersFinal.size(); a++) {
+                        size += stickersFinal.get(a).getObjectSize();
+                    }
+                    NativeByteBuffer data = new NativeByteBuffer(size);
+                    NativeByteBuffer data2 = new NativeByteBuffer(4 + unreadStickers.size() * 8);
+                    data.writeInt32(stickersFinal.size());
+                    for (int a = 0; a < stickersFinal.size(); a++) {
+                        stickersFinal.get(a).serializeToStream(data);
+                    }
+                    data2.writeInt32(unreadStickers.size());
+                    for (int a = 0; a < unreadStickers.size(); a++) {
+                        data2.writeInt64(unreadStickers.get(a));
+                    }
+                    state.bindInteger(1, 1);
+                    state.bindByteBuffer(2, data);
+                    state.bindByteBuffer(3, data2);
+                    state.bindInteger(4, date);
+                    state.bindInteger(5, hash);
+                    state.step();
+                    data.reuse();
+                    data2.reuse();
+                    state.dispose();
+                } else {
+                    SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("UPDATE stickers_featured SET date = ?");
+                    state.requery();
+                    state.bindInteger(1, date);
+                    state.step();
+                    state.dispose();
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    private int calcFeaturedStickersHash(ArrayList<StickerSetCovered> sets) {
+        long acc = 0;
+        for (int a = 0; a < sets.size(); a++) {
+            StickerSet set = sets.get(a).set;
+            if (set.archived) {
+                continue;
+            }
+            int high_id = (int) (set.id >> 32);
+            int lower_id = (int) set.id;
+            acc = ((acc * 20261) + 0x80000000L + high_id) % 0x80000000L;
+            acc = ((acc * 20261) + 0x80000000L + lower_id) % 0x80000000L;
+            if (unreadStickerSets.contains(set.id)) {
+                acc = ((acc * 20261) + 0x80000000L + 1) % 0x80000000L;
+            }
+        }
+        return (int) acc;
+    }
+
+    public void markFaturedStickersAsRead(boolean query) {
+        if (unreadStickerSets.isEmpty()) {
+            return;
+        }
+        unreadStickerSets.clear();
+        loadFeaturedHash = calcFeaturedStickersHash(featuredStickerSets);
+        getNotificationCenter().postNotificationName(NotificationCenter.featuredStickersDidLoad);
+        putFeaturedStickersToCache(featuredStickerSets, unreadStickerSets, loadFeaturedDate, loadFeaturedHash);
+        if (query) {
+            TL_messages_readFeaturedStickers req = new TL_messages_readFeaturedStickers();
+            getConnectionsManager().sendRequest(req, (response, error) -> {
+
+            });
+        }
+    }
+
+    public int getFeaturesStickersHashWithoutUnread() {
+        long acc = 0;
+        for (int a = 0; a < featuredStickerSets.size(); a++) {
+            StickerSet set = featuredStickerSets.get(a).set;
+            if (set.archived) {
+                continue;
+            }
+            int high_id = (int) (set.id >> 32);
+            int lower_id = (int) set.id;
+            acc = ((acc * 20261) + 0x80000000L + high_id) % 0x80000000L;
+            acc = ((acc * 20261) + 0x80000000L + lower_id) % 0x80000000L;
+        }
+        return (int) acc;
+    }
+
+    public void markFaturedStickersByIdAsRead(final long id) {
+        if (!unreadStickerSets.contains(id) || readingStickerSets.contains(id)) {
+            return;
+        }
+        readingStickerSets.add(id);
+        TL_messages_readFeaturedStickers req = new TL_messages_readFeaturedStickers();
+        req.id.add(id);
+        getConnectionsManager().sendRequest(req, (response, error) -> {
+
+        });
+        AndroidUtilities.runOnUIThread(() -> {
+            unreadStickerSets.remove(id);
+            readingStickerSets.remove(id);
+            loadFeaturedHash = calcFeaturedStickersHash(featuredStickerSets);
+            getNotificationCenter().postNotificationName(NotificationCenter.featuredStickersDidLoad);
+            putFeaturedStickersToCache(featuredStickerSets, unreadStickerSets, loadFeaturedDate, loadFeaturedHash);
+        }, 1000);
+    }
+
+    public int getArchivedStickersCount(int type) {
+        return archivedStickersCount[type];
+    }
+
+
+    public void verifyAnimatedStickerMessage(Message message) {
+        verifyAnimatedStickerMessage(message, false);
+    }
+
+    public void verifyAnimatedStickerMessage(Message message, boolean safe) {
+        if (message == null) {
+            return;
+        }
+        Document document = MessageObject.getDocument(message);
+        String name = MessageObject.getStickerSetName(document);
+        if (TextUtils.isEmpty(name)) {
+            return;
+        }
+        TL_messages_stickerSet stickerSet = stickerSetsByName.get(name);
+        if (stickerSet != null) {
+            for (int a = 0, N = stickerSet.documents.size(); a < N; a++) {
+                Document sticker = stickerSet.documents.get(a);
+                if (sticker.id == document.id && sticker.dc_id == document.dc_id) {
+                    message.stickerVerified = 1;
+                    break;
+                }
+            }
+            return;
+        }
+        if (safe) {
+            AndroidUtilities.runOnUIThread(() -> verifyAnimatedStickerMessageInternal(message, name));
+        } else {
+            verifyAnimatedStickerMessageInternal(message, name);
+        }
+    }
+
+    private void verifyAnimatedStickerMessageInternal(Message message, String name) {
+        ArrayList<Message> messages = verifyingMessages.get(name);
+        if (messages == null) {
+            messages = new ArrayList<>();
+            verifyingMessages.put(name, messages);
+        }
+        messages.add(message);
+        TL_messages_getStickerSet req = new TL_messages_getStickerSet();
+        req.stickerset = MessageObject.getInputStickerSet(message);
+        getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+            ArrayList<Message> arrayList = verifyingMessages.get(name);
+            if (response != null) {
+                TL_messages_stickerSet set = (TL_messages_stickerSet) response;
+                storeTempStickerSet(set);
+                for (int b = 0, N2 = arrayList.size(); b < N2; b++) {
+                    Message m = arrayList.get(b);
+                    Document d = MessageObject.getDocument(m);
+                    for (int a = 0, N = set.documents.size(); a < N; a++) {
+                        Document sticker = set.documents.get(a);
+                        if (sticker.id == d.id && sticker.dc_id == d.dc_id) {
+                            m.stickerVerified = 1;
+                            break;
+                        }
+                    }
+                    if (m.stickerVerified == 0) {
+                        m.stickerVerified = 2;
+                    }
+                }
+            } else {
+                for (int b = 0, N2 = arrayList.size(); b < N2; b++) {
+                    arrayList.get(b).stickerVerified = 2;
+                }
+            }
+            getNotificationCenter().postNotificationName(NotificationCenter.didVerifyMessagesStickers, arrayList);
+            getMessagesStorage().updateMessageVerifyFlags(arrayList);
+        }));
+    }
+
+    public void loadArchivedStickersCount(final int type, boolean cache) {
+        if (cache) {
+            SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
+            int count = preferences.getInt("archivedStickersCount" + type, -1);
+            if (count == -1) {
+                loadArchivedStickersCount(type, false);
+            } else {
+                archivedStickersCount[type] = count;
+                getNotificationCenter().postNotificationName(NotificationCenter.archivedStickersCountDidLoad, type);
+            }
+        } else {
+            TL_messages_getArchivedStickers req = new TL_messages_getArchivedStickers();
+            req.limit = 0;
+            req.masks = type == TYPE_MASK;
+            int reqId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+                if (error == null) {
+                    TL_messages_archivedStickers res = (TL_messages_archivedStickers) response;
+                    archivedStickersCount[type] = res.count;
+                    SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
+                    preferences.edit().putInt("archivedStickersCount" + type, res.count).commit();
+                    getNotificationCenter().postNotificationName(NotificationCenter.archivedStickersCountDidLoad, type);
+                }
+            }));
+        }
+    }
+
+    private void processLoadStickersResponse(final int type, final TL_messages_allStickers res) {
+        final ArrayList<TL_messages_stickerSet> newStickerArray = new ArrayList<>();
+        if (res.sets.isEmpty()) {
+            processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), res.hash);
+        } else {
+            final LongSparseArray<TL_messages_stickerSet> newStickerSets = new LongSparseArray<>();
+            for (int a = 0; a < res.sets.size(); a++) {
+                final StickerSet stickerSet = res.sets.get(a);
+
+                TL_messages_stickerSet oldSet = stickerSetsById.get(stickerSet.id);
+                if (oldSet != null && oldSet.set.hash == stickerSet.hash) {
+                    oldSet.set.archived = stickerSet.archived;
+                    oldSet.set.installed = stickerSet.installed;
+                    oldSet.set.official = stickerSet.official;
+                    newStickerSets.put(oldSet.set.id, oldSet);
+                    newStickerArray.add(oldSet);
+
+                    if (newStickerSets.size() == res.sets.size()) {
+                        processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), res.hash);
+                    }
+                    continue;
+                }
+
+                newStickerArray.add(null);
+                final int index = a;
+
+                TL_messages_getStickerSet req = new TL_messages_getStickerSet();
+                req.stickerset = new TL_inputStickerSetID();
+                req.stickerset.id = stickerSet.id;
+                req.stickerset.access_hash = stickerSet.access_hash;
+
+                getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+                    TL_messages_stickerSet res1 = (TL_messages_stickerSet) response;
+                    newStickerArray.set(index, res1);
+                    newStickerSets.put(stickerSet.id, res1);
+                    if (newStickerSets.size() == res.sets.size()) {
+                        for (int a1 = 0; a1 < newStickerArray.size(); a1++) {
+                            if (newStickerArray.get(a1) == null) {
+                                newStickerArray.remove(a1);
+                                a1--;
+                            }
+                        }
+                        processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), res.hash);
+                    }
+                }));
+            }
+        }
+    }
+
+    public void loadDiceStickers(String emoji, boolean cache) {
+        if (loadingDiceStickerSets.contains(emoji) || diceStickerSetsByEmoji.get(emoji) != null) {
+            return;
+        }
+        loadingDiceStickerSets.add(emoji);
+        if (cache) {
+            getMessagesStorage().getStorageQueue().postRunnable(() -> {
+                TL_messages_stickerSet stickerSet = null;
+                int date = 0;
+                SQLiteCursor cursor = null;
+                try {
+                    cursor = getMessagesStorage().getDatabase().queryFinalized("SELECT data, date FROM stickers_dice WHERE emoji = ?", emoji);
+                    if (cursor.next()) {
+                        NativeByteBuffer data = cursor.byteBufferValue(0);
+                        if (data != null) {
+                            stickerSet = TL_messages_stickerSet.TLdeserialize(data, data.readInt32(false), false);
+                            data.reuse();
+                        }
+                        date = cursor.intValue(1);
+                    }
+                } catch (Throwable e) {
+                    FileLog.e(e);
+                } finally {
+                    if (cursor != null) {
+                        cursor.dispose();
+                    }
+                }
+                processLoadedDiceStickers(emoji, stickerSet, true, date);
+            });
+        } else {
+            TL_messages_getStickerSet req = new TL_messages_getStickerSet();
+            TL_inputStickerSetDice inputStickerSetDice = new TL_inputStickerSetDice();
+            inputStickerSetDice.emoticon = emoji;
+            req.stickerset = inputStickerSetDice;
+            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+                if (response instanceof TL_messages_stickerSet) {
+                    processLoadedDiceStickers(emoji, (TL_messages_stickerSet) response, false, (int) (System.currentTimeMillis() / 1000));
+                } else {
+                    processLoadedDiceStickers(emoji, null, false, (int) (System.currentTimeMillis() / 1000));
+                }
+            }));
+        }
+    }
+
+    private void processLoadedDiceStickers(String emoji, TL_messages_stickerSet res, final boolean cache, final int date) {
+        AndroidUtilities.runOnUIThread(() -> loadingDiceStickerSets.remove(emoji));
+        Utilities.stageQueue.postRunnable(() -> {
+            if (cache && (res == null || Math.abs(System.currentTimeMillis() / 1000 - date) >= 60 * 60 * 24) || !cache && res == null) {
+                AndroidUtilities.runOnUIThread(() -> loadDiceStickers(emoji, false), res == null && !cache ? 1000 : 0);
+                if (res == null) {
+                    return;
+                }
+            }
+            if (res != null) {
+                if (!cache) {
+                    putDiceStickersToCache(emoji, res, date);
+                }
+                AndroidUtilities.runOnUIThread(() -> {
+                    diceStickerSetsByEmoji.put(emoji, res);
+                    diceEmojiStickerSetsById.put(res.set.id, emoji);
+                    getNotificationCenter().postNotificationName(NotificationCenter.diceStickersDidLoad, emoji);
+                });
+            } else if (!cache) {
+                putDiceStickersToCache(emoji, null, date);
+            }
+        });
+    }
+
+    private void putDiceStickersToCache(final String emoji, TL_messages_stickerSet stickers, final int date) {
+        if (TextUtils.isEmpty(emoji)) {
+            return;
+        }
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                if (stickers != null) {
+                    SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO stickers_dice VALUES(?, ?, ?)");
+                    state.requery();
+                    NativeByteBuffer data = new NativeByteBuffer(stickers.getObjectSize());
+                    stickers.serializeToStream(data);
+                    state.bindString(1, emoji);
+                    state.bindByteBuffer(2, data);
+                    state.bindInteger(3, date);
+                    state.step();
+                    data.reuse();
+                    state.dispose();
+                } else {
+                    SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("UPDATE stickers_dice SET date = ?");
+                    state.requery();
+                    state.bindInteger(1, date);
+                    state.step();
+                    state.dispose();
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    public void loadStickers(final int type, boolean cache, boolean useHash) {
+        loadStickers(type, cache, useHash, false);
+    }
+
+    public void loadStickers(final int type, boolean cache, boolean force, boolean scheduleIfLoading) {
+        if (loadingStickers[type]) {
+            if (scheduleIfLoading) {
+                scheduledLoadStickers[type] = () -> loadStickers(type, false, force, false);
+            }
+            return;
+        }
+        if (type == TYPE_FEATURED) {
+            if (featuredStickerSets.isEmpty() || !getMessagesController().preloadFeaturedStickers) {
+                return;
+            }
+        } else if (type != TYPE_EMOJI) {
+            loadArchivedStickersCount(type, cache);
+        }
+        loadingStickers[type] = true;
+        if (cache) {
+            getMessagesStorage().getStorageQueue().postRunnable(() -> {
+                ArrayList<TL_messages_stickerSet> newStickerArray = null;
+                int date = 0;
+                int hash = 0;
+                SQLiteCursor cursor = null;
+                try {
+                    cursor = getMessagesStorage().getDatabase().queryFinalized("SELECT data, date, hash FROM stickers_v2 WHERE id = " + (type + 1));
+                    if (cursor.next()) {
+                        NativeByteBuffer data = cursor.byteBufferValue(0);
+                        if (data != null) {
+                            newStickerArray = new ArrayList<>();
+                            int count = data.readInt32(false);
+                            for (int a = 0; a < count; a++) {
+                                TL_messages_stickerSet stickerSet = TL_messages_stickerSet.TLdeserialize(data, data.readInt32(false), false);
+                                newStickerArray.add(stickerSet);
+                            }
+                            data.reuse();
+                        }
+                        date = cursor.intValue(1);
+                        hash = calcStickersHash(newStickerArray);
+                    }
+                } catch (Throwable e) {
+                    FileLog.e(e);
+                } finally {
+                    if (cursor != null) {
+                        cursor.dispose();
+                    }
+                }
+                processLoadedStickers(type, newStickerArray, true, date, hash);
+            });
+        } else {
+            if (type == TYPE_FEATURED) {
+                TL_messages_allStickers response = new TL_messages_allStickers();
+                response.hash = loadFeaturedHash;
+                for (int a = 0, size = featuredStickerSets.size(); a < size; a++) {
+                    response.sets.add(featuredStickerSets.get(a).set);
+                }
+                processLoadStickersResponse(type, response);
+            } else if (type == TYPE_EMOJI) {
+                TL_messages_getStickerSet req = new TL_messages_getStickerSet();
+                req.stickerset = new TL_inputStickerSetAnimatedEmoji();
+                getConnectionsManager().sendRequest(req, (response, error) -> {
+                    if (response instanceof TL_messages_stickerSet) {
+                        final ArrayList<TL_messages_stickerSet> newStickerArray = new ArrayList<>();
+                        newStickerArray.add((TL_messages_stickerSet) response);
+                        processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), calcStickersHash(newStickerArray));
+                    } else {
+                        processLoadedStickers(type, null, false, (int) (System.currentTimeMillis() / 1000), 0);
+                    }
+                });
+            } else {
+                TLObject req;
+                final int hash;
+                if (type == TYPE_IMAGE) {
+                    req = new TL_messages_getAllStickers();
+                    hash = ((TL_messages_getAllStickers) req).hash = force ? 0 : loadHash[type];
+                } else {
+                    req = new TL_messages_getMaskStickers();
+                    hash = ((TL_messages_getMaskStickers) req).hash = force ? 0 : loadHash[type];
+                }
+                getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+                    if (response instanceof TL_messages_allStickers) {
+                        processLoadStickersResponse(type, (TL_messages_allStickers) response);
+                    } else {
+                        processLoadedStickers(type, null, false, (int) (System.currentTimeMillis() / 1000), hash);
+                    }
+                }));
+            }
+        }
+    }
+
+    private void putStickersToCache(final int type, ArrayList<TL_messages_stickerSet> stickers, final int date, final int hash) {
+        final ArrayList<TL_messages_stickerSet> stickersFinal = stickers != null ? new ArrayList<>(stickers) : null;
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                if (stickersFinal != null) {
+                    SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO stickers_v2 VALUES(?, ?, ?, ?)");
+                    state.requery();
+                    int size = 4;
+                    for (int a = 0; a < stickersFinal.size(); a++) {
+                        size += stickersFinal.get(a).getObjectSize();
+                    }
+                    NativeByteBuffer data = new NativeByteBuffer(size);
+                    data.writeInt32(stickersFinal.size());
+                    for (int a = 0; a < stickersFinal.size(); a++) {
+                        stickersFinal.get(a).serializeToStream(data);
+                    }
+                    state.bindInteger(1, type + 1);
+                    state.bindByteBuffer(2, data);
+                    state.bindInteger(3, date);
+                    state.bindInteger(4, hash);
+                    state.step();
+                    data.reuse();
+                    state.dispose();
+                } else {
+                    SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("UPDATE stickers_v2 SET date = ?");
+                    state.requery();
+                    state.bindInteger(1, date);
+                    state.step();
+                    state.dispose();
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    public String getStickerSetName(long setId) {
+        TL_messages_stickerSet stickerSet = stickerSetsById.get(setId);
+        if (stickerSet != null) {
+            return stickerSet.set.short_name;
+        }
+        StickerSetCovered stickerSetCovered = featuredStickerSetsById.get(setId);
+        if (stickerSetCovered != null) {
+            return stickerSetCovered.set.short_name;
+        }
+        return null;
+    }
+
+    public static long getStickerSetId(Document document) {
+        for (int a = 0; a < document.attributes.size(); a++) {
+            DocumentAttribute attribute = document.attributes.get(a);
+            if (attribute instanceof TL_documentAttributeSticker) {
+                if (attribute.stickerset instanceof TL_inputStickerSetID) {
+                    return attribute.stickerset.id;
+                }
+                break;
+            }
+        }
+        return -1;
+    }
+
+    public static InputStickerSet getInputStickerSet(Document document) {
+        for (int a = 0; a < document.attributes.size(); a++) {
+            DocumentAttribute attribute = document.attributes.get(a);
+            if (attribute instanceof TL_documentAttributeSticker) {
+                if (attribute.stickerset instanceof TL_inputStickerSetEmpty) {
+                    return null;
+                }
+                return attribute.stickerset;
+            }
+        }
+        return null;
+    }
+
+    private static int calcStickersHash(ArrayList<TL_messages_stickerSet> sets) {
+        long acc = 0;
+        for (int a = 0; a < sets.size(); a++) {
+            StickerSet set = sets.get(a).set;
+            if (set.archived) {
+                continue;
+            }
+            acc = ((acc * 20261) + 0x80000000L + set.hash) % 0x80000000L;
+        }
+        return (int) acc;
+    }
+
+    private void processLoadedStickers(final int type, final ArrayList<TL_messages_stickerSet> res, final boolean cache, final int date, final int hash) {
+        AndroidUtilities.runOnUIThread(() -> {
+            loadingStickers[type] = false;
+            stickersLoaded[type] = true;
+            if (scheduledLoadStickers[type] != null) {
+                scheduledLoadStickers[type].run();
+                scheduledLoadStickers[type] = null;
+            }
+        });
+        Utilities.stageQueue.postRunnable(() -> {
+            if (cache && (res == null || Math.abs(System.currentTimeMillis() / 1000 - date) >= 60 * 60) || !cache && res == null && hash == 0) {
+                AndroidUtilities.runOnUIThread(() -> {
+                    if (res != null && hash != 0) {
+                        loadHash[type] = hash;
+                    }
+                    loadStickers(type, false, false);
+                }, res == null && !cache ? 1000 : 0);
+                if (res == null) {
+                    return;
+                }
+            }
+            if (res != null) {
+                try {
+                    final ArrayList<TL_messages_stickerSet> stickerSetsNew = new ArrayList<>();
+                    final LongSparseArray<TL_messages_stickerSet> stickerSetsByIdNew = new LongSparseArray<>();
+                    final HashMap<String, TL_messages_stickerSet> stickerSetsByNameNew = new HashMap<>();
+                    final LongSparseArray<String> stickersByEmojiNew = new LongSparseArray<>();
+                    final LongSparseArray<Document> stickersByIdNew = new LongSparseArray<>();
+                    final HashMap<String, ArrayList<Document>> allStickersNew = new HashMap<>();
+
+                    for (int a = 0; a < res.size(); a++) {
+                        TL_messages_stickerSet stickerSet = res.get(a);
+                        if (stickerSet == null || removingStickerSetsUndos.indexOfKey(stickerSet.set.id) >= 0) {
+                            continue;
+                        }
+                        stickerSetsNew.add(stickerSet);
+                        stickerSetsByIdNew.put(stickerSet.set.id, stickerSet);
+                        stickerSetsByNameNew.put(stickerSet.set.short_name, stickerSet);
+
+                        for (int b = 0; b < stickerSet.documents.size(); b++) {
+                            Document document = stickerSet.documents.get(b);
+                            if (document == null || document instanceof TL_documentEmpty) {
+                                continue;
+                            }
+                            stickersByIdNew.put(document.id, document);
+                        }
+                        if (!stickerSet.set.archived) {
+                            for (int b = 0; b < stickerSet.packs.size(); b++) {
+                                TL_stickerPack stickerPack = stickerSet.packs.get(b);
+                                if (stickerPack == null || stickerPack.emoticon == null) {
+                                    continue;
+                                }
+                                stickerPack.emoticon = stickerPack.emoticon.replace("\uFE0F", "");
+                                ArrayList<Document> arrayList = allStickersNew.get(stickerPack.emoticon);
+                                if (arrayList == null) {
+                                    arrayList = new ArrayList<>();
+                                    allStickersNew.put(stickerPack.emoticon, arrayList);
+                                }
+                                for (int c = 0; c < stickerPack.documents.size(); c++) {
+                                    Long id = stickerPack.documents.get(c);
+                                    if (stickersByEmojiNew.indexOfKey(id) < 0) {
+                                        stickersByEmojiNew.put(id, stickerPack.emoticon);
+                                    }
+                                    Document sticker = stickersByIdNew.get(id);
+                                    if (sticker != null) {
+                                        arrayList.add(sticker);
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (!cache) {
+                        putStickersToCache(type, stickerSetsNew, date, hash);
+                    }
+                    AndroidUtilities.runOnUIThread(() -> {
+                        for (int a = 0; a < stickerSets[type].size(); a++) {
+                            StickerSet set = stickerSets[type].get(a).set;
+                            stickerSetsById.remove(set.id);
+                            stickerSetsByName.remove(set.short_name);
+                            if (type != TYPE_FEATURED && type != TYPE_EMOJI) {
+                                installedStickerSetsById.remove(set.id);
+                            }
+                        }
+                        for (int a = 0; a < stickerSetsByIdNew.size(); a++) {
+                            stickerSetsById.put(stickerSetsByIdNew.keyAt(a), stickerSetsByIdNew.valueAt(a));
+                            if (type != TYPE_FEATURED && type != TYPE_EMOJI) {
+                                installedStickerSetsById.put(stickerSetsByIdNew.keyAt(a), stickerSetsByIdNew.valueAt(a));
+                            }
+                        }
+                        stickerSetsByName.putAll(stickerSetsByNameNew);
+                        stickerSets[type] = stickerSetsNew;
+                        loadHash[type] = hash;
+                        loadDate[type] = date;
+                        stickersByIds[type] = stickersByIdNew;
+                        if (type == TYPE_IMAGE) {
+                            allStickers = allStickersNew;
+                            stickersByEmoji = stickersByEmojiNew;
+                        } else if (type == TYPE_FEATURED) {
+                            allStickersFeatured = allStickersNew;
+                        }
+                        getNotificationCenter().postNotificationName(NotificationCenter.stickersDidLoad, type);
+                    });
+                } catch (Throwable e) {
+                    FileLog.e(e);
+                }
+            } else if (!cache) {
+                AndroidUtilities.runOnUIThread(() -> loadDate[type] = date);
+                putStickersToCache(type, null, date, 0);
+            }
+        });
+    }
+
+    public boolean cancelRemovingStickerSet(long id) {
+        final Runnable undoAction = removingStickerSetsUndos.get(id);
+        if (undoAction != null) {
+            undoAction.run();
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    public void preloadStickerSetThumb(TL_messages_stickerSet stickerSet) {
+        if (stickerSet.set.thumb instanceof TL_photoSize) {
+            final ArrayList<Document> documents = stickerSet.documents;
+            if (documents != null && !documents.isEmpty()) {
+                loadStickerSetThumbInternal(stickerSet.set.thumb, stickerSet, documents.get(0));
+            }
+        }
+    }
+
+    public void preloadStickerSetThumb(StickerSetCovered stickerSet) {
+        if (stickerSet.set.thumb instanceof TL_photoSize) {
+            final Document sticker;
+            if (stickerSet.cover != null) {
+                sticker = stickerSet.cover;
+            } else if (!stickerSet.covers.isEmpty()) {
+                sticker = stickerSet.covers.get(0);
+            } else {
+                return;
+            }
+            loadStickerSetThumbInternal(stickerSet.set.thumb, stickerSet, sticker);
+        }
+    }
+
+    private void loadStickerSetThumbInternal(PhotoSize thumb, Object parentObject, Document sticker) {
+        final ImageLocation imageLocation = ImageLocation.getForSticker(thumb, sticker);
+        if (imageLocation != null) {
+            final String ext = imageLocation.imageType == FileLoader.IMAGE_TYPE_LOTTIE ? "tgs" : "webp";
+            getFileLoader().loadFile(imageLocation, parentObject, ext, 2, 1);
+        }
+    }
+
+    /** @param toggle 0 - remove, 1 - archive, 2 - add */
+    public void toggleStickerSet(final Context context, final TLObject stickerSetObject, final int toggle, final BaseFragment baseFragment, final boolean showSettings, boolean showTooltip) {
+        final StickerSet stickerSet;
+        final TL_messages_stickerSet messages_stickerSet;
+
+        if (stickerSetObject instanceof TL_messages_stickerSet) {
+            messages_stickerSet = ((TL_messages_stickerSet) stickerSetObject);
+            stickerSet = messages_stickerSet.set;
+        } else if (stickerSetObject instanceof StickerSetCovered) {
+            stickerSet = ((StickerSetCovered) stickerSetObject).set;
+            if (toggle != 2) {
+                messages_stickerSet = stickerSetsById.get(stickerSet.id);
+                if (messages_stickerSet == null) {
+                    return;
+                }
+            } else {
+                messages_stickerSet = null;
+            }
+        } else {
+            throw new IllegalArgumentException("Invalid type of the given stickerSetObject: " + stickerSetObject.getClass());
+        }
+
+        final int type = stickerSet.masks ? TYPE_MASK : TYPE_IMAGE;
+
+        stickerSet.archived = toggle == 1;
+
+        int currentIndex = 0;
+        for (int a = 0; a < stickerSets[type].size(); a++) {
+            TL_messages_stickerSet set = stickerSets[type].get(a);
+            if (set.set.id == stickerSet.id) {
+                currentIndex = a;
+                stickerSets[type].remove(a);
+                if (toggle == 2) {
+                    stickerSets[type].add(0, set);
+                } else {
+                    stickerSetsById.remove(set.set.id);
+                    installedStickerSetsById.remove(set.set.id);
+                    stickerSetsByName.remove(set.set.short_name);
+                }
+                break;
+            }
+        }
+
+        loadHash[type] = calcStickersHash(stickerSets[type]);
+        putStickersToCache(type, stickerSets[type], loadDate[type], loadHash[type]);
+        getNotificationCenter().postNotificationName(NotificationCenter.stickersDidLoad, type);
+
+        if (toggle == 2) {
+            if (!cancelRemovingStickerSet(stickerSet.id)) {
+                toggleStickerSetInternal(context, toggle, baseFragment, showSettings, stickerSetObject, stickerSet, type, showTooltip);
+            }
+        } else if (!showTooltip || baseFragment == null) {
+            toggleStickerSetInternal(context, toggle, baseFragment, showSettings, stickerSetObject, stickerSet, type, false);
+        } else {
+            final StickerSetBulletinLayout bulletinLayout = new StickerSetBulletinLayout(context, stickerSetObject, toggle);
+            final int finalCurrentIndex = currentIndex;
+            final Bulletin.UndoButton undoButton = new Bulletin.UndoButton(context).setUndoAction(() -> {
+                stickerSet.archived = false;
+
+                stickerSets[type].add(finalCurrentIndex, messages_stickerSet);
+                stickerSetsById.put(stickerSet.id, messages_stickerSet);
+                installedStickerSetsById.put(stickerSet.id, messages_stickerSet);
+                stickerSetsByName.put(stickerSet.short_name, messages_stickerSet);
+                removingStickerSetsUndos.remove(stickerSet.id);
+
+                loadHash[type] = calcStickersHash(stickerSets[type]);
+                putStickersToCache(type, stickerSets[type], loadDate[type], loadHash[type]);
+                getNotificationCenter().postNotificationName(NotificationCenter.stickersDidLoad, type);
+            }).setDelayedAction(() -> toggleStickerSetInternal(context, toggle, baseFragment, showSettings, stickerSetObject, stickerSet, type, false));
+            bulletinLayout.setButton(undoButton);
+            removingStickerSetsUndos.put(stickerSet.id, undoButton::undo);
+            Bulletin.make(baseFragment, bulletinLayout, Bulletin.DURATION_LONG).show();
+        }
+    }
+
+    private void toggleStickerSetInternal(Context context, int toggle, BaseFragment baseFragment, boolean showSettings, TLObject stickerSetObject, StickerSet stickerSet, int type, boolean showTooltip) {
+        TL_inputStickerSetID stickerSetID = new TL_inputStickerSetID();
+        stickerSetID.access_hash = stickerSet.access_hash;
+        stickerSetID.id = stickerSet.id;
+
+        if (toggle != 0) {
+            TL_messages_installStickerSet req = new TL_messages_installStickerSet();
+            req.stickerset = stickerSetID;
+            req.archived = toggle == 1;
+            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+                removingStickerSetsUndos.remove(stickerSet.id);
+                if (response instanceof TL_messages_stickerSetInstallResultArchive) {
+                    processStickerSetInstallResultArchive(baseFragment, showSettings, type, (TL_messages_stickerSetInstallResultArchive) response);
+                }
+                loadStickers(type, false, false, true);
+                if (error == null && showTooltip && baseFragment != null) {
+                    Bulletin.make(baseFragment, new StickerSetBulletinLayout(context, stickerSetObject, StickerSetBulletinLayout.TYPE_ADDED), Bulletin.DURATION_SHORT).show();
+                }
+            }));
+        } else {
+            TL_messages_uninstallStickerSet req = new TL_messages_uninstallStickerSet();
+            req.stickerset = stickerSetID;
+            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+                removingStickerSetsUndos.remove(stickerSet.id);
+                loadStickers(type, false, true);
+            }));
+        }
+    }
+
+    /** @param toggle 0 - uninstall, 1 - archive, 2 - unarchive */
+    public void toggleStickerSets(final ArrayList<StickerSet> stickerSetList, final int type, final int toggle, final BaseFragment baseFragment, final boolean showSettings) {
+        final int stickerSetListSize = stickerSetList.size();
+        final ArrayList<InputStickerSet> inputStickerSets = new ArrayList<>(stickerSetListSize);
+
+        for (int i = 0; i < stickerSetListSize; i++) {
+            final StickerSet stickerSet = stickerSetList.get(i);
+            final InputStickerSet inputStickerSet = new TL_inputStickerSetID();
+            inputStickerSet.access_hash = stickerSet.access_hash;
+            inputStickerSet.id = stickerSet.id;
+            inputStickerSets.add(inputStickerSet);
+            if (toggle != 0) {
+                stickerSet.archived = toggle == 1;
+            }
+            for (int a = 0, size = stickerSets[type].size(); a < size; a++) {
+                TL_messages_stickerSet set = stickerSets[type].get(a);
+                if (set.set.id == inputStickerSet.id) {
+                    stickerSets[type].remove(a);
+                    if (toggle == 2) {
+                        stickerSets[type].add(0, set);
+                    } else {
+                        stickerSetsById.remove(set.set.id);
+                        installedStickerSetsById.remove(set.set.id);
+                        stickerSetsByName.remove(set.set.short_name);
+                    }
+                    break;
+                }
+            }
+        }
+
+        loadHash[type] = calcStickersHash(this.stickerSets[type]);
+        putStickersToCache(type, this.stickerSets[type], loadDate[type], loadHash[type]);
+        getNotificationCenter().postNotificationName(NotificationCenter.stickersDidLoad, type);
+
+        final TL_messages_toggleStickerSets req = new TL_messages_toggleStickerSets();
+        req.stickersets = inputStickerSets;
+        switch (toggle) {
+            case 0:
+                req.uninstall = true;
+                break;
+            case 1:
+                req.archive = true;
+                break;
+            case 2:
+                req.unarchive = true;
+                break;
+        }
+        getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+            if (toggle != 0) {
+                if (response instanceof TL_messages_stickerSetInstallResultArchive) {
+                    processStickerSetInstallResultArchive(baseFragment, showSettings, type, (TL_messages_stickerSetInstallResultArchive) response);
+                }
+                loadStickers(type, false, false, true);
+            } else {
+                loadStickers(type, false, true);
+            }
+        }));
+    }
+
+    public void processStickerSetInstallResultArchive(BaseFragment baseFragment, boolean showSettings, int type, TL_messages_stickerSetInstallResultArchive response) {
+        for (int i = 0, size = response.sets.size(); i < size; i++) {
+            installedStickerSetsById.remove(response.sets.get(i).set.id);
+        }
+        loadArchivedStickersCount(type, false);
+        getNotificationCenter().postNotificationName(NotificationCenter.needAddArchivedStickers, response.sets);
+        if (baseFragment != null && baseFragment.getParentActivity() != null) {
+            final StickersArchiveAlert alert = new StickersArchiveAlert(baseFragment.getParentActivity(), showSettings ? baseFragment : null, response.sets);
+            baseFragment.showDialog(alert.create());
+        }
+    }
+    //endregion ---------------- STICKERS END ----------------
 
     //region ---------------- MESSAGE SEARCH ----------------
     private int reqId;
@@ -1892,12 +3747,6 @@ public class MediaDataController extends BaseController {
         getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
     }
 
-    public String getEmojiForSticker(long id) {
-        String value = stickersByEmoji.get(id);
-        return value != null ? value : "";
-    }
-
-
     //region ---------------- MEDIA ----------------
     public final static int MEDIA_PHOTOVIDEO = 0;
     public final static int MEDIA_FILE = 1;
@@ -2617,4 +4466,771 @@ public class MediaDataController extends BaseController {
     }
 
     //endregion ---------------- BOT END ----------------
+
+
+    //region ---------------- SEARCH ----------------
+    public ArrayList<TLRPC.TL_topPeer> hints = new ArrayList<>();
+    public ArrayList<TLRPC.TL_topPeer> inlineBots = new ArrayList<>();
+    boolean loaded;
+    boolean loading;
+
+    private static Paint roundPaint, erasePaint;
+    private static RectF bitmapRect;
+    private static Path roundPath;
+
+    public void buildShortcuts() {
+        if (Build.VERSION.SDK_INT < 25) {
+            return;
+        }
+        final ArrayList<TLRPC.TL_topPeer> hintsFinal = new ArrayList<>();
+        if (SharedConfig.passcodeHash.length() <= 0) {
+            for (int a = 0; a < hints.size(); a++) {
+                hintsFinal.add(hints.get(a));
+                if (hintsFinal.size() == 3) {
+                    break;
+                }
+            }
+        }
+        Utilities.globalQueue.postRunnable(() -> {
+            try {
+                ShortcutManager shortcutManager = ApplicationLoader.applicationContext.getSystemService(ShortcutManager.class);
+                List<ShortcutInfo> currentShortcuts = shortcutManager.getDynamicShortcuts();
+                ArrayList<String> shortcutsToUpdate = new ArrayList<>();
+                ArrayList<String> newShortcutsIds = new ArrayList<>();
+                ArrayList<String> shortcutsToDelete = new ArrayList<>();
+
+                if (currentShortcuts != null && !currentShortcuts.isEmpty()) {
+                    newShortcutsIds.add("compose");
+                    for (int a = 0; a < hintsFinal.size(); a++) {
+                        TLRPC.TL_topPeer hint = hintsFinal.get(a);
+                        long did;
+                        if (hint.peer.user_id != 0) {
+                            did = hint.peer.user_id;
+                        } else {
+                            did = -hint.peer.chat_id;
+                            if (did == 0) {
+                                did = -hint.peer.channel_id;
+                            }
+                        }
+                        newShortcutsIds.add("did" + did);
+                    }
+                    for (int a = 0; a < currentShortcuts.size(); a++) {
+                        String id = currentShortcuts.get(a).getId();
+                        if (!newShortcutsIds.remove(id)) {
+                            shortcutsToDelete.add(id);
+                        }
+                        shortcutsToUpdate.add(id);
+                    }
+                    if (newShortcutsIds.isEmpty() && shortcutsToDelete.isEmpty()) {
+                        return;
+                    }
+                }
+
+                Intent intent = new Intent(ApplicationLoader.applicationContext, LaunchActivity.class);
+                intent.setAction("new_dialog");
+                ArrayList<ShortcutInfo> arrayList = new ArrayList<>();
+                arrayList.add(new ShortcutInfo.Builder(ApplicationLoader.applicationContext, "compose")
+                        .setShortLabel(LocaleController.getString("NewConversationShortcut", R.string.NewConversationShortcut))
+                        .setLongLabel(LocaleController.getString("NewConversationShortcut", R.string.NewConversationShortcut))
+                        .setIcon(Icon.createWithResource(ApplicationLoader.applicationContext, R.drawable.shortcut_compose))
+                        .setIntent(intent)
+                        .build());
+                if (shortcutsToUpdate.contains("compose")) {
+                    shortcutManager.updateShortcuts(arrayList);
+                } else {
+                    shortcutManager.addDynamicShortcuts(arrayList);
+                }
+                arrayList.clear();
+
+                if (!shortcutsToDelete.isEmpty()) {
+                    shortcutManager.removeDynamicShortcuts(shortcutsToDelete);
+                }
+
+                for (int a = 0; a < hintsFinal.size(); a++) {
+                    Intent shortcutIntent = new Intent(ApplicationLoader.applicationContext, OpenChatReceiver.class);
+                    TLRPC.TL_topPeer hint = hintsFinal.get(a);
+
+                    TLRPC.User user = null;
+                    TLRPC.Chat chat = null;
+                    long did;
+                    if (hint.peer.user_id != 0) {
+                        shortcutIntent.putExtra("userId", hint.peer.user_id);
+                        user = getMessagesController().getUser(hint.peer.user_id);
+                        did = hint.peer.user_id;
+                    } else {
+                        int chat_id = hint.peer.chat_id;
+                        if (chat_id == 0) {
+                            chat_id = hint.peer.channel_id;
+                        }
+                        chat = getMessagesController().getChat(chat_id);
+                        shortcutIntent.putExtra("chatId", chat_id);
+                        did = -chat_id;
+                    }
+                    if ((user == null || UserObject.isDeleted(user)) && chat == null) {
+                        continue;
+                    }
+
+                    String name;
+                    TLRPC.FileLocation photo = null;
+
+                    if (user != null) {
+                        name = ContactsController.formatName(user.first_name, user.last_name);
+                        if (user.photo != null) {
+                            photo = user.photo.photo_small;
+                        }
+                    } else {
+                        name = chat.title;
+                        if (chat.photo != null) {
+                            photo = chat.photo.photo_small;
+                        }
+                    }
+
+                    shortcutIntent.putExtra("currentAccount", currentAccount);
+                    shortcutIntent.setAction("com.tmessages.openchat" + did);
+                    shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+
+                    Bitmap bitmap = null;
+                    if (photo != null) {
+                        try {
+                            File path = FileLoader.getPathToAttach(photo, true);
+                            bitmap = BitmapFactory.decodeFile(path.toString());
+                            if (bitmap != null) {
+                                int size = AndroidUtilities.dp(48);
+                                Bitmap result = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+                                Canvas canvas = new Canvas(result);
+                                if (roundPaint == null) {
+                                    roundPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+                                    bitmapRect = new RectF();
+                                    erasePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                                    erasePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+                                    roundPath = new Path();
+                                    roundPath.addCircle(size / 2, size / 2, size / 2 - AndroidUtilities.dp(2), Path.Direction.CW);
+                                    roundPath.toggleInverseFillType();
+                                }
+                                bitmapRect.set(AndroidUtilities.dp(2), AndroidUtilities.dp(2), AndroidUtilities.dp(46), AndroidUtilities.dp(46));
+                                canvas.drawBitmap(bitmap, null, bitmapRect, roundPaint);
+                                canvas.drawPath(roundPath, erasePaint);
+                                try {
+                                    canvas.setBitmap(null);
+                                } catch (Exception ignore) {
+
+                                }
+                                bitmap = result;
+                            }
+                        } catch (Throwable e) {
+                            FileLog.e(e);
+                        }
+                    }
+
+                    String id = "did" + did;
+                    if (TextUtils.isEmpty(name)) {
+                        name = " ";
+                    }
+                    ShortcutInfo.Builder builder = new ShortcutInfo.Builder(ApplicationLoader.applicationContext, id)
+                            .setShortLabel(name)
+                            .setLongLabel(name)
+                            .setIntent(shortcutIntent);
+                    if (bitmap != null) {
+                        builder.setIcon(Icon.createWithBitmap(bitmap));
+                    } else {
+                        builder.setIcon(Icon.createWithResource(ApplicationLoader.applicationContext, R.drawable.shortcut_user));
+                    }
+                    arrayList.add(builder.build());
+                    if (shortcutsToUpdate.contains(id)) {
+                        shortcutManager.updateShortcuts(arrayList);
+                    } else {
+                        shortcutManager.addDynamicShortcuts(arrayList);
+                    }
+                    arrayList.clear();
+                }
+            } catch (Throwable ignore) {
+
+            }
+        });
+    }
+
+    public void loadHints(boolean cache) {
+        if (loading || !getUserConfig().suggestContacts) {
+            return;
+        }
+        if (cache) {
+            if (loaded) {
+                return;
+            }
+            loading = true;
+            getMessagesStorage().getStorageQueue().postRunnable(() -> {
+                final ArrayList<TLRPC.TL_topPeer> hintsNew = new ArrayList<>();
+                final ArrayList<TLRPC.TL_topPeer> inlineBotsNew = new ArrayList<>();
+                final ArrayList<TLRPC.User> users = new ArrayList<>();
+                final ArrayList<TLRPC.Chat> chats = new ArrayList<>();
+                int selfUserId = getUserConfig().getClientUserId();
+                try {
+                    ArrayList<Integer> usersToLoad = new ArrayList<>();
+                    ArrayList<Integer> chatsToLoad = new ArrayList<>();
+                    SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized("SELECT did, type, rating FROM chat_hints WHERE 1 ORDER BY rating DESC");
+                    while (cursor.next()) {
+                        int did = cursor.intValue(0);
+                        if (did == selfUserId) {
+                            continue;
+                        }
+                        int type = cursor.intValue(1);
+                        TLRPC.TL_topPeer peer = new TLRPC.TL_topPeer();
+                        peer.rating = cursor.doubleValue(2);
+                        if (did > 0) {
+                            peer.peer = new TLRPC.TL_peerUser();
+                            peer.peer.user_id = did;
+                            usersToLoad.add(did);
+                        } else {
+                            peer.peer = new TLRPC.TL_peerChat();
+                            peer.peer.chat_id = -did;
+                            chatsToLoad.add(-did);
+                        }
+                        if (type == 0) {
+                            hintsNew.add(peer);
+                        } else if (type == 1) {
+                            inlineBotsNew.add(peer);
+                        }
+                    }
+                    cursor.dispose();
+                    if (!usersToLoad.isEmpty()) {
+                        getMessagesStorage().getUsersInternal(TextUtils.join(",", usersToLoad), users);
+                    }
+
+                    if (!chatsToLoad.isEmpty()) {
+                        getMessagesStorage().getChatsInternal(TextUtils.join(",", chatsToLoad), chats);
+                    }
+                    AndroidUtilities.runOnUIThread(() -> {
+                        getMessagesController().putUsers(users, true);
+                        getMessagesController().putChats(chats, true);
+                        loading = false;
+                        loaded = true;
+                        hints = hintsNew;
+                        inlineBots = inlineBotsNew;
+                        buildShortcuts();
+                        getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
+                        getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
+                        if (Math.abs(getUserConfig().lastHintsSyncTime - (int) (System.currentTimeMillis() / 1000)) >= 24 * 60 * 60) {
+                            loadHints(false);
+                        }
+                    });
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
+            });
+            loaded = true;
+        } else {
+            loading = true;
+            TLRPC.TL_contacts_getTopPeers req = new TLRPC.TL_contacts_getTopPeers();
+            req.hash = 0;
+            req.bots_pm = false;
+            req.correspondents = true;
+            req.groups = false;
+            req.channels = false;
+            req.bots_inline = true;
+            req.offset = 0;
+            req.limit = 20;
+            getConnectionsManager().sendRequest(req, (response, error) -> {
+                if (response instanceof TLRPC.TL_contacts_topPeers) {
+                    AndroidUtilities.runOnUIThread(() -> {
+                        final TLRPC.TL_contacts_topPeers topPeers = (TLRPC.TL_contacts_topPeers) response;
+                        getMessagesController().putUsers(topPeers.users, false);
+                        getMessagesController().putChats(topPeers.chats, false);
+                        for (int a = 0; a < topPeers.categories.size(); a++) {
+                            TLRPC.TL_topPeerCategoryPeers category = topPeers.categories.get(a);
+                            if (category.category instanceof TLRPC.TL_topPeerCategoryBotsInline) {
+                                inlineBots = category.peers;
+                                getUserConfig().botRatingLoadTime = (int) (System.currentTimeMillis() / 1000);
+                            } else {
+                                hints = category.peers;
+                                int selfUserId = getUserConfig().getClientUserId();
+                                for (int b = 0; b < hints.size(); b++) {
+                                    TLRPC.TL_topPeer topPeer = hints.get(b);
+                                    if (topPeer.peer.user_id == selfUserId) {
+                                        hints.remove(b);
+                                        break;
+                                    }
+                                }
+                                getUserConfig().ratingLoadTime = (int) (System.currentTimeMillis() / 1000);
+                            }
+                        }
+                        getUserConfig().saveConfig(false);
+                        buildShortcuts();
+                        getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
+                        getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
+                        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+                            try {
+                                getMessagesStorage().getDatabase().executeFast("DELETE FROM chat_hints WHERE 1").stepThis().dispose();
+                                getMessagesStorage().getDatabase().beginTransaction();
+                                getMessagesStorage().putUsersAndChats(topPeers.users, topPeers.chats, false, false);
+
+                                SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO chat_hints VALUES(?, ?, ?, ?)");
+                                for (int a = 0; a < topPeers.categories.size(); a++) {
+                                    int type;
+                                    TLRPC.TL_topPeerCategoryPeers category = topPeers.categories.get(a);
+                                    if (category.category instanceof TLRPC.TL_topPeerCategoryBotsInline) {
+                                        type = 1;
+                                    } else {
+                                        type = 0;
+                                    }
+                                    for (int b = 0; b < category.peers.size(); b++) {
+                                        TLRPC.TL_topPeer peer = category.peers.get(b);
+                                        int did;
+                                        if (peer.peer instanceof TLRPC.TL_peerUser) {
+                                            did = peer.peer.user_id;
+                                        } else if (peer.peer instanceof TLRPC.TL_peerChat) {
+                                            did = -peer.peer.chat_id;
+                                        } else {
+                                            did = -peer.peer.channel_id;
+                                        }
+                                        state.requery();
+                                        state.bindInteger(1, did);
+                                        state.bindInteger(2, type);
+                                        state.bindDouble(3, peer.rating);
+                                        state.bindInteger(4, 0);
+                                        state.step();
+                                    }
+                                }
+
+                                state.dispose();
+
+                                getMessagesStorage().getDatabase().commitTransaction();
+                                AndroidUtilities.runOnUIThread(() -> {
+                                    getUserConfig().suggestContacts = true;
+                                    getUserConfig().lastHintsSyncTime = (int) (System.currentTimeMillis() / 1000);
+                                    getUserConfig().saveConfig(false);
+                                });
+                            } catch (Exception e) {
+                                FileLog.e(e);
+                            }
+                        });
+                    });
+                } else if (response instanceof TLRPC.TL_contacts_topPeersDisabled) {
+                    AndroidUtilities.runOnUIThread(() -> {
+                        getUserConfig().suggestContacts = false;
+                        getUserConfig().lastHintsSyncTime = (int) (System.currentTimeMillis() / 1000);
+                        getUserConfig().saveConfig(false);
+                        clearTopPeers();
+                    });
+                }
+            });
+        }
+    }
+
+    public void clearTopPeers() {
+        hints.clear();
+        inlineBots.clear();
+        getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
+        getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                getMessagesStorage().getDatabase().executeFast("DELETE FROM chat_hints WHERE 1").stepThis().dispose();
+            } catch (Exception ignore) {
+
+            }
+        });
+        buildShortcuts();
+    }
+
+    public void increaseInlineRaiting(final int uid) {
+        if (!getUserConfig().suggestContacts) {
+            return;
+        }
+        int dt;
+        if (getUserConfig().botRatingLoadTime != 0) {
+            dt = Math.max(1, ((int) (System.currentTimeMillis() / 1000)) - getUserConfig().botRatingLoadTime);
+        } else {
+            dt = 60;
+        }
+
+        TLRPC.TL_topPeer peer = null;
+        for (int a = 0; a < inlineBots.size(); a++) {
+            TLRPC.TL_topPeer p = inlineBots.get(a);
+            if (p.peer.user_id == uid) {
+                peer = p;
+                break;
+            }
+        }
+        if (peer == null) {
+            peer = new TLRPC.TL_topPeer();
+            peer.peer = new TLRPC.TL_peerUser();
+            peer.peer.user_id = uid;
+            inlineBots.add(peer);
+        }
+        peer.rating += Math.exp(dt / getMessagesController().ratingDecay);
+        Collections.sort(inlineBots, (lhs, rhs) -> {
+            if (lhs.rating > rhs.rating) {
+                return -1;
+            } else if (lhs.rating < rhs.rating) {
+                return 1;
+            }
+            return 0;
+        });
+        if (inlineBots.size() > 20) {
+            inlineBots.remove(inlineBots.size() - 1);
+        }
+        savePeer(uid, 1, peer.rating);
+        getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
+    }
+
+    public void removeInline(final int uid) {
+        TLRPC.TL_topPeerCategoryPeers category = null;
+        for (int a = 0; a < inlineBots.size(); a++) {
+            if (inlineBots.get(a).peer.user_id == uid) {
+                inlineBots.remove(a);
+                TLRPC.TL_contacts_resetTopPeerRating req = new TLRPC.TL_contacts_resetTopPeerRating();
+                req.category = new TLRPC.TL_topPeerCategoryBotsInline();
+                req.peer = getMessagesController().getInputPeer(uid);
+                getConnectionsManager().sendRequest(req, (response, error) -> {
+
+                });
+                deletePeer(uid, 1);
+                getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
+                return;
+            }
+        }
+    }
+
+    public void removePeer(final int uid) {
+        for (int a = 0; a < hints.size(); a++) {
+            if (hints.get(a).peer.user_id == uid) {
+                hints.remove(a);
+                getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
+                TLRPC.TL_contacts_resetTopPeerRating req = new TLRPC.TL_contacts_resetTopPeerRating();
+                req.category = new TLRPC.TL_topPeerCategoryCorrespondents();
+                req.peer = getMessagesController().getInputPeer(uid);
+                deletePeer(uid, 0);
+                getConnectionsManager().sendRequest(req, (response, error) -> {
+
+                });
+                return;
+            }
+        }
+    }
+
+    public void increasePeerRaiting(final long did) {
+        if (!getUserConfig().suggestContacts) {
+            return;
+        }
+        final int lower_id = (int) did;
+        if (lower_id <= 0) {
+            return;
+        }
+        //remove chats and bots for now
+        final TLRPC.User user = lower_id > 0 ? getMessagesController().getUser(lower_id) : null;
+        //final TLRPC.Chat chat = lower_id < 0 ? MessagesController.getInstance().getChat(-lower_id) : null;
+        if (user == null || user.bot || user.self/*&& chat == null || ChatObject.isChannel(chat) && !chat.megagroup*/) {
+            return;
+        }
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            double dt = 0;
+            try {
+                int lastTime = 0;
+                int lastMid = 0;
+                SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT MAX(mid), MAX(date) FROM messages WHERE uid = %d AND out = 1", did));
+                if (cursor.next()) {
+                    lastMid = cursor.intValue(0);
+                    lastTime = cursor.intValue(1);
+                }
+                cursor.dispose();
+                if (lastMid > 0 && getUserConfig().ratingLoadTime != 0) {
+                    dt = (lastTime - getUserConfig().ratingLoadTime);
+                }
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+            final double dtFinal = dt;
+            AndroidUtilities.runOnUIThread(() -> {
+                TLRPC.TL_topPeer peer = null;
+                for (int a = 0; a < hints.size(); a++) {
+                    TLRPC.TL_topPeer p = hints.get(a);
+                    if (lower_id < 0 && (p.peer.chat_id == -lower_id || p.peer.channel_id == -lower_id) || lower_id > 0 && p.peer.user_id == lower_id) {
+                        peer = p;
+                        break;
+                    }
+                }
+                if (peer == null) {
+                    peer = new TLRPC.TL_topPeer();
+                    if (lower_id > 0) {
+                        peer.peer = new TLRPC.TL_peerUser();
+                        peer.peer.user_id = lower_id;
+                    } else {
+                        peer.peer = new TLRPC.TL_peerChat();
+                        peer.peer.chat_id = -lower_id;
+                    }
+                    hints.add(peer);
+                }
+                peer.rating += Math.exp(dtFinal / getMessagesController().ratingDecay);
+                Collections.sort(hints, (lhs, rhs) -> {
+                    if (lhs.rating > rhs.rating) {
+                        return -1;
+                    } else if (lhs.rating < rhs.rating) {
+                        return 1;
+                    }
+                    return 0;
+                });
+
+                savePeer((int) did, 0, peer.rating);
+
+                getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
+            });
+        });
+    }
+
+    private void savePeer(final int did, final int type, final double rating) {
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO chat_hints VALUES(?, ?, ?, ?)");
+                state.requery();
+                state.bindInteger(1, did);
+                state.bindInteger(2, type);
+                state.bindDouble(3, rating);
+                state.bindInteger(4, (int) System.currentTimeMillis() / 1000);
+                state.step();
+                state.dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    private void deletePeer(final int did, final int type) {
+        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+            try {
+                getMessagesStorage().getDatabase().executeFast(String.format(Locale.US, "DELETE FROM chat_hints WHERE did = %d AND type = %d", did, type)).stepThis().dispose();
+            } catch (Exception e) {
+                FileLog.e(e);
+            }
+        });
+    }
+
+    private Intent createIntrnalShortcutIntent(long did) {
+        Intent shortcutIntent = new Intent(ApplicationLoader.applicationContext, OpenChatReceiver.class);
+
+        int lower_id = (int) did;
+        int high_id = (int) (did >> 32);
+
+        if (lower_id == 0) {
+            shortcutIntent.putExtra("encId", high_id);
+            TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(high_id);
+            if (encryptedChat == null) {
+                return null;
+            }
+        } else if (lower_id > 0) {
+            shortcutIntent.putExtra("userId", lower_id);
+        } else if (lower_id < 0) {
+            shortcutIntent.putExtra("chatId", -lower_id);
+        } else {
+            return null;
+        }
+        shortcutIntent.putExtra("currentAccount", currentAccount);
+        shortcutIntent.setAction("com.tmessages.openchat" + did);
+        shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        return shortcutIntent;
+    }
+
+    public void installShortcut(long did) {
+        try {
+
+            Intent shortcutIntent = createIntrnalShortcutIntent(did);
+
+            int lower_id = (int) did;
+            int high_id = (int) (did >> 32);
+
+            TLRPC.User user = null;
+            TLRPC.Chat chat = null;
+            if (lower_id == 0) {
+                TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(high_id);
+                if (encryptedChat == null) {
+                    return;
+                }
+                user = getMessagesController().getUser(encryptedChat.user_id);
+            } else if (lower_id > 0) {
+                user = getMessagesController().getUser(lower_id);
+            } else if (lower_id < 0) {
+                chat = getMessagesController().getChat(-lower_id);
+            } else {
+                return;
+            }
+            if (user == null && chat == null) {
+                return;
+            }
+
+            String name;
+            TLRPC.FileLocation photo = null;
+
+            boolean selfUser = false;
+
+            if (user != null) {
+                if (UserObject.isUserSelf(user)) {
+                    name = LocaleController.getString("SavedMessages", R.string.SavedMessages);
+                    selfUser = true;
+                } else {
+                    name = ContactsController.formatName(user.first_name, user.last_name);
+                    if (user.photo != null) {
+                        photo = user.photo.photo_small;
+                    }
+                }
+            } else {
+                name = chat.title;
+                if (chat.photo != null) {
+                    photo = chat.photo.photo_small;
+                }
+            }
+
+            Bitmap bitmap = null;
+            if (selfUser || photo != null) {
+                try {
+                    if (!selfUser) {
+                        File path = FileLoader.getPathToAttach(photo, true);
+                        bitmap = BitmapFactory.decodeFile(path.toString());
+                    }
+                    if (selfUser || bitmap != null) {
+                        int size = AndroidUtilities.dp(58);
+                        Bitmap result = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+                        result.eraseColor(Color.TRANSPARENT);
+                        Canvas canvas = new Canvas(result);
+                        if (selfUser) {
+                            AvatarDrawable avatarDrawable = new AvatarDrawable(user);
+                            avatarDrawable.setAvatarType(AvatarDrawable.AVATAR_TYPE_SAVED);
+                            avatarDrawable.setBounds(0, 0, size, size);
+                            avatarDrawable.draw(canvas);
+                        } else {
+                            BitmapShader shader = new BitmapShader(bitmap, Shader.TileMode.CLAMP, Shader.TileMode.CLAMP);
+                            if (roundPaint == null) {
+                                roundPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+                                bitmapRect = new RectF();
+                            }
+                            float scale = size / (float) bitmap.getWidth();
+                            canvas.save();
+                            canvas.scale(scale, scale);
+                            roundPaint.setShader(shader);
+                            bitmapRect.set(0, 0, bitmap.getWidth(), bitmap.getHeight());
+                            canvas.drawRoundRect(bitmapRect, bitmap.getWidth(), bitmap.getHeight(), roundPaint);
+                            canvas.restore();
+                        }
+                        Drawable drawable = ApplicationLoader.applicationContext.getResources().getDrawable(R.drawable.book_logo);
+                        int w = AndroidUtilities.dp(15);
+                        int left = size - w - AndroidUtilities.dp(2);
+                        int top = size - w - AndroidUtilities.dp(2);
+                        drawable.setBounds(left, top, left + w, top + w);
+                        drawable.draw(canvas);
+                        try {
+                            canvas.setBitmap(null);
+                        } catch (Exception e) {
+                            //don't promt, this will crash on 2.x
+                        }
+                        bitmap = result;
+                    }
+                } catch (Throwable e) {
+                    FileLog.e(e);
+                }
+            }
+            if (Build.VERSION.SDK_INT >= 26) {
+                ShortcutInfo.Builder pinShortcutInfo =
+                        new ShortcutInfo.Builder(ApplicationLoader.applicationContext, "sdid_" + did)
+                                .setShortLabel(name)
+                                .setIntent(shortcutIntent);
+
+                if (bitmap != null) {
+                    pinShortcutInfo.setIcon(Icon.createWithBitmap(bitmap));
+                } else {
+                    if (user != null) {
+                        if (user.bot) {
+                            pinShortcutInfo.setIcon(Icon.createWithResource(ApplicationLoader.applicationContext, R.drawable.book_bot));
+                        } else {
+                            pinShortcutInfo.setIcon(Icon.createWithResource(ApplicationLoader.applicationContext, R.drawable.book_user));
+                        }
+                    } else if (chat != null) {
+                        if (ChatObject.isChannel(chat) && !chat.megagroup) {
+                            pinShortcutInfo.setIcon(Icon.createWithResource(ApplicationLoader.applicationContext, R.drawable.book_channel));
+                        } else {
+                            pinShortcutInfo.setIcon(Icon.createWithResource(ApplicationLoader.applicationContext, R.drawable.book_group));
+                        }
+                    }
+                }
+
+                ShortcutManager shortcutManager = ApplicationLoader.applicationContext.getSystemService(ShortcutManager.class);
+                shortcutManager.requestPinShortcut(pinShortcutInfo.build(), null);
+            } else {
+                Intent addIntent = new Intent();
+                if (bitmap != null) {
+                    addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON, bitmap);
+                } else {
+                    if (user != null) {
+                        if (user.bot) {
+                            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(ApplicationLoader.applicationContext, R.drawable.book_bot));
+                        } else {
+                            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(ApplicationLoader.applicationContext, R.drawable.book_user));
+                        }
+                    } else if (chat != null) {
+                        if (ChatObject.isChannel(chat) && !chat.megagroup) {
+                            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(ApplicationLoader.applicationContext, R.drawable.book_channel));
+                        } else {
+                            addIntent.putExtra(Intent.EXTRA_SHORTCUT_ICON_RESOURCE, Intent.ShortcutIconResource.fromContext(ApplicationLoader.applicationContext, R.drawable.book_group));
+                        }
+                    }
+                }
+
+                addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, shortcutIntent);
+                addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
+                addIntent.putExtra("duplicate", false);
+
+                addIntent.setAction("com.android.launcher.action.INSTALL_SHORTCUT");
+                ApplicationLoader.applicationContext.sendBroadcast(addIntent);
+            }
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+    }
+
+    public void uninstallShortcut(long did) {
+        try {
+            if (Build.VERSION.SDK_INT >= 26) {
+                ShortcutManager shortcutManager = ApplicationLoader.applicationContext.getSystemService(ShortcutManager.class);
+                ArrayList<String> arrayList = new ArrayList<>();
+                arrayList.add("sdid_" + did);
+                shortcutManager.removeDynamicShortcuts(arrayList);
+            } else {
+                int lower_id = (int) did;
+                int high_id = (int) (did >> 32);
+
+                TLRPC.User user = null;
+                TLRPC.Chat chat = null;
+                if (lower_id == 0) {
+                    TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(high_id);
+                    if (encryptedChat == null) {
+                        return;
+                    }
+                    user = getMessagesController().getUser(encryptedChat.user_id);
+                } else if (lower_id > 0) {
+                    user = getMessagesController().getUser(lower_id);
+                } else if (lower_id < 0) {
+                    chat = getMessagesController().getChat(-lower_id);
+                } else {
+                    return;
+                }
+                if (user == null && chat == null) {
+                    return;
+                }
+                String name;
+
+                if (user != null) {
+                    name = ContactsController.formatName(user.first_name, user.last_name);
+                } else {
+                    name = chat.title;
+                }
+
+                Intent addIntent = new Intent();
+                addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, createIntrnalShortcutIntent(did));
+                addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
+                addIntent.putExtra("duplicate", false);
+
+                addIntent.setAction("com.android.launcher.action.UNINSTALL_SHORTCUT");
+                ApplicationLoader.applicationContext.sendBroadcast(addIntent);
+            }
+        } catch (Exception e) {
+            FileLog.e(e);
+        }
+    }
+    //endregion ---------------- SEARCH END ----------------
 }
