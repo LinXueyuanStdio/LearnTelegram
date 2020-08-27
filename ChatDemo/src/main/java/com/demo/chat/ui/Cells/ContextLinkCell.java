@@ -544,7 +544,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
         return documentAttach;
     }
 
-    public TLRPC.BotInlineResult getBotInlineResult() {
+    public BotInlineResult getBotInlineResult() {
         return inlineResult;
     }
 

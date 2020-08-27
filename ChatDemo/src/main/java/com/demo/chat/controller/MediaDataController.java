@@ -1892,6 +1892,10 @@ public class MediaDataController extends BaseController {
         getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
     }
 
+    public String getEmojiForSticker(long id) {
+        String value = stickersByEmoji.get(id);
+        return value != null ? value : "";
+    }
 
 
     //region ---------------- MEDIA ----------------

@@ -39,14 +39,19 @@ import com.demo.chat.controller.MessagesController;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Emoji;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.sticker.InputStickerSet;
+import com.demo.chat.model.sticker.StickerSetCovered;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
 import com.demo.chat.ui.ActionBar.ActionBarMenuItem;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ActionBar.BottomSheet;
 import com.demo.chat.ui.Cells.FeaturedStickerSetInfoCell;
+import com.demo.chat.ui.Cells.StickerEmojiCell;
 import com.demo.chat.ui.ChatActivity;
 import com.demo.chat.ui.Viewer.ContentPreviewViewer;
 
@@ -116,8 +121,8 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
 
     private TLRPC.TL_messages_stickerSet stickerSet;
     private Document selectedSticker;
-    private TLRPC.InputStickerSet inputStickerSet;
-    private ArrayList<TLRPC.StickerSetCovered> stickerSetCovereds;
+    private InputStickerSet inputStickerSet;
+    private ArrayList<StickerSetCovered> stickerSetCovereds;
 
     private StickersAlertDelegate delegate;
     private StickersAlertInstallDelegate installDelegate;
@@ -153,7 +158,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
         }
 
         @Override
-        public void openSet(TLRPC.InputStickerSet set, boolean clearsInputField) {
+        public void openSet(InputStickerSet set, boolean clearsInputField) {
 
         }
 
@@ -210,7 +215,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                 if (vector.objects.isEmpty()) {
                     dismiss();
                 } else if (vector.objects.size() == 1) {
-                    TLRPC.StickerSetCovered set = (TLRPC.StickerSetCovered) vector.objects.get(0);
+                    StickerSetCovered set = (StickerSetCovered) vector.objects.get(0);
                     inputStickerSet = new TLRPC.TL_inputStickerSetID();
                     inputStickerSet.id = set.set.id;
                     inputStickerSet.access_hash = set.set.access_hash;
@@ -218,7 +223,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                 } else {
                     stickerSetCovereds = new ArrayList<>();
                     for (int a = 0; a < vector.objects.size(); a++) {
-                        stickerSetCovereds.add((TLRPC.StickerSetCovered) vector.objects.get(a));
+                        stickerSetCovereds.add((StickerSetCovered) vector.objects.get(a));
                     }
                     gridView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT, 0, 0, 0, 48));
                     titleTextView.setVisibility(View.GONE);
@@ -240,7 +245,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
         init(context);
     }
 
-    public StickersAlert(Context context, BaseFragment baseFragment, TLRPC.InputStickerSet set, TLRPC.TL_messages_stickerSet loadedSet, StickersAlertDelegate stickersAlertDelegate) {
+    public StickersAlert(Context context, BaseFragment baseFragment, InputStickerSet set, TLRPC.TL_messages_stickerSet loadedSet, StickersAlertDelegate stickersAlertDelegate) {
         super(context, false);
         delegate = stickersAlertDelegate;
         inputStickerSet = set;
@@ -489,7 +494,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
         });
         stickersOnItemClickListener = (view, position) -> {
             if (stickerSetCovereds != null) {
-                TLRPC.StickerSetCovered pack = adapter.positionsToSets.get(position);
+                StickerSetCovered pack = adapter.positionsToSets.get(position);
                 if (pack != null) {
                     dismiss();
                     TLRPC.TL_inputStickerSetID inputStickerSetID = new TLRPC.TL_inputStickerSetID();
@@ -994,7 +999,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
         private Context context;
         private int stickersPerRow;
         private SparseArray<Object> cache = new SparseArray<>();
-        private SparseArray<TLRPC.StickerSetCovered> positionsToSets = new SparseArray<>();
+        private SparseArray<StickerSetCovered> positionsToSets = new SparseArray<>();
         private int totalItems;
         private int stickersRowCount;
 
@@ -1064,7 +1069,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                         ((EmptyCell) holder.itemView).setHeight(AndroidUtilities.dp(82));
                         break;
                     case 2:
-                        TLRPC.StickerSetCovered stickerSetCovered = stickerSetCovereds.get((Integer) cache.get(position));
+                        StickerSetCovered stickerSetCovered = stickerSetCovereds.get((Integer) cache.get(position));
                         FeaturedStickerSetInfoCell cell = (FeaturedStickerSetInfoCell) holder.itemView;
                         cell.setStickerSet(stickerSetCovered, false);
                         /*boolean installing = installingStickerSets.containsKey(stickerSetCovered.set.id);
@@ -1100,7 +1105,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                 totalItems = 0;
                 stickersRowCount = 0;
                 for (int a = 0; a < stickerSetCovereds.size(); a++) {
-                    TLRPC.StickerSetCovered pack = stickerSetCovereds.get(a);
+                    StickerSetCovered pack = stickerSetCovereds.get(a);
                     if (pack.covers.isEmpty() && pack.cover == null) {
                         continue;
                     }

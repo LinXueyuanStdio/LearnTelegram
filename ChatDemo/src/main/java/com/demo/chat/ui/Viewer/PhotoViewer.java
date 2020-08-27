@@ -4468,7 +4468,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
 
             @Override
-            public void onContextClick(TLRPC.BotInlineResult result) {
+            public void onContextClick(BotInlineResult result) {
 
             }
         }));
@@ -5714,8 +5714,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         CharSequence caption = null;
         if (object instanceof MediaController.PhotoEntry) {
             caption = ((MediaController.PhotoEntry) object).caption;
-        } else if (object instanceof TLRPC.BotInlineResult) {
-            //caption = ((TLRPC.BotInlineResult) object).send_message.caption;
+        } else if (object instanceof BotInlineResult) {
+            //caption = ((BotInlineResult) object).send_message.caption;
         } else if (object instanceof MediaController.SearchImage) {
             caption = ((MediaController.SearchImage) object).caption;
         }
@@ -6971,8 +6971,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             if (object instanceof MediaController.SearchImage) {
                 MediaController.SearchImage searchImage = ((MediaController.SearchImage) object);
                 return searchImage.getAttachName();
-            } else if (object instanceof TLRPC.BotInlineResult) {
-                TLRPC.BotInlineResult botInlineResult = (TLRPC.BotInlineResult) object;
+            } else if (object instanceof BotInlineResult) {
+                BotInlineResult botInlineResult = (BotInlineResult) object;
                 if (botInlineResult.document != null) {
                     return FileLoader.getAttachFileName(botInlineResult.document);
                 }  else if (botInlineResult.photo != null) {
@@ -7454,7 +7454,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     rotateItem.setVisibility(sendPhotoType != SELECT_TYPE_AVATAR ? View.GONE : View.VISIBLE);
                 }
                 allowCaption = !isDocumentsPicker;
-            } else if (obj instanceof TLRPC.BotInlineResult) {
+            } else if (obj instanceof BotInlineResult) {
                 cropItem.setVisibility(View.GONE);
                 rotateItem.setVisibility(View.GONE);
                 allowCaption = false;
@@ -7512,7 +7512,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             CharSequence caption = null;
             User user = parentChatActivity != null ? parentChatActivity.getCurrentUser() : null;
             boolean allowTimeItem = !isDocumentsPicker && parentChatActivity != null && !parentChatActivity.isSecretChat() && !parentChatActivity.isInScheduleMode() && user != null && !user.bot && !UserObject.isUserSelf(user) && !parentChatActivity.isEditingMessageMedia();
-            if (entry instanceof TLRPC.BotInlineResult) {
+            if (entry instanceof BotInlineResult) {
                 allowTimeItem = false;
             } else if (entry instanceof MediaController.PhotoEntry) {
 
@@ -7762,8 +7762,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             boolean isFiltered = false;
             boolean isPainted = false;
             boolean isCropped = false;
-            if (object instanceof TLRPC.BotInlineResult) {
-                TLRPC.BotInlineResult botInlineResult = currentBotInlineResult = ((TLRPC.BotInlineResult) object);
+            if (object instanceof BotInlineResult) {
+                BotInlineResult botInlineResult = currentBotInlineResult = ((BotInlineResult) object);
                 if (botInlineResult.document != null) {
                     isVideo = MessageObject.isVideoDocument(botInlineResult.document);
                 } else if (botInlineResult.content instanceof TLRPC.TL_webDocument) {
@@ -7994,8 +7994,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 return;
             }
             Object object = imagesArrLocals.get(index);
-            if (object instanceof TLRPC.BotInlineResult) {
-                TLRPC.BotInlineResult botInlineResult = currentBotInlineResult = ((TLRPC.BotInlineResult) object);
+            if (object instanceof BotInlineResult) {
+                BotInlineResult botInlineResult = currentBotInlineResult = ((BotInlineResult) object);
                 if (botInlineResult.document != null) {
                     currentPathObject = FileLoader.getPathToAttach(botInlineResult.document).getAbsolutePath();
                     isVideo = MessageObject.isVideoDocument(botInlineResult.document);
@@ -8452,7 +8452,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     photoProgressViews[a].setBackgroundState(PROGRESS_NONE, animated);
                     return;
                 }
-                TLRPC.BotInlineResult botInlineResult = (TLRPC.BotInlineResult) imagesArrLocals.get(index);
+                BotInlineResult botInlineResult = (BotInlineResult) imagesArrLocals.get(index);
                 if (botInlineResult.type.equals("video") || MessageObject.isVideoDocument(botInlineResult.document)) {
                     if (botInlineResult.document != null) {
                         f1 = FileLoader.getPathToAttach(botInlineResult.document);
@@ -8628,9 +8628,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         }
                         filter = String.format(Locale.US, "%d_%d", size, size);
                     }
-                } else if (object instanceof TLRPC.BotInlineResult) {
+                } else if (object instanceof BotInlineResult) {
                     cacheType = 1;
-                    TLRPC.BotInlineResult botInlineResult = ((TLRPC.BotInlineResult) object);
+                    BotInlineResult botInlineResult = ((BotInlineResult) object);
                     if (botInlineResult.type.equals("video") || MessageObject.isVideoDocument(botInlineResult.document)) {
                         if (botInlineResult.document != null) {
                             photo = FileLoader.getClosestPhotoSizeWithSize(botInlineResult.document.thumbs, 90);
@@ -8838,7 +8838,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         return result;
     }
 
-    public static boolean isShowingImage(TLRPC.BotInlineResult object) {
+    public static boolean isShowingImage(BotInlineResult object) {
         boolean result = false;
         if (Instance != null) {
             result = Instance.isVisible && !Instance.disableShowCheck && object != null && Instance.currentBotInlineResult != null && object.id == Instance.currentBotInlineResult.id;

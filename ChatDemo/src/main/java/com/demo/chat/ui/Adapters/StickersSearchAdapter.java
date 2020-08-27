@@ -24,9 +24,13 @@ import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Emoji;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.sticker.InputStickerSet;
+import com.demo.chat.model.sticker.StickerSetCovered;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
 import com.demo.chat.ui.Cells.FeaturedStickerSetInfoCell;
+import com.demo.chat.ui.Cells.StickerEmojiCell;
+import com.demo.chat.ui.Cells.StickerSetNameCell;
 import com.demo.chat.ui.Components.LayoutHelper;
 import com.demo.chat.ui.Components.RecyclerListView;
 
@@ -57,9 +61,9 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
 
         void setAdapterVisible(boolean visible);
 
-        void onStickerSetAdd(TLRPC.StickerSetCovered stickerSet, boolean primary);
+        void onStickerSetAdd(StickerSetCovered stickerSet, boolean primary);
 
-        void onStickerSetRemove(TLRPC.StickerSetCovered stickerSet);
+        void onStickerSetRemove(StickerSetCovered stickerSet);
 
         int getStickersPerRow();
 
@@ -72,9 +76,9 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
 
     private final Context context;
     private final Delegate delegate;
-    private final TLRPC.StickerSetCovered[] primaryInstallingStickerSets;
-    private final LongSparseArray<TLRPC.StickerSetCovered> installingStickerSets;
-    private final LongSparseArray<TLRPC.StickerSetCovered> removingStickerSets;
+    private final StickerSetCovered[] primaryInstallingStickerSets;
+    private final LongSparseArray<StickerSetCovered> installingStickerSets;
+    private final LongSparseArray<StickerSetCovered> removingStickerSets;
 
     private SparseArray<Object> rowStartPack = new SparseArray<>();
     private SparseArray<Object> cache = new SparseArray<>();
@@ -83,13 +87,13 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
     private SparseArray<String> positionToEmoji = new SparseArray<>();
     private int totalItems;
 
-    private ArrayList<TLRPC.StickerSetCovered> serverPacks = new ArrayList<>();
+    private ArrayList<StickerSetCovered> serverPacks = new ArrayList<>();
     private ArrayList<TLRPC.TL_messages_stickerSet> localPacks = new ArrayList<>();
     private HashMap<TLRPC.TL_messages_stickerSet, Boolean> localPacksByShortName = new HashMap<>();
     private HashMap<TLRPC.TL_messages_stickerSet, Integer> localPacksByName = new HashMap<>();
     private HashMap<ArrayList<Document>, String> emojiStickers = new HashMap<>();
     private ArrayList<ArrayList<Document>> emojiArrays = new ArrayList<>();
-    private SparseArray<TLRPC.StickerSetCovered> positionsToSets = new SparseArray<>();
+    private SparseArray<StickerSetCovered> positionsToSets = new SparseArray<>();
 
     private ImageView emptyImageView;
     private TextView emptyTextView;
@@ -273,7 +277,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
         }
     };
 
-    public StickersSearchAdapter(Context context, Delegate delegate, TLRPC.StickerSetCovered[] primaryInstallingStickerSets, LongSparseArray<TLRPC.StickerSetCovered> installingStickerSets, LongSparseArray<TLRPC.StickerSetCovered> removingStickerSets) {
+    public StickersSearchAdapter(Context context, Delegate delegate, StickerSetCovered[] primaryInstallingStickerSets, LongSparseArray<StickerSetCovered> installingStickerSets, LongSparseArray<StickerSetCovered> removingStickerSets) {
         this.context = context;
         this.delegate = delegate;
         this.primaryInstallingStickerSets = primaryInstallingStickerSets;
@@ -329,7 +333,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
         if (object != null) {
             if (object instanceof Document) {
                 return 0;
-            } else if (object instanceof TLRPC.StickerSetCovered) {
+            } else if (object instanceof StickerSetCovered) {
                 return 3;
             } else {
                 return 2;
@@ -359,7 +363,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
                 view = new FeaturedStickerSetInfoCell(context, 17, true);
                 ((FeaturedStickerSetInfoCell) view).setAddOnClickListener(v -> {
                     final FeaturedStickerSetInfoCell cell = (FeaturedStickerSetInfoCell) v.getParent();
-                    TLRPC.StickerSetCovered pack = cell.getStickerSet();
+                    StickerSetCovered pack = cell.getStickerSet();
                     if (installingStickerSets.indexOfKey(pack.set.id) >= 0 || removingStickerSets.indexOfKey(pack.set.id) >= 0) {
                         return;
                     }
@@ -456,9 +460,9 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
         }
     }
 
-    public void installStickerSet(TLRPC.InputStickerSet inputSet) {
+    public void installStickerSet(InputStickerSet inputSet) {
         for (int i = 0; i < serverPacks.size(); i++) {
-            final TLRPC.StickerSetCovered setCovered = serverPacks.get(i);
+            final StickerSetCovered setCovered = serverPacks.get(i);
             if (setCovered.set.id == inputSet.id) {
                 installStickerSet(setCovered, null);
                 break;
@@ -466,7 +470,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
         }
     }
 
-    public void installStickerSet(TLRPC.StickerSetCovered pack, FeaturedStickerSetInfoCell cell) {
+    public void installStickerSet(StickerSetCovered pack, FeaturedStickerSetInfoCell cell) {
         for (int i = 0; i < primaryInstallingStickerSets.length; i++) {
             if (primaryInstallingStickerSets[i] != null) {
                 final TLRPC.TL_messages_stickerSet s = MediaDataController.getInstance(currentAccount).getStickerSetById(primaryInstallingStickerSets[i].set.id);
@@ -496,7 +500,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
             delegate.onStickerSetAdd(cell.getStickerSet(), primary);
         } else {
             for (int i = 0, size = positionsToSets.size(); i < size; i++) {
-                final TLRPC.StickerSetCovered item = positionsToSets.get(i);
+                final StickerSetCovered item = positionsToSets.get(i);
                 if (item != null && item.set.id == pack.set.id) {
                     notifyItemChanged(i, PAYLOAD_ANIMATED);
                     break;
@@ -508,7 +512,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
     private void bindFeaturedStickerSetInfoCell(FeaturedStickerSetInfoCell cell, int position, boolean animated) {
         final MediaDataController mediaDataController = MediaDataController.getInstance(currentAccount);
         ArrayList<Long> unreadStickers = mediaDataController.getUnreadStickerSets();
-        TLRPC.StickerSetCovered stickerSetCovered = (TLRPC.StickerSetCovered) cache.get(position);
+        StickerSetCovered stickerSetCovered = (StickerSetCovered) cache.get(position);
         boolean unread = unreadStickers != null && unreadStickers.contains(stickerSetCovered.set.id);
         boolean forceInstalled = false;
         for (int i = 0; i < primaryInstallingStickerSets.length; i++) {
@@ -596,8 +600,8 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
                                 cacheParent.put(num, parent);
                             }
                             positionToRow.put(num, row);
-                            if (a >= localCount && pack instanceof TLRPC.StickerSetCovered) {
-                                positionsToSets.put(num, (TLRPC.StickerSetCovered) pack);
+                            if (a >= localCount && pack instanceof StickerSetCovered) {
+                                positionsToSets.put(num, (StickerSetCovered) pack);
                             }
                             documentsCount++;
                         }
@@ -611,7 +615,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
                     continue;
                 } else {
                     idx -= emojiCount;
-                    TLRPC.StickerSetCovered set = serverPacks.get(idx);
+                    StickerSetCovered set = serverPacks.get(idx);
                     documents = set.covers;
                     pack = set;
                 }
@@ -621,8 +625,8 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
             }
             int count = (int) Math.ceil(documents.size() / (float) delegate.getStickersPerRow());
             cache.put(totalItems, pack);
-            if (a >= localCount && pack instanceof TLRPC.StickerSetCovered) {
-                positionsToSets.put(totalItems, (TLRPC.StickerSetCovered) pack);
+            if (a >= localCount && pack instanceof StickerSetCovered) {
+                positionsToSets.put(totalItems, (StickerSetCovered) pack);
             }
             positionToRow.put(totalItems, startRow);
             for (int b = 0, size = documents.size(); b < size; b++) {
@@ -634,8 +638,8 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
                     cacheParent.put(num, pack);
                 }
                 positionToRow.put(num, row);
-                if (a >= localCount && pack instanceof TLRPC.StickerSetCovered) {
-                    positionsToSets.put(num, (TLRPC.StickerSetCovered) pack);
+                if (a >= localCount && pack instanceof StickerSetCovered) {
+                    positionsToSets.put(num, (StickerSetCovered) pack);
                 }
             }
             for (int b = 0, N = count + 1; b < N; b++) {
@@ -657,7 +661,7 @@ public class StickersSearchAdapter extends RecyclerListView.SelectionAdapter {
         return delegate.getStickersPerRow();
     }
 
-    public TLRPC.StickerSetCovered getSetForPosition(int position) {
+    public StickerSetCovered getSetForPosition(int position) {
         return positionsToSets.get(position);
     }
 

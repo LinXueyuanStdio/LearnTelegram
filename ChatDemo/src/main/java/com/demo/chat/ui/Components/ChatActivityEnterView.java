@@ -86,14 +86,19 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.camera.CameraController;
 import com.demo.chat.model.Chat;
+import com.demo.chat.model.Message;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
+import com.demo.chat.model.sticker.InputStickerSet;
+import com.demo.chat.model.sticker.StickerSet;
+import com.demo.chat.model.sticker.StickerSetCovered;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
 import com.demo.chat.ui.ActionBar.ActionBarMenuSubItem;
@@ -379,7 +384,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     private ChatActivityEnterViewDelegate delegate;
     private TrendingStickersAlert trendingStickersAlert;
 
-    private TLRPC.TL_document audioToSend;
+    private Document audioToSend;
     private String audioToSendPath;
     private MessageObject audioToSendMessageObject;
     private VideoEditedInfo videoToSendMessageObject;
@@ -1813,6 +1818,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     public ChatActivityEnterView(Activity context, SizeNotifierFrameLayout parent, ChatActivity fragment, final boolean isChat) {
         super(context);
 
+        //region 1. 初始化
         smoothKeyboard = isChat && SharedConfig.smoothKeyboard;
         dotPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         dotPaint.setColor(Theme.getColor(Theme.key_chat_emojiPanelNewTrending));
@@ -1845,6 +1851,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         SharedPreferences preferences = MessagesController.getGlobalMainSettings();
         sendByEnter = preferences.getBoolean("send_by_enter", false);
         configAnimationsEnabled = preferences.getBoolean("view_animations", true);
+        //endregion
 
         textFieldContainer = new LinearLayout(context);
         textFieldContainer.setOrientation(LinearLayout.HORIZONTAL);
@@ -2098,7 +2105,11 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     if ((int) dialog_id > 0) {
                         currentUser = accountInstance.getMessagesController().getUser((int) dialog_id);
                     }
-                    if (currentUser != null && (currentUser.id == UserConfig.getInstance(currentAccount).getClientUserId() || currentUser.status != null && currentUser.status.expires < currentTime && !accountInstance.getMessagesController().onlinePrivacy.containsKey(currentUser.id))) {
+                    if (currentUser != null
+                            && (currentUser.id == UserConfig.getInstance(currentAccount).getClientUserId()
+                            || currentUser.status != null
+                            && currentUser.status.expires < currentTime
+                            && !accountInstance.getMessagesController().onlinePrivacy.containsKey(currentUser.id))) {
                         return;
                     }
                     lastTypingTimeSend = System.currentTimeMillis();
@@ -3079,9 +3090,6 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             }
         } else if (slowModeTimer >= Integer.MAX_VALUE - 1) {
             currentTime = 0;
-            if (info != null) {
-                accountInstance.getMessagesController().loadFullChat(info.id, 0, true);
-            }
         } else {
             currentTime = slowModeTimer - serverTime;
         }
@@ -5928,9 +5936,6 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
 
             @Override
             public void onStickersSettingsClick() {
-                if (parentFragment != null) {
-                    parentFragment.presentFragment(new StickersActivity(MediaDataController.TYPE_IMAGE));
-                }
             }
 
             @Override
@@ -5957,8 +5962,8 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                         if ((int) dialog_id == 0) {
                             accountInstance.getMessagesController().saveGif(parent, document);
                         }
-                    } else if (gif instanceof TLRPC.BotInlineResult) {
-                        TLRPC.BotInlineResult result = (TLRPC.BotInlineResult) gif;
+                    } else if (gif instanceof BotInlineResult) {
+                        BotInlineResult result = (BotInlineResult) gif;
 
                         if (result.document != null) {
                             MediaDataController.getInstance(currentAccount).addRecentGif(result.document, (int) (System.currentTimeMillis() / 1000));
@@ -6008,7 +6013,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             }
 
             @Override
-            public void onShowStickerSet(TLRPC.StickerSet stickerSet, TLRPC.InputStickerSet inputStickerSet) {
+            public void onShowStickerSet(StickerSet stickerSet, InputStickerSet inputStickerSet) {
                 if (trendingStickersAlert != null && !trendingStickersAlert.isDismissed()) {
                     trendingStickersAlert.getLayout().showStickerSet(stickerSet, inputStickerSet);
                     return;
@@ -6017,7 +6022,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     return;
                 }
                 if (stickerSet != null) {
-                    inputStickerSet = new TLRPC.TL_inputStickerSetID();
+                    inputStickerSet = new InputStickerSet();
                     inputStickerSet.access_hash = stickerSet.access_hash;
                     inputStickerSet.id = stickerSet.id;
                 }
@@ -6025,13 +6030,15 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
             }
 
             @Override
-            public void onStickerSetAdd(TLRPC.StickerSetCovered stickerSet) {
-                MediaDataController.getInstance(currentAccount).toggleStickerSet(parentActivity, stickerSet, 2, parentFragment, false, false);
+            public void onStickerSetAdd(StickerSetCovered stickerSet) {
+                //TODO
+                // MediaDataController.getInstance(currentAccount).toggleStickerSet(parentActivity, stickerSet, 2, parentFragment, false, false);
             }
 
             @Override
-            public void onStickerSetRemove(TLRPC.StickerSetCovered stickerSet) {
-                MediaDataController.getInstance(currentAccount).toggleStickerSet(parentActivity, stickerSet, 0, parentFragment, false, false);
+            public void onStickerSetRemove(StickerSetCovered stickerSet) {
+                //TODO
+                // MediaDataController.getInstance(currentAccount).toggleStickerSet(parentActivity, stickerSet, 0, parentFragment, false, false);
             }
 
             @Override
@@ -6655,7 +6662,6 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
 
             if (recordInterfaceState != 0 && !wasSendTyping && !isInScheduleMode()) {
                 wasSendTyping = true;
-                accountInstance.getMessagesController().sendTyping(dialog_id, videoSendButton != null && videoSendButton.getTag() != null ? 7 : 1, 0);
             }
 
             if (recordCircle != null) {
@@ -6745,7 +6751,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                         return;
                     }
 
-                    TLRPC.TL_message message = new TLRPC.TL_message();
+                    Message message = new Message();
                     message.out = true;
                     message.id = 0;
                     message.to_id = new TLRPC.TL_peerUser();
@@ -6756,7 +6762,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     message.media = new TLRPC.TL_messageMediaDocument();
                     message.media.flags |= 3;
                     message.media.document = audioToSend;
-                    message.flags |= Message_FLAG_HAS_MEDIA | Message_FLAG_HAS_FROM_ID;
+                    message.flags |= Message.MESSAGE_FLAG_HAS_MEDIA | Message.MESSAGE_FLAG_HAS_FROM_ID;
                     audioToSendMessageObject = new MessageObject(UserConfig.selectedAccount, message, false);
 
                     recordedAudioPanel.setAlpha(1.0f);
@@ -6767,16 +6773,16 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
                     recordDeleteImageView.setScaleX(0f);
                     int duration = 0;
                     for (int a = 0; a < audioToSend.attributes.size(); a++) {
-                        DocumentAttribute attribute = audioToSend.attributes.get(a);
-                        if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
+                        Document.DocumentAttribute attribute = audioToSend.attributes.get(a);
+                        if (attribute.isAudio()) {
                             duration = attribute.duration;
                             break;
                         }
                     }
 
                     for (int a = 0; a < audioToSend.attributes.size(); a++) {
-                        DocumentAttribute attribute = audioToSend.attributes.get(a);
-                        if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
+                        Document.DocumentAttribute attribute = audioToSend.attributes.get(a);
+                        if (attribute.isAudio()) {
                             if (attribute.waveform == null || attribute.waveform.length == 0) {
                                 attribute.waveform = MediaController.getInstance().getWaveform(audioToSendPath);
                             }

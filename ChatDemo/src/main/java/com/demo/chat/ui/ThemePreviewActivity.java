@@ -58,6 +58,7 @@ import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.model.Message;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.small.WallPaper;
@@ -2301,7 +2302,7 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
             } else {
                 MediaController.SearchImage wallPaper = (MediaController.SearchImage) object;
                 if (wallPaper.photo != null) {
-                    TLRPC.PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(wallPaper.photo.sizes, maxWallpaperSize, true);
+                    PhotoSize photoSize = FileLoader.getClosestPhotoSizeWithSize(wallPaper.photo.sizes, maxWallpaperSize, true);
                     path = FileLoader.getPathToAttach(photoSize, true);
                     fileName = FileLoader.getAttachFileName(photoSize);
                     size = photoSize.size;
@@ -2614,7 +2615,7 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
         } else if (screenType == SCREEN_TYPE_CHANGE_BACKGROUND) {
             if (currentWallpaper instanceof WallPaper) {
                 WallPaper wallPaper = (WallPaper) currentWallpaper;
-                TLRPC.PhotoSize thumb = setThumb ? FileLoader.getClosestPhotoSizeWithSize(wallPaper.document.thumbs, 100) : null;
+                PhotoSize thumb = setThumb ? FileLoader.getClosestPhotoSizeWithSize(wallPaper.document.thumbs, 100) : null;
                 backgroundImage.setImage(ImageLocation.getForDocument(wallPaper.document), imageFilter, ImageLocation.getForDocument(thumb, wallPaper.document), "100_100_b", "jpg", wallPaper.document.size, 1, wallPaper);
             } else if (currentWallpaper instanceof WallpapersListActivity.ColorWallpaper) {
                 WallpapersListActivity.ColorWallpaper wallPaper = (WallpapersListActivity.ColorWallpaper) currentWallpaper;
@@ -2644,8 +2645,8 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
             } else if (currentWallpaper instanceof MediaController.SearchImage) {
                 MediaController.SearchImage wallPaper = (MediaController.SearchImage) currentWallpaper;
                 if (wallPaper.photo != null) {
-                    TLRPC.PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(wallPaper.photo.sizes, 100);
-                    TLRPC.PhotoSize image = FileLoader.getClosestPhotoSizeWithSize(wallPaper.photo.sizes, maxWallpaperSize, true);
+                    PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(wallPaper.photo.sizes, 100);
+                    PhotoSize image = FileLoader.getClosestPhotoSizeWithSize(wallPaper.photo.sizes, maxWallpaperSize, true);
                     if (image == thumb) {
                         image = null;
                     }
@@ -2893,7 +2894,7 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
 
             int date = (int) (System.currentTimeMillis() / 1000) - 60 * 60;
 
-            TLRPC.Message message;
+            Message message;
             MessageObject messageObject;
             if (screenType == SCREEN_TYPE_CHANGE_BACKGROUND) {
                 message = new TLRPC.TL_message();

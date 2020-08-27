@@ -501,7 +501,7 @@ public class PhotoPaintView extends FrameLayout implements EntityView.EntityView
                         mediaEntity.height = size.height;
                         mediaEntity.document = stickerView.getSticker();
                         mediaEntity.parentObject = stickerView.getParentObject();
-                        TLRPC.Document document = stickerView.getSticker();
+                        Document document = stickerView.getSticker();
                         mediaEntity.text = FileLoader.getPathToAttach(document, true).getAbsolutePath();
                         if (MessageObject.isAnimatedStickerDocument(document, true)) {
                             mediaEntity.subType |= 1;
@@ -802,7 +802,7 @@ public class PhotoPaintView extends FrameLayout implements EntityView.EntityView
         for (int a = 0; a < count; a++) {
             View child = entitiesView.getChildAt(a);
             if (child instanceof StickerView) {
-                TLRPC.Document document = ((StickerView) child).getSticker();
+                Document document = ((StickerView) child).getSticker();
                 if (result == null) {
                     result = new ArrayList<>();
                 }
@@ -1385,8 +1385,8 @@ public class PhotoPaintView extends FrameLayout implements EntityView.EntityView
         TLRPC.TL_maskCoords maskCoords = null;
 
         for (int a = 0; a < document.attributes.size(); a++) {
-            TLRPC.DocumentAttribute attribute = document.attributes.get(a);
-            if (attribute instanceof TLRPC.TL_documentAttributeSticker) {
+            Document.DocumentAttribute attribute = document.attributes.get(a);
+            if (attribute.isSticker()) {
                 maskCoords = attribute.mask_coords;
                 break;
             }

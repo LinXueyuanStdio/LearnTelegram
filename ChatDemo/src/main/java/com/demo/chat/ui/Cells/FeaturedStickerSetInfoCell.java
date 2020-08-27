@@ -23,8 +23,10 @@ import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.model.sticker.StickerSetCovered;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
+import com.demo.chat.ui.Components.ColorSpanUnderline;
 import com.demo.chat.ui.Components.LayoutHelper;
 import com.demo.chat.ui.Components.ProgressButton;
 import com.demo.chat.ui.Components.RecyclerListView;
@@ -46,7 +48,7 @@ public class FeaturedStickerSetInfoCell extends FrameLayout {
     private TextView infoTextView;
     private ProgressButton addButton;
     private TextView delButton;
-    private TLRPC.StickerSetCovered set;
+    private StickerSetCovered set;
 
     private AnimatorSet animatorSet;
 
@@ -164,19 +166,19 @@ public class FeaturedStickerSetInfoCell extends FrameLayout {
         }
     }
 
-    public void setStickerSet(TLRPC.StickerSetCovered stickerSet, boolean unread) {
+    public void setStickerSet(StickerSetCovered stickerSet, boolean unread) {
         setStickerSet(stickerSet, unread, false, 0, 0, false);
     }
 
-    public void setStickerSet(TLRPC.StickerSetCovered stickerSet, boolean unread, boolean animated) {
+    public void setStickerSet(StickerSetCovered stickerSet, boolean unread, boolean animated) {
         setStickerSet(stickerSet, unread, animated, 0, 0, false);
     }
 
-    public void setStickerSet(TLRPC.StickerSetCovered stickerSet, boolean unread, boolean animated, int index, int searchLength) {
+    public void setStickerSet(StickerSetCovered stickerSet, boolean unread, boolean animated, int index, int searchLength) {
         setStickerSet(stickerSet, unread, animated, index, searchLength, false);
     }
 
-    public void setStickerSet(TLRPC.StickerSetCovered stickerSet, boolean unread, boolean animated, int index, int searchLength, boolean forceInstalled) {
+    public void setStickerSet(StickerSetCovered stickerSet, boolean unread, boolean animated, int index, int searchLength, boolean forceInstalled) {
         if (animatorSet != null) {
             animatorSet.cancel();
             animatorSet = null;
@@ -282,7 +284,7 @@ public class FeaturedStickerSetInfoCell extends FrameLayout {
         return isInstalled;
     }
 
-    public TLRPC.StickerSetCovered getStickerSet() {
+    public StickerSetCovered getStickerSet() {
         return set;
     }
 

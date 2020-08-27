@@ -123,6 +123,7 @@ public class MessageMedia {
         public boolean v2;
         public int views;
     }
+
     public static class PageBlock{
         public boolean first; //custom
         public boolean bottom; //custom

@@ -54,8 +54,10 @@ import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
+import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.User;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.theme.Theme;
@@ -208,9 +210,9 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
 
     public static class LiveLocation {
         public int id;
-        public TLRPC.Message object;
-        public TLRPC.User user;
-        public TLRPC.Chat chat;
+        public Message object;
+        public User user;
+        public Chat chat;
         public Marker marker;
     }
 
@@ -1866,7 +1868,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         }
         int lower_id = (int) dialogId;
         if (lower_id < 0) {
-            TLRPC.Chat chat = getMessagesController().getChat(-lower_id);
+            Chat chat = getMessagesController().getChat(-lower_id);
             if (ChatObject.isChannel(chat) && !chat.megagroup) {
                 return false;
             }

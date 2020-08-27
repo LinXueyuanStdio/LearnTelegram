@@ -43,12 +43,15 @@ import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.small.WebDocument;
+import com.demo.chat.model.sticker.InputStickerSet;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Cells.ChatMessageCell;
 import com.demo.chat.ui.Components.TextStyleSpan;
 import com.demo.chat.ui.Components.URLSpanBotCommand;
+import com.demo.chat.ui.Components.URLSpanMono;
 import com.demo.chat.ui.Components.URLSpanNoUnderline;
 import com.demo.chat.ui.Components.URLSpanReplacement;
+import com.demo.chat.ui.Components.URLSpanUserMention;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -142,8 +145,6 @@ public class MessageObject {
     public boolean cancelEditing;
 
     public boolean scheduled;
-
-    public ArrayList<TLRPC.TL_pollAnswer> checkedVotes;
 
     public CharSequence editingMessage;
     public ArrayList<MessageEntity> editingMessageEntities;
@@ -1541,8 +1542,8 @@ public class MessageObject {
                 message.media.webpage.url = "";
             }
         } else if (event.action instanceof TLRPC.TL_channelAdminLogEventActionChangeStickerSet) {
-            TLRPC.InputStickerSet newStickerset = ((TLRPC.TL_channelAdminLogEventActionChangeStickerSet) event.action).new_stickerset;
-            TLRPC.InputStickerSet oldStickerset = ((TLRPC.TL_channelAdminLogEventActionChangeStickerSet) event.action).new_stickerset;
+            InputStickerSet newStickerset = ((TLRPC.TL_channelAdminLogEventActionChangeStickerSet) event.action).new_stickerset;
+            InputStickerSet oldStickerset = ((TLRPC.TL_channelAdminLogEventActionChangeStickerSet) event.action).new_stickerset;
             if (newStickerset == null || newStickerset instanceof TLRPC.TL_inputStickerSetEmpty) {
                 messageText = replaceWithLink(LocaleController.getString("EventLogRemovedStickersSet", R.string.EventLogRemovedStickersSet), "un1", fromUser);
             } else {
@@ -1790,12 +1791,6 @@ public class MessageObject {
                 messageText = replaceWithLink(LocaleController.getString("ActionPinnedGeoLive", R.string.ActionPinnedGeoLive), "un1", fromUser != null ? fromUser : chat);
             } else if (replyMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaContact) {
                 messageText = replaceWithLink(LocaleController.getString("ActionPinnedContact", R.string.ActionPinnedContact), "un1", fromUser != null ? fromUser : chat);
-            } else if (replyMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaPoll) {
-                if (((TLRPC.TL_messageMediaPoll) replyMessageObject.messageOwner.media).poll.quiz) {
-                    messageText = replaceWithLink(LocaleController.getString("ActionPinnedQuiz", R.string.ActionPinnedQuiz), "un1", fromUser != null ? fromUser : chat);
-                } else {
-                    messageText = replaceWithLink(LocaleController.getString("ActionPinnedPoll", R.string.ActionPinnedPoll), "un1", fromUser != null ? fromUser : chat);
-                }
             } else if (replyMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaPhoto) {
                 messageText = replaceWithLink(LocaleController.getString("ActionPinnedPhoto", R.string.ActionPinnedPhoto), "un1", fromUser != null ? fromUser : chat);
             } else if (replyMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGame) {
@@ -4540,14 +4535,14 @@ public class MessageObject {
         return message.media instanceof TLRPC.TL_messageMediaInvoice;
     }
 
-    public static TLRPC.InputStickerSet getInputStickerSet(Message message) {
+    public static InputStickerSet getInputStickerSet(Message message) {
         if (message.media != null && message.media.document != null) {
             return getInputStickerSet(message.media.document);
         }
         return null;
     }
 
-    public static TLRPC.InputStickerSet getInputStickerSet(Document document) {
+    public static InputStickerSet getInputStickerSet(Document document) {
         if (document == null) {
             return null;
         }
@@ -5014,7 +5009,7 @@ public class MessageObject {
         return LocaleController.getString("AudioUnknownArtist", R.string.AudioUnknownArtist);
     }
 
-    public TLRPC.InputStickerSet getInputStickerSet() {
+    public InputStickerSet getInputStickerSet() {
         return getInputStickerSet(messageOwner);
     }
 

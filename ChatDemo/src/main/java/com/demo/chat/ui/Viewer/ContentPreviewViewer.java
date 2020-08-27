@@ -39,11 +39,13 @@ import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.sticker.InputStickerSet;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.BottomSheet;
 import com.demo.chat.ui.Cells.ContextLinkCell;
 import com.demo.chat.ui.Cells.StickerCell;
+import com.demo.chat.ui.Cells.StickerEmojiCell;
 import com.demo.chat.ui.Components.LayoutHelper;
 import com.demo.chat.ui.Components.RecyclerListView;
 
@@ -72,7 +74,7 @@ public class ContentPreviewViewer {
 
     public interface ContentPreviewViewerDelegate {
         void sendSticker(Document sticker, Object parent, boolean notify, int scheduleDate);
-        void openSet(TLRPC.InputStickerSet set, boolean clearInputField);
+        void openSet(InputStickerSet set, boolean clearInputField);
         boolean needSend();
         boolean canSchedule();
         boolean isInScheduleMode();
@@ -281,7 +283,7 @@ public class ContentPreviewViewer {
                         delegate.gifAddedOrDeleted();
                     } else if (actions.get(which) == 3) {
                         Document document = currentDocument;
-                        TLRPC.BotInlineResult result = inlineResult;
+                        BotInlineResult result = inlineResult;
                         Object parent = parentObject;
                         ContentPreviewViewerDelegate stickerPreviewViewerDelegate = delegate;
                         AlertsCreator.createScheduleDatePickerDialog(parentActivity, stickerPreviewViewerDelegate.getDialogId(), (notify, scheduleDate) -> stickerPreviewViewerDelegate.sendGif(document != null ? document : result, parent, notify, scheduleDate));
@@ -304,7 +306,7 @@ public class ContentPreviewViewer {
     private int currentContentType;
     private Document currentDocument;
     private BotInlineResult inlineResult;
-    private TLRPC.InputStickerSet currentStickerSet;
+    private InputStickerSet currentStickerSet;
     private Object parentObject;
 
     @SuppressLint("StaticFieldLeak")
@@ -622,7 +624,7 @@ public class ContentPreviewViewer {
         keyboardHeight = height;
     }
 
-    public void open(Document document, TLRPC.BotInlineResult botInlineResult, int contentType, boolean isRecent, Object parent) {
+    public void open(Document document, BotInlineResult botInlineResult, int contentType, boolean isRecent, Object parent) {
         if (parentActivity == null || windowView == null) {
             return;
         }
@@ -637,9 +639,9 @@ public class ContentPreviewViewer {
                 textPaint.setTextSize(AndroidUtilities.dp(24));
             }
 
-            TLRPC.InputStickerSet newSet = null;
+            InputStickerSet newSet = null;
             for (int a = 0; a < document.attributes.size(); a++) {
-                DocumentAttribute attribute = document.attributes.get(a);
+                Document.DocumentAttribute attribute = document.attributes.get(a);
                 if (attribute instanceof TLRPC.TL_documentAttributeSticker && attribute.stickerset != null) {
                     newSet = attribute.stickerset;
                     break;

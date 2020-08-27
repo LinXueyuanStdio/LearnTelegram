@@ -43,6 +43,8 @@ import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.NotificationCenter;
+import com.demo.chat.model.small.BotInlineResult;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.small.WallPaper;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
@@ -1263,7 +1265,7 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                     nextImagesSearchOffset = res.next_offset;
 
                     for (int a = 0, count = res.results.size(); a < count; a++) {
-                        TLRPC.BotInlineResult result = res.results.get(a);
+                        BotInlineResult result = res.results.get(a);
                         if (!"photo".equals(result.type)) {
                             continue;
                         }
@@ -1273,8 +1275,8 @@ public class WallpapersListActivity extends BaseFragment implements Notification
 
                         MediaController.SearchImage bingImage = new MediaController.SearchImage();
                         if (result.photo != null) {
-                            TLRPC.PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, AndroidUtilities.getPhotoSize());
-                            TLRPC.PhotoSize size2 = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, 320);
+                            PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, AndroidUtilities.getPhotoSize());
+                            PhotoSize size2 = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, 320);
                             if (size == null) {
                                 continue;
                             }

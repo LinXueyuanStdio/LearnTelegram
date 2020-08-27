@@ -45,6 +45,7 @@ import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
 import com.demo.chat.controller.MessagesController;
+import com.demo.chat.controller.MessagesStorage;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.NotificationCenter;
@@ -55,6 +56,7 @@ import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
@@ -1587,7 +1589,7 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
                 nextImagesSearchOffset = res.next_offset;
 
                 for (int a = 0, count = res.results.size(); a < count; a++) {
-                    TLRPC.BotInlineResult result = res.results.get(a);
+                    BotInlineResult result = res.results.get(a);
                     if (!gif && !"photo".equals(result.type) || gif && !"gif".equals(result.type)) {
                         continue;
                     }

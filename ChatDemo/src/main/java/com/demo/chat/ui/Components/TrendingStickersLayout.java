@@ -17,11 +17,17 @@ import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.NotificationCenter;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.sticker.InputStickerSet;
+import com.demo.chat.model.sticker.StickerSet;
+import com.demo.chat.model.sticker.StickerSetCovered;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.Adapters.StickersSearchAdapter;
 import com.demo.chat.ui.Cells.FeaturedStickerSetInfoCell;
+import com.demo.chat.ui.Cells.GraySectionCell;
+import com.demo.chat.ui.Cells.StickerEmojiCell;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,10 +49,10 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
 
         private String[] lastSearchKeyboardLanguage = new String[0];
 
-        public void onStickerSetAdd(TLRPC.StickerSetCovered stickerSet, boolean primary) {
+        public void onStickerSetAdd(StickerSetCovered stickerSet, boolean primary) {
         }
 
-        public void onStickerSetRemove(TLRPC.StickerSetCovered stickerSet) {
+        public void onStickerSetRemove(StickerSetCovered stickerSet) {
         }
 
         public boolean onListViewInterceptTouchEvent(RecyclerListView listView, MotionEvent event) {
@@ -84,9 +90,9 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
     private final int currentAccount = UserConfig.selectedAccount;
 
     private final Delegate delegate;
-    private final TLRPC.StickerSetCovered[] primaryInstallingStickerSets;
-    private final LongSparseArray<TLRPC.StickerSetCovered> installingStickerSets;
-    private final LongSparseArray<TLRPC.StickerSetCovered> removingStickerSets;
+    private final StickerSetCovered[] primaryInstallingStickerSets;
+    private final LongSparseArray<StickerSetCovered> installingStickerSets;
+    private final LongSparseArray<StickerSetCovered> removingStickerSets;
 
     private final View shadowView;
     private final SearchField searchView;
@@ -108,10 +114,10 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
     private int hash;
 
     public TrendingStickersLayout(@NonNull Context context, Delegate delegate) {
-        this(context, delegate, new TLRPC.StickerSetCovered[10], new LongSparseArray<>(), new LongSparseArray<>());
+        this(context, delegate, new StickerSetCovered[10], new LongSparseArray<>(), new LongSparseArray<>());
     }
 
-    public TrendingStickersLayout(@NonNull Context context, Delegate delegate, TLRPC.StickerSetCovered[] primaryInstallingStickerSets, LongSparseArray<TLRPC.StickerSetCovered> installingStickerSets, LongSparseArray<TLRPC.StickerSetCovered> removingStickerSets) {
+    public TrendingStickersLayout(@NonNull Context context, Delegate delegate, StickerSetCovered[] primaryInstallingStickerSets, LongSparseArray<StickerSetCovered> installingStickerSets, LongSparseArray<StickerSetCovered> removingStickerSets) {
         super(context);
         this.delegate = delegate;
         this.primaryInstallingStickerSets = primaryInstallingStickerSets;
@@ -140,12 +146,12 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
             }
 
             @Override
-            public void onStickerSetAdd(TLRPC.StickerSetCovered stickerSet, boolean primary) {
+            public void onStickerSetAdd(StickerSetCovered stickerSet, boolean primary) {
                 delegate.onStickerSetAdd(stickerSet, primary);
             }
 
             @Override
-            public void onStickerSetRemove(TLRPC.StickerSetCovered stickerSet) {
+            public void onStickerSetRemove(StickerSetCovered stickerSet) {
                 delegate.onStickerSetRemove(stickerSet);
             }
 
@@ -204,7 +210,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
             }
         };
         final RecyclerListView.OnItemClickListener trendingOnItemClickListener = (view, position) -> {
-            final TLRPC.StickerSetCovered pack;
+            final StickerSetCovered pack;
             if (listView.getAdapter() == searchAdapter) {
                 pack = searchAdapter.getSetForPosition(position);
             } else {
@@ -321,13 +327,13 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
         return result;
     }
 
-    private void showStickerSet(TLRPC.StickerSet pack) {
+    private void showStickerSet(StickerSet pack) {
         showStickerSet(pack, null);
     }
 
-    public void showStickerSet(TLRPC.StickerSet pack, TLRPC.InputStickerSet inputStickerSet) {
+    public void showStickerSet(StickerSet pack, InputStickerSet inputStickerSet) {
         if (pack != null) {
-            inputStickerSet = new TLRPC.TL_inputStickerSetID();
+            inputStickerSet = new InputStickerSet();
             inputStickerSet.access_hash = pack.access_hash;
             inputStickerSet.id = pack.id;
         }
@@ -336,7 +342,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
         }
     }
 
-    private void showStickerSet(TLRPC.InputStickerSet inputStickerSet) {
+    private void showStickerSet(InputStickerSet inputStickerSet) {
         final StickersAlert.StickersAlertDelegate stickersAlertDelegate;
         if (delegate.canSendSticker()) {
             stickersAlertDelegate = new StickersAlert.StickersAlertDelegate() {
@@ -365,7 +371,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
             public void onStickerSetInstalled() {
                 if (listView.getAdapter() == adapter) {
                     for (int i = 0; i < adapter.sets.size(); i++) {
-                        final TLRPC.StickerSetCovered setCovered = adapter.sets.get(i);
+                        final StickerSetCovered setCovered = adapter.sets.get(i);
                         if (setCovered.set.id == inputStickerSet.id) {
                             adapter.installStickerSet(setCovered, null);
                             break;
@@ -508,9 +514,9 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
 
         private final Context context;
         private final SparseArray<Object> cache = new SparseArray<>();
-        private final ArrayList<TLRPC.StickerSetCovered> sets = new ArrayList<>();
-        private final SparseArray<TLRPC.StickerSetCovered> positionsToSets = new SparseArray<>();
-        private final ArrayList<TLRPC.StickerSetCovered> otherPacks = new ArrayList<>();
+        private final ArrayList<StickerSetCovered> sets = new ArrayList<>();
+        private final SparseArray<StickerSetCovered> positionsToSets = new SparseArray<>();
+        private final ArrayList<StickerSetCovered> otherPacks = new ArrayList<>();
 
         private boolean loadingMore;
         private boolean endReached;
@@ -570,7 +576,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
                     view = new FeaturedStickerSetInfoCell(context, 17, true);
                     ((FeaturedStickerSetInfoCell) view).setAddOnClickListener(v -> {
                         final FeaturedStickerSetInfoCell cell = (FeaturedStickerSetInfoCell) v.getParent();
-                        TLRPC.StickerSetCovered pack = cell.getStickerSet();
+                        StickerSetCovered pack = cell.getStickerSet();
                         if (installingStickerSets.indexOfKey(pack.set.id) >= 0 || removingStickerSets.indexOfKey(pack.set.id) >= 0) {
                             return;
                         }
@@ -592,7 +598,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
                     final FeaturedStickerSetCell2 stickerSetCell = new FeaturedStickerSetCell2(context);
                     stickerSetCell.setAddOnClickListener(v -> {
                         final FeaturedStickerSetCell2 cell = (FeaturedStickerSetCell2) v.getParent();
-                        TLRPC.StickerSetCovered pack = cell.getStickerSet();
+                        StickerSetCovered pack = cell.getStickerSet();
                         if (installingStickerSets.indexOfKey(pack.set.id) >= 0 || removingStickerSets.indexOfKey(pack.set.id) >= 0) {
                             return;
                         }
@@ -646,7 +652,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
         private void bindStickerSetCell(View view, int position, boolean animated) {
             final MediaDataController mediaDataController = MediaDataController.getInstance(currentAccount);
             boolean unread = false;
-            final TLRPC.StickerSetCovered stickerSetCovered;
+            final StickerSetCovered stickerSetCovered;
             if (position < totalItems) {
                 stickerSetCovered = sets.get((Integer) cache.get(position));
                 final ArrayList<Long> unreadStickers = mediaDataController.getUnreadStickerSets();
@@ -688,7 +694,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
             cell.setNeedDivider(position > 0 && (cache.get(position - 1) == null || !cache.get(position - 1).equals(ITEM_SECTION)));
         }
 
-        private void installStickerSet(TLRPC.StickerSetCovered pack, View view) {
+        private void installStickerSet(StickerSetCovered pack, View view) {
             for (int i = 0; i < primaryInstallingStickerSets.length; i++) {
                 if (primaryInstallingStickerSets[i] != null) {
                     final TLRPC.TL_messages_stickerSet s = MediaDataController.getInstance(currentAccount).getStickerSetById(primaryInstallingStickerSets[i].set.id);
@@ -722,7 +728,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
                 delegate.onStickerSetAdd(pack, primary);
             } else {
                 for (int i = 0, size = positionsToSets.size(); i < size; i++) {
-                    final TLRPC.StickerSetCovered item = positionsToSets.get(i);
+                    final StickerSetCovered item = positionsToSets.get(i);
                     if (item != null && item.set.id == pack.set.id) {
                         notifyItemChanged(i, PAYLOAD_ANIMATED);
                         break;
@@ -750,12 +756,12 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
             int num = 0;
 
             final MediaDataController mediaDataController = MediaDataController.getInstance(currentAccount);
-            ArrayList<TLRPC.StickerSetCovered> packs = new ArrayList<>(mediaDataController.getFeaturedStickerSets());
+            ArrayList<StickerSetCovered> packs = new ArrayList<>(mediaDataController.getFeaturedStickerSets());
             final int otherStickersSectionPosition = packs.size();
             packs.addAll(otherPacks);
 
             for (int a = 0; a < packs.size(); a++) {
-                TLRPC.StickerSetCovered pack = packs.get(a);
+                StickerSetCovered pack = packs.get(a);
                 if (pack.covers.isEmpty() && pack.cover == null) {
                     continue;
                 }
@@ -802,7 +808,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
                 loadingMore = false;
                 if (error == null && response instanceof TLRPC.TL_messages_featuredStickers) {
                     final TLRPC.TL_messages_featuredStickers stickersResponse = (TLRPC.TL_messages_featuredStickers) response;
-                    final List<TLRPC.StickerSetCovered> packs = stickersResponse.sets;
+                    final List<StickerSetCovered> packs = stickersResponse.sets;
                     if (packs.size() < 40) {
                         endReached = true;
                     }
@@ -813,7 +819,7 @@ public class TrendingStickersLayout extends FrameLayout implements NotificationC
                         otherPacks.addAll(packs);
                         int num = sets.size();
                         for (int a = 0; a < packs.size(); a++) {
-                            TLRPC.StickerSetCovered pack = packs.get(a);
+                            StickerSetCovered pack = packs.get(a);
                             if (pack.covers.isEmpty() && pack.cover == null) {
                                 continue;
                             }

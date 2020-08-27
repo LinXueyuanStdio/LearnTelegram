@@ -18,6 +18,21 @@ import java.util.HashMap;
  * @usage null
  */
 public class Message {
+    //public static final int MESSAGE_FLAG_UNREAD             = 0x00000001;
+    //public static final int MESSAGE_FLAG_OUT                = 0x00000002;
+    public static final int MESSAGE_FLAG_FWD                = 0x00000004;
+    public static final int MESSAGE_FLAG_REPLY              = 0x00000008;
+    //public static final int MESSAGE_FLAG_MENTION            = 0x00000010;
+    //public static final int MESSAGE_FLAG_CONTENT_UNREAD     = 0x00000020;
+    public static final int MESSAGE_FLAG_HAS_MARKUP         = 0x00000040;
+    public static final int MESSAGE_FLAG_HAS_ENTITIES       = 0x00000080;
+    public static final int MESSAGE_FLAG_HAS_FROM_ID        = 0x00000100;
+    public static final int MESSAGE_FLAG_HAS_MEDIA          = 0x00000200;
+    public static final int MESSAGE_FLAG_HAS_VIEWS          = 0x00000400;
+    public static final int MESSAGE_FLAG_HAS_BOT_ID         = 0x00000800;
+    public static final int MESSAGE_FLAG_EDITED             = 0x00008000;
+    public static final int MESSAGE_FLAG_MEGAGROUP          = 0x80000000;
+
     public int id;
     public int from_id;
     public Peer to_id;

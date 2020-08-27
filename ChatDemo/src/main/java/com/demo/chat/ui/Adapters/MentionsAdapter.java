@@ -484,7 +484,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
                     searchResultBotContextSwitch = res.switch_pm;
                 }
                 for (int a = 0; a < res.results.size(); a++) {
-                    TLRPC.BotInlineResult result = res.results.get(a);
+                    BotInlineResult result = res.results.get(a);
                     if (!(result.document instanceof TLRPC.TL_document) && !(result.photo instanceof TLRPC.TL_photo) && !"game".equals(result.type) && result.content == null && result.send_message instanceof TLRPC.TL_botInlineMessageMediaAuto) {
                         res.results.remove(a);
                         a--;

@@ -1338,7 +1338,7 @@ public class AudioPlayerAlert extends BottomSheet implements NotificationCenter.
                             boolean ok = false;
                             for (int c = 0; c < document.attributes.size(); c++) {
                                 Document.DocumentAttribute attribute = document.attributes.get(c);
-                                if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
+                                if (attribute.isAudio()) {
                                     if (attribute.performer != null) {
                                         ok = attribute.performer.toLowerCase().contains(q);
                                     }
