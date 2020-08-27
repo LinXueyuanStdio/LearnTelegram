@@ -26,7 +26,7 @@ public class Document extends Media {
     public byte[] key;
     public byte[] iv;
     public ArrayList<PhotoSize> thumbs = new ArrayList<>();
-    public ArrayList<TL_videoSize> video_thumbs = new ArrayList<>();
+    public ArrayList<VideoSize> video_thumbs = new ArrayList<>();
     public ArrayList<DocumentAttribute> attributes = new ArrayList<>();
 
     public static class DocumentAttribute{

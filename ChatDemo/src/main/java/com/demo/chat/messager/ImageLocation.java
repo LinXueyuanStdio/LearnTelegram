@@ -11,6 +11,7 @@ import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.small.VideoSize;
 import com.demo.chat.model.small.WebFile;
 import com.demo.chat.model.sticker.InputStickerSet;
 import com.demo.chat.theme.Theme;
@@ -186,7 +187,7 @@ public class ImageLocation {
         return imageLocation;
     }
 
-    public static ImageLocation getForDocument(TL_videoSize videoSize, Document document) {
+    public static ImageLocation getForDocument(VideoSize videoSize, Document document) {
         if (videoSize == null || document == null) {
             return null;
         }

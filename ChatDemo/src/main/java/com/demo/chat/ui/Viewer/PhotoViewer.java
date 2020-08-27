@@ -8642,7 +8642,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     } else if (botInlineResult.type.equals("gif") && botInlineResult.document != null) {
                         document = botInlineResult.document;
                         imageSize = botInlineResult.document.size;
-                        TLRPC.TL_videoSize videoSize = MessageObject.getDocumentVideoThumb(botInlineResult.document);
+                        VideoSize videoSize = MessageObject.getDocumentVideoThumb(botInlineResult.document);
                         if (videoSize != null) {
                             videoThumb = ImageLocation.getForDocument(videoSize, document);
                         }
@@ -8782,7 +8782,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     parentObject = messageObject;
                     if (sharedMediaType == MediaDataController.MEDIA_GIF) {
                         Document document = messageObject.getDocument();
-                        TLRPC.TL_videoSize videoSize = MessageObject.getDocumentVideoThumb(document);
+                        VideoSize videoSize = MessageObject.getDocumentVideoThumb(document);
                         if (videoSize != null) {
                             videoThumb = ImageLocation.getForDocument(videoSize, document);
                         }
