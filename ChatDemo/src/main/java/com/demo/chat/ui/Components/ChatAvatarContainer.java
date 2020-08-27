@@ -116,7 +116,7 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
                 int[] media = new int[MediaDataController.MEDIA_TYPES_COUNT];
                 System.arraycopy(sharedMediaPreloader.getLastMediaCount(), 0, media, 0, media.length);
                 MediaActivity fragment = new MediaActivity(args, media, sharedMediaPreloader.getSharedMediaData(), -1);
-                fragment.setChatInfo(parentFragment.getCurrentChatInfo());
+                fragment.setChatInfo(parentFragment.getCurrentChat());
                 parentFragment.presentFragment(fragment);
             } else {
                 args.putInt("user_id", user.id);
@@ -293,7 +293,7 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
         if (printString == null || printString.length() == 0 || ChatObject.isChannel(chat) && !chat.megagroup) {
             setTypingAnimation(false);
             if (chat != null) {
-                ChatFull info = parentFragment.getCurrentChatInfo();
+                Chat info = parentFragment.getCurrentChat();
                 if (ChatObject.isChannel(chat)) {
                     if (info != null && info.participants_count != 0) {
                         if (chat.megagroup) {
@@ -444,7 +444,7 @@ public class ChatAvatarContainer extends FrameLayout implements NotificationCent
             return;
         }
         onlineCount = 0;
-        ChatFull info = parentFragment.getCurrentChatInfo();
+        Chat info = parentFragment.getCurrentChat();
         if (info == null) {
             return;
         }

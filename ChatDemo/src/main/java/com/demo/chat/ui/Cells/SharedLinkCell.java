@@ -22,6 +22,7 @@ import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
@@ -195,7 +196,7 @@ public class SharedLinkCell extends FrameLayout {
         }
         if (message != null && !message.messageOwner.entities.isEmpty()) {
             for (int a = 0; a < message.messageOwner.entities.size(); a++) {
-                TLRPC.MessageEntity entity = message.messageOwner.entities.get(a);
+                MessageEntity entity = message.messageOwner.entities.get(a);
                 if (entity.length <= 0 || entity.offset < 0 || entity.offset >= message.messageOwner.message.length()) {
                     continue;
                 } else if (entity.offset + entity.length > message.messageOwner.message.length()) {

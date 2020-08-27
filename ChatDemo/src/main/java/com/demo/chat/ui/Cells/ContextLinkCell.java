@@ -20,6 +20,7 @@ import android.view.animation.AccelerateInterpolator;
 import android.widget.FrameLayout;
 
 import com.demo.chat.R;
+import com.demo.chat.controller.DownloadController;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
@@ -35,6 +36,7 @@ import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
@@ -100,7 +102,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
     private User inlineBot;
     private Document documentAttach;
     private int currentDate;
-    private TLRPC.Photo photoAttach;
+    private MessageMedia.Photo photoAttach;
     private PhotoSize currentPhotoObject;
     private int documentAttachType;
     private boolean mediaWebpage;
@@ -468,11 +470,11 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
         }
     }
 
-    public void setLink(TLRPC.BotInlineResult contextResult, User bot, boolean media, boolean divider, boolean shadow) {
+    public void setLink(BotInlineResult contextResult, User bot, boolean media, boolean divider, boolean shadow) {
         setLink(contextResult, bot, media, divider, shadow, false);
     }
 
-    public void setLink(TLRPC.BotInlineResult contextResult, User bot, boolean media, boolean divider, boolean shadow, boolean forceGif) {
+    public void setLink(BotInlineResult contextResult, User bot, boolean media, boolean divider, boolean shadow, boolean forceGif) {
         needDivider = divider;
         needShadow = shadow;
         inlineBot = bot;

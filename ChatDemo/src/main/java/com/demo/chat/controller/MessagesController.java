@@ -3,6 +3,7 @@ package com.demo.chat.controller;
 import android.app.Activity;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.LongSparseArray;
@@ -1095,6 +1096,58 @@ public class MessagesController extends BaseController implements NotificationCe
         }
         return false;
     }
+
+    public static boolean isSupportUser(User user) {
+        return user != null && (user.support || user.id == 777000 ||
+                user.id == 333000 || user.id == 4240000 || user.id == 4244000 ||
+                user.id == 4245000 || user.id == 4246000 || user.id == 410000 ||
+                user.id == 420000 || user.id == 431000 || user.id == 431415000 ||
+                user.id == 434000 || user.id == 4243000 || user.id == 439000 ||
+                user.id == 449000 || user.id == 450000 || user.id == 452000 ||
+                user.id == 454000 || user.id == 4254000 || user.id == 455000 ||
+                user.id == 460000 || user.id == 470000 || user.id == 479000 ||
+                user.id == 796000 || user.id == 482000 || user.id == 490000 ||
+                user.id == 496000 || user.id == 497000 || user.id == 498000 ||
+                user.id == 4298000);
+    }
+    public void openByUserName(String username, final BaseFragment fragment, final int type) {
+        if (username == null || fragment == null) {
+            return;
+        }
+        TLObject object = getUserOrChat(username);
+        User user = null;
+        Chat chat = null;
+        if (object instanceof User) {
+            user = (User) object;
+            if (user.min) {
+                user = null;
+            }
+        } else if (object instanceof Chat) {
+            chat = (Chat) object;
+            if (chat.min) {
+                chat = null;
+            }
+        }
+        if (user != null) {
+            openChatOrProfileWith(user, null, fragment, type, false);
+        } else if (chat != null) {
+            openChatOrProfileWith(null, chat, fragment, 1, false);
+        }
+    }
+    public boolean isChannelAdminsLoaded(int chatId) {
+        return channelAdmins.get(chatId) != null;
+    }
+    public void loadChannelAdmins(final int chatId, final boolean cache) {
+        int loadTime = loadingChannelAdmins.get(chatId);
+        if (SystemClock.elapsedRealtime() - loadTime < 60) {
+            return;
+        }
+        loadingChannelAdmins.put(chatId, (int) (SystemClock.elapsedRealtime() / 1000));
+        if (cache) {
+            getMessagesStorage().loadChannelAdmins(chatId);
+        }
+    }
+
     //region NotificationCenter.NotificationCenterDelegate
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {

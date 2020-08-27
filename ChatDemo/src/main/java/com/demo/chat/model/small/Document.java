@@ -43,5 +43,12 @@ public class Document {
         public String performer;
         public boolean voice;
         public byte[] waveform;
+
+        public boolean isImageSize() {
+            return false;
+        }
+        public boolean isVideo() {
+            return false;
+        }
     }
 }

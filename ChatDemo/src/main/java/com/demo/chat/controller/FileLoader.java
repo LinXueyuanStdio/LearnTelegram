@@ -1166,12 +1166,6 @@ public class FileLoader extends BaseController {
             } else {
                 return document.dc_id + "_" + document.id;
             }
-        } else if (attach instanceof SecureDocument) {
-            SecureDocument secureDocument = (SecureDocument) attach;
-            return secureDocument.secureFile.dc_id + "_" + secureDocument.secureFile.id + ".jpg";
-        } else if (attach instanceof TLRPC.TL_secureFile) {
-            TLRPC.TL_secureFile secureFile = (TLRPC.TL_secureFile) attach;
-            return secureFile.dc_id + "_" + secureFile.id + ".jpg";
         } else if (attach instanceof WebFile) {
             WebFile document = (WebFile) attach;
             return Utilities.MD5(document.url) + "." + ImageLoader.getHttpUrlExtension(document.url, getMimeTypePart(document.mime_type));

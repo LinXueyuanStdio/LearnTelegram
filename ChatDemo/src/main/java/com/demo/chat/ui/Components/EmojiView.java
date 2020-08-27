@@ -59,6 +59,7 @@ import com.demo.chat.messager.EmojiData;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.browser.Browser;
+import com.demo.chat.model.Chat;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
@@ -209,7 +210,7 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
     private int favTabBum = -2;
     private int trendingTabNum = -2;
 
-    private ChatFull info;
+    private Chat info;
 
     private boolean isLayout;
     private int currentBackgroundType = -1;
@@ -3265,7 +3266,7 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
         dragListener = listener;
     }
 
-    public void setChatInfo(ChatFull chatInfo) {
+    public void setChatInfo(Chat chatInfo) {
         info = chatInfo;
         updateStickerTabs();
     }

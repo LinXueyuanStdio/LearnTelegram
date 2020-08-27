@@ -42,6 +42,7 @@ import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SerializedData;
 import com.demo.chat.messager.SharedConfig;
@@ -57,6 +58,7 @@ import com.demo.chat.ui.ActionBar.ActionBarMenuItem;
 import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ActionBar.BottomSheet;
+import com.demo.chat.ui.CacheControlActivity;
 import com.demo.chat.ui.Cells.CheckBoxCell;
 import com.demo.chat.ui.Cells.RadioColorCell;
 import com.demo.chat.ui.ChatActivity;
@@ -1052,7 +1054,8 @@ public class AlertsCreator {
         return false;
     }
 
-    public static void showBlockReportSpamAlert(BaseFragment fragment, long dialog_id, User currentUser, Chat currentChat, TLRPC.EncryptedChat encryptedChat, boolean isLocation, ChatFull chatInfo, MessagesStorage.IntCallback callback) {
+    public static void showBlockReportSpamAlert(BaseFragment fragment, long dialog_id,
+            User currentUser, Chat currentChat, boolean isLocation, MessagesStorage.IntCallback callback) {
         if (fragment == null || fragment.getParentActivity() == null) {
             return;
         }
@@ -1061,7 +1064,7 @@ public class AlertsCreator {
         CharSequence reportText;
         CheckBoxCell[] cells;
         SharedPreferences preferences = MessagesController.getNotificationsSettings(fragment.getCurrentAccount());
-        boolean showReport = encryptedChat != null || preferences.getBoolean("dialog_bar_report" + dialog_id, false);
+        boolean showReport = false;
         if (currentUser != null) {
             builder.setTitle(LocaleController.formatString("BlockUserTitle", R.string.BlockUserTitle, UserObject.getFirstName(currentUser)));
             builder.setMessage(AndroidUtilities.replaceTags(LocaleController.formatString("BlockUserAlert", R.string.BlockUserAlert, UserObject.getFirstName(currentUser))));
@@ -1116,7 +1119,7 @@ public class AlertsCreator {
                 accountInstance.getMessagesController().blockUser(currentUser.id);
             }
             if (cells == null || cells[0] != null && cells[0].isChecked()) {
-                accountInstance.getMessagesController().reportSpam(dialog_id, currentUser, currentChat, encryptedChat, currentChat != null && isLocation);
+                accountInstance.getMessagesController().reportSpam(dialog_id, currentUser, currentChat, null, currentChat != null && isLocation);
             }
             if (cells == null || cells[1].isChecked()) {
                 if (currentChat != null) {
@@ -2743,70 +2746,6 @@ public class AlertsCreator {
     }
     //endregion
 
-    public static AlertDialog.Builder createTTLAlert(final Context context, final TLRPC.EncryptedChat encryptedChat) {
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle(LocaleController.getString("MessageLifetime", R.string.MessageLifetime));
-        final NumberPicker numberPicker = new NumberPicker(context);
-        numberPicker.setMinValue(0);
-        numberPicker.setMaxValue(20);
-        if (encryptedChat.ttl > 0 && encryptedChat.ttl < 16) {
-            numberPicker.setValue(encryptedChat.ttl);
-        } else if (encryptedChat.ttl == 30) {
-            numberPicker.setValue(16);
-        } else if (encryptedChat.ttl == 60) {
-            numberPicker.setValue(17);
-        } else if (encryptedChat.ttl == 60 * 60) {
-            numberPicker.setValue(18);
-        } else if (encryptedChat.ttl == 60 * 60 * 24) {
-            numberPicker.setValue(19);
-        } else if (encryptedChat.ttl == 60 * 60 * 24 * 7) {
-            numberPicker.setValue(20);
-        } else if (encryptedChat.ttl == 0) {
-            numberPicker.setValue(0);
-        }
-        numberPicker.setFormatter(value -> {
-            if (value == 0) {
-                return LocaleController.getString("ShortMessageLifetimeForever", R.string.ShortMessageLifetimeForever);
-            } else if (value >= 1 && value < 16) {
-                return LocaleController.formatTTLString(value);
-            } else if (value == 16) {
-                return LocaleController.formatTTLString(30);
-            } else if (value == 17) {
-                return LocaleController.formatTTLString(60);
-            } else if (value == 18) {
-                return LocaleController.formatTTLString(60 * 60);
-            } else if (value == 19) {
-                return LocaleController.formatTTLString(60 * 60 * 24);
-            } else if (value == 20) {
-                return LocaleController.formatTTLString(60 * 60 * 24 * 7);
-            }
-            return "";
-        });
-        builder.setView(numberPicker);
-        builder.setNegativeButton(LocaleController.getString("Done", R.string.Done), (dialog, which) -> {
-            int oldValue = encryptedChat.ttl;
-            which = numberPicker.getValue();
-            if (which >= 0 && which < 16) {
-                encryptedChat.ttl = which;
-            } else if (which == 16) {
-                encryptedChat.ttl = 30;
-            } else if (which == 17) {
-                encryptedChat.ttl = 60;
-            } else if (which == 18) {
-                encryptedChat.ttl = 60 * 60;
-            } else if (which == 19) {
-                encryptedChat.ttl = 60 * 60 * 24;
-            } else if (which == 20) {
-                encryptedChat.ttl = 60 * 60 * 24 * 7;
-            }
-            if (oldValue != encryptedChat.ttl) {
-                SecretChatHelper.getInstance(UserConfig.selectedAccount).sendTTLMessage(encryptedChat, null);
-                MessagesStorage.getInstance(UserConfig.selectedAccount).updateEncryptedChatTTL(encryptedChat);
-            }
-        });
-        return builder;
-    }
-
     public interface AccountSelectDelegate {
         void didSelectAccount(int account);
     }
@@ -2851,8 +2790,8 @@ public class AlertsCreator {
         void didPressedNewCard();
     }
 
-    public static void createDeleteMessagesAlert(BaseFragment fragment, User user, Chat chat, TLRPC.EncryptedChat encryptedChat, ChatFull chatInfo, long mergeDialogId, MessageObject selectedMessage, SparseArray<MessageObject>[] selectedMessages, MessageObject.GroupedMessages selectedGroup, boolean scheduled, int loadParticipant, Runnable onDelete) {
-        if (fragment == null || user == null && chat == null && encryptedChat == null) {
+    public static void createDeleteMessagesAlert(BaseFragment fragment, User user, Chat chat, long mergeDialogId, MessageObject selectedMessage, SparseArray<MessageObject>[] selectedMessages, MessageObject.GroupedMessages selectedGroup, boolean scheduled, int loadParticipant, Runnable onDelete) {
+        if (fragment == null || user == null && chat == null) {
             return;
         }
         Activity activity = fragment.getParentActivity();
@@ -2872,9 +2811,7 @@ public class AlertsCreator {
         }
 
         long dialogId;
-        if (encryptedChat != null) {
-            dialogId = ((long) encryptedChat.id) << 32;
-        } else if (user != null) {
+        if (user != null) {
             dialogId = user.id;
         } else {
             dialogId = -chat.id;

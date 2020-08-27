@@ -30,6 +30,7 @@ import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.BotInfo;
 import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.theme.Theme;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.Cells.BotSwitchCell;
 import com.demo.chat.ui.Cells.ContextLinkCell;
 import com.demo.chat.ui.Cells.MentionCell;
@@ -60,7 +61,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
     private int currentAccount = UserConfig.selectedAccount;
     private Context mContext;
     private long dialog_id;
-    private ChatFull info;
+    private Chat info;
     private SearchAdapterHelper searchAdapterHelper;
     private ArrayList<User> searchResultUsernames;
     private SparseArray<User> searchResultUsernamesMap;
@@ -176,7 +177,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
         parentFragment = fragment;
     }
 
-    public void setChatInfo(ChatFull chatInfo) {
+    public void setChatInfo(Chat chatInfo) {
         currentAccount = UserConfig.selectedAccount;
         info = chatInfo;
         if (!inlineMediaEnabled && foundContextBot != null && parentFragment != null) {
@@ -905,7 +906,7 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
         return resultLength;
     }
 
-    public ArrayList<TLRPC.BotInlineResult> getSearchResultBotContext() {
+    public ArrayList<BotInlineResult> getSearchResultBotContext() {
         return searchResultBotContext;
     }
 

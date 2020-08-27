@@ -117,8 +117,10 @@ import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
@@ -144,7 +146,10 @@ import com.demo.chat.ui.Components.GestureDetector2;
 import com.demo.chat.ui.Components.GroupedPhotosListView;
 import com.demo.chat.ui.Components.LayoutHelper;
 import com.demo.chat.ui.Components.PaintingOverlay;
+import com.demo.chat.ui.Components.PhotoCropView;
 import com.demo.chat.ui.Components.PhotoFilterView;
+import com.demo.chat.ui.Components.PhotoPaintView;
+import com.demo.chat.ui.Components.PhotoViewerCaptionEnterView;
 import com.demo.chat.ui.Components.PickerBottomLayoutViewer;
 import com.demo.chat.ui.Components.PipVideoView;
 import com.demo.chat.ui.Components.RLottieDrawable;
@@ -153,7 +158,9 @@ import com.demo.chat.ui.Components.RecyclerListView;
 import com.demo.chat.ui.Components.SizeNotifierFrameLayoutPhoto;
 import com.demo.chat.ui.Components.StickersAlert;
 import com.demo.chat.ui.Components.TextViewSwitcher;
+import com.demo.chat.ui.Components.Tooltip;
 import com.demo.chat.ui.Components.URLSpanNoUnderline;
+import com.demo.chat.ui.Components.VideoForwardDrawable;
 import com.demo.chat.ui.Components.VideoPlayer;
 import com.demo.chat.ui.Components.VideoPlayerSeekBar;
 import com.demo.chat.ui.Components.VideoSeekPreviewImage;
@@ -732,7 +739,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     private ArrayList<VideoEditedInfo.MediaEntity> currentMediaEntities;
     private String currentPaintPath;
     private long currentAverageDuration;
-    private TLRPC.BotInlineResult currentBotInlineResult;
+    private BotInlineResult currentBotInlineResult;
     private ImageLocation currentFileLocation;
     private SecureDocument currentSecureDocument;
     private String[] currentFileNames = new String[3];
@@ -812,7 +819,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     private SparseArray<MessageObject>[] imagesByIds = new SparseArray[] {new SparseArray<>(), new SparseArray<>()};
     private ArrayList<ImageLocation> imagesArrLocations = new ArrayList<>();
     private ArrayList<SecureDocument> secureDocuments = new ArrayList<>();
-    private ArrayList<TLRPC.Photo> avatarsArr = new ArrayList<>();
+    private ArrayList<MessageMedia.Photo> avatarsArr = new ArrayList<>();
     private ArrayList<Integer> imagesArrLocationsSizes = new ArrayList<>();
     private ArrayList<Object> imagesArrLocals = new ArrayList<>();
     private ImageLocation currentUserAvatarLocation = null;
@@ -3027,7 +3034,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         args2.putLong("dialog_id", currentDialogId);
                         MediaActivity mediaActivity = new MediaActivity(args2, new int[]{-1, -1, -1, -1, -1, -1}, null, sharedMediaType);
                         if (parentChatActivity != null) {
-                            mediaActivity.setChatInfo(parentChatActivity.getCurrentChatInfo());
+                            mediaActivity.setChatInfo(parentChatActivity.getCurrentChat());
                         }
                         closePhoto(false, false);
                         ((LaunchActivity) parentActivity).presentFragment(mediaActivity, false, true);
@@ -3044,10 +3051,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                             args.putInt("user_id", lower_part);
                         } else if (lower_part < 0) {
                             Chat chat = MessagesController.getInstance(currentAccount).getChat(-lower_part);
-                            if (chat != null && chat.migrated_to != null) {
-                                args.putInt("migrated_to", lower_part);
-                                lower_part = -chat.migrated_to.channel_id;
-                            }
                             args.putInt("chat_id", -lower_part);
                         }
                     } else {
@@ -3190,11 +3193,9 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                                 }
 
                                 ArrayList<Long> random_ids = null;
-                                TLRPC.EncryptedChat encryptedChat = null;
                                 if ((int) obj.getDialogId() == 0 && obj.messageOwner.random_id != 0) {
                                     random_ids = new ArrayList<>();
                                     random_ids.add(obj.messageOwner.random_id);
-                                    encryptedChat = MessagesController.getInstance(currentAccount).getEncryptedChat((int) (obj.getDialogId() >> 32));
                                 }
 
                                 MessagesController.getInstance(currentAccount).deleteMessages(arr, random_ids, encryptedChat, obj.getDialogId(), obj.messageOwner.to_id.channel_id, deleteForAll[0], obj.scheduled);
@@ -3203,11 +3204,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                             if (currentIndex < 0 || currentIndex >= avatarsArr.size()) {
                                 return;
                             }
-                            TLRPC.Photo photo = avatarsArr.get(currentIndex);
+                            MessageMedia.Photo photo = avatarsArr.get(currentIndex);
                             ImageLocation currentLocation = imagesArrLocations.get(currentIndex);
-                            if (photo instanceof TLRPC.TL_photoEmpty) {
-                                photo = null;
-                            }
                             boolean current = false;
                             if (currentUserAvatarLocation != null) {
                                 if (photo != null) {
@@ -7465,8 +7463,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 rotateItem.setVisibility(View.GONE);
                 allowCaption = cropItem.getVisibility() == View.VISIBLE;
             }
-            if (parentChatActivity != null && (parentChatActivity.currentEncryptedChat == null || AndroidUtilities.getPeerLayerVersion(parentChatActivity.currentEncryptedChat.layer) >= 46)) {
-                mentionsAdapter.setChatInfo(parentChatActivity.chatInfo);
+            if (parentChatActivity != null) {
+                mentionsAdapter.setChatInfo(parentChatActivity.currentChat);
                 mentionsAdapter.setNeedUsernames(parentChatActivity.currentChat != null);
                 mentionsAdapter.setNeedBotContext(false);
                 needCaptionLayout = allowCaption && (placeProvider == null || placeProvider != null && placeProvider.allowCaption());

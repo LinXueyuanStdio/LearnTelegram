@@ -54,7 +54,9 @@ import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
 import com.demo.chat.ui.ActionBar.ActionBar;
@@ -158,7 +160,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
     private ActionBarMenuItem gotoItem;
     private boolean scrolling;
     private long mergeDialogId;
-    protected TLRPC.ChatFull info = null;
+    protected Chat info = null;
 
     private AnimatorSet tabsAnimation;
     private boolean tabsAnimationInProgress;
@@ -406,7 +408,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
                             currentChat = MessagesController.getInstance(currentAccount).getChat(-lower_id);
                         }
                     }
-                    AlertsCreator.createDeleteMessagesAlert(MediaActivity.this, currentUser, currentChat, currentEncryptedChat, null, mergeDialogId, null, selectedFiles, null, false, 1, () -> {
+                    AlertsCreator.createDeleteMessagesAlert(MediaActivity.this, currentUser, currentChat, null, null, mergeDialogId, null, selectedFiles, null, false, 1, () -> {
                         actionBar.hideActionMode();
                         actionBar.closeSearchField();
                         cantDeleteMessagesCount = 0;
@@ -1580,7 +1582,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
         }
     }
 
-    public void setChatInfo(TLRPC.ChatFull chatInfo) {
+    public void setChatInfo(Chat chatInfo) {
         info = chatInfo;
         if (info != null && info.migrated_from_chat_id != 0 && mergeDialogId == 0) {
             mergeDialogId = -info.migrated_from_chat_id;
@@ -1978,7 +1980,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
             } else if (selectedMode == 1) {
                 if (view instanceof SharedDocumentCell) {
                     SharedDocumentCell cell = (SharedDocumentCell) view;
-                    TLRPC.Document document = message.getDocument();
+                    Document document = message.getDocument();
                     if (cell.isLoaded()) {
                         if (message.canPreviewDocument()) {
                             PhotoViewer.getInstance().setParentActivity(getParentActivity());
@@ -2004,9 +2006,9 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
                 }
             } else if (selectedMode == 3) {
                 try {
-                    TLRPC.WebPage webPage = message.messageOwner.media != null ? message.messageOwner.media.webpage : null;
+                    MessageMedia.WebPage webPage = message.messageOwner.media != null ? message.messageOwner.media.webpage : null;
                     String link = null;
-                    if (webPage != null && !(webPage instanceof TLRPC.TL_webPageEmpty)) {
+                    if (webPage != null) {
                         if (webPage.cached_page != null) {
                             ArticleViewer.getInstance().setParentActivity(getParentActivity(), MediaActivity.this);
                             ArticleViewer.getInstance().open(message);
@@ -2039,7 +2041,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
         }
     }
 
-    private void openWebView(TLRPC.WebPage webPage) {
+    private void openWebView(MessageMedia.WebPage webPage) {
         EmbedBottomSheet.show(getParentActivity(), webPage.site_name, webPage.description, webPage.url, webPage.embed_url, webPage.embed_width, webPage.embed_height);
     }
 
@@ -2103,7 +2105,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
 
     SharedLinkCell.SharedLinkCellDelegate sharedLinkCellDelegate = new SharedLinkCell.SharedLinkCellDelegate() {
         @Override
-        public void needOpenWebView(TLRPC.WebPage webPage) {
+        public void needOpenWebView(MessageMedia.WebPage webPage) {
             MediaActivity.this.openWebView(webPage);
         }
 
@@ -2712,7 +2714,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
                                         break;
                                     }
                                     if (currentType == 4) {
-                                        TLRPC.Document document;
+                                        Document document;
                                         if (messageObject.type == 0) {
                                             document = messageObject.messageOwner.media.webpage.document;
                                         } else {
@@ -2720,7 +2722,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
                                         }
                                         boolean ok = false;
                                         for (int c = 0; c < document.attributes.size(); c++) {
-                                            TLRPC.DocumentAttribute attribute = document.attributes.get(c);
+                                            Document.DocumentAttribute attribute = document.attributes.get(c);
                                             if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
                                                 if (attribute.performer != null) {
                                                     ok = attribute.performer.toLowerCase().contains(q);

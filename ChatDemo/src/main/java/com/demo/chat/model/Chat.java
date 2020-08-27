@@ -16,6 +16,27 @@ import java.util.ArrayList;
  * @usage null
  */
 public class Chat {
+    public static int UserType = 0;
+    public static int RobotType = 1;
+    public static int GroupType = 2;
+    public static int ChannelType = 3;
+
+    public boolean isRobot() {
+        return type == RobotType;
+    }
+
+    public boolean isUser() {
+        return type == UserType;
+    }
+
+    public boolean isGroup() {
+        return type == GroupType;
+    }
+
+    public boolean isChannel() {
+        return type == ChannelType;
+    }
+
     public int type = 0;
     public int id = 0;
     public String title;
@@ -94,6 +115,7 @@ public class Chat {
         public boolean pin_messages;
         public boolean add_admins;
     }
+
     public static class TL_chatBannedRights {
         public int flags;
         public boolean view_messages;
@@ -109,5 +131,21 @@ public class Chat {
         public boolean invite_users;
         public boolean pin_messages;
         public int until_date;
+    }
+
+    public static class ChatParticipants{
+        public int flags;
+        public int chat_id;
+        public ChatParticipant self_participant;
+        public ArrayList<ChatParticipant> participants = new ArrayList<>();
+        public int version;
+        public int admin_id;
+    }
+
+
+    public static class ChatParticipant{
+        public int user_id;
+        public int inviter_id;
+        public int date;
     }
 }

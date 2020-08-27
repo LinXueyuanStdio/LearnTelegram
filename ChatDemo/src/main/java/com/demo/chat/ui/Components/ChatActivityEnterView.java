@@ -320,7 +320,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
     private int editingMessageReqId;
     private boolean editingCaption;
 
-    private ChatFull info;
+    private Chat info;
 
     private boolean hasRecordVideo;
 
@@ -3499,7 +3499,7 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
         updateFieldHint();
     }
 
-    public void setChatInfo(ChatFull chatInfo) {
+    public void setChatInfo(Chat chatInfo) {
         info = chatInfo;
         if (emojiView != null) {
             emojiView.setChatInfo(info);
