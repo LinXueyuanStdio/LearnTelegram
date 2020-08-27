@@ -2988,7 +2988,7 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
                 MessagesStickerSet stickerSet = stickerSets.get(a);
                 Media thumb;
                 Document document = stickerSet.documents.get(0);
-                if (stickerSet.set.thumb instanceof TLRPC.TL_photoSize) {
+                if (stickerSet.set.thumb instanceof PhotoSize) {
                     thumb = stickerSet.set.thumb;
                 } else {
                     thumb = document;
@@ -4149,32 +4149,32 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
                                     loadingUrl[0] = true;
                                     final AlertDialog progressDialog[] = new AlertDialog[]{new AlertDialog(getContext(), 3)};
 
-                                    TLRPC.TL_messages_getEmojiURL req = new TLRPC.TL_messages_getEmojiURL();
-                                    req.lang_code = lastSearchAlias != null ? lastSearchAlias : lastSearchKeyboardLanguage[0];
-                                    int requestId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-                                                AndroidUtilities.runOnUIThread(() -> {
-                                                    try {
-                                                        progressDialog[0].dismiss();
-                                                    } catch (Throwable ignore) {
-
-                                                    }
-                                                    progressDialog[0] = null;
-
-                                                    if (response instanceof TLRPC.TL_emojiURL) {
-                                                        Browser.openUrl(getContext(), ((TLRPC.TL_emojiURL) response).url);
-                                                        builder.getDismissRunnable().run();
-                                                    }
-                                                });
-                                            }
-                                    );
-
-                                    AndroidUtilities.runOnUIThread(() -> {
-                                        if (progressDialog[0] == null) {
-                                            return;
-                                        }
-                                        progressDialog[0].setOnCancelListener(dialog -> ConnectionsManager.getInstance(currentAccount).cancelRequest(requestId, true));
-                                        progressDialog[0].show();
-                                    }, 1000);
+//                                    TLRPC.TL_messages_getEmojiURL req = new TLRPC.TL_messages_getEmojiURL();
+//                                    req.lang_code = lastSearchAlias != null ? lastSearchAlias : lastSearchKeyboardLanguage[0];
+//                                    int requestId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
+//                                                AndroidUtilities.runOnUIThread(() -> {
+//                                                    try {
+//                                                        progressDialog[0].dismiss();
+//                                                    } catch (Throwable ignore) {
+//
+//                                                    }
+//                                                    progressDialog[0] = null;
+//
+//                                                    if (response instanceof TLRPC.TL_emojiURL) {
+//                                                        Browser.openUrl(getContext(), ((TLRPC.TL_emojiURL) response).url);
+//                                                        builder.getDismissRunnable().run();
+//                                                    }
+//                                                });
+//                                            }
+//                                    );
+//
+//                                    AndroidUtilities.runOnUIThread(() -> {
+//                                        if (progressDialog[0] == null) {
+//                                            return;
+//                                        }
+//                                        progressDialog[0].setOnCancelListener(dialog -> ConnectionsManager.getInstance(currentAccount).cancelRequest(requestId, true));
+//                                        progressDialog[0].show();
+//                                    }, 1000);TODO 发起请求
                                 }
                             });
 
@@ -4524,33 +4524,34 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
                 return;
             }
             searchingUser = true;
-            TLRPC.TL_contacts_resolveUsername req = new TLRPC.TL_contacts_resolveUsername();
-            req.username = MessagesController.getInstance(currentAccount).gifSearchBot;
-            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-                if (response != null) {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        TLRPC.TL_contacts_resolvedPeer res = (TLRPC.TL_contacts_resolvedPeer) response;
-                        MessagesController.getInstance(currentAccount).putUsers(res.users, false);
-                        MessagesController.getInstance(currentAccount).putChats(res.chats, false);
-                        MessagesStorage.getInstance(currentAccount).putUsersAndChats(res.users, res.chats, true, true);
-                        String str = lastSearchImageString;
-                        lastSearchImageString = null;
-                        search(str, "", false);
-                    });
-                }
-            });
+            //TODO 发起请求
+//            TLRPC.TL_contacts_resolveUsername req = new TLRPC.TL_contacts_resolveUsername();
+//            req.username = MessagesController.getInstance(currentAccount).gifSearchBot;
+//            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
+//                if (response != null) {
+//                    AndroidUtilities.runOnUIThread(() -> {
+//                        TLRPC.TL_contacts_resolvedPeer res = (TLRPC.TL_contacts_resolvedPeer) response;
+//                        MessagesController.getInstance(currentAccount).putUsers(res.users, false);
+//                        MessagesController.getInstance(currentAccount).putChats(res.chats, false);
+//                        MessagesStorage.getInstance(currentAccount).putUsersAndChats(res.users, res.chats, true, true);
+//                        String str = lastSearchImageString;
+//                        lastSearchImageString = null;
+//                        search(str, "", false);
+//                    });
+//                }
+//            });
         }
 
         public void search(String text) {
             if (withRecent) {
                 return;
             }
-            if (reqId != 0) {
-                if (reqId >= 0) {
-                    ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
-                }
-                reqId = 0;
-            }
+//            if (reqId != 0) {
+//                if (reqId >= 0) {
+//                    ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
+//                }
+//                reqId = 0;
+//            }//TODO 取消请求
             lastSearchIsEmoji = false;
             if (progressEmptyView != null) {
                 progressEmptyView.setLoadingState(false);
@@ -4599,12 +4600,12 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
         }
 
         protected void search(final String query, final String offset, boolean searchUser, boolean isEmoji, boolean cache) {
-            if (reqId != 0) {
-                if (reqId >= 0) {
-                    ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
-                }
-                reqId = 0;
-            }
+//            if (reqId != 0) {
+//                if (reqId >= 0) {
+//                    ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
+//                }
+//                reqId = 0;
+//            }TODO 取消请求
 
             lastSearchImageString = query;
             lastSearchIsEmoji = isEmoji;
@@ -4749,44 +4750,44 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
         private void preload(final String query, final String offset, boolean cache) {
             final String key = "gif_search_" + query + "_" + offset;
 
-            if (cache && gifCache.containsKey(key)) {
-                return;
-            }
+//            if (cache && gifCache.containsKey(key)) {
+//                return;
+//            }TODO 发起请求
 
-            final RequestDelegate requestDelegate = (response, error) -> AndroidUtilities.runOnUIThread(() -> processResponse(query, offset, cache, key, response));
-
-            if (cache) {
-                loadingKeys.add(key);
-                MessagesStorage.getInstance(currentAccount).getBotCache(key, requestDelegate);
-            } else {
-                final MessagesController messagesController = MessagesController.getInstance(currentAccount);
-                final TLObject gifSearchBot = messagesController.getUserOrChat(messagesController.gifSearchBot);
-                if (!(gifSearchBot instanceof User)) {
-                    return;
-                }
-                loadingKeys.add(key);
-                TLRPC.TL_messages_getInlineBotResults req = new TLRPC.TL_messages_getInlineBotResults();
-                req.query = query == null ? "" : query;
-                req.bot = messagesController.getInputUser((User) gifSearchBot);
-                req.offset = offset;
-                req.peer = new TLRPC.TL_inputPeerEmpty();
-                ConnectionsManager.getInstance(currentAccount).sendRequest(req, requestDelegate, ConnectionsManager.RequestFlagFailOnServerErrors);
-            }
+//            final RequestDelegate requestDelegate = (response, error) -> AndroidUtilities.runOnUIThread(() -> processResponse(query, offset, cache, key, response));
+//
+//            if (cache) {
+//                loadingKeys.add(key);
+//                MessagesStorage.getInstance(currentAccount).getBotCache(key, requestDelegate);
+//            } else {
+//                final MessagesController messagesController = MessagesController.getInstance(currentAccount);
+//                final TLObject gifSearchBot = messagesController.getUserOrChat(messagesController.gifSearchBot);
+//                if (!(gifSearchBot instanceof User)) {
+//                    return;
+//                }
+//                loadingKeys.add(key);
+//                TLRPC.TL_messages_getInlineBotResults req = new TLRPC.TL_messages_getInlineBotResults();
+//                req.query = query == null ? "" : query;
+//                req.bot = messagesController.getInputUser((User) gifSearchBot);
+//                req.offset = offset;
+//                req.peer = new TLRPC.TL_inputPeerEmpty();
+//                ConnectionsManager.getInstance(currentAccount).sendRequest(req, requestDelegate, ConnectionsManager.RequestFlagFailOnServerErrors);
+//            }
         }
 
-        private void processResponse(final String query, final String offset, boolean cache, String key, TLObject response) {
-            loadingKeys.remove(key);
-
-            if (gifSearchAdapter.lastSearchIsEmoji && gifSearchAdapter.lastSearchImageString.equals(query)) {
-                gifSearchAdapter.processResponse(query, offset, false, true, cache, key, response);
-            } else {
-                if (cache && (!(response instanceof Messages_BotResults) || ((Messages_BotResults) response).results.isEmpty())) {
-                    preload(query, offset, false);
-                } else if (response instanceof Messages_BotResults && !gifCache.containsKey(key)) {
-                    gifCache.put(key, (Messages_BotResults) response);
-                }
-            }
-        }
+//        private void processResponse(final String query, final String offset, boolean cache, String key, TLObject response) {
+//            loadingKeys.remove(key);
+//
+//            if (gifSearchAdapter.lastSearchIsEmoji && gifSearchAdapter.lastSearchImageString.equals(query)) {
+//                gifSearchAdapter.processResponse(query, offset, false, true, cache, key, response);
+//            } else {
+//                if (cache && (!(response instanceof Messages_BotResults) || ((Messages_BotResults) response).results.isEmpty())) {
+//                    preload(query, offset, false);
+//                } else if (response instanceof Messages_BotResults && !gifCache.containsKey(key)) {
+//                    gifCache.put(key, (Messages_BotResults) response);
+//                }
+//            }
+//        }
     }
 
     private class GifLayoutManager extends ExtendedGridLayoutManager {
@@ -5085,55 +5086,55 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
                 if ((!localPacks.isEmpty() || !emojiStickers.isEmpty()) && stickersGridView.getAdapter() != stickersSearchGridAdapter) {
                     stickersGridView.setAdapter(stickersSearchGridAdapter);
                 }
-                final TLRPC.TL_messages_searchStickerSets req = new TLRPC.TL_messages_searchStickerSets();
-                req.q = searchQuery;
-                reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-                    if (response instanceof TLRPC.TL_messages_foundStickerSets) {
-                        AndroidUtilities.runOnUIThread(() -> {
-                            if (req.q.equals(searchQuery)) {
-                                clear();
-                                stickersSearchField.progressDrawable.stopAnimation();
-                                reqId = 0;
-                                if (stickersGridView.getAdapter() != stickersSearchGridAdapter) {
-                                    stickersGridView.setAdapter(stickersSearchGridAdapter);
-                                }
-                                TLRPC.TL_messages_foundStickerSets res = (TLRPC.TL_messages_foundStickerSets) response;
-                                serverPacks.addAll(res.sets);
-                                notifyDataSetChanged();
-                            }
-                        });
-                    }
-                });
-                if (Emoji.isValidEmoji(searchQuery)) {
-                    final TLRPC.TL_messages_getStickers req2 = new TLRPC.TL_messages_getStickers();
-                    req2.emoticon = searchQuery;
-                    req2.hash = 0;
-                    reqId2 = ConnectionsManager.getInstance(currentAccount).sendRequest(req2, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                        if (req2.emoticon.equals(searchQuery)) {
-                            reqId2 = 0;
-                            if (!(response instanceof TLRPC.TL_messages_stickers)) {
-                                return;
-                            }
-                            TLRPC.TL_messages_stickers res = (TLRPC.TL_messages_stickers) response;
-                            int oldCount = emojiStickersArray.size();
-                            for (int a = 0, size = res.stickers.size(); a < size; a++) {
-                                Document document = res.stickers.get(a);
-                                if (emojiStickersMap.indexOfKey(document.id) >= 0) {
-                                    continue;
-                                }
-                                emojiStickersArray.add(document);
-                            }
-                            int newCount = emojiStickersArray.size();
-                            if (oldCount != newCount) {
-                                emojiStickers.put(emojiStickersArray, searchQuery);
-                                if (oldCount == 0) {
-                                    emojiArrays.add(emojiStickersArray);
-                                }
-                                notifyDataSetChanged();
-                            }
-                        }
-                    }));
-                }
+//                final TLRPC.TL_messages_searchStickerSets req = new TLRPC.TL_messages_searchStickerSets();
+//                req.q = searchQuery;
+//                reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
+//                    if (response instanceof TLRPC.TL_messages_foundStickerSets) {
+//                        AndroidUtilities.runOnUIThread(() -> {
+//                            if (req.q.equals(searchQuery)) {
+//                                clear();
+//                                stickersSearchField.progressDrawable.stopAnimation();
+//                                reqId = 0;
+//                                if (stickersGridView.getAdapter() != stickersSearchGridAdapter) {
+//                                    stickersGridView.setAdapter(stickersSearchGridAdapter);
+//                                }
+//                                TLRPC.TL_messages_foundStickerSets res = (TLRPC.TL_messages_foundStickerSets) response;
+//                                serverPacks.addAll(res.sets);
+//                                notifyDataSetChanged();
+//                            }
+//                        });
+//                    }
+//                });
+//                if (Emoji.isValidEmoji(searchQuery)) {
+//                    final TLRPC.TL_messages_getStickers req2 = new TLRPC.TL_messages_getStickers();
+//                    req2.emoticon = searchQuery;
+//                    req2.hash = 0;
+//                    reqId2 = ConnectionsManager.getInstance(currentAccount).sendRequest(req2, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                        if (req2.emoticon.equals(searchQuery)) {
+//                            reqId2 = 0;
+//                            if (!(response instanceof TLRPC.TL_messages_stickers)) {
+//                                return;
+//                            }
+//                            TLRPC.TL_messages_stickers res = (TLRPC.TL_messages_stickers) response;
+//                            int oldCount = emojiStickersArray.size();
+//                            for (int a = 0, size = res.stickers.size(); a < size; a++) {
+//                                Document document = res.stickers.get(a);
+//                                if (emojiStickersMap.indexOfKey(document.id) >= 0) {
+//                                    continue;
+//                                }
+//                                emojiStickersArray.add(document);
+//                            }
+//                            int newCount = emojiStickersArray.size();
+//                            if (oldCount != newCount) {
+//                                emojiStickers.put(emojiStickersArray, searchQuery);
+//                                if (oldCount == 0) {
+//                                    emojiArrays.add(emojiStickersArray);
+//                                }
+//                                notifyDataSetChanged();
+//                            }
+//                        }
+//                    }));
+//                }TODO 发起请求
                 notifyDataSetChanged();
             }
         };
@@ -5161,14 +5162,14 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
         }
 
         public void search(String text) {
-            if (reqId != 0) {
-                ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
-                reqId = 0;
-            }
-            if (reqId2 != 0) {
-                ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId2, true);
-                reqId2 = 0;
-            }
+//            if (reqId != 0) {
+//                ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
+//                reqId = 0;
+//            }
+//            if (reqId2 != 0) {
+//                ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId2, true);
+//                reqId2 = 0;
+//            }TODO 取消请求
             if (TextUtils.isEmpty(text)) {
                 searchQuery = null;
                 localPacks.clear();

@@ -55,6 +55,7 @@ import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
@@ -65,13 +66,18 @@ import com.demo.chat.ui.ActionBar.ActionBarMenuItem;
 import com.demo.chat.ui.ActionBar.BackDrawable;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ActionBar.BottomSheet;
+import com.demo.chat.ui.Adapters.SearchAdapterHelper;
 import com.demo.chat.ui.Cells.ChatActionCell;
 import com.demo.chat.ui.Cells.ContextLinkCell;
+import com.demo.chat.ui.Cells.GraySectionCell;
+import com.demo.chat.ui.Cells.LoadingCell;
 import com.demo.chat.ui.Cells.SharedAudioCell;
 import com.demo.chat.ui.Cells.SharedDocumentCell;
 import com.demo.chat.ui.Cells.SharedLinkCell;
+import com.demo.chat.ui.Cells.SharedMediaSectionCell;
 import com.demo.chat.ui.Cells.SharedPhotoVideoCell;
 import com.demo.chat.ui.ChatActivity;
+import com.demo.chat.ui.DialogsActivity;
 import com.demo.chat.ui.Viewer.ArticleViewer;
 import com.demo.chat.ui.Viewer.PhotoViewer;
 
@@ -198,9 +204,6 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 ChatActivity chatActivity = (ChatActivity) fragment;
                 dialogId = chatActivity.getDialogId();
                 mergeDialogId = chatActivity.getMergeDialogId();
-            } else if (fragment instanceof ProfileActivity) {
-                ProfileActivity profileActivity = (ProfileActivity) fragment;
-                dialogId = profileActivity.getDialogId();
             }
 
             sharedMediaData = new SharedMediaData[6];
@@ -356,7 +359,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                     return;
                 }
                 int channelId = (Integer) args[1];
-                TLRPC.Chat currentChat;
+                Chat currentChat;
                 int lowerId = (int) dialogId;
                 if (lowerId < 0) {
                     currentChat = parentFragment.getMessagesController().getChat(-lowerId);
@@ -1443,7 +1446,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
 
     }
 
-    protected boolean onMemberClick(TLRPC.ChatParticipant participant, boolean isLong) {
+    protected boolean onMemberClick(Chat.ChatParticipant participant, boolean isLong) {
         return false;
     }
 
@@ -2859,7 +2862,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         }
     }
 
-    private void openWebView(TLRPC.WebPage webPage) {
+    private void openWebView(MessageMedia.WebPage webPage) {
         EmbedBottomSheet.show(profileActivity.getParentActivity(), webPage.site_name, webPage.description, webPage.url, webPage.embed_url, webPage.embed_width, webPage.embed_height);
     }
 
@@ -3898,7 +3901,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         private SearchAdapterHelper searchAdapterHelper;
         private Runnable searchRunnable;
         private int totalCount = 0;
-        private TLRPC.Chat currentChat;
+        private Chat currentChat;
 
         public GroupUsersSearchAdapter(Context context) {
             mContext = context;

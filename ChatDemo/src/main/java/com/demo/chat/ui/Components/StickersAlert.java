@@ -737,26 +737,26 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                     if (MediaDataController.getInstance(currentAccount).cancelRemovingStickerSet(inputStickerSet.id)) {
                         return;
                     }
-                    TLRPC.TL_messages_installStickerSet req = new TLRPC.TL_messages_installStickerSet();
-                    req.stickerset = inputStickerSet;
-                    ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                        final int type = stickerSet.set.masks ? MediaDataController.TYPE_MASK : MediaDataController.TYPE_IMAGE;
-                        try {
-                            if (error == null) {
-                                if (showTooltipWhenToggle) {
-                                    Bulletin.make(parentFragment, new StickerSetBulletinLayout(pickerBottomLayout.getContext(), stickerSet, StickerSetBulletinLayout.TYPE_ADDED), Bulletin.DURATION_SHORT).show();
-                                }
-                                if (response instanceof MessagesStickerSetInstallResultArchive) {
-                                    MediaDataController.getInstance(currentAccount).processStickerSetInstallResultArchive(parentFragment, true, type, (MessagesStickerSetInstallResultArchive) response);
-                                }
-                            } else {
-                                Toast.makeText(getContext(), LocaleController.getString("ErrorOccurred", R.string.ErrorOccurred), Toast.LENGTH_SHORT).show();
-                            }
-                        } catch (Exception e) {
-                            FileLog.e(e);
-                        }
-                        MediaDataController.getInstance(currentAccount).loadStickers(type, false, true);
-                    }));
+//                    TLRPC.TL_messages_installStickerSet req = new TLRPC.TL_messages_installStickerSet();
+//                    req.stickerset = inputStickerSet;TODO 发起请求
+//                    ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                        final int type = stickerSet.set.masks ? MediaDataController.TYPE_MASK : MediaDataController.TYPE_IMAGE;
+//                        try {
+//                            if (error == null) {
+//                                if (showTooltipWhenToggle) {
+//                                    Bulletin.make(parentFragment, new StickerSetBulletinLayout(pickerBottomLayout.getContext(), stickerSet, StickerSetBulletinLayout.TYPE_ADDED), Bulletin.DURATION_SHORT).show();
+//                                }
+//                                if (response instanceof MessagesStickerSetInstallResultArchive) {
+//                                    MediaDataController.getInstance(currentAccount).processStickerSetInstallResultArchive(parentFragment, true, type, (MessagesStickerSetInstallResultArchive) response);
+//                                }
+//                            } else {
+//                                Toast.makeText(getContext(), LocaleController.getString("ErrorOccurred", R.string.ErrorOccurred), Toast.LENGTH_SHORT).show();
+//                            }
+//                        } catch (Exception e) {
+//                            FileLog.e(e);
+//                        }
+//                        MediaDataController.getInstance(currentAccount).loadStickers(type, false, true);
+//                    }));
                 }, text, Theme.key_dialogTextBlue2);
             } else {
                 String text;
@@ -888,10 +888,10 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
     @Override
     public void dismiss() {
         super.dismiss();
-        if (reqId != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
-            reqId = 0;
-        }
+//        if (reqId != 0) {
+//            ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
+//            reqId = 0;
+//        }TODO 取消请求
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.emojiDidLoad);
         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.startAllHeavyOperations, 4);
     }

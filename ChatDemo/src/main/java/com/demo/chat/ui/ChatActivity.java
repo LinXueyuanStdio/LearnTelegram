@@ -14861,7 +14861,7 @@ public class ChatActivity extends BaseFragment
                         }
                     }
                 }
-                if (message.media.ttl_seconds != 0 && (message.media.photo instanceof TLRPC.TL_photoEmpty || message.media.document instanceof TLRPC.TL_documentEmpty)) {
+                if (message.media.ttl_seconds != 0) {
                     existMessageObject.setType();
                     if (chatAdapter != null) {
                         chatAdapter.updateRowWithMessageObject(existMessageObject, false);

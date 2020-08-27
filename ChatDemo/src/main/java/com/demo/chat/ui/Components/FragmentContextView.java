@@ -40,6 +40,7 @@ import com.demo.chat.model.UserObject;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ChatActivity;
+import com.demo.chat.ui.DialogsActivity;
 import com.demo.chat.ui.LaunchActivity;
 import com.demo.chat.ui.LocationActivity;
 
@@ -297,13 +298,9 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                 show = LocationController.getInstance(fragment.getCurrentAccount()).isSharingLocation(((ChatActivity) fragment).getDialogId());
             }
         } else {
-            if (VoIPService.getSharedInstance() != null && VoIPService.getSharedInstance().getCallState() != VoIPService.STATE_WAITING_INCOMING) {
+            MessageObject messageObject = MediaController.getInstance().getPlayingMessageObject();
+            if (messageObject != null && messageObject.getId() != 0) {
                 show = true;
-            } else {
-                MessageObject messageObject = MediaController.getInstance().getPlayingMessageObject();
-                if (messageObject != null && messageObject.getId() != 0) {
-                    show = true;
-                }
             }
         }
         setVisibility(show ? VISIBLE : GONE);

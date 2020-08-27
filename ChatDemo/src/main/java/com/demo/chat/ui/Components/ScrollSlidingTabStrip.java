@@ -34,6 +34,7 @@ import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.sticker.MessagesStickerSet;
 import com.demo.chat.theme.Theme;
 
 import java.util.HashMap;

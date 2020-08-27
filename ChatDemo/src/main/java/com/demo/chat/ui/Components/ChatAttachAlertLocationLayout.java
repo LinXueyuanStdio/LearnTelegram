@@ -55,6 +55,7 @@ import com.demo.chat.theme.ThemeDescription;
 import com.demo.chat.ui.ActionBar.ActionBar;
 import com.demo.chat.ui.ActionBar.ActionBarMenu;
 import com.demo.chat.ui.ActionBar.ActionBarMenuItem;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.Cells.HeaderCell;
 import com.demo.chat.ui.Cells.ShadowSectionCell;
 import com.demo.chat.ui.ChatActivity;

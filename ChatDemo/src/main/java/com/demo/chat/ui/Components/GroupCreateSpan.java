@@ -17,8 +17,10 @@ import android.view.View;
 import android.view.accessibility.AccessibilityNodeInfo;
 
 import com.demo.chat.R;
+import com.demo.chat.controller.ContactsController;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
