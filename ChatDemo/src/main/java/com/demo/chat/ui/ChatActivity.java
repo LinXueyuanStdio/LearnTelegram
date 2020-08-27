@@ -122,6 +122,7 @@ import com.demo.chat.model.small.InlineBotSwitchPM;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.sticker.InputStickerSet;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
@@ -5313,11 +5314,11 @@ public class ChatActivity extends BaseFragment
             }
 
             @Override
-            public void openSet(TLRPC.InputStickerSet set, boolean clearsInputField) {
+            public void openSet(InputStickerSet set, boolean clearsInputField) {
                 if (set == null || getParentActivity() == null) {
                     return;
                 }
-                TLRPC.TL_inputStickerSetID inputStickerSet = new TLRPC.TL_inputStickerSetID();
+                InputStickerSet inputStickerSet = new InputStickerSet();
                 inputStickerSet.access_hash = set.access_hash;
                 inputStickerSet.id = set.id;
                 StickersAlert alert = new StickersAlert(getParentActivity(), ChatActivity.this, inputStickerSet, null, chatActivityEnterView);
@@ -6550,7 +6551,7 @@ public class ChatActivity extends BaseFragment
                 if (messageObject.isVoice()) {
                     return 2;
                 } else if (messageObject.isSticker() || messageObject.isAnimatedSticker()) {
-                    TLRPC.InputStickerSet inputStickerSet = messageObject.getInputStickerSet();
+                    InputStickerSet inputStickerSet = messageObject.getInputStickerSet();
                     if (inputStickerSet instanceof TLRPC.TL_inputStickerSetID) {
                         if (!getMediaDataController().isStickerPackInstalled(inputStickerSet.id)) {
                             return 7;

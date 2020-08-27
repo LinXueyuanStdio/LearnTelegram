@@ -1,5 +1,7 @@
 package com.demo.chat.model.small;
 
+import com.demo.chat.model.sticker.InputStickerSet;
+
 import java.util.ArrayList;
 
 /**
