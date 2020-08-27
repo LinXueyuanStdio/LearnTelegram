@@ -1,5 +1,7 @@
 package com.demo.chat.controller;
 
+import android.accounts.Account;
+import android.accounts.AccountManager;
 import android.content.ContentResolver;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -37,12 +39,14 @@ public class ContactsController extends BaseController {
     public boolean contactsLoaded;
     private boolean contactsSyncInProgress;
     private boolean contactsBookLoaded;
+
+    private boolean ignoreChanges;
+    private final Object observerLock = new Object();
     private class MyContentObserver extends ContentObserver {
 
         private Runnable checkRunnable = () -> {
             for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
                 if (UserConfig.getInstance(a).isClientActivated()) {
-                    ConnectionsManager.getInstance(a).resumeNetworkMaybe();
                     ContactsController.getInstance(a).checkContacts();
                 }
             }
@@ -121,6 +125,8 @@ public class ContactsController extends BaseController {
     public ArrayList<Contact> phoneBookContacts = new ArrayList<>();
     public HashMap<String, ArrayList<Object>> phoneBookSectionsDict = new HashMap<>();
     public ArrayList<String> phoneBookSectionsArray = new ArrayList<>();
+
+    private HashMap<String, String> sectionsToReplace = new HashMap<>();
 
     private static volatile ContactsController[] Instance = new ContactsController[UserConfig.MAX_ACCOUNT_COUNT];
     public static ContactsController getInstance(int num) {
@@ -990,6 +996,84 @@ public class ContactsController extends BaseController {
         return reload;
     }
 
+    private Account systemAccount;
+    public void checkAppAccount() {
+        AccountManager am = AccountManager.get(ApplicationLoader.applicationContext);
+        try {
+            Account[] accounts = am.getAccountsByType("org.telegram.messenger");
+            systemAccount = null;
+            for (int a = 0; a < accounts.length; a++) {
+                Account acc = accounts[a];
+                boolean found = false;
+                for (int b = 0; b < UserConfig.MAX_ACCOUNT_COUNT; b++) {
+                    User user = UserConfig.getInstance(b).getCurrentUser();
+                    if (user != null) {
+                        if (acc.name.equals("" + user.id)) {
+                            if (b == currentAccount) {
+                                systemAccount = acc;
+                            }
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+                if (!found) {
+                    try {
+                        am.removeAccount(accounts[a], null, null);
+                    } catch (Exception ignore) {
+
+                    }
+                }
+
+            }
+        } catch (Throwable ignore) {
+
+        }
+        if (getUserConfig().isClientActivated()) {
+            readContacts();
+            if (systemAccount == null) {
+                try {
+                    systemAccount = new Account("" + getUserConfig().getClientUserId(), "org.telegram.messenger");
+                    am.addAccountExplicitly(systemAccount, "", null);
+                } catch (Exception ignore) {
+
+                }
+            }
+        }
+    }
+    private boolean loadingContacts;
+    private final Object loadContactsSync = new Object();
+    public ArrayList<TLRPC.TL_contact> contacts = new ArrayList<>();
+    public void readContacts() {
+        synchronized (loadContactsSync) {
+            if (loadingContacts) {
+                return;
+            }
+            loadingContacts = true;
+        }
+
+        Utilities.stageQueue.postRunnable(() -> {
+            if (!contacts.isEmpty() || contactsLoaded) {
+                synchronized (loadContactsSync) {
+                    loadingContacts = false;
+                }
+                return;
+            }
+            loadContacts(true, 0);
+        });
+    }
+
+    public void loadContacts(boolean fromCache, final int hash) {
+        synchronized (loadContactsSync) {
+            loadingContacts = true;
+        }
+        if (fromCache) {
+            if (BuildVars.LOGS_ENABLED) {
+                FileLog.d("load contacts from cache");
+            }
+            getMessagesStorage().getContacts();
+        }
+    }
 
     public void checkContacts() {
         Utilities.globalQueue.postRunnable(() -> {

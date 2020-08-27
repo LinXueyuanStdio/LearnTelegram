@@ -17,8 +17,12 @@ import com.demo.chat.R;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.NotificationCenter;
+import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.time.FastDateFormat;
+import com.demo.chat.model.User;
+import com.demo.chat.model.UserObject;
 
 import org.xmlpull.v1.XmlPullParser;
 

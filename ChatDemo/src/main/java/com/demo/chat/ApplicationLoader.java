@@ -27,6 +27,8 @@ import android.os.PowerManager;
 import android.telephony.TelephonyManager;
 
 import com.demo.chat.controller.ConnectionsManager;
+import com.demo.chat.controller.ContactsController;
+import com.demo.chat.controller.DownloadController;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;

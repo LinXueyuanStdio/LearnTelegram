@@ -57,8 +57,10 @@ import com.demo.chat.messager.audioinfo.AudioInfo;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.VideoEditedInfo;
+import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;
+import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.BaseFragment;
@@ -66,8 +68,8 @@ import com.demo.chat.ui.ChatActivity;
 import com.demo.chat.ui.Components.EmbedBottomSheet;
 import com.demo.chat.ui.Components.PhotoFilterView;
 import com.demo.chat.ui.Components.PipRoundVideoView;
-import com.demo.chat.ui.Components.VideoPlayer;
 import com.demo.chat.ui.Components.Point;
+import com.demo.chat.ui.Components.VideoPlayer;
 import com.demo.chat.ui.Viewer.PhotoViewer;
 import com.google.android.exoplayer2.C;
 import com.google.android.exoplayer2.ExoPlayer;
@@ -305,10 +307,10 @@ public class MediaController
         public int date;
         public CharSequence caption;
         public Document document;
-        public TLRPC.Photo photo;
+        public MessageMedia.Photo photo;
         public PhotoSize photoSize;
         public PhotoSize thumbPhotoSize;
-        public TLRPC.BotInlineResult inlineResult;
+        public BotInlineResult inlineResult;
         public HashMap<String, String> params;
 
         @Override

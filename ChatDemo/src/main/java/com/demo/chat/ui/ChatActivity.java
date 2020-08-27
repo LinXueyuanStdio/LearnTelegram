@@ -115,6 +115,7 @@ import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.BotInfo;
 import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.DraftMessage;
 import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
@@ -459,7 +460,7 @@ public class ChatActivity extends BaseFragment
     private PhotoSize pinnedImageThumbLocation;
     private TLObject pinnedImageLocationObject;
     private int linkSearchRequestId;
-    private TLRPC.WebPage foundWebPage;
+    private MessageMedia.WebPage foundWebPage;
     private ArrayList<CharSequence> foundUrls;
     private String pendingLinkSearchString;
     private Runnable pendingWebPageTimeoutRunnable;
@@ -6379,7 +6380,6 @@ public class ChatActivity extends BaseFragment
     //endregion
 
     //region 消息操作
-
     /**
      * 转发
      */
@@ -7092,35 +7092,7 @@ public class ChatActivity extends BaseFragment
         updatePinnedMessageView(true);
         updateVisibleRows();
 
-        if (!messageObject.scheduled) {
-            TLRPC.TL_messages_getMessageEditData req = new TLRPC.TL_messages_getMessageEditData();
-            req.peer = getMessagesController().getInputPeer((int) dialog_id);
-            req.id = messageObject.getId();
-            editingMessageObjectReqId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                editingMessageObjectReqId = 0;
-                if (response == null) {
-                    if (getParentActivity() == null) {
-                        return;
-                    }
-                    AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                    builder.setTitle(LocaleController.getString("AppName", R.string.AppName));
-                    builder.setMessage(LocaleController.getString("EditMessageError", R.string.EditMessageError));
-                    builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), null);
-                    showDialog(builder.create());
-
-                    if (chatActivityEnterView != null) {
-                        chatActivityEnterView.setEditingMessageObject(null, false);
-                        hideFieldPanel(true);
-                    }
-                } else {
-                    if (chatActivityEnterView != null) {
-                        chatActivityEnterView.showEditDoneProgress(false, true);
-                    }
-                }
-            }));
-        } else {
-            chatActivityEnterView.showEditDoneProgress(false, true);
-        }
+        chatActivityEnterView.showEditDoneProgress(false, true);
     }
 
     private void restartSticker(ChatMessageCell cell) {
@@ -7213,7 +7185,7 @@ public class ChatActivity extends BaseFragment
         if (chatActivityEnterView == null || inScheduleMode) {
             return;
         }
-        TLRPC.DraftMessage draftMessage = getMediaDataController().getDraft(dialog_id);
+        DraftMessage draftMessage = getMediaDataController().getDraft(dialog_id);
         Message draftReplyMessage = draftMessage != null && draftMessage.reply_to_msg_id != 0 ? getMediaDataController().getDraftMessage(dialog_id) : null;
         if (chatActivityEnterView.getFieldText() == null) {
             if (draftMessage != null) {
@@ -8443,9 +8415,9 @@ public class ChatActivity extends BaseFragment
         boolean hasSettings = false;
         if (botInfo.size() != 0) {
             for (int b = 0; b < botInfo.size(); b++) {
-                TLRPC.BotInfo info = botInfo.valueAt(b);
+                BotInfo info = botInfo.valueAt(b);
                 for (int a = 0; a < info.commands.size(); a++) {
-                    TLRPC.TL_botCommand command = info.commands.get(a);
+                    BotInfo.BotCommand command = info.commands.get(a);
                     if (command.command.toLowerCase().equals("help")) {
                         hasHelp = true;
                     } else if (command.command.toLowerCase().equals("settings")) {
@@ -11432,7 +11404,7 @@ public class ChatActivity extends BaseFragment
         showFieldPanel(false, null, null, null, null, notify, scheduleDate, false, animated);
     }
 
-    public void showFieldPanelForWebPage(boolean show, TLRPC.WebPage webPage, boolean cancel) {
+    public void showFieldPanelForWebPage(boolean show, MessageMedia.WebPage webPage, boolean cancel) {
         showFieldPanel(show, null, null, null, webPage, true, 0, cancel, true);
     }
 
@@ -11448,7 +11420,7 @@ public class ChatActivity extends BaseFragment
         showFieldPanel(show, null, messageObjectToEdit, null, null, true, 0, false, true);
     }
 
-    public void showFieldPanel(boolean show, MessageObject messageObjectToReply, MessageObject messageObjectToEdit, ArrayList<MessageObject> messageObjectsToForward, TLRPC.WebPage webPage, boolean notify, int scheduleDate, boolean cancel, boolean animated) {
+    public void showFieldPanel(boolean show, MessageObject messageObjectToReply, MessageObject messageObjectToEdit, ArrayList<MessageObject> messageObjectsToForward, MessageMedia.WebPage webPage, boolean notify, int scheduleDate, boolean cancel, boolean animated) {
         if (chatActivityEnterView == null) {
             return;
         }
@@ -12635,8 +12607,8 @@ public class ChatActivity extends BaseFragment
                 args.putInt("dialogsType", 3);
                 args.putInt("messagesCount", forwardingMessageGroup == null ? 1 : forwardingMessageGroup.messages.size());
                 args.putInt("hasPoll", forwardingMessage.isPoll() ? (forwardingMessage.isPublicPoll() ? 2 : 1) : 0);
-                DialogsActivity fragment = new DialogsActivity(args);
-                fragment.setDelegate(this);
+                HomeActivity fragment = new HomeActivity();
+//                fragment.setDelegate(this);
                 presentFragment(fragment);
                 break;
             }
@@ -12891,13 +12863,11 @@ public class ChatActivity extends BaseFragment
                 break;
             }
             case 18: {
-                if (currentUser != null) {
-                    VoIPHelper.startCall(currentUser, getParentActivity(), getMessagesController().getUserFull(currentUser.id));
-                }
+                //打电话，移除
                 break;
             }
             case 19: {
-                VoIPHelper.showRateAlert(getParentActivity(), (TLRPC.TL_messageActionPhoneCall) selectedObject.messageOwner.action);
+                //打电话，移除
                 break;
             }
             case 20: {
@@ -15653,21 +15623,13 @@ public class ChatActivity extends BaseFragment
         int pinned_msg_id;
         boolean changed = false;
         if (chatInfo != null) {
-            if (pinnedMessageObject != null && chatInfo.pinned_msg_id != pinnedMessageObject.getId()) {
+            if (pinnedMessageObject != null && currentChat.pinned_msg_id != pinnedMessageObject.getId()) {
                 pinnedMessageObject = null;
             }
-            if (chatInfo.pinned_msg_id != 0 && pinnedMessageObject == null) {
-                pinnedMessageObject = messagesDict[0].get(chatInfo.pinned_msg_id);
+            if (currentChat.pinned_msg_id != 0 && pinnedMessageObject == null) {
+                pinnedMessageObject = messagesDict[0].get(currentChat.pinned_msg_id);
             }
-            pinned_msg_id = chatInfo.pinned_msg_id;
-        } else if (userInfo != null) {
-            if (pinnedMessageObject != null && userInfo.pinned_msg_id != pinnedMessageObject.getId()) {
-                pinnedMessageObject = null;
-            }
-            if (userInfo.pinned_msg_id != 0 && pinnedMessageObject == null) {
-                pinnedMessageObject = messagesDict[0].get(userInfo.pinned_msg_id);
-            }
-            pinned_msg_id = userInfo.pinned_msg_id;
+            pinned_msg_id = currentChat.pinned_msg_id;
         } else {
             pinned_msg_id = 0;
         }
@@ -16254,13 +16216,7 @@ public class ChatActivity extends BaseFragment
 
                     @Override
                     public void didPressOther(ChatMessageCell cell, float otherX, float otherY) {
-                        if (cell.getMessageObject().type == 16) {
-                            if (currentUser != null) {
-                                VoIPHelper.startCall(currentUser, getParentActivity(), getMessagesController().getUserFull(currentUser.id));
-                            }
-                        } else {
-                            createMenu(cell, true, false, otherX, otherY, false);
-                        }
+                        createMenu(cell, true, false, otherX, otherY, false);
                     }
 
                     @Override
@@ -16416,7 +16372,7 @@ public class ChatActivity extends BaseFragment
                                 fragment.setDelegate(ChatActivity.this);
                                 presentFragment(fragment);
                             } else {
-                                LocationActivity fragment = new LocationActivity(currentEncryptedChat == null ? 3 : 0);
+                                LocationActivity fragment = new LocationActivity(3);
                                 fragment.setDelegate(ChatActivity.this);
                                 fragment.setMessageObject(message);
                                 fragment.setDelegate(ChatActivity.this);

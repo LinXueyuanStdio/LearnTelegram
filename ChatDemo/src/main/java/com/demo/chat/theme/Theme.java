@@ -48,6 +48,8 @@ import android.view.View;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
+import com.demo.chat.controller.ConnectionsManager;
+import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
@@ -56,6 +58,7 @@ import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.model.small.WallPaper;
 import com.demo.chat.ui.Components.CombinedDrawable;
 import com.demo.chat.ui.Components.RLottieDrawable;
 import com.demo.chat.ui.Components.ScamDrawable;
@@ -870,7 +873,7 @@ public class Theme {
         public boolean patternMotion;
 
         public TLRPC.TL_theme info;
-        public TLRPC.TL_wallPaper pattern;
+        public WallPaper pattern;
         public int account;
 
         public String pathToFile;

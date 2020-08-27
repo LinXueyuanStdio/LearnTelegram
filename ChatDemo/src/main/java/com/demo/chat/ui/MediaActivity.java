@@ -44,8 +44,6 @@ import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
 import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.MessagesController;
-import com.demo.chat.controller.SendMessagesHelper;
-import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
@@ -66,9 +64,11 @@ import com.demo.chat.ui.ActionBar.BackDrawable;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ActionBar.BottomSheet;
 import com.demo.chat.ui.Cells.GraySectionCell;
+import com.demo.chat.ui.Cells.LoadingCell;
 import com.demo.chat.ui.Cells.SharedAudioCell;
 import com.demo.chat.ui.Cells.SharedDocumentCell;
 import com.demo.chat.ui.Cells.SharedLinkCell;
+import com.demo.chat.ui.Cells.SharedMediaSectionCell;
 import com.demo.chat.ui.Cells.SharedPhotoVideoCell;
 import com.demo.chat.ui.Components.AnimationProperties;
 import com.demo.chat.ui.Components.BackupImageView;
@@ -85,7 +85,6 @@ import com.demo.chat.ui.Viewer.ArticleViewer;
 import com.demo.chat.ui.Viewer.PhotoViewer;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 
 import androidx.annotation.NonNull;
@@ -1341,7 +1340,7 @@ public class MediaActivity extends BaseFragment implements NotificationCenter.No
             if (scheduled) {
                 return;
             }
-            TLRPC.Chat currentChat = null;
+            Chat currentChat = null;
             if ((int) dialog_id < 0) {
                 currentChat = MessagesController.getInstance(currentAccount).getChat(-(int) dialog_id);
             }

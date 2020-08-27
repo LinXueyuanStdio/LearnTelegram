@@ -14,12 +14,14 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.demo.chat.R;
+import com.demo.chat.controller.DownloadController;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.ImageLoader;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.PhotoSize;
@@ -310,7 +312,7 @@ public class SharedDocumentCell extends FrameLayout implements DownloadControlle
             String name = null;
             if (messageObject.isMusic()) {
                 for (int a = 0; a < document.attributes.size(); a++) {
-                    DocumentAttribute attribute = document.attributes.get(a);
+                    Document.DocumentAttribute attribute = document.attributes.get(a);
                     if (attribute instanceof TLRPC.TL_documentAttributeAudio) {
                         if (attribute.performer != null && attribute.performer.length() != 0 || attribute.title != null && attribute.title.length() != 0) {
                             name = messageObject.getMusicAuthor() + " - " + messageObject.getMusicTitle();

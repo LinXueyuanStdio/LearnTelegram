@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.LongSparseArray;
+import android.util.SparseArray;
 import android.util.SparseIntArray;
 
 import com.demo.chat.ApplicationLoader;
@@ -39,7 +40,27 @@ import java.util.concurrent.ConcurrentHashMap;
  * @usage null
  */
 public class MessagesController extends BaseController implements NotificationCenter.NotificationCenterDelegate {
+
+    public static final int UPDATE_MASK_NAME = 1;
+    public static final int UPDATE_MASK_AVATAR = 2;
     public static final int UPDATE_MASK_STATUS = 4;
+    public static final int UPDATE_MASK_CHAT_AVATAR = 8;
+    public static final int UPDATE_MASK_CHAT_NAME = 16;
+    public static final int UPDATE_MASK_CHAT_MEMBERS = 32;
+    public static final int UPDATE_MASK_USER_PRINT = 64;
+    public static final int UPDATE_MASK_USER_PHONE = 128;
+    public static final int UPDATE_MASK_READ_DIALOG_MESSAGE = 256;
+    public static final int UPDATE_MASK_SELECT_DIALOG = 512;
+    public static final int UPDATE_MASK_PHONE = 1024;
+    public static final int UPDATE_MASK_NEW_MESSAGE = 2048;
+    public static final int UPDATE_MASK_SEND_STATE = 4096;
+    public static final int UPDATE_MASK_CHAT = 8192;
+    //public static final int UPDATE_MASK_CHAT_ADMINS = 16384;
+    public static final int UPDATE_MASK_MESSAGE_TEXT = 32768;
+    public static final int UPDATE_MASK_CHECK = 65536;
+    public static final int UPDATE_MASK_REORDER = 131072;
+    public static final int UPDATE_MASK_ALL = UPDATE_MASK_AVATAR | UPDATE_MASK_STATUS | UPDATE_MASK_NAME | UPDATE_MASK_CHAT_AVATAR | UPDATE_MASK_CHAT_NAME | UPDATE_MASK_CHAT_MEMBERS | UPDATE_MASK_USER_PRINT | UPDATE_MASK_USER_PHONE | UPDATE_MASK_READ_DIALOG_MESSAGE | UPDATE_MASK_PHONE;
+
 
     private int nextPromoInfoCheckTime;
     private boolean checkingPromoInfo;
@@ -552,6 +573,13 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     //endregion
+    public void markMessageAsRead(final int mid, final int channelId, TLRPC.InputChannel inputChannel, int ttl, long taskId) {
+        if (mid == 0 || ttl <= 0) {
+            return;
+        }
+        int time = getConnectionsManager().getCurrentTime();
+        getMessagesStorage().createTaskForMid(mid, channelId, time, time, ttl, false);
+    }
 
     public void markMessageAsRead(final long dialog_id, final long random_id, int ttl) {
         if (random_id == 0 || dialog_id == 0 || ttl <= 0 && ttl != Integer.MIN_VALUE) {
@@ -1033,6 +1061,40 @@ public class MessagesController extends BaseController implements NotificationCe
         getMessagesStorage().cleanup(false);
     }
 
+    public String getAdminRank(int chatId, int uid) {
+        SparseArray<String> array = channelAdmins.get(chatId);
+        if (array == null) {
+            return null;
+        }
+        return array.get(uid);
+    }
+
+
+    public boolean isDialogMuted(long dialog_id) {
+        return isDialogMuted(dialog_id, null);
+    }
+
+    public boolean isDialogMuted(long dialog_id, Chat chat) {
+        int mute_type = notificationsPreferences.getInt("notify2_" + dialog_id, -1);
+        if (mute_type == -1) {
+            Boolean forceChannel;
+            if (chat != null) {
+                forceChannel = ChatObject.isChannel(chat) && !chat.megagroup;
+            } else {
+                forceChannel = null;
+            }
+            return !getNotificationsController().isGlobalNotificationsEnabled(dialog_id, forceChannel);
+        }
+        if (mute_type == 2) {
+            return true;
+        } else if (mute_type == 3) {
+            int mute_until = notificationsPreferences.getInt("notifyuntil_" + dialog_id, 0);
+            if (mute_until >= getConnectionsManager().getCurrentTime()) {
+                return true;
+            }
+        }
+        return false;
+    }
     //region NotificationCenter.NotificationCenterDelegate
     @Override
     public void didReceivedNotification(int id, int account, Object... args) {

@@ -10,6 +10,7 @@ import android.widget.TextView;
 import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Emoji;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.theme.Theme;
@@ -73,9 +74,9 @@ public class MentionCell extends LinearLayout {
             return;
         }
         avatarDrawable.setInfo(user);
-        if (user.photo != null && user.photo.photo_small != null) {
+        if (user.photo != null && user.photo.photo_small != null)
             imageView.setImage(ImageLocation.getForUser(user, false), "50_50", avatarDrawable, user);
-        } else {
+        else {
             imageView.setImageDrawable(avatarDrawable);
         }
         nameTextView.setText(UserObject.getUserName(user));

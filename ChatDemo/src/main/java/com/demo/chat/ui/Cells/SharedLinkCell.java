@@ -20,7 +20,10 @@ import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.small.MessageMedia;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Components.CheckBox2;
@@ -41,7 +44,7 @@ import java.util.Locale;
 public class SharedLinkCell extends FrameLayout {
 
     public interface SharedLinkCellDelegate {
-        void needOpenWebView(TLRPC.WebPage webPage);
+        void needOpenWebView(MessageMedia.WebPage webPage);
         boolean canPerformActions();
         void onLinkPress(final String urlFinal, boolean longPress);
     }
@@ -178,7 +181,7 @@ public class SharedLinkCell extends FrameLayout {
         boolean hasPhoto = false;
 
         if (message.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && message.messageOwner.media.webpage instanceof TLRPC.TL_webPage) {
-            TLRPC.WebPage webPage = message.messageOwner.media.webpage;
+            MessageMedia.WebPage webPage = message.messageOwner.media.webpage;
             if (message.photoThumbs == null && webPage.photo != null) {
                 message.generateThumbs(true);
             }
@@ -318,8 +321,8 @@ public class SharedLinkCell extends FrameLayout {
         letterDrawable.setBounds(x, AndroidUtilities.dp(11), x + maxPhotoWidth, AndroidUtilities.dp(63));
 
         if (hasPhoto) {
-            TLRPC.PhotoSize currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, maxPhotoWidth, true);
-            TLRPC.PhotoSize currentPhotoObjectThumb = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, 80);
+            PhotoSize currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, maxPhotoWidth, true);
+            PhotoSize currentPhotoObjectThumb = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, 80);
             if (currentPhotoObjectThumb == currentPhotoObject) {
                 currentPhotoObjectThumb = null;
             }
@@ -420,7 +423,7 @@ public class SharedLinkCell extends FrameLayout {
                                 result = true;
                             } else if (linkPreviewPressed) {
                                 try {
-                                    TLRPC.WebPage webPage = pressedLink == 0 && message.messageOwner.media != null ? message.messageOwner.media.webpage : null;
+                                    MessageMedia.WebPage webPage = pressedLink == 0 && message.messageOwner.media != null ? message.messageOwner.media.webpage : null;
                                     if (webPage != null && webPage.embed_url != null && webPage.embed_url.length() != 0) {
                                         delegate.needOpenWebView(webPage);
                                     } else {

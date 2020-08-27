@@ -31,6 +31,7 @@ import com.demo.chat.model.User;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.BotInfo;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.DraftMessage;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.ui.Components.TextStyleSpan;
 import com.demo.chat.ui.Components.URLSpanReplacement;

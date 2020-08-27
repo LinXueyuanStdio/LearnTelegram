@@ -22,6 +22,7 @@ import android.text.TextUtils;
 import android.util.Base64;
 import android.util.LongSparseArray;
 import android.util.SparseArray;
+import android.webkit.MimeTypeMap;
 import android.widget.Toast;
 
 import com.demo.chat.ApplicationLoader;
@@ -36,11 +37,13 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SerializedData;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
+import com.demo.chat.messager.audioinfo.AudioInfo;
 import com.demo.chat.model.Message;
 import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.PhotoSize;
@@ -54,6 +57,8 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
@@ -5280,7 +5285,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     @UiThread
-    public static void prepareSendingBotContextResult(AccountInstance accountInstance, final TLRPC.BotInlineResult result, final HashMap<String, String> params, final long dialog_id, final MessageObject reply_to_msg, boolean notify, int scheduleDate) {
+    public static void prepareSendingBotContextResult(AccountInstance accountInstance, final BotInlineResult result, final HashMap<String, String> params, final long dialog_id, final MessageObject reply_to_msg, boolean notify, int scheduleDate) {
         if (result == null) {
             return;
         }

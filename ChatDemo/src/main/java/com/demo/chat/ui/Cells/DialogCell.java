@@ -39,6 +39,7 @@ import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.small.DraftMessage;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
@@ -156,7 +157,7 @@ public class DialogCell extends BaseCell {
     private Chat chat;
     private TLRPC.EncryptedChat encryptedChat;
     private CharSequence lastPrintString;
-    private TLRPC.DraftMessage draftMessage;
+    private DraftMessage draftMessage;
 
     private CheckBox2 checkBox;
 

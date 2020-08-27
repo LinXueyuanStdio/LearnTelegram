@@ -13,6 +13,7 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import android.widget.FrameLayout;
 
 import com.demo.chat.R;
+import com.demo.chat.controller.DownloadController;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
@@ -22,6 +23,8 @@ import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLoader;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Components.CheckBox2;
 import com.demo.chat.ui.Components.LayoutHelper;
@@ -120,9 +123,9 @@ public class SharedAudioCell extends FrameLayout implements DownloadController.F
     public void setMessageObject(MessageObject messageObject, boolean divider) {
         needDivider = divider;
         currentMessageObject = messageObject;
-        TLRPC.Document document = messageObject.getDocument();
+        Document document = messageObject.getDocument();
 
-        TLRPC.PhotoSize thumb = document != null ? FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 240) : null;
+        PhotoSize thumb = document != null ? FileLoader.getClosestPhotoSizeWithSize(document.thumbs, 240) : null;
         if (thumb instanceof TLRPC.TL_photoSize) {
             radialProgress.setImageOverlay(thumb, document, messageObject);
         } else {
