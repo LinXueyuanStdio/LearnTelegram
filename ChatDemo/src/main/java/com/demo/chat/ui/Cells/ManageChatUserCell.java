@@ -18,6 +18,7 @@ import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.User;
+import com.demo.chat.model.UserChat;
 import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.theme.Theme;
@@ -41,7 +42,7 @@ public class ManageChatUserCell extends FrameLayout {
     private ImageView optionsButton;
 
     private AvatarDrawable avatarDrawable;
-    private TLObject currentObject;
+    private UserChat currentObject;
 
     private CharSequence currentName;
     private CharSequence currrntStatus;
@@ -105,7 +106,7 @@ public class ManageChatUserCell extends FrameLayout {
         }
     }
 
-    public void setData(TLObject object, CharSequence name, CharSequence status, boolean divider) {
+    public void setData(UserChat object, CharSequence name, CharSequence status, boolean divider) {
         if (object == null) {
             currrntStatus = null;
             currentName = null;
@@ -220,7 +221,7 @@ public class ManageChatUserCell extends FrameLayout {
                         statusTextView.setText(LocaleController.getString("BotStatusCantRead", R.string.BotStatusCantRead));
                     }
                 } else {
-                    if (currentUser.id == UserConfig.getInstance(currentAccount).getClientUserId() || currentUser.status != null && currentUser.status.expires > ConnectionsManager.getInstance(currentAccount).getCurrentTime() || MessagesController.getInstance(currentAccount).onlinePrivacy.containsKey(currentUser.id)) {
+                    if (currentUser.id == UserConfig.getInstance(currentAccount).getClientUserId() || currentUser.status != null && currentUser.status.expires > ConnectionsManager.getInstance(currentAccount).getCurrentTime()) {
                         statusTextView.setTextColor(statusOnlineColor);
                         statusTextView.setText(LocaleController.getString("Online", R.string.Online));
                     } else {
@@ -295,7 +296,7 @@ public class ManageChatUserCell extends FrameLayout {
         delegate = manageChatUserCellDelegate;
     }
 
-    public TLObject getCurrentObject() {
+    public UserChat getCurrentObject() {
         return currentObject;
     }
 

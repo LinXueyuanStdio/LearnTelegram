@@ -47,6 +47,7 @@ import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.model.Chat;
+import com.demo.chat.model.Message;
 import com.demo.chat.model.User;
 import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.small.MessageMedia;
@@ -57,6 +58,7 @@ import com.demo.chat.ui.ActionBar.ActionBarMenu;
 import com.demo.chat.ui.ActionBar.ActionBarMenuItem;
 import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.Cells.HeaderCell;
+import com.demo.chat.ui.Cells.LocationCell;
 import com.demo.chat.ui.Cells.ShadowSectionCell;
 import com.demo.chat.ui.ChatActivity;
 import com.google.android.gms.maps.CameraUpdate;
@@ -65,17 +67,14 @@ import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.MapView;
 import com.google.android.gms.maps.MapsInitializer;
 import com.google.android.gms.maps.Projection;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.CameraPosition;
 import com.google.android.gms.maps.model.CircleOptions;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
-import com.google.android.gms.maps.model.MarkerOptions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 
 import androidx.recyclerview.widget.DefaultItemAnimator;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -112,10 +111,10 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
 
     private View loadingMapView;
     private FrameLayout mapViewClip;
-    private LocationActivityAdapter adapter;
+//    private LocationActivityAdapter adapter;
     private RecyclerListView listView;
     private RecyclerListView searchListView;
-    private LocationActivitySearchAdapter searchAdapter;
+//    private LocationActivitySearchAdapter searchAdapter;
     private ImageView markerImageView;
     private FillLastLinearLayoutManager layoutManager;
     private AvatarDrawable avatarDrawable;
@@ -177,7 +176,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
     public static class VenueLocation {
         public int num;
         public Marker marker;
-        public TLRPC.TL_messageMediaVenue venue;
+        public MessageMedia venue;
     }
 
     public static class LiveLocation {
@@ -376,19 +375,20 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         searchWas = false;
         searching = false;
         searchInProgress = false;
-        if (adapter != null) {
-            adapter.destroy();
-        }
-        if (searchAdapter != null) {
-            searchAdapter.destroy();
-        }
+//        if (adapter != null) {
+//            adapter.destroy();
+//        }
+//        if (searchAdapter != null) {
+//            searchAdapter.destroy();
+//        }
 
 
         ActionBarMenu menu = parentAlert.actionBar.createMenu();
 
         overlayView = new MapOverlayView(context);
 
-        searchItem = menu.addItem(0, R.drawable.ic_ab_search).setIsSearchField(true).setActionBarMenuItemSearchListener(new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
+        searchItem = menu.addItem(0, R.drawable.ic_ab_search).setIsSearchField(true)
+                         .setActionBarMenuItemSearchListener(new ActionBarMenuItem.ActionBarMenuItemSearchListener() {
             @Override
             public void onSearchExpand() {
                 searching = true;
@@ -399,42 +399,42 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
             public void onSearchCollapse() {
                 searching = false;
                 searchWas = false;
-                searchAdapter.searchDelayed(null, null);
+//                searchAdapter.searchDelayed(null, null);
                 updateEmptyView();
             }
 
             @Override
             public void onTextChanged(EditText editText) {
-                if (searchAdapter == null) {
-                    return;
-                }
-                String text = editText.getText().toString();
-                if (text.length() != 0) {
-                    searchWas = true;
-                    searchItem.setShowSearchProgress(true);
-
-                    if (otherItem != null) {
-                        otherItem.setVisibility(GONE);
-                    }
-                    listView.setVisibility(GONE);
-                    mapViewClip.setVisibility(GONE);
-                    if (searchListView.getAdapter() != searchAdapter) {
-                        searchListView.setAdapter(searchAdapter);
-                    }
-                    searchListView.setVisibility(VISIBLE);
-                    searchInProgress = searchAdapter.getItemCount() == 0;
-                    updateEmptyView();
-                } else {
-                    if (otherItem != null) {
-                        otherItem.setVisibility(VISIBLE);
-                    }
-                    listView.setVisibility(VISIBLE);
-                    mapViewClip.setVisibility(VISIBLE);
-                    searchListView.setAdapter(null);
-                    searchListView.setVisibility(GONE);
-                    emptyView.setVisibility(GONE);
-                }
-                searchAdapter.searchDelayed(text, userLocation);
+//                if (searchAdapter == null) {
+//                    return;
+//                }
+//                String text = editText.getText().toString();
+//                if (text.length() != 0) {
+//                    searchWas = true;
+//                    searchItem.setShowSearchProgress(true);
+//
+//                    if (otherItem != null) {
+//                        otherItem.setVisibility(GONE);
+//                    }
+//                    listView.setVisibility(GONE);
+//                    mapViewClip.setVisibility(GONE);
+//                    if (searchListView.getAdapter() != searchAdapter) {
+//                        searchListView.setAdapter(searchAdapter);
+//                    }
+//                    searchListView.setVisibility(VISIBLE);
+//                    searchInProgress = searchAdapter.getItemCount() == 0;
+//                    updateEmptyView();
+//                } else {
+//                    if (otherItem != null) {
+//                        otherItem.setVisibility(VISIBLE);
+//                    }
+//                    listView.setVisibility(VISIBLE);
+//                    mapViewClip.setVisibility(VISIBLE);
+//                    searchListView.setAdapter(null);
+//                    searchListView.setVisibility(GONE);
+//                    emptyView.setVisibility(GONE);
+//                }
+//                searchAdapter.searchDelayed(text, userLocation);
             }
         });
         searchItem.setSearchFieldHint(LocaleController.getString("Search", R.string.Search));
@@ -525,7 +525,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         mapViewClip.addView(searchAreaButton, LayoutHelper.createFrame(LayoutHelper.WRAP_CONTENT, Build.VERSION.SDK_INT >= 21 ? 40 : 44, Gravity.CENTER_HORIZONTAL | Gravity.TOP, 80, 12, 80, 0));
         searchAreaButton.setOnClickListener(v -> {
             showSearchPlacesButton(false);
-            adapter.searchPlacesWithQuery(null, userLocation, true, true);
+//            adapter.searchPlacesWithQuery(null, userLocation, true, true);
             searchedForCustomLocations = true;
             showResults();
         });
@@ -618,13 +618,13 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
             if (myLocation != null && googleMap != null) {
                 locationButton.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_location_actionActiveIcon), PorterDuff.Mode.MULTIPLY));
                 locationButton.setTag(Theme.key_location_actionActiveIcon);
-                adapter.setCustomLocation(null);
+//                adapter.setCustomLocation(null);
                 userLocationMoved = false;
                 showSearchPlacesButton(false);
                 googleMap.animateCamera(CameraUpdateFactory.newLatLng(new LatLng(myLocation.getLatitude(), myLocation.getLongitude())));
                 if (searchedForCustomLocations) {
                     if (myLocation != null) {
-                        adapter.searchPlacesWithQuery(null, myLocation, true, true);
+//                        adapter.searchPlacesWithQuery(null, myLocation, true, true);
                     }
                     searchedForCustomLocations = false;
                     showResults();
@@ -669,8 +669,8 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
             }
         };
         listView.setClipToPadding(false);
-        listView.setAdapter(adapter = new LocationActivityAdapter(context, locationType, dialogId, true));
-        adapter.setUpdateRunnable(this::updateClipView);
+//        listView.setAdapter(adapter = new LocationActivityAdapter(context, locationType, dialogId, true));
+//        adapter.setUpdateRunnable(this::updateClipView);
         listView.setVerticalScrollBarEnabled(false);
         listView.setLayoutManager(layoutManager = new FillLastLinearLayoutManager(context, LinearLayoutManager.VERTICAL, false, 0, listView) {
             @Override
@@ -724,54 +724,54 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
             }
         });
         ((DefaultItemAnimator) listView.getItemAnimator()).setDelayAnimations(false);
-        listView.setOnItemClickListener((view, position) -> {
-            if (position == 1) {
-                if (delegate != null && userLocation != null) {
-                    if (lastPressedMarkerView != null) {
-                        lastPressedMarkerView.callOnClick();
-                    } else {
-                        TLRPC.TL_messageMediaGeo location = new TLRPC.TL_messageMediaGeo();
-                        location.geo = new TLRPC.TL_geoPoint();
-                        location.geo.lat = AndroidUtilities.fixLocationCoord(userLocation.getLatitude());
-                        location.geo._long = AndroidUtilities.fixLocationCoord(userLocation.getLongitude());
-                        if (chatActivity.isInScheduleMode()) {
-                            AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), chatActivity.getDialogId(), (notify, scheduleDate) -> {
-                                delegate.didSelectLocation(location, locationType, notify, scheduleDate);
-                                parentAlert.dismiss();
-                            });
-                        } else {
-                            delegate.didSelectLocation(location, locationType, true, 0);
-                            parentAlert.dismiss();
-                        }
-                    }
-                }
-            } else if (position == 2 && locationType == 1) {
-                if (getLocationController().isSharingLocation(dialogId)) {
-                    getLocationController().removeSharingLocation(dialogId);
-                    parentAlert.dismiss();
-                } else {
-                    openShareLiveLocation();
-                }
-            } else {
-                Object object = adapter.getItem(position);
-                if (object instanceof TLRPC.TL_messageMediaVenue) {
-                    if (chatActivity.isInScheduleMode()) {
-                        AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), chatActivity.getDialogId(), (notify, scheduleDate) -> {
-                            delegate.didSelectLocation((TLRPC.TL_messageMediaVenue) object, locationType, notify, scheduleDate);
-                            parentAlert.dismiss();
-                        });
-                    } else {
-                        delegate.didSelectLocation((TLRPC.TL_messageMediaVenue) object, locationType, true, 0);
-                        parentAlert.dismiss();
-                    }
-                } else if (object instanceof LiveLocation) {
-                    LiveLocation liveLocation = (LiveLocation) object;
-                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(liveLocation.marker.getPosition(), googleMap.getMaxZoomLevel() - 4));
-                }
-            }
-        });
-        adapter.setDelegate(dialogId, this::updatePlacesMarkers);
-        adapter.setOverScrollHeight(overScrollHeight);
+//        listView.setOnItemClickListener((view, position) -> {
+//            if (position == 1) {
+//                if (delegate != null && userLocation != null) {
+//                    if (lastPressedMarkerView != null) {
+//                        lastPressedMarkerView.callOnClick();
+//                    } else {
+//                        TLRPC.TL_messageMediaGeo location = new TLRPC.TL_messageMediaGeo();
+//                        location.geo = new TLRPC.TL_geoPoint();
+//                        location.geo.lat = AndroidUtilities.fixLocationCoord(userLocation.getLatitude());
+//                        location.geo._long = AndroidUtilities.fixLocationCoord(userLocation.getLongitude());
+//                        if (chatActivity.isInScheduleMode()) {
+//                            AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), chatActivity.getDialogId(), (notify, scheduleDate) -> {
+//                                delegate.didSelectLocation(location, locationType, notify, scheduleDate);
+//                                parentAlert.dismiss();
+//                            });
+//                        } else {
+//                            delegate.didSelectLocation(location, locationType, true, 0);
+//                            parentAlert.dismiss();
+//                        }
+//                    }
+//                }
+//            } else if (position == 2 && locationType == 1) {
+//                if (getLocationController().isSharingLocation(dialogId)) {
+//                    getLocationController().removeSharingLocation(dialogId);
+//                    parentAlert.dismiss();
+//                } else {
+//                    openShareLiveLocation();
+//                }
+//            } else {
+//                Object object = adapter.getItem(position);
+//                if (object.isVenue()) {
+//                    if (chatActivity.isInScheduleMode()) {
+//                        AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), chatActivity.getDialogId(), (notify, scheduleDate) -> {
+//                            delegate.didSelectLocation((TLRPC.TL_messageMediaVenue) object, locationType, notify, scheduleDate);
+//                            parentAlert.dismiss();
+//                        });
+//                    } else {
+//                        delegate.didSelectLocation((TLRPC.TL_messageMediaVenue) object, locationType, true, 0);
+//                        parentAlert.dismiss();
+//                    }
+//                } else if (object instanceof LiveLocation) {
+//                    LiveLocation liveLocation = (LiveLocation) object;
+//                    googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(liveLocation.marker.getPosition(), googleMap.getMaxZoomLevel() - 4));
+//                }
+//            }
+//        });
+//        adapter.setDelegate(dialogId, this::updatePlacesMarkers);
+//        adapter.setOverScrollHeight(overScrollHeight);
 
         addView(mapViewClip, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP));
 
@@ -810,7 +810,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                     animatorSet.setDuration(200);
                     animatorSet.playTogether(ObjectAnimator.ofFloat(markerImageView, View.TRANSLATION_Y, markerTop));
                     animatorSet.start();
-                    adapter.fetchLocationAddress();
+//                    adapter.fetchLocationAddress();
                 }
                 if (ev.getAction() == MotionEvent.ACTION_MOVE) {
                     if (!userLocationMoved) {
@@ -824,7 +824,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                             userLocation.setLongitude(googleMap.getCameraPosition().target.longitude);
                         }
                     }
-                    adapter.setCustomLocation(userLocation);
+//                    adapter.setCustomLocation(userLocation);
                 }
                 return super.onInterceptTouchEvent(ev);
             }
@@ -872,22 +872,22 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         searchListView = new RecyclerListView(context);
         searchListView.setVisibility(GONE);
         searchListView.setLayoutManager(new LinearLayoutManager(context, LinearLayoutManager.VERTICAL, false));
-        searchAdapter = new LocationActivitySearchAdapter(context) {
-            @Override
-            public void notifyDataSetChanged() {
-                if (searchItem != null) {
-                    searchItem.setShowSearchProgress(searchAdapter.isSearching());
-                }
-                if (emptySubtitleTextView != null) {
-                    emptySubtitleTextView.setText(AndroidUtilities.replaceTags(LocaleController.formatString("NoPlacesFoundInfo", R.string.NoPlacesFoundInfo, searchAdapter.getLastSearchString())));
-                }
-                super.notifyDataSetChanged();
-            }
-        };
-        searchAdapter.setDelegate(0, places -> {
-            searchInProgress = false;
-            updateEmptyView();
-        });
+//        searchAdapter = new LocationActivitySearchAdapter(context) {
+//            @Override
+//            public void notifyDataSetChanged() {
+//                if (searchItem != null) {
+//                    searchItem.setShowSearchProgress(searchAdapter.isSearching());
+//                }
+//                if (emptySubtitleTextView != null) {
+//                    emptySubtitleTextView.setText(AndroidUtilities.replaceTags(LocaleController.formatString("NoPlacesFoundInfo", R.string.NoPlacesFoundInfo, searchAdapter.getLastSearchString())));
+//                }
+//                super.notifyDataSetChanged();
+//            }
+//        };
+//        searchAdapter.setDelegate(0, places -> {
+//            searchInProgress = false;
+//            updateEmptyView();
+//        });
         addView(searchListView, LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.LEFT | Gravity.TOP));
         searchListView.setOnScrollListener(new RecyclerView.OnScrollListener() {
             @Override
@@ -897,20 +897,20 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                 }
             }
         });
-        searchListView.setOnItemClickListener((view, position) -> {
-            TLRPC.TL_messageMediaVenue object = searchAdapter.getItem(position);
-            if (object != null && delegate != null) {
-                if (chatActivity.isInScheduleMode()) {
-                    AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), chatActivity.getDialogId(), (notify, scheduleDate) -> {
-                        delegate.didSelectLocation(object, locationType, notify, scheduleDate);
-                        parentAlert.dismiss();
-                    });
-                } else {
-                    delegate.didSelectLocation(object, locationType, true, 0);
-                    parentAlert.dismiss();
-                }
-            }
-        });
+//        searchListView.setOnItemClickListener((view, position) -> {
+//            TLRPC.TL_messageMediaVenue object = searchAdapter.getItem(position);
+//            if (object != null && delegate != null) {
+//                if (chatActivity.isInScheduleMode()) {
+//                    AlertsCreator.createScheduleDatePickerDialog(getParentActivity(), chatActivity.getDialogId(), (notify, scheduleDate) -> {
+//                        delegate.didSelectLocation(object, locationType, notify, scheduleDate);
+//                        parentAlert.dismiss();
+//                    });
+//                } else {
+//                    delegate.didSelectLocation(object, locationType, true, 0);
+//                    parentAlert.dismiss();
+//                }
+//            }
+//        });
 
         updateEmptyView();
     }
@@ -931,9 +931,9 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
     void onDestroy() {
         NotificationCenter.getGlobalInstance().removeObserver(this, NotificationCenter.locationPermissionGranted);
         try {
-            if (googleMap != null) {
-                googleMap.setMyLocationEnabled(false);
-            }
+//            if (googleMap != null) {
+//                googleMap.setMyLocationEnabled(false);
+//            }
         } catch (Exception e) {
             FileLog.e(e);
         }
@@ -955,12 +955,12 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         } catch (Exception ignore) {
 
         }
-        if (adapter != null) {
-            adapter.destroy();
-        }
-        if (searchAdapter != null) {
-            searchAdapter.destroy();
-        }
+//        if (adapter != null) {
+//            adapter.destroy();
+//        }
+//        if (searchAdapter != null) {
+//            searchAdapter.destroy();
+//        }
         parentAlert.actionBar.closeSearchField();
         ActionBarMenu menu = parentAlert.actionBar.createMenu();
         menu.removeView(searchItem);
@@ -1120,12 +1120,12 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
             user = parentAlert.baseFragment.getMessagesController().getUser((int) dialogId);
         }
         AlertsCreator.createLocationUpdateDialog(getParentActivity(), user, param -> {
-            TLRPC.TL_messageMediaGeoLive location = new TLRPC.TL_messageMediaGeoLive();
-            location.geo = new TLRPC.TL_geoPoint();
-            location.geo.lat = AndroidUtilities.fixLocationCoord(myLocation.getLatitude());
-            location.geo._long = AndroidUtilities.fixLocationCoord(myLocation.getLongitude());
-            location.period = param;
-            delegate.didSelectLocation(location, locationType, true, 0);
+//            TLRPC.TL_messageMediaGeoLive location = new TLRPC.TL_messageMediaGeoLive();
+//            location.geo = new TLRPC.TL_geoPoint();
+//            location.geo.lat = AndroidUtilities.fixLocationCoord(myLocation.getLatitude());
+//            location.geo._long = AndroidUtilities.fixLocationCoord(myLocation.getLongitude());
+//            location.period = param;
+//            delegate.didSelectLocation(location, locationType, true, 0);
             parentAlert.dismiss();
         }).show();
     }
@@ -1151,33 +1151,33 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         return null;
     }
 
-    private void updatePlacesMarkers(ArrayList<TLRPC.TL_messageMediaVenue> places) {
-        if (places == null) {
-            return;
-        }
-        for (int a = 0, N = placeMarkers.size(); a < N; a++) {
-            placeMarkers.get(a).marker.remove();
-        }
-        placeMarkers.clear();
-        for (int a = 0, N = places.size(); a < N; a++) {
-            TLRPC.TL_messageMediaVenue venue = places.get(a);
-            try {
-                MarkerOptions options = new MarkerOptions().position(new LatLng(venue.geo.lat, venue.geo._long));
-                options.icon(BitmapDescriptorFactory.fromBitmap(createPlaceBitmap(a)));
-                options.anchor(0.5f, 0.5f);
-                options.title(venue.title);
-                options.snippet(venue.address);
-                VenueLocation venueLocation = new VenueLocation();
-                venueLocation.num = a;
-                venueLocation.marker = googleMap.addMarker(options);
-                venueLocation.venue = venue;
-                venueLocation.marker.setTag(venueLocation);
-                placeMarkers.add(venueLocation);
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-        }
-    }
+//    private void updatePlacesMarkers(ArrayList<TLRPC.TL_messageMediaVenue> places) {
+//        if (places == null) {
+//            return;
+//        }
+//        for (int a = 0, N = placeMarkers.size(); a < N; a++) {
+//            placeMarkers.get(a).marker.remove();
+//        }
+//        placeMarkers.clear();
+//        for (int a = 0, N = places.size(); a < N; a++) {
+//            TLRPC.TL_messageMediaVenue venue = places.get(a);
+//            try {
+//                MarkerOptions options = new MarkerOptions().position(new LatLng(venue.geo.lat, venue.geo._long));
+//                options.icon(BitmapDescriptorFactory.fromBitmap(createPlaceBitmap(a)));
+//                options.anchor(0.5f, 0.5f);
+//                options.title(venue.title);
+//                options.snippet(venue.address);
+//                VenueLocation venueLocation = new VenueLocation();
+//                venueLocation.num = a;
+//                venueLocation.marker = googleMap.addMarker(options);
+//                venueLocation.venue = venue;
+//                venueLocation.marker.setTag(venueLocation);
+//                placeMarkers.add(venueLocation);
+//            } catch (Exception e) {
+//                FileLog.e(e);
+//            }
+//        }
+//    }
 
     private MessagesController getMessagesController() {
         return parentAlert.baseFragment.getMessagesController();
@@ -1204,11 +1204,11 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         userLocation.setLatitude(20.659322);
         userLocation.setLongitude(-11.406250);
 
-        try {
-            googleMap.setMyLocationEnabled(true);
-        } catch (Exception e) {
-            FileLog.e(e);
-        }
+//        try {
+//            googleMap.setMyLocationEnabled(true);
+//        } catch (Exception e) {
+//            FileLog.e(e);
+//        }
         googleMap.getUiSettings().setMyLocationButtonEnabled(false);
         googleMap.getUiSettings().setZoomControlsEnabled(false);
         googleMap.getUiSettings().setCompassEnabled(false);
@@ -1234,14 +1234,14 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                 }
             }
         });
-        googleMap.setOnMyLocationChangeListener(location -> {
-            if (parentAlert == null || parentAlert.baseFragment == null) {
-                return;
-            }
-            positionMarker(location);
-            getLocationController().setGoogleMapLocation(location, isFirstLocation);
-            isFirstLocation = false;
-        });
+//        googleMap.setOnMyLocationChangeListener(location -> {
+//            if (parentAlert == null || parentAlert.baseFragment == null) {
+//                return;
+//            }
+//            positionMarker(location);
+//            getLocationController().setGoogleMapLocation(location, isFirstLocation);
+//            isFirstLocation = false;
+//        });
         googleMap.setOnMarkerClickListener(marker -> {
             if (!(marker.getTag() instanceof VenueLocation)) {
                 return true;
@@ -1336,19 +1336,19 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
     }
 
     private void showResults() {
-        if (adapter.getItemCount() == 0) {
-            return;
-        }
-        int position = layoutManager.findFirstVisibleItemPosition();
-        if (position != 0) {
-            return;
-        }
-        View child = listView.getChildAt(0);
-        int offset = AndroidUtilities.dp(258) + child.getTop();
-        if (offset < 0 || offset > AndroidUtilities.dp(258)) {
-            return;
-        }
-        listView.smoothScrollBy(0, offset);
+//        if (adapter.getItemCount() == 0) {
+//            return;
+//        }
+//        int position = layoutManager.findFirstVisibleItemPosition();
+//        if (position != 0) {
+//            return;
+//        }
+//        View child = listView.getChildAt(0);
+//        int offset = AndroidUtilities.dp(258) + child.getTop();
+//        if (offset < 0 || offset > AndroidUtilities.dp(258)) {
+//            return;
+//        }
+//        listView.smoothScrollBy(0, offset);
     }
 
     private void updateClipView() {
@@ -1445,7 +1445,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         layoutParams.topMargin = height;
         searchListView.setLayoutParams(layoutParams);
 
-        adapter.setOverScrollHeight(overScrollHeight);
+//        adapter.setOverScrollHeight(overScrollHeight);
         layoutParams = (FrameLayout.LayoutParams) mapView.getLayoutParams();
         if (layoutParams != null) {
             layoutParams.height = mapHeight + AndroidUtilities.dp(10);
@@ -1458,20 +1458,20 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                 overlayView.setLayoutParams(layoutParams);
             }
         }
-        adapter.notifyDataSetChanged();
+//        adapter.notifyDataSetChanged();
         updateClipView();
     }
 
     private Location getLastLocation() {
-        LocationManager lm = (LocationManager) ApplicationLoader.applicationContext.getSystemService(Context.LOCATION_SERVICE);
-        List<String> providers = lm.getProviders(true);
+//        LocationManager lm = (LocationManager) ApplicationLoader.applicationContext.getSystemService(Context.LOCATION_SERVICE);
+//        List<String> providers = lm.getProviders(true);
         Location l = null;
-        for (int i = providers.size() - 1; i >= 0; i--) {
-            l = lm.getLastKnownLocation(providers.get(i));
-            if (l != null) {
-                break;
-            }
-        }
+//        for (int i = providers.size() - 1; i >= 0; i--) {
+//            l = lm.getLastKnownLocation(providers.get(i));
+//            if (l != null) {
+//                break;
+//            }
+//        }
         return l;
     }
 
@@ -1483,12 +1483,12 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
 
         if (googleMap != null) {
             LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-            if (adapter != null) {
-                if (!searchedForCustomLocations) {
-                    adapter.searchPlacesWithQuery(null, myLocation, true);
-                }
-                adapter.setGpsLocation(myLocation);
-            }
+//            if (adapter != null) {
+//                if (!searchedForCustomLocations) {
+//                    adapter.searchPlacesWithQuery(null, myLocation, true);
+//                }
+//                adapter.setGpsLocation(myLocation);
+//            }
             if (!userLocationMoved) {
                 userLocation = new Location(location);
                 if (firstWas) {
@@ -1501,7 +1501,7 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
                 }
             }
         } else {
-            adapter.setGpsLocation(myLocation);
+//            adapter.setGpsLocation(myLocation);
         }
     }
 
@@ -1509,11 +1509,11 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
     public void didReceivedNotification(int id, int account, Object... args) {
         if (id == NotificationCenter.locationPermissionGranted) {
             if (googleMap != null) {
-                try {
-                    googleMap.setMyLocationEnabled(true);
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
+//                try {
+//                    googleMap.setMyLocationEnabled(true);
+//                } catch (Exception e) {
+//                    FileLog.e(e);
+//                }
             }
         }
     }
@@ -1549,11 +1549,11 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         }
         onResumeCalled = true;
         if (googleMap != null) {
-            try {
-                googleMap.setMyLocationEnabled(true);
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
+//            try {
+//                googleMap.setMyLocationEnabled(true);
+//            } catch (Exception e) {
+//                FileLog.e(e);
+//            }
         }
         fixLayoutInternal(true);
         if (checkPermission && Build.VERSION.SDK_INT >= 23) {
@@ -1639,17 +1639,17 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, null, Theme.key_location_placeLocationBackground));
         themeDescriptions.add(new ThemeDescription(null, 0, null, null, null, null, Theme.key_dialog_liveLocationProgress));
 
-        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_USEBACKGROUNDDRAWABLE | ThemeDescription.FLAG_CHECKTAG, new Class[]{SendLocationCell.class}, new String[]{"imageView"}, null, null, null, Theme.key_location_sendLocationIcon));
-        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_USEBACKGROUNDDRAWABLE | ThemeDescription.FLAG_CHECKTAG, new Class[]{SendLocationCell.class}, new String[]{"imageView"}, null, null, null, Theme.key_location_sendLiveLocationIcon));
-        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_USEBACKGROUNDDRAWABLE | ThemeDescription.FLAG_CHECKTAG, new Class[]{SendLocationCell.class}, new String[]{"imageView"}, null, null, null, Theme.key_location_sendLocationBackground));
-        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_USEBACKGROUNDDRAWABLE | ThemeDescription.FLAG_CHECKTAG, new Class[]{SendLocationCell.class}, new String[]{"imageView"}, null, null, null, Theme.key_location_sendLiveLocationBackground));
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{SendLocationCell.class}, new String[]{"accurateTextView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText3));
-        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CHECKTAG, new Class[]{SendLocationCell.class}, new String[]{"titleTextView"}, null, null, null, Theme.key_location_sendLiveLocationText));
-        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CHECKTAG, new Class[]{SendLocationCell.class}, new String[]{"titleTextView"}, null, null, null, Theme.key_location_sendLocationText));
+//        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_USEBACKGROUNDDRAWABLE | ThemeDescription.FLAG_CHECKTAG, new Class[]{SendLocationCell.class}, new String[]{"imageView"}, null, null, null, Theme.key_location_sendLocationIcon));
+//        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_USEBACKGROUNDDRAWABLE | ThemeDescription.FLAG_CHECKTAG, new Class[]{SendLocationCell.class}, new String[]{"imageView"}, null, null, null, Theme.key_location_sendLiveLocationIcon));
+//        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_USEBACKGROUNDDRAWABLE | ThemeDescription.FLAG_CHECKTAG, new Class[]{SendLocationCell.class}, new String[]{"imageView"}, null, null, null, Theme.key_location_sendLocationBackground));
+//        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_USEBACKGROUNDDRAWABLE | ThemeDescription.FLAG_CHECKTAG, new Class[]{SendLocationCell.class}, new String[]{"imageView"}, null, null, null, Theme.key_location_sendLiveLocationBackground));
+//        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{SendLocationCell.class}, new String[]{"accurateTextView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText3));
+//        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CHECKTAG, new Class[]{SendLocationCell.class}, new String[]{"titleTextView"}, null, null, null, Theme.key_location_sendLiveLocationText));
+//        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_CHECKTAG, new Class[]{SendLocationCell.class}, new String[]{"titleTextView"}, null, null, null, Theme.key_location_sendLocationText));
 
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{LocationDirectionCell.class}, new String[]{"buttonTextView"}, null, null, null, Theme.key_featuredStickers_buttonText));
-        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_USEBACKGROUNDDRAWABLE, new Class[]{LocationDirectionCell.class}, new String[]{"frameLayout"}, null, null, null, Theme.key_featuredStickers_addButton));
-        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_USEBACKGROUNDDRAWABLE | ThemeDescription.FLAG_DRAWABLESELECTEDSTATE, new Class[]{LocationDirectionCell.class}, new String[]{"frameLayout"}, null, null, null, Theme.key_featuredStickers_addButtonPressed));
+//        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{LocationDirectionCell.class}, new String[]{"buttonTextView"}, null, null, null, Theme.key_featuredStickers_buttonText));
+//        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_USEBACKGROUNDDRAWABLE, new Class[]{LocationDirectionCell.class}, new String[]{"frameLayout"}, null, null, null, Theme.key_featuredStickers_addButton));
+//        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_USEBACKGROUNDDRAWABLE | ThemeDescription.FLAG_DRAWABLESELECTEDSTATE, new Class[]{LocationDirectionCell.class}, new String[]{"frameLayout"}, null, null, null, Theme.key_featuredStickers_addButtonPressed));
 
         themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_BACKGROUNDFILTER, new Class[]{ShadowSectionCell.class}, null, null, null, Theme.key_windowBackgroundGrayShadow));
         themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_BACKGROUNDFILTER | ThemeDescription.FLAG_CELLBACKGROUNDCOLOR, new Class[]{ShadowSectionCell.class}, null, null, null, Theme.key_windowBackgroundGray));
@@ -1664,16 +1664,16 @@ public class ChatAttachAlertLocationLayout extends ChatAttachAlert.AttachAlertLa
         themeDescriptions.add(new ThemeDescription(searchListView, 0, new Class[]{LocationCell.class}, new String[]{"nameTextView"}, null, null, null, Theme.key_windowBackgroundWhiteBlackText));
         themeDescriptions.add(new ThemeDescription(searchListView, 0, new Class[]{LocationCell.class}, new String[]{"addressTextView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText3));
 
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{SharingLiveLocationCell.class}, new String[]{"nameTextView"}, null, null, null, Theme.key_windowBackgroundWhiteBlackText));
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{SharingLiveLocationCell.class}, new String[]{"distanceTextView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText2));
-
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{LocationLoadingCell.class}, new String[]{"progressBar"}, null, null, null, Theme.key_progressCircle));
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{LocationLoadingCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText3));
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{LocationLoadingCell.class}, new String[]{"imageView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText3));
-
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{LocationPoweredCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText3));
-        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_IMAGECOLOR, new Class[]{LocationPoweredCell.class}, new String[]{"imageView"}, null, null, null, Theme.key_dialogEmptyImage));
-        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{LocationPoweredCell.class}, new String[]{"textView2"}, null, null, null, Theme.key_dialogEmptyText));
+//        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{SharingLiveLocationCell.class}, new String[]{"nameTextView"}, null, null, null, Theme.key_windowBackgroundWhiteBlackText));
+//        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{SharingLiveLocationCell.class}, new String[]{"distanceTextView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText2));
+//
+//        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{LocationLoadingCell.class}, new String[]{"progressBar"}, null, null, null, Theme.key_progressCircle));
+//        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{LocationLoadingCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText3));
+//        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{LocationLoadingCell.class}, new String[]{"imageView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText3));
+//
+//        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{LocationPoweredCell.class}, new String[]{"textView"}, null, null, null, Theme.key_windowBackgroundWhiteGrayText3));
+//        themeDescriptions.add(new ThemeDescription(listView, ThemeDescription.FLAG_IMAGECOLOR, new Class[]{LocationPoweredCell.class}, new String[]{"imageView"}, null, null, null, Theme.key_dialogEmptyImage));
+//        themeDescriptions.add(new ThemeDescription(listView, 0, new Class[]{LocationPoweredCell.class}, new String[]{"textView2"}, null, null, null, Theme.key_dialogEmptyText));
 
         return themeDescriptions;
     }

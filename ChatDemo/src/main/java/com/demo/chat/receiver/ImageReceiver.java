@@ -1672,7 +1672,7 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
         return null;
     }
 
-    protected int getTag(int type) {
+    public int getTag(int type) {
         if (type == TYPE_THUMB) {
             return thumbTag;
         } else if (type == TYPE_MEDIA) {
@@ -1682,7 +1682,7 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
         }
     }
 
-    protected void setTag(int value, int type) {
+    public void setTag(int value, int type) {
         if (type == TYPE_THUMB) {
             thumbTag = value;
         } else if (type == TYPE_MEDIA) {
@@ -1700,7 +1700,7 @@ public class ImageReceiver implements NotificationCenter.NotificationCenterDeleg
         return param;
     }
 
-    protected boolean setImageBitmapByKey(Drawable drawable, String key, int type, boolean memCache, int guid) {
+    public boolean setImageBitmapByKey(Drawable drawable, String key, int type, boolean memCache, int guid) {
         if (drawable == null || key == null || currentGuid != guid) {
             return false;
         }

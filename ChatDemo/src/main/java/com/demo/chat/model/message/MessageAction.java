@@ -37,11 +37,20 @@ public class MessageAction {
 //    public PhoneCallDiscardReason reason;
 
     public boolean isChatEditPhoto(){return false;}
+    public boolean isLoginUnknownLocation(){return false;}
     public boolean isSecureValuesSent(){return false;}
     public boolean isEmpty(){return false;}
     public boolean isChatCreate(){return false;}
     public boolean isChatDeleteUser(){return false;}
     public boolean isChatAddUser(){return false;}
     public boolean isPinMessage(){return false;}
+    public boolean isScreenshotTaken(){return false;}
+    public boolean isChatEditTitle(){return false;}
+    public boolean isChatDeletePhoto(){return false;}
+    public boolean isUserJoined(){return false;}
+    public boolean isPhoneCall(){return false;}
+    public boolean isContactSignUp(){return false;}
+    public boolean isChatJoinedByLink(){return false;}
     public boolean isUserUpdatedPhoto(){return false;}
+    public boolean isHistoryClear(){return false;}
 }

@@ -5,15 +5,13 @@ import android.util.SparseArray;
 import com.demo.chat.PhoneFormat.PhoneFormat;
 import com.demo.chat.SQLite.SQLiteCursor;
 import com.demo.chat.SQLite.SQLitePreparedStatement;
-import com.demo.chat.controller.ConnectionsManager;
-import com.demo.chat.controller.ContactsController;
-import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.MessagesStorage;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.model.Chat;
 import com.demo.chat.model.User;
-import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.UserChat;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,14 +54,14 @@ public class SearchAdapterHelper {
     private int reqId = 0;
     private int lastReqId;
     private String lastFoundUsername = null;
-    private ArrayList<TLObject> localServerSearch = new ArrayList<>();
-    private ArrayList<TLObject> globalSearch = new ArrayList<>();
-    private SparseArray<TLObject> globalSearchMap = new SparseArray<>();
-    private ArrayList<TLObject> groupSearch = new ArrayList<>();
-    private SparseArray<TLObject> groupSearchMap = new SparseArray<>();
-    private SparseArray<TLObject> phoneSearchMap = new SparseArray<>();
+    private ArrayList<UserChat> localServerSearch = new ArrayList<>();
+    private ArrayList<UserChat> globalSearch = new ArrayList<>();
+    private SparseArray<UserChat> globalSearchMap = new SparseArray<>();
+    private ArrayList<UserChat> groupSearch = new ArrayList<>();
+    private SparseArray<UserChat> groupSearchMap = new SparseArray<>();
+    private SparseArray<UserChat> phoneSearchMap = new SparseArray<>();
     private ArrayList<Object> phonesSearch = new ArrayList<>();
-    private ArrayList<TLObject> localSearchResults;
+    private ArrayList<UserChat> localSearchResults;
 
     private int currentAccount = UserConfig.selectedAccount;
 
@@ -79,7 +77,7 @@ public class SearchAdapterHelper {
     private boolean hashtagsLoadedFromDb = false;
 
     protected static final class DialogSearchResult {
-        public TLObject object;
+        public UserChat object;
         public int date;
         public CharSequence name;
     }
@@ -283,26 +281,26 @@ public class SearchAdapterHelper {
             phonesSearch.clear();
             phoneSearchMap.clear();
             String phone = PhoneFormat.stripExceptNumbers(query);
-            ArrayList<TLRPC.TL_contact> arrayList = ContactsController.getInstance(currentAccount).contacts;
-            boolean hasFullMatch = false;
-            for (int a = 0, N = arrayList.size(); a < N; a++) {
-                TLRPC.TL_contact contact = arrayList.get(a);
-                User user = MessagesController.getInstance(currentAccount).getUser(contact.user_id);
-                if (user == null) {
-                    continue;
-                }
-                if (user.phone != null && user.phone.startsWith(phone)) {
-                    if (!hasFullMatch) {
-                        hasFullMatch = user.phone.length() == phone.length();
-                    }
-                    phonesSearch.add(user);
-                    phoneSearchMap.put(user.id, user);
-                }
-            }
-            if (!hasFullMatch) {
-                phonesSearch.add("section");
-                phonesSearch.add(phone);
-            }
+//            ArrayList<TLRPC.TL_contact> arrayList = ContactsController.getInstance(currentAccount).contacts;
+//            boolean hasFullMatch = false;
+//            for (int a = 0, N = arrayList.size(); a < N; a++) {
+//                TLRPC.TL_contact contact = arrayList.get(a);
+//                User user = MessagesController.getInstance(currentAccount).getUser(contact.user_id);
+//                if (user == null) {
+//                    continue;
+//                }
+//                if (user.phone != null && user.phone.startsWith(phone)) {
+//                    if (!hasFullMatch) {
+//                        hasFullMatch = user.phone.length() == phone.length();
+//                    }
+//                    phonesSearch.add(user);
+//                    phoneSearchMap.put(user.id, user);
+//                }
+//            }
+//            if (!hasFullMatch) {
+//                phonesSearch.add("section");
+//                phonesSearch.add(phone);
+//            }
             delegate.onDataSetChanged(searchId);
         }
     }
@@ -351,14 +349,14 @@ public class SearchAdapterHelper {
         return false;
     }
 
-    public void mergeResults(ArrayList<TLObject> localResults) {
+    public void mergeResults(ArrayList<UserChat> localResults) {
         localSearchResults = localResults;
         if (globalSearchMap.size() == 0 || localResults == null) {
             return;
         }
         int count = localResults.size();
         for (int a = 0; a < count; a++) {
-            TLObject obj = localResults.get(a);
+            UserChat obj = localResults.get(a);
             if (obj instanceof User) {
                 User user = (User) obj;
                 User u = (User) globalSearchMap.get(user.id);
@@ -367,7 +365,7 @@ public class SearchAdapterHelper {
                     localServerSearch.remove(u);
                     globalSearchMap.remove(u.id);
                 }
-                TLObject participant = groupSearchMap.get(user.id);
+                UserChat participant = groupSearchMap.get(user.id);
                 if (participant != null) {
                     groupSearch.remove(participant);
                     groupSearchMap.remove(user.id);
@@ -377,9 +375,9 @@ public class SearchAdapterHelper {
                     phonesSearch.remove(object);
                     phoneSearchMap.remove(user.id);
                 }
-            } else if (obj instanceof TLRPC.Chat) {
-                TLRPC.Chat chat = (TLRPC.Chat) obj;
-                TLRPC.Chat c = (TLRPC.Chat) globalSearchMap.get(-chat.id);
+            } else if (obj instanceof Chat) {
+                Chat chat = (Chat) obj;
+                Chat c = (Chat) globalSearchMap.get(-chat.id);
                 if (c != null) {
                     globalSearch.remove(c);
                     localServerSearch.remove(c);
@@ -487,7 +485,7 @@ public class SearchAdapterHelper {
         }
     }
 
-    public ArrayList<TLObject> getGlobalSearch() {
+    public ArrayList<UserChat> getGlobalSearch() {
         return globalSearch;
     }
 
@@ -495,11 +493,11 @@ public class SearchAdapterHelper {
         return phonesSearch;
     }
 
-    public ArrayList<TLObject> getLocalServerSearch() {
+    public ArrayList<UserChat> getLocalServerSearch() {
         return localServerSearch;
     }
 
-    public ArrayList<TLObject> getGroupSearch() {
+    public ArrayList<UserChat> getGroupSearch() {
         return groupSearch;
     }
 

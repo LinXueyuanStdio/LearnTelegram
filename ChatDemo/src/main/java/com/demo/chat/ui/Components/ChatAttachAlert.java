@@ -2216,9 +2216,10 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
                     position -= buttonsCount;
                     AttachBotButton child = (AttachBotButton) holder.itemView;
                     child.setTag(position);
-                    int user_id = MediaDataController.getInstance(currentAccount).inlineBots.get(position).peer.user_id;
-                    User user = MessagesController.getInstance(currentAccount).getUser(user_id);
-                    child.setUser(user);
+                    //TODO
+//                    int user_id = MediaDataController.getInstance(currentAccount).inlineBots.get(position).peer.user_id;
+//                    User user = MessagesController.getInstance(currentAccount).getUser(user_id);
+//                    child.setUser(user);
                     break;
             }
         }

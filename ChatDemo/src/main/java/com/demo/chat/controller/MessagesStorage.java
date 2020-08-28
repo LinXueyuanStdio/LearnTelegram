@@ -2622,7 +2622,6 @@ public class MessagesStorage extends BaseController {
                 final ArrayList<MessageObject> pushMessages = new ArrayList<>();
                 final ArrayList<User> users = new ArrayList<>();
                 final ArrayList<Chat> chats = new ArrayList<>();
-                final ArrayList<EncryptedChat> encryptedChats = new ArrayList<>();
                 int maxDate = 0;
                 if (ids.length() > 0) {
                     cursor = database.queryFinalized("SELECT read_state, data, send_state, mid, date, uid, replydata FROM messages WHERE uid IN (" + ids.toString() + ") AND out = 0 AND read_state IN(0,2) ORDER BY date DESC LIMIT 50");
@@ -2789,7 +2788,7 @@ public class MessagesStorage extends BaseController {
                     }
                 }
                 Collections.reverse(messages);
-                AndroidUtilities.runOnUIThread(() -> getNotificationsController().processLoadedUnreadMessages(pushDialogs, messages, pushMessages, users, chats, encryptedChats));
+                AndroidUtilities.runOnUIThread(() -> getNotificationsController().processLoadedUnreadMessages(pushDialogs, messages, pushMessages, users, chats));
             } catch (Exception e) {
                 FileLog.e(e);
             }

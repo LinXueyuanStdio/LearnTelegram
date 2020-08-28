@@ -177,7 +177,8 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                             LocationController.getInstance(a).removeAllLocationSharings();
                         }
                     } else {
-                        LocationController.getInstance(fragment.getCurrentAccount()).removeSharingLocation(((ChatActivity) fragment).getDialogId());
+                        //TODO
+//                        LocationController.getInstance(fragment.getCurrentAccount()).removeSharingLocation(((ChatActivity) fragment).getDialogId());
                     }
                 });
                 builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
@@ -232,24 +233,26 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                 if (fragment instanceof ChatActivity) {
                     did = ((ChatActivity) fragment).getDialogId();
                     account = fragment.getCurrentAccount();
-                } else if (LocationController.getLocationsCount() == 1) {
-                    for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-                        ArrayList<LocationController.SharingLocationInfo> arrayList = LocationController.getInstance(a).sharingLocationsUI;
-                        if (!arrayList.isEmpty()) {
-                            LocationController.SharingLocationInfo info = LocationController.getInstance(a).sharingLocationsUI.get(0);
-                            did = info.did;
-                            account = info.messageObject.currentAccount;
-                            break;
-                        }
-                    }
+                    //TODO
+//                } else if (LocationController.getLocationsCount() == 1) {
+//                    for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+//                        ArrayList<LocationController.SharingLocationInfo> arrayList = LocationController.getInstance(a).sharingLocationsUI;
+//                        if (!arrayList.isEmpty()) {
+//                            LocationController.SharingLocationInfo info = LocationController.getInstance(a).sharingLocationsUI.get(0);
+//                            did = info.did;
+//                            account = info.messageObject.currentAccount;
+//                            break;
+//                        }
+//                    }
                 } else {
                     did = 0;
                 }
-                if (did != 0) {
-                    openSharingLocation(LocationController.getInstance(account).getSharingLocationInfo(did));
-                } else {
-                    fragment.showDialog(new SharingLocationsAlert(getContext(), this::openSharingLocation));
-                }
+                //TODO
+//                if (did != 0) {
+//                    openSharingLocation(LocationController.getInstance(account).getSharingLocationInfo(did));
+//                } else {
+//                    fragment.showDialog(new SharingLocationsAlert(getContext(), this::openSharingLocation));
+//                }
             }
         });
     }
@@ -292,11 +295,12 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
     private void checkVisibility() {
         boolean show = false;
         if (isLocation) {
-            if (fragment instanceof DialogsActivity) {
-                show = LocationController.getLocationsCount() != 0;
-            } else {
-                show = LocationController.getInstance(fragment.getCurrentAccount()).isSharingLocation(((ChatActivity) fragment).getDialogId());
-            }
+            //TODO
+//            if (fragment instanceof DialogsActivity) {
+//                show = LocationController.getLocationsCount() != 0;
+//            } else {
+//                show = LocationController.getInstance(fragment.getCurrentAccount()).isSharingLocation(((ChatActivity) fragment).getDialogId());
+//            }
         } else {
             MessageObject messageObject = MediaController.getInstance().getPlayingMessageObject();
             if (messageObject != null && messageObject.getId() != 0) {
@@ -433,7 +437,7 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
         } else if (id == NotificationCenter.messagePlayingDidStart || id == NotificationCenter.messagePlayingPlayStateChanged || id == NotificationCenter.messagePlayingDidReset || id == NotificationCenter.didEndCall) {
             checkPlayer(false);
         } else if (id == NotificationCenter.didStartedCall) {
-            checkCall(false);
+//            checkCall(false);
         } else if (id == NotificationCenter.messagePlayingSpeedChanged) {
             updatePlaybackButton();
         }
@@ -446,12 +450,13 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
                 create = true;
             }
         }
-        boolean show;
-        if (fragment instanceof DialogsActivity) {
-            show = LocationController.getLocationsCount() != 0;
-        } else {
-            show = LocationController.getInstance(fragment.getCurrentAccount()).isSharingLocation(((ChatActivity) fragment).getDialogId());
-        }
+        boolean show = true;
+        //TODO
+//        if (fragment instanceof DialogsActivity) {
+//            show = LocationController.getLocationsCount() != 0;
+//        } else {
+//            show = LocationController.getInstance(fragment.getCurrentAccount()).isSharingLocation(((ChatActivity) fragment).getDialogId());
+//        }
         if (!show) {
             lastLocationSharingCount = -1;
             AndroidUtilities.cancelRunOnUIThread(checkLocationRunnable);
@@ -557,58 +562,58 @@ public class FragmentContextView extends FrameLayout implements NotificationCent
         ChatActivity chatActivity = (ChatActivity) fragment;
         long dialogId = chatActivity.getDialogId();
         int currentAccount = chatActivity.getCurrentAccount();
-        ArrayList<Message> messages = LocationController.getInstance(currentAccount).locationsCache.get(dialogId);
-        if (!firstLocationsLoaded) {
-            LocationController.getInstance(currentAccount).loadLiveLocations(dialogId);
-            firstLocationsLoaded = true;
-        }
+//        ArrayList<Message> messages = LocationController.getInstance(currentAccount).locationsCache.get(dialogId);
+//        if (!firstLocationsLoaded) {
+//            LocationController.getInstance(currentAccount).loadLiveLocations(dialogId);
+//            firstLocationsLoaded = true;
+//        }
 
         int locationSharingCount = 0;
         User notYouUser = null;
-        if (messages != null) {
-            int currentUserId = UserConfig.getInstance(currentAccount).getClientUserId();
-            int date = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
-            for (int a = 0; a < messages.size(); a++) {
-                Message message = messages.get(a);
-                if (message.media == null) {
-                    continue;
-                }
-                if (message.date + message.media.period > date) {
-                    if (notYouUser == null && message.from_id != currentUserId) {
-                        notYouUser = MessagesController.getInstance(currentAccount).getUser(message.from_id);
-                    }
-                    locationSharingCount++;
-                }
-            }
-        }
+//        if (messages != null) {
+//            int currentUserId = UserConfig.getInstance(currentAccount).getClientUserId();
+//            int date = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
+//            for (int a = 0; a < messages.size(); a++) {
+//                Message message = messages.get(a);
+//                if (message.media == null) {
+//                    continue;
+//                }
+//                if (message.date + message.media.period > date) {
+//                    if (notYouUser == null && message.from_id != currentUserId) {
+//                        notYouUser = MessagesController.getInstance(currentAccount).getUser(message.from_id);
+//                    }
+//                    locationSharingCount++;
+//                }
+//            }
+//        }
         if (lastLocationSharingCount == locationSharingCount) {
             return;
         }
         lastLocationSharingCount = locationSharingCount;
 
         String liveLocation = LocaleController.getString("LiveLocationContext", R.string.LiveLocationContext);
-        String fullString;
+        String fullString = "";
         if (locationSharingCount == 0) {
             fullString = liveLocation;
         } else {
             int otherSharingCount = locationSharingCount - 1;
-            if (LocationController.getInstance(currentAccount).isSharingLocation(dialogId)) {
-                if (otherSharingCount != 0) {
-                    if (otherSharingCount == 1 && notYouUser != null) {
-                        fullString = String.format("%1$s - %2$s", liveLocation, LocaleController.formatString("SharingYouAndOtherName", R.string.SharingYouAndOtherName, UserObject.getFirstName(notYouUser)));
-                    } else {
-                        fullString = String.format("%1$s - %2$s %3$s", liveLocation, LocaleController.getString("ChatYourSelfName", R.string.ChatYourSelfName), LocaleController.formatPluralString("AndOther", otherSharingCount));
-                    }
-                } else {
-                    fullString = String.format("%1$s - %2$s", liveLocation, LocaleController.getString("ChatYourSelfName", R.string.ChatYourSelfName));
-                }
-            } else {
-                if (otherSharingCount != 0) {
-                    fullString = String.format("%1$s - %2$s %3$s", liveLocation, UserObject.getFirstName(notYouUser), LocaleController.formatPluralString("AndOther", otherSharingCount));
-                } else {
-                    fullString = String.format("%1$s - %2$s", liveLocation, UserObject.getFirstName(notYouUser));
-                }
-            }
+//            if (LocationController.getInstance(currentAccount).isSharingLocation(dialogId)) {
+//                if (otherSharingCount != 0) {
+//                    if (otherSharingCount == 1 && notYouUser != null) {
+//                        fullString = String.format("%1$s - %2$s", liveLocation, LocaleController.formatString("SharingYouAndOtherName", R.string.SharingYouAndOtherName, UserObject.getFirstName(notYouUser)));
+//                    } else {
+//                        fullString = String.format("%1$s - %2$s %3$s", liveLocation, LocaleController.getString("ChatYourSelfName", R.string.ChatYourSelfName), LocaleController.formatPluralString("AndOther", otherSharingCount));
+//                    }
+//                } else {
+//                    fullString = String.format("%1$s - %2$s", liveLocation, LocaleController.getString("ChatYourSelfName", R.string.ChatYourSelfName));
+//                }
+//            } else {
+//                if (otherSharingCount != 0) {
+//                    fullString = String.format("%1$s - %2$s %3$s", liveLocation, UserObject.getFirstName(notYouUser), LocaleController.formatPluralString("AndOther", otherSharingCount));
+//                } else {
+//                    fullString = String.format("%1$s - %2$s", liveLocation, UserObject.getFirstName(notYouUser));
+//                }
+//            }
         }
         if (fullString.equals(lastString)) {
             return;

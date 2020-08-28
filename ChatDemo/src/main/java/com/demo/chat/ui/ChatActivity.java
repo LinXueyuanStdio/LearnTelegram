@@ -279,7 +279,7 @@ public class ChatActivity extends BaseFragment
     private FrameLayout progressView;
     private View progressView2;
     private FrameLayout bottomOverlay;
-    protected ChatActivityEnterView chatActivityEnterView;
+    public ChatActivityEnterView chatActivityEnterView;
     int chatActivityEnterViewAnimateFromTop;
     private View timeItem2;
     private ActionBarMenuItem attachItem;
@@ -506,7 +506,7 @@ public class ChatActivity extends BaseFragment
 
     private SparseArray<MessageObject>[] messagesDict = new SparseArray[]{new SparseArray<>(), new SparseArray<>()};
     private HashMap<String, ArrayList<MessageObject>> messagesByDays = new HashMap<>();
-    protected ArrayList<MessageObject> messages = new ArrayList<>();
+    public ArrayList<MessageObject> messages = new ArrayList<>();
     private LongSparseArray<MessageObject.GroupedMessages> groupedMessagesMap = new LongSparseArray<>();
     private int[] maxMessageId = new int[]{Integer.MAX_VALUE, Integer.MAX_VALUE};
     private int[] minMessageId = new int[]{Integer.MIN_VALUE, Integer.MIN_VALUE};
@@ -5593,7 +5593,7 @@ public class ChatActivity extends BaseFragment
                 if (ChatObject.isChannel(currentChat) && !currentChat.isForbidden()) {
                     if (ChatObject.isNotInChat(currentChat)) {
                         showBottomOverlayProgress(true, true);
-                        getMessagesController().addUserToChat(currentChat.id, getUserConfig().getCurrentUser(), null, 0, null, ChatActivity.this, null);
+                        getMessagesController().addUserToChat(currentChat.id, getUserConfig().getCurrentUser(), 0, null, ChatActivity.this, null);
                         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.closeSearchByActiveAction);
 
                         if (hasReportSpam() && reportSpamButton.getTag(R.id.object_tag) != null) {
@@ -6468,7 +6468,7 @@ public class ChatActivity extends BaseFragment
         if (messageObject == null || messageObject.isOut() || !messageObject.isSecretMedia() || messageObject.messageOwner.destroyTime != 0 || messageObject.messageOwner.ttl <= 0) {
             return false;
         }
-        getMessagesController().markMessageAsRead(messageObject.getId(), ChatObject.isChannel(currentChat) ? currentChat.id : 0, null, messageObject.messageOwner.ttl, 0);
+        getMessagesController().markMessageAsRead(messageObject.getId(), ChatObject.isChannel(currentChat) ? currentChat.id : 0, messageObject.messageOwner.ttl, 0);
         messageObject.messageOwner.destroyTime = messageObject.messageOwner.ttl + getConnectionsManager().getCurrentTime();
         return true;
     }

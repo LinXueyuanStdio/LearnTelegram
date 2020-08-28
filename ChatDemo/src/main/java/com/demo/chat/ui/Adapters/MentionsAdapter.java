@@ -685,25 +685,25 @@ public class MentionsAdapter extends RecyclerListView.SelectionAdapter {
             ArrayList<User> newResult = new ArrayList<>();
             final SparseArray<User> newResultsHashMap = new SparseArray<>();
             final SparseArray<User> newMap = new SparseArray<>();
-            ArrayList<TLRPC.TL_topPeer> inlineBots = MediaDataController.getInstance(currentAccount).inlineBots;
-            if (!usernameOnly && needBotContext && dogPostion == 0 && !inlineBots.isEmpty()) {
-                int count = 0;
-                for (int a = 0; a < inlineBots.size(); a++) {
-                    User user = messagesController.getUser(inlineBots.get(a).peer.user_id);
-                    if (user == null) {
-                        continue;
-                    }
-                    if (user.username != null && user.username.length() > 0 && (usernameString.length() > 0 && user.username.toLowerCase().startsWith(usernameString) || usernameString.length() == 0)) {
-                        newResult.add(user);
-                        newResultsHashMap.put(user.id, user);
-                        newMap.put(user.id, user);
-                        count++;
-                    }
-                    if (count == 5) {
-                        break;
-                    }
-                }
-            }
+//            ArrayList<TLRPC.TL_topPeer> inlineBots = MediaDataController.getInstance(currentAccount).inlineBots;
+//            if (!usernameOnly && needBotContext && dogPostion == 0 && !inlineBots.isEmpty()) {
+//                int count = 0;
+//                for (int a = 0; a < inlineBots.size(); a++) {
+//                    User user = messagesController.getUser(inlineBots.get(a).peer.user_id);
+//                    if (user == null) {
+//                        continue;
+//                    }
+//                    if (user.username != null && user.username.length() > 0 && (usernameString.length() > 0 && user.username.toLowerCase().startsWith(usernameString) || usernameString.length() == 0)) {
+//                        newResult.add(user);
+//                        newResultsHashMap.put(user.id, user);
+//                        newMap.put(user.id, user);
+//                        count++;
+//                    }
+//                    if (count == 5) {
+//                        break;
+//                    }
+//                }
+//            }
             final Chat chat;
             if (parentFragment != null) {
                 chat = parentFragment.getCurrentChat();

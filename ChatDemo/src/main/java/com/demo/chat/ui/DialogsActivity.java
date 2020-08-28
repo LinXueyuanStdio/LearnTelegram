@@ -14,7 +14,7 @@ import java.util.ArrayList;
  * @description null
  * @usage null
  */
-public class DialogsActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate{
+public class DialogsActivity extends BaseFragment implements NotificationCenter.NotificationCenterDelegate {
     private DialogsActivityDelegate delegate;
 
     public interface DialogsActivityDelegate {
@@ -24,6 +24,8 @@ public class DialogsActivity extends BaseFragment implements NotificationCenter.
     public void setDelegate(DialogsActivityDelegate delegate) {
         this.delegate = delegate;
     }
+
+    public void setSearchString(String text) {}
 
     public DialogsActivity(Bundle args) {
         super(args);

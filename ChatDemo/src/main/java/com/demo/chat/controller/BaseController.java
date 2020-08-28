@@ -44,10 +44,10 @@ public class BaseController {
     protected final ConnectionsManager getConnectionsManager() {
         return parentAccountInstance.getConnectionsManager();
     }
-//    //位置
-//    protected final LocationController getLocationController() {
-//        return parentAccountInstance.getLocationController();
-//    }
+    //位置
+    protected final LocationController getLocationController() {
+        return parentAccountInstance.getLocationController();
+    }
     //通知
     protected final NotificationsController getNotificationsController() {
         return parentAccountInstance.getNotificationsController();

@@ -20,6 +20,11 @@ import java.util.TimeZone;
  * @usage null
  */
 public class ConnectionsManager extends BaseController {
+    public final static int FileTypePhoto = 0x01000000;
+    public final static int FileTypeVideo = 0x02000000;
+    public final static int FileTypeAudio = 0x03000000;
+    public final static int FileTypeFile = 0x04000000;
+
     private static int lastClassGuid = 1;
 
     public static int generateClassGuid() {

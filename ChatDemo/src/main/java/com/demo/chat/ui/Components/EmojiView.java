@@ -51,7 +51,6 @@ import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.controller.MessagesController;
-import com.demo.chat.controller.MessagesStorage;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Emoji;
@@ -92,7 +91,6 @@ import java.util.List;
 import java.util.Map;
 
 import androidx.annotation.IntDef;
-import androidx.annotation.MainThread;
 import androidx.annotation.NonNull;
 import androidx.core.view.ViewCompat;
 import androidx.recyclerview.widget.GridLayoutManager;
@@ -4606,133 +4604,133 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
 //                }
 //                reqId = 0;
 //            }TODO 取消请求
-
-            lastSearchImageString = query;
-            lastSearchIsEmoji = isEmoji;
-
-            if (progressEmptyView != null) {
-                progressEmptyView.setLoadingState(isEmoji);
-            }
-
-            TLObject object = MessagesController.getInstance(currentAccount).getUserOrChat(MessagesController.getInstance(currentAccount).gifSearchBot);
-            if (!(object instanceof User)) {
-                if (searchUser) {
-                    searchBotUser();
-                    if (!withRecent) {
-                        gifSearchField.progressDrawable.startAnimation();
-                    }
-                }
-                return;
-            }
-            if (!withRecent && TextUtils.isEmpty(offset)) {
-                gifSearchField.progressDrawable.startAnimation();
-            }
-
-            bot = (User) object;
-            final String key = "gif_search_" + query + "_" + offset;
-            final RequestDelegate requestDelegate = (response, error) -> AndroidUtilities.runOnUIThread(() -> processResponse(query, offset, searchUser, isEmoji, cache, key, response));
-
-            if (!cache && !withRecent && isEmoji && TextUtils.isEmpty(offset)) {
-                results.clear();
-                resultsMap.clear();
-                if (gifGridView.getAdapter() != this) {
-                    gifGridView.setAdapter(this);
-                }
-                notifyDataSetChanged();
-                scrollGifsToTop();
-            }
-
-            if (cache && gifCache.containsKey(key)) {
-                processResponse(query, offset, searchUser, isEmoji, true, key, gifCache.get(key));
-                return;
-            }
-
-            if (gifSearchPreloader.isLoading(key)) {
-                return;
-            }
-
-            if (cache) {
-                reqId = -1;
-                MessagesStorage.getInstance(currentAccount).getBotCache(key, requestDelegate);
-            }
+//
+//            lastSearchImageString = query;
+//            lastSearchIsEmoji = isEmoji;
+//
+//            if (progressEmptyView != null) {
+//                progressEmptyView.setLoadingState(isEmoji);
+//            }
+//
+//            TLObject object = MessagesController.getInstance(currentAccount).getUserOrChat(MessagesController.getInstance(currentAccount).gifSearchBot);
+//            if (!(object instanceof User)) {
+//                if (searchUser) {
+//                    searchBotUser();
+//                    if (!withRecent) {
+//                        gifSearchField.progressDrawable.startAnimation();
+//                    }
+//                }
+//                return;
+//            }
+//            if (!withRecent && TextUtils.isEmpty(offset)) {
+//                gifSearchField.progressDrawable.startAnimation();
+//            }
+//
+//            bot = (User) object;
+//            final String key = "gif_search_" + query + "_" + offset;
+//            final RequestDelegate requestDelegate = (response, error) -> AndroidUtilities.runOnUIThread(() -> processResponse(query, offset, searchUser, isEmoji, cache, key, response));
+//
+//            if (!cache && !withRecent && isEmoji && TextUtils.isEmpty(offset)) {
+//                results.clear();
+//                resultsMap.clear();
+//                if (gifGridView.getAdapter() != this) {
+//                    gifGridView.setAdapter(this);
+//                }
+//                notifyDataSetChanged();
+//                scrollGifsToTop();
+//            }
+//
+//            if (cache && gifCache.containsKey(key)) {
+//                processResponse(query, offset, searchUser, isEmoji, true, key, gifCache.get(key));
+//                return;
+//            }
+//
+//            if (gifSearchPreloader.isLoading(key)) {
+//                return;
+//            }
+//
+//            if (cache) {
+//                reqId = -1;
+//                MessagesStorage.getInstance(currentAccount).getBotCache(key, requestDelegate);
+//            }
         }
 
-        @MainThread
-        private void processResponse(final String query, final String offset, boolean searchUser, boolean isEmoji, boolean cache, String key, MessagesBotResults response) {
-            if (query == null || !query.equals(lastSearchImageString)) {
-                return;
-            }
-            reqId = 0;
-            if (cache) {
-                search(query, offset, searchUser, isEmoji, false);
-                return;
-            }
-
-            if (!withRecent) {
-                if (TextUtils.isEmpty(offset)) {
-                    results.clear();
-                    resultsMap.clear();
-                    gifSearchField.progressDrawable.stopAnimation();
-                }
-            }
-
-            if (response instanceof MessagesBotResults) {
-                int addedCount = 0;
-                int oldCount = results.size();
-                MessagesBotResults res = (MessagesBotResults) response;
-                if (!gifCache.containsKey(key)) {
-                    gifCache.put(key, res);
-                }
-                if (!cache && res.cache_time != 0) {
-                    MessagesStorage.getInstance(currentAccount).saveBotCache(key, res);
-                }
-                nextSearchOffset = res.next_offset;
-                for (int a = 0; a < res.results.size(); a++) {
-                    BotInlineResult result = res.results.get(a);
-                    if (resultsMap.containsKey(result.id)) {
-                        continue;
-                    }
-                    result.query_id = res.query_id;
-                    results.add(result);
-                    resultsMap.put(result.id, result);
-                    addedCount++;
-                }
-                searchEndReached = oldCount == results.size() || TextUtils.isEmpty(nextSearchOffset);
-                if (addedCount != 0) {
-                    if (!isEmoji || oldCount != 0) {
-                        updateItems();
-                        if (withRecent) {
-                            if (oldCount != 0) {
-                                notifyItemChanged(recentItemsCount + 1 + oldCount);
-                                notifyItemRangeInserted(recentItemsCount + 1 + oldCount + 1, addedCount);
-                            } else {
-                                notifyItemRangeInserted(recentItemsCount + 1, addedCount + 1);
-                            }
-                        } else {
-                            if (oldCount != 0) {
-                                notifyItemChanged(oldCount);
-                            }
-                            notifyItemRangeInserted(oldCount + 1, addedCount);
-                        }
-                    } else {
-                        notifyDataSetChanged();
-                    }
-                } else if (results.isEmpty()) {
-                    notifyDataSetChanged();
-                }
-            } else {
-                notifyDataSetChanged();
-            }
-
-            if (!withRecent) {
-                if (gifGridView.getAdapter() != this) {
-                    gifGridView.setAdapter(this);
-                }
-                if (isEmoji && !TextUtils.isEmpty(query) && TextUtils.isEmpty(offset)) {
-                    scrollGifsToTop();
-                }
-            }
-        }
+//        @MainThread
+//        private void processResponse(final String query, final String offset, boolean searchUser, boolean isEmoji, boolean cache, String key, MessagesBotResults response) {
+//            if (query == null || !query.equals(lastSearchImageString)) {
+//                return;
+//            }
+//            reqId = 0;
+//            if (cache) {
+//                search(query, offset, searchUser, isEmoji, false);
+//                return;
+//            }
+//
+//            if (!withRecent) {
+//                if (TextUtils.isEmpty(offset)) {
+//                    results.clear();
+//                    resultsMap.clear();
+//                    gifSearchField.progressDrawable.stopAnimation();
+//                }
+//            }
+//
+//            if (response instanceof MessagesBotResults) {
+//                int addedCount = 0;
+//                int oldCount = results.size();
+//                MessagesBotResults res = (MessagesBotResults) response;
+//                if (!gifCache.containsKey(key)) {
+//                    gifCache.put(key, res);
+//                }
+//                if (!cache && res.cache_time != 0) {
+//                    MessagesStorage.getInstance(currentAccount).saveBotCache(key, res);
+//                }
+//                nextSearchOffset = res.next_offset;
+//                for (int a = 0; a < res.results.size(); a++) {
+//                    BotInlineResult result = res.results.get(a);
+//                    if (resultsMap.containsKey(result.id)) {
+//                        continue;
+//                    }
+//                    result.query_id = res.query_id;
+//                    results.add(result);
+//                    resultsMap.put(result.id, result);
+//                    addedCount++;
+//                }
+//                searchEndReached = oldCount == results.size() || TextUtils.isEmpty(nextSearchOffset);
+//                if (addedCount != 0) {
+//                    if (!isEmoji || oldCount != 0) {
+//                        updateItems();
+//                        if (withRecent) {
+//                            if (oldCount != 0) {
+//                                notifyItemChanged(recentItemsCount + 1 + oldCount);
+//                                notifyItemRangeInserted(recentItemsCount + 1 + oldCount + 1, addedCount);
+//                            } else {
+//                                notifyItemRangeInserted(recentItemsCount + 1, addedCount + 1);
+//                            }
+//                        } else {
+//                            if (oldCount != 0) {
+//                                notifyItemChanged(oldCount);
+//                            }
+//                            notifyItemRangeInserted(oldCount + 1, addedCount);
+//                        }
+//                    } else {
+//                        notifyDataSetChanged();
+//                    }
+//                } else if (results.isEmpty()) {
+//                    notifyDataSetChanged();
+//                }
+//            } else {
+//                notifyDataSetChanged();
+//            }
+//
+//            if (!withRecent) {
+//                if (gifGridView.getAdapter() != this) {
+//                    gifGridView.setAdapter(this);
+//                }
+//                if (isEmoji && !TextUtils.isEmpty(query) && TextUtils.isEmpty(offset)) {
+//                    scrollGifsToTop();
+//                }
+//            }
+//        }
     }
 
     private class GifSearchPreloader {

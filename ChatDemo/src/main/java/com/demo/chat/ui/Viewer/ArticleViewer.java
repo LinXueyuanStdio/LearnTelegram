@@ -87,7 +87,6 @@ import android.widget.Toast;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
-import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.DownloadController;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
@@ -203,6 +202,7 @@ import static com.demo.chat.model.action.MessageObject.POSITION_FLAG_TOP;
  */
 public class ArticleViewer implements NotificationCenter.NotificationCenterDelegate, GestureDetector.OnGestureListener, GestureDetector.OnDoubleTapListener {
 
+    //region field
     private Activity parentActivity;
     private BaseFragment parentFragment;
     private ArrayList<BlockEmbedCell> createdWebViews = new ArrayList<>();
@@ -322,6 +322,9 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
     int allowAnimationIndex = -1;
 
     private final String BOTTOM_SHEET_VIEW_TAG = "bottomSheet";
+    private int selectedFont = 0;
+    private FontCell[] fontCells = new FontCell[2];
+    //endregion
 
     @SuppressLint("StaticFieldLeak")
     private static volatile ArticleViewer Instance = null;
@@ -343,9 +346,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return Instance != null;
     }
 
-    private int selectedFont = 0;
-    private FontCell[] fontCells = new FontCell[2];
-
+    //region class
     private static class TL_pageBlockRelatedArticlesChild extends PageBlock {
         private Block.TL_pageBlockRelatedArticles parent;
         private int num;
@@ -1153,6 +1154,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             }
         }
     }
+    //endregion
 
     private void createPaint(boolean update) {
         if (quoteLinePaint == null) {
@@ -5119,6 +5121,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         }
     }
 
+    //region views
     private class WebpageAdapter extends RecyclerListView.SelectionAdapter {
 
         private Context context;
@@ -8436,7 +8439,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
 
                 @Override
                 protected boolean hasSiblingChild(int position) {
-                    TLObject message = currentBlock.items.get(currentBlock.items.size() - position - 1);
+                    PageBlock message = currentBlock.items.get(currentBlock.items.size() - position - 1);
                     MessageObject.GroupedMessagePosition pos = group.positions.get(message);
                     if (pos.minX == pos.maxX || pos.minY != pos.maxY || pos.minY == 0) {
                         return false;
@@ -8457,7 +8460,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             gridLayoutManager.setSpanSizeLookup(new GridLayoutManagerFixed.SpanSizeLookup() {
                 @Override
                 public int getSpanSize(int position) {
-                    TLObject message = currentBlock.items.get(currentBlock.items.size() - position - 1);
+                    PageBlock message = currentBlock.items.get(currentBlock.items.size() - position - 1);
                     return group.positions.get(message).spanSize;
                 }
             });
@@ -11481,8 +11484,9 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             textSelectionHelper.draw(canvas, view, i);
         }
     }
+    //endregion
 
-    //------------ photo viewer
+    //region ------------ photo viewer
 
     private static class LinkMovementMethodMy extends LinkMovementMethod {
         @Override
@@ -13439,7 +13443,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
     }
 
     private void onActionClick(boolean download) {
-        TLObject media = getMedia(photoAdapter, currentIndex);
+        Media media = getMedia(photoAdapter, currentIndex);
         if (!(media instanceof Document) || currentFileNames[0] == null) {
             return;
         }
@@ -13626,4 +13630,5 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         object.clipTopAddition = currentHeaderHeight;
         return object;
     }
+    //endregion
 }

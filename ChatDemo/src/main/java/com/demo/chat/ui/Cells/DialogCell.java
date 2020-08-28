@@ -33,12 +33,13 @@ import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.Emoji;
 import com.demo.chat.messager.FileLog;
+import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.model.Chat;
-import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
-import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.action.MessageObject;
+import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.small.DraftMessage;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.receiver.ImageReceiver;
@@ -46,7 +47,9 @@ import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Components.AvatarDrawable;
 import com.demo.chat.ui.Components.CheckBox2;
 import com.demo.chat.ui.Components.CubicBezierInterpolator;
+import com.demo.chat.ui.Components.PullForegroundDrawable;
 import com.demo.chat.ui.Components.RLottieDrawable;
+import com.demo.chat.ui.Components.StaticLayoutEx;
 
 /**
  * @author 林学渊
@@ -155,7 +158,6 @@ public class DialogCell extends BaseCell {
 
     private User user;
     private Chat chat;
-    private TLRPC.EncryptedChat encryptedChat;
     private CharSequence lastPrintString;
     private DraftMessage draftMessage;
 
@@ -265,25 +267,6 @@ public class DialogCell extends BaseCell {
         }
     }
 
-    public void setDialog(TLRPC.Dialog dialog, int type, int folder) {
-        currentDialogId = dialog.id;
-        isDialogCell = true;
-        if (dialog instanceof TLRPC.TL_dialogFolder) {
-            TLRPC.TL_dialogFolder dialogFolder = (TLRPC.TL_dialogFolder) dialog;
-            currentDialogFolderId = dialogFolder.folder.id;
-            if (archivedChatsDrawable != null) {
-                archivedChatsDrawable.setCell(this);
-            }
-        } else {
-            currentDialogFolderId = 0;
-        }
-        dialogsType = type;
-        folderId = folder;
-        messageId = 0;
-        update(0);
-        checkOnline();
-    }
-
     public void setDialogIndex(int i) {
         index = i;
     }
@@ -296,7 +279,10 @@ public class DialogCell extends BaseCell {
     }
 
     private void checkOnline() {
-        boolean isOnline = user != null && !user.self && (user.status != null && user.status.expires > ConnectionsManager.getInstance(currentAccount).getCurrentTime() || MessagesController.getInstance(currentAccount).onlinePrivacy.containsKey(user.id));
+        boolean isOnline = user != null
+                && !user.self
+                && (user.status != null
+                && user.status.expires > ConnectionsManager.getInstance(currentAccount).getCurrentTime());
         onlineProgress = isOnline ? 1.0f : 0.0f;
     }
 
@@ -404,51 +390,51 @@ public class DialogCell extends BaseCell {
     }
 
     private CharSequence formatArchivedDialogNames() {
-        ArrayList<TLRPC.Dialog> dialogs = MessagesController.getInstance(currentAccount).getDialogs(currentDialogFolderId);
-        currentDialogFolderDialogsCount = dialogs.size();
+//        ArrayList<TLRPC.Dialog> dialogs = MessagesController.getInstance(currentAccount).getDialogs(currentDialogFolderId);
+//        currentDialogFolderDialogsCount = dialogs.size();
         SpannableStringBuilder builder = new SpannableStringBuilder();
-        for (int a = 0, N = dialogs.size(); a < N; a++) {
-            TLRPC.Dialog dialog = dialogs.get(a);
-            User currentUser = null;
-            Chat currentChat = null;
-            if (DialogObject.isSecretDialogId(dialog.id)) {
-                TLRPC.EncryptedChat encryptedChat = MessagesController.getInstance(currentAccount).getEncryptedChat((int) (dialog.id >> 32));
-                if (encryptedChat != null) {
-                    currentUser = MessagesController.getInstance(currentAccount).getUser(encryptedChat.user_id);
-                }
-            } else {
-                int lowerId = (int) dialog.id;
-                if (lowerId > 0) {
-                    currentUser = MessagesController.getInstance(currentAccount).getUser(lowerId);
-                } else {
-                    currentChat = MessagesController.getInstance(currentAccount).getChat(-lowerId);
-                }
-            }
-            String title;
-            if (currentChat != null) {
-                title = currentChat.title.replace('\n', ' ');
-            } else if (currentUser != null) {
-                if (UserObject.isDeleted(currentUser)) {
-                    title = LocaleController.getString("HiddenName", R.string.HiddenName);
-                } else {
-                    title = UserObject.formatName(currentUser.first_name, currentUser.last_name).replace('\n', ' ');
-                }
-            } else {
-                continue;
-            }
-            if (builder.length() > 0) {
-                builder.append(", ");
-            }
-            int boldStart = builder.length();
-            int boldEnd = boldStart + title.length();
-            builder.append(title);
-            if (dialog.unread_count > 0) {
-                builder.setSpan(new TypefaceSpan(AndroidUtilities.getTypeface("fonts/rmedium.ttf"), 0, Theme.getColor(Theme.key_chats_nameArchived)), boldStart, boldEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
-            }
-            if (builder.length() > 150) {
-                break;
-            }
-        }
+//        for (int a = 0, N = dialogs.size(); a < N; a++) {
+//            TLRPC.Dialog dialog = dialogs.get(a);
+//            User currentUser = null;
+//            Chat currentChat = null;
+//            if (DialogObject.isSecretDialogId(dialog.id)) {
+//                TLRPC.EncryptedChat encryptedChat = MessagesController.getInstance(currentAccount).getEncryptedChat((int) (dialog.id >> 32));
+//                if (encryptedChat != null) {
+//                    currentUser = MessagesController.getInstance(currentAccount).getUser(encryptedChat.user_id);
+//                }
+//            } else {
+//                int lowerId = (int) dialog.id;
+//                if (lowerId > 0) {
+//                    currentUser = MessagesController.getInstance(currentAccount).getUser(lowerId);
+//                } else {
+//                    currentChat = MessagesController.getInstance(currentAccount).getChat(-lowerId);
+//                }
+//            }
+//            String title;
+//            if (currentChat != null) {
+//                title = currentChat.title.replace('\n', ' ');
+//            } else if (currentUser != null) {
+//                if (UserObject.isDeleted(currentUser)) {
+//                    title = LocaleController.getString("HiddenName", R.string.HiddenName);
+//                } else {
+//                    title = UserObject.formatName(currentUser.first_name, currentUser.last_name).replace('\n', ' ');
+//                }
+//            } else {
+//                continue;
+//            }
+//            if (builder.length() > 0) {
+//                builder.append(", ");
+//            }
+//            int boldStart = builder.length();
+//            int boldEnd = boldStart + title.length();
+//            builder.append(title);
+//            if (dialog.unread_count > 0) {
+//                builder.setSpan(new TypefaceSpan(AndroidUtilities.getTypeface("fonts/rmedium.ttf"), 0, Theme.getColor(Theme.key_chats_nameArchived)), boldStart, boldEnd, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+//            }
+//            if (builder.length() > 150) {
+//                break;
+//            }
+//        }
         return Emoji.replaceEmoji(builder, Theme.dialogs_messagePaint[paintIndex].getFontMetricsInt(), AndroidUtilities.dp(17), false);
     }
 
@@ -645,31 +631,7 @@ public class DialogCell extends BaseCell {
                 }
             }
 
-            if (encryptedChat != null) {
-                if (currentDialogFolderId == 0) {
-                    drawNameLock = true;
-                    if (useForceThreeLines || SharedConfig.useThreeLinesLayout) {
-                        nameLockTop = AndroidUtilities.dp(12.5f);
-                        if (!LocaleController.isRTL) {
-                            nameLockLeft = AndroidUtilities.dp(72 + 6);
-                            nameLeft = AndroidUtilities.dp(72 + 10) + Theme.dialogs_lockDrawable.getIntrinsicWidth();
-                        } else {
-                            nameLockLeft = getMeasuredWidth() - AndroidUtilities.dp(72 + 6) - Theme.dialogs_lockDrawable.getIntrinsicWidth();
-                            nameLeft = AndroidUtilities.dp(22);
-                        }
-                    } else {
-                        nameLockTop = AndroidUtilities.dp(16.5f);
-                        if (!LocaleController.isRTL) {
-                            nameLockLeft = AndroidUtilities.dp(72 + 4);
-                            nameLeft = AndroidUtilities.dp(72 + 8) + Theme.dialogs_lockDrawable.getIntrinsicWidth();
-                        } else {
-                            nameLockLeft = getMeasuredWidth() - AndroidUtilities.dp(72 + 4) - Theme.dialogs_lockDrawable.getIntrinsicWidth();
-                            nameLeft = AndroidUtilities.dp(18);
-                        }
-                    }
-                }
-            } else {
-                if (currentDialogFolderId == 0) {
+            if (currentDialogFolderId == 0) {
                     if (chat != null) {
                         if (chat.scam) {
                             drawScam = true;
@@ -743,7 +705,6 @@ public class DialogCell extends BaseCell {
                         }
                     }
                 }
-            }
 
             int lastDate = lastMessageDate;
             if (lastMessageDate == 0 && message != null) {
@@ -793,31 +754,14 @@ public class DialogCell extends BaseCell {
                         currentMessagePaint = Theme.dialogs_messagePrintingPaint[paintIndex];
                         messageString = LocaleController.getString("HistoryCleared", R.string.HistoryCleared);
                     } else if (message == null) {
-                        if (encryptedChat != null) {
-                            currentMessagePaint = Theme.dialogs_messagePrintingPaint[paintIndex];
-                            if (encryptedChat instanceof TLRPC.TL_encryptedChatRequested) {
-                                messageString = LocaleController.getString("EncryptionProcessing", R.string.EncryptionProcessing);
-                            } else if (encryptedChat instanceof TLRPC.TL_encryptedChatWaiting) {
-                                messageString = LocaleController.formatString("AwaitingEncryption", R.string.AwaitingEncryption, UserObject.getFirstName(user));
-                            } else if (encryptedChat instanceof TLRPC.TL_encryptedChatDiscarded) {
-                                messageString = LocaleController.getString("EncryptionRejected", R.string.EncryptionRejected);
-                            } else if (encryptedChat instanceof TLRPC.TL_encryptedChat) {
-                                if (encryptedChat.admin_id == UserConfig.getInstance(currentAccount).getClientUserId()) {
-                                    messageString = LocaleController.formatString("EncryptedChatStartedOutgoing", R.string.EncryptedChatStartedOutgoing, UserObject.getFirstName(user));
-                                } else {
-                                    messageString = LocaleController.getString("EncryptedChatStartedIncoming", R.string.EncryptedChatStartedIncoming);
-                                }
-                            }
-                        } else {
-                            messageString = "";
-                        }
+                        messageString = "";
                     } else {
                         User fromUser = null;
                         Chat fromChat = null;
                         if (message.isFromUser()) {
                             fromUser = MessagesController.getInstance(currentAccount).getUser(message.messageOwner.from_id);
                         } else {
-                            fromChat = MessagesController.getInstance(currentAccount).getChat(message.messageOwner.to_id.channel_id);
+                            fromChat = MessagesController.getInstance(currentAccount).getChat(message.messageOwner.to_id);
                         }
                         if (dialogsType == 3 && UserObject.isUserSelf(user)) {
                             messageString = LocaleController.getString("SavedMessagesInfo", R.string.SavedMessagesInfo);
@@ -826,18 +770,19 @@ public class DialogCell extends BaseCell {
                         } else if (!useForceThreeLines && !SharedConfig.useThreeLinesLayout && currentDialogFolderId != 0) {
                             checkMessage = false;
                             messageString = formatArchivedDialogNames();
-                        } else if (message.messageOwner instanceof TLRPC.TL_messageService) {
-                            if (ChatObject.isChannel(chat) && (message.messageOwner.action instanceof TLRPC.TL_messageActionHistoryClear ||
-                                    message.messageOwner.action instanceof TLRPC.TL_messageActionChannelMigrateFrom)) {
-                                messageString = "";
-                                showChecks = false;
-                            } else {
-                                messageString = message.messageText;
-                            }
-                            currentMessagePaint = Theme.dialogs_messagePrintingPaint[paintIndex];
+                            //TODO
+//                        } else if (message.messageOwner instanceof TLRPC.TL_messageService) {
+//                            if (ChatObject.isChannel(chat) && (message.messageOwner.action instanceof TLRPC.TL_messageActionHistoryClear ||
+//                                    message.messageOwner.action instanceof TLRPC.TL_messageActionChannelMigrateFrom)) {
+//                                messageString = "";
+//                                showChecks = false;
+//                            } else {
+//                                messageString = message.messageText;
+//                            }
+//                            currentMessagePaint = Theme.dialogs_messagePrintingPaint[paintIndex];
                         } else {
                             boolean needEmoji = true;
-                            if (BuildVars.DEBUG_VERSION && encryptedChat == null && !message.needDrawBluredPreview() && (message.isPhoto() || message.isNewGif() || message.isVideo())) {
+                            if (BuildVars.DEBUG_VERSION && !message.needDrawBluredPreview() && (message.isPhoto() || message.isNewGif() || message.isVideo())) {
                                 PhotoSize smallThumb = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, 40);
                                 PhotoSize bigThumb = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, AndroidUtilities.getPhotoSize());
                                 if (smallThumb == bigThumb) {
@@ -893,14 +838,7 @@ public class DialogCell extends BaseCell {
                                 } else if (message.messageOwner.media != null && !message.isMediaEmpty()) {
                                     currentMessagePaint = Theme.dialogs_messagePrintingPaint[paintIndex];
                                     String innerMessage;
-                                    if (message.messageOwner.media instanceof TLRPC.TL_messageMediaPoll) {
-                                        TLRPC.TL_messageMediaPoll mediaPoll = (TLRPC.TL_messageMediaPoll) message.messageOwner.media;
-                                        if (Build.VERSION.SDK_INT >= 18) {
-                                            innerMessage = String.format("\uD83D\uDCCA \u2068%s\u2069", mediaPoll.poll.question);
-                                        } else {
-                                            innerMessage = String.format("\uD83D\uDCCA %s", mediaPoll.poll.question);
-                                        }
-                                    } else if (message.type == 14) {
+                                    if (message.type == 14) {
                                         if (Build.VERSION.SDK_INT >= 18) {
                                             innerMessage = String.format("\uD83C\uDFA7 \u2068%s - %s\u2069", message.getMusicAuthor(), message.getMusicTitle());
                                         } else {
@@ -945,9 +883,9 @@ public class DialogCell extends BaseCell {
                                     builder.setSpan(new FixedWidthSize(AndroidUtilities.dp(thumbSize + 6)), thumbInsertIndex, thumbInsertIndex + 1, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
                                 }
                             } else {
-                                if (message.messageOwner.media instanceof TLRPC.TL_messageMediaPhoto && message.messageOwner.media.photo instanceof TLRPC.TL_photoEmpty && message.messageOwner.media.ttl_seconds != 0) {
+                                if (message.messageOwner.media.isPhoto() && message.messageOwner.media.photo==null && message.messageOwner.media.ttl_seconds != 0) {
                                     messageString = LocaleController.getString("AttachPhotoExpired", R.string.AttachPhotoExpired);
-                                } else if (message.messageOwner.media instanceof TLRPC.TL_messageMediaDocument && message.messageOwner.media.document instanceof TLRPC.TL_documentEmpty && message.messageOwner.media.ttl_seconds != 0) {
+                                } else if (message.messageOwner.media.isDocument() && message.messageOwner.media.document ==null && message.messageOwner.media.ttl_seconds != 0) {
                                     messageString = LocaleController.getString("AttachVideoExpired", R.string.AttachVideoExpired);
                                 } else if (message.caption != null) {
                                     String emoji;
@@ -1050,7 +988,7 @@ public class DialogCell extends BaseCell {
                     }
                 }
 
-                if (message.isOut() && draftMessage == null && showChecks && !(message.messageOwner.action instanceof TLRPC.TL_messageActionHistoryClear)) {
+                if (message.isOut() && draftMessage == null && showChecks && !(message.messageOwner.action.isHistoryClear())) {
                     if (message.isSending()) {
                         drawCheck1 = false;
                         drawCheck2 = false;
@@ -1079,22 +1017,23 @@ public class DialogCell extends BaseCell {
 
             promoDialog = false;
             MessagesController messagesController = MessagesController.getInstance(currentAccount);
-            if (dialogsType == 0 && messagesController.isPromoDialog(currentDialogId, true)) {
-                drawPinBackground = true;
-                promoDialog = true;
-                if (messagesController.promoDialogType == MessagesController.PROMO_TYPE_PROXY) {
-                    timeString = LocaleController.getString("UseProxySponsor", R.string.UseProxySponsor);
-                } else if (messagesController.promoDialogType == MessagesController.PROMO_TYPE_PSA) {
-                    timeString = LocaleController.getString("PsaType_" + messagesController.promoPsaType);
-                    if (TextUtils.isEmpty(timeString)) {
-                        timeString = LocaleController.getString("PsaTypeDefault", R.string.PsaTypeDefault);
-                    }
-                    if (!TextUtils.isEmpty(messagesController.promoPsaMessage)) {
-                        messageString = messagesController.promoPsaMessage;
-                        hasMessageThumb = false;
-                    }
-                }
-            }
+            //TODO
+//            if (dialogsType == 0 && messagesController.isPromoDialog(currentDialogId, true)) {
+//                drawPinBackground = true;
+//                promoDialog = true;
+//                if (messagesController.promoDialogType == MessagesController.PROMO_TYPE_PROXY) {
+//                    timeString = LocaleController.getString("UseProxySponsor", R.string.UseProxySponsor);
+//                } else if (messagesController.promoDialogType == MessagesController.PROMO_TYPE_PSA) {
+//                    timeString = LocaleController.getString("PsaType_" + messagesController.promoPsaType);
+//                    if (TextUtils.isEmpty(timeString)) {
+//                        timeString = LocaleController.getString("PsaTypeDefault", R.string.PsaTypeDefault);
+//                    }
+//                    if (!TextUtils.isEmpty(messagesController.promoPsaMessage)) {
+//                        messageString = messagesController.promoPsaMessage;
+//                        hasMessageThumb = false;
+//                    }
+//                }
+//            }
 
             if (currentDialogFolderId != 0) {
                 nameString = LocaleController.getString("ArchivedChats", R.string.ArchivedChats);
@@ -1493,50 +1432,50 @@ public class DialogCell extends BaseCell {
         isSelected = value;
     }
 
-    public void checkCurrentDialogIndex(boolean frozen) {
-        ArrayList<TLRPC.Dialog> dialogsArray = DialogsActivity.getDialogsArray(currentAccount, dialogsType, folderId, frozen);
-        if (index < dialogsArray.size()) {
-            TLRPC.Dialog dialog = dialogsArray.get(index);
-            TLRPC.Dialog nextDialog = index + 1 < dialogsArray.size() ? dialogsArray.get(index + 1) : null;
-            TLRPC.DraftMessage newDraftMessage = MediaDataController.getInstance(currentAccount).getDraft(currentDialogId);
-            MessageObject newMessageObject;
-            if (currentDialogFolderId != 0) {
-                newMessageObject = findFolderTopMessage();
-            } else {
-                newMessageObject = MessagesController.getInstance(currentAccount).dialogMessage.get(dialog.id);
-            }
-            if (currentDialogId != dialog.id ||
-                    message != null && message.getId() != dialog.top_message ||
-                    newMessageObject != null && newMessageObject.messageOwner.edit_date != currentEditDate ||
-                    unreadCount != dialog.unread_count ||
-                    mentionCount != dialog.unread_mentions_count ||
-                    markUnread != dialog.unread_mark ||
-                    message != newMessageObject ||
-                    message == null && newMessageObject != null || newDraftMessage != draftMessage || drawPin != dialog.pinned) {
-                boolean dialogChanged = currentDialogId != dialog.id;
-                currentDialogId = dialog.id;
-                if (dialog instanceof TLRPC.TL_dialogFolder) {
-                    TLRPC.TL_dialogFolder dialogFolder = (TLRPC.TL_dialogFolder) dialog;
-                    currentDialogFolderId = dialogFolder.folder.id;
-                } else {
-                    currentDialogFolderId = 0;
-                }
-                if (dialogsType == 7 || dialogsType == 8) {
-                    MessagesController.DialogFilter filter = MessagesController.getInstance(currentAccount).selectedDialogFilter[dialogsType == 8 ? 1 : 0];
-                    fullSeparator = dialog instanceof TLRPC.TL_dialog && nextDialog != null && filter != null && filter.pinnedDialogs.indexOfKey(dialog.id) >= 0 && filter.pinnedDialogs.indexOfKey(nextDialog.id) < 0;
-                    fullSeparator2 = false;
-                } else {
-                    fullSeparator = dialog instanceof TLRPC.TL_dialog && dialog.pinned && nextDialog != null && !nextDialog.pinned;
-                    fullSeparator2 = dialog instanceof TLRPC.TL_dialogFolder && nextDialog != null && !nextDialog.pinned;
-                }
-                update(0);
-                if (dialogChanged) {
-                    reorderIconProgress = drawPin && drawReorder ? 1.0f : 0.0f;
-                }
-                checkOnline();
-            }
-        }
-    }
+//    public void checkCurrentDialogIndex(boolean frozen) {
+//        ArrayList<TLRPC.Dialog> dialogsArray = DialogsActivity.getDialogsArray(currentAccount, dialogsType, folderId, frozen);
+//        if (index < dialogsArray.size()) {
+//            TLRPC.Dialog dialog = dialogsArray.get(index);
+//            TLRPC.Dialog nextDialog = index + 1 < dialogsArray.size() ? dialogsArray.get(index + 1) : null;
+//            TLRPC.DraftMessage newDraftMessage = MediaDataController.getInstance(currentAccount).getDraft(currentDialogId);
+//            MessageObject newMessageObject;
+//            if (currentDialogFolderId != 0) {
+//                newMessageObject = findFolderTopMessage();
+//            } else {
+//                newMessageObject = MessagesController.getInstance(currentAccount).dialogMessage.get(dialog.id);
+//            }
+//            if (currentDialogId != dialog.id ||
+//                    message != null && message.getId() != dialog.top_message ||
+//                    newMessageObject != null && newMessageObject.messageOwner.edit_date != currentEditDate ||
+//                    unreadCount != dialog.unread_count ||
+//                    mentionCount != dialog.unread_mentions_count ||
+//                    markUnread != dialog.unread_mark ||
+//                    message != newMessageObject ||
+//                    message == null && newMessageObject != null || newDraftMessage != draftMessage || drawPin != dialog.pinned) {
+//                boolean dialogChanged = currentDialogId != dialog.id;
+//                currentDialogId = dialog.id;
+//                if (dialog instanceof TLRPC.TL_dialogFolder) {
+//                    TLRPC.TL_dialogFolder dialogFolder = (TLRPC.TL_dialogFolder) dialog;
+//                    currentDialogFolderId = dialogFolder.folder.id;
+//                } else {
+//                    currentDialogFolderId = 0;
+//                }
+//                if (dialogsType == 7 || dialogsType == 8) {
+//                    MessagesController.DialogFilter filter = MessagesController.getInstance(currentAccount).selectedDialogFilter[dialogsType == 8 ? 1 : 0];
+//                    fullSeparator = dialog instanceof TLRPC.TL_dialog && nextDialog != null && filter != null && filter.pinnedDialogs.indexOfKey(dialog.id) >= 0 && filter.pinnedDialogs.indexOfKey(nextDialog.id) < 0;
+//                    fullSeparator2 = false;
+//                } else {
+//                    fullSeparator = dialog instanceof TLRPC.TL_dialog && dialog.pinned && nextDialog != null && !nextDialog.pinned;
+//                    fullSeparator2 = dialog instanceof TLRPC.TL_dialogFolder && nextDialog != null && !nextDialog.pinned;
+//                }
+//                update(0);
+//                if (dialogChanged) {
+//                    reorderIconProgress = drawPin && drawReorder ? 1.0f : 0.0f;
+//                }
+//                checkOnline();
+//            }
+//        }
+//    }
 
     public void animateArchiveAvatar() {
         if (avatarDrawable.getAvatarType() != AvatarDrawable.AVATAR_TYPE_ARCHIVED) {
@@ -1557,20 +1496,20 @@ public class DialogCell extends BaseCell {
     }
 
     private MessageObject findFolderTopMessage() {
-        ArrayList<TLRPC.Dialog> dialogs = DialogsActivity.getDialogsArray(currentAccount, dialogsType, currentDialogFolderId, false);
+//        ArrayList<TLRPC.Dialog> dialogs = DialogsActivity.getDialogsArray(currentAccount, dialogsType, currentDialogFolderId, false);
         MessageObject maxMessage = null;
-        if (!dialogs.isEmpty()) {
-            for (int a = 0, N = dialogs.size(); a < N; a++) {
-                TLRPC.Dialog dialog = dialogs.get(a);
-                MessageObject object = MessagesController.getInstance(currentAccount).dialogMessage.get(dialog.id);
-                if (object != null && (maxMessage == null || object.messageOwner.date > maxMessage.messageOwner.date)) {
-                    maxMessage = object;
-                }
-                if (dialog.pinnedNum == 0 && maxMessage != null) {
-                    break;
-                }
-            }
-        }
+//        if (!dialogs.isEmpty()) {
+//            for (int a = 0, N = dialogs.size(); a < N; a++) {
+//                TLRPC.Dialog dialog = dialogs.get(a);
+//                MessageObject object = MessagesController.getInstance(currentAccount).dialogMessage.get(dialog.id);
+//                if (object != null && (maxMessage == null || object.messageOwner.date > maxMessage.messageOwner.date)) {
+//                    maxMessage = object;
+//                }
+//                if (dialog.pinnedNum == 0 && maxMessage != null) {
+//                    break;
+//                }
+//            }
+//        }
         return maxMessage;
     }
 
@@ -1590,39 +1529,39 @@ public class DialogCell extends BaseCell {
             thumbImage.setImageBitmap((BitmapDrawable) null);
         } else {
             if (isDialogCell) {
-                TLRPC.Dialog dialog = MessagesController.getInstance(currentAccount).dialogs_dict.get(currentDialogId);
-                if (dialog != null) {
-                    if (mask == 0) {
-                        clearingDialog = MessagesController.getInstance(currentAccount).isClearingDialog(dialog.id);
-                        message = MessagesController.getInstance(currentAccount).dialogMessage.get(dialog.id);
-                        lastUnreadState = message != null && message.isUnread();
-                        if (dialog instanceof TLRPC.TL_dialogFolder) {
-                            unreadCount = MessagesStorage.getInstance(currentAccount).getArchiveUnreadCount();
-                            mentionCount = 0;
-                        } else {
-                            unreadCount = dialog.unread_count;
-                            mentionCount = dialog.unread_mentions_count;
-                        }
-                        markUnread = dialog.unread_mark;
-                        currentEditDate = message != null ? message.messageOwner.edit_date : 0;
-                        lastMessageDate = dialog.last_message_date;
-                        if (dialogsType == 7 || dialogsType == 8) {
-                            MessagesController.DialogFilter filter = MessagesController.getInstance(currentAccount).selectedDialogFilter[dialogsType == 8 ? 1 : 0];
-                            drawPin = filter != null && filter.pinnedDialogs.indexOfKey(dialog.id) >= 0;
-                        } else {
-                            drawPin = currentDialogFolderId == 0 && dialog.pinned;
-                        }
-                        if (message != null) {
-                            lastSendState = message.messageOwner.send_state;
-                        }
-                    }
-                } else {
-                    unreadCount = 0;
-                    mentionCount = 0;
-                    currentEditDate = 0;
-                    lastMessageDate = 0;
-                    clearingDialog = false;
-                }
+//                TLRPC.Dialog dialog = MessagesController.getInstance(currentAccount).dialogs_dict.get(currentDialogId);
+//                if (dialog != null) {
+//                    if (mask == 0) {
+//                        clearingDialog = MessagesController.getInstance(currentAccount).isClearingDialog(dialog.id);
+//                        message = MessagesController.getInstance(currentAccount).dialogMessage.get(dialog.id);
+//                        lastUnreadState = message != null && message.isUnread();
+//                        if (dialog instanceof TLRPC.TL_dialogFolder) {
+//                            unreadCount = MessagesStorage.getInstance(currentAccount).getArchiveUnreadCount();
+//                            mentionCount = 0;
+//                        } else {
+//                            unreadCount = dialog.unread_count;
+//                            mentionCount = dialog.unread_mentions_count;
+//                        }
+//                        markUnread = dialog.unread_mark;
+//                        currentEditDate = message != null ? message.messageOwner.edit_date : 0;
+//                        lastMessageDate = dialog.last_message_date;
+//                        if (dialogsType == 7 || dialogsType == 8) {
+//                            MessagesController.DialogFilter filter = MessagesController.getInstance(currentAccount).selectedDialogFilter[dialogsType == 8 ? 1 : 0];
+//                            drawPin = filter != null && filter.pinnedDialogs.indexOfKey(dialog.id) >= 0;
+//                        } else {
+//                            drawPin = currentDialogFolderId == 0 && dialog.pinned;
+//                        }
+//                        if (message != null) {
+//                            lastSendState = message.messageOwner.send_state;
+//                        }
+//                    }
+//                } else {
+//                    unreadCount = 0;
+//                    mentionCount = 0;
+//                    currentEditDate = 0;
+//                    lastMessageDate = 0;
+//                    clearingDialog = false;
+//                }
             } else {
                 drawPin = false;
             }
@@ -1672,25 +1611,25 @@ public class DialogCell extends BaseCell {
                         continueUpdate = true;
                     }
                     if (isDialogCell) {
-                        TLRPC.Dialog dialog = MessagesController.getInstance(currentAccount).dialogs_dict.get(currentDialogId);
-                        int newCount;
-                        int newMentionCount;
-                        if (dialog instanceof TLRPC.TL_dialogFolder) {
-                            newCount = MessagesStorage.getInstance(currentAccount).getArchiveUnreadCount();
-                            newMentionCount = 0;
-                        } else if (dialog != null) {
-                            newCount = dialog.unread_count;
-                            newMentionCount = dialog.unread_mentions_count;
-                        } else {
-                            newCount = 0;
-                            newMentionCount = 0;
-                        }
-                        if (dialog != null && (unreadCount != newCount || markUnread != dialog.unread_mark || mentionCount != newMentionCount)) {
-                            unreadCount = newCount;
-                            mentionCount = newMentionCount;
-                            markUnread = dialog.unread_mark;
-                            continueUpdate = true;
-                        }
+//                        TLRPC.Dialog dialog = MessagesController.getInstance(currentAccount).dialogs_dict.get(currentDialogId);
+//                        int newCount;
+//                        int newMentionCount;
+//                        if (dialog instanceof TLRPC.TL_dialogFolder) {
+//                            newCount = MessagesStorage.getInstance(currentAccount).getArchiveUnreadCount();
+//                            newMentionCount = 0;
+//                        } else if (dialog != null) {
+//                            newCount = dialog.unread_count;
+//                            newMentionCount = dialog.unread_mentions_count;
+//                        } else {
+//                            newCount = 0;
+//                            newMentionCount = 0;
+//                        }
+//                        if (dialog != null && (unreadCount != newCount || markUnread != dialog.unread_mark || mentionCount != newMentionCount)) {
+//                            unreadCount = newCount;
+//                            mentionCount = newMentionCount;
+//                            markUnread = dialog.unread_mark;
+//                            continueUpdate = true;
+//                        }
                     }
                 }
                 if (!continueUpdate && (mask & MessagesController.UPDATE_MASK_SEND_STATE) != 0) {
@@ -1708,7 +1647,6 @@ public class DialogCell extends BaseCell {
 
             user = null;
             chat = null;
-            encryptedChat = null;
 
             long dialogId;
             if (currentDialogFolderId != 0) {
@@ -1730,20 +1668,16 @@ public class DialogCell extends BaseCell {
                 if (lower_id != 0) {
                     if (lower_id < 0) {
                         chat = MessagesController.getInstance(currentAccount).getChat(-lower_id);
-                        if (!isDialogCell && chat != null && chat.migrated_to != null) {
-                            Chat chat2 = MessagesController.getInstance(currentAccount).getChat(chat.migrated_to.channel_id);
-                            if (chat2 != null) {
-                                chat = chat2;
-                            }
-                        }
+//                        if (!isDialogCell && chat != null) {
+//                            Chat chat2 = MessagesController.getInstance(currentAccount).getChat(chat.channel_id);
+//                            if (chat2 != null) {
+//                                chat = chat2;
+//                            }
+//                        }
                     } else {
                         user = MessagesController.getInstance(currentAccount).getUser(lower_id);
                     }
                 } else {
-                    encryptedChat = MessagesController.getInstance(currentAccount).getEncryptedChat(high_id);
-                    if (encryptedChat != null) {
-                        user = MessagesController.getInstance(currentAccount).getUser(encryptedChat.user_id);
-                    }
                 }
                 if (useMeForMyMessages && user != null && message.isOutOwner()) {
                     user = MessagesController.getInstance(currentAccount).getUser(UserConfig.getInstance(currentAccount).clientUserId);
@@ -2015,8 +1949,6 @@ public class DialogCell extends BaseCell {
         if (nameLayout != null) {
             if (currentDialogFolderId != 0) {
                 Theme.dialogs_namePaint[paintIndex].setColor(Theme.dialogs_namePaint[paintIndex].linkColor = Theme.getColor(Theme.key_chats_nameArchived));
-            } else if (encryptedChat != null || customDialog != null && customDialog.type == 2) {
-                Theme.dialogs_namePaint[paintIndex].setColor(Theme.dialogs_namePaint[paintIndex].linkColor = Theme.getColor(Theme.key_chats_secretName));
             } else {
                 Theme.dialogs_namePaint[paintIndex].setColor(Theme.dialogs_namePaint[paintIndex].linkColor = Theme.getColor(Theme.key_chats_name));
             }
@@ -2174,7 +2106,7 @@ public class DialogCell extends BaseCell {
         }
 
         if (user != null && isDialogCell && currentDialogFolderId == 0 && !MessagesController.isSupportUser(user) && !user.bot) {
-            boolean isOnline = !user.self && (user.status != null && user.status.expires > ConnectionsManager.getInstance(currentAccount).getCurrentTime() || MessagesController.getInstance(currentAccount).onlinePrivacy.containsKey(user.id));
+            boolean isOnline = !user.self && (user.status != null && user.status.expires > ConnectionsManager.getInstance(currentAccount).getCurrentTime());
             if (isOnline || onlineProgress != 0) {
                 int top = (int) (avatarImage.getImageY2() - AndroidUtilities.dp(useForceThreeLines || SharedConfig.useThreeLinesLayout ? 6 : 8));
                 int left;
@@ -2383,10 +2315,6 @@ public class DialogCell extends BaseCell {
             sb.append(LocaleController.getString("ArchivedChats", R.string.ArchivedChats));
             sb.append(". ");
         } else {
-            if (encryptedChat != null) {
-                sb.append(LocaleController.getString("AccDescrSecretChat", R.string.AccDescrSecretChat));
-                sb.append(". ");
-            }
             if (user != null) {
                 if (user.bot) {
                     sb.append(LocaleController.getString("Bot", R.string.Bot));
@@ -2435,13 +2363,11 @@ public class DialogCell extends BaseCell {
                 sb.append(". ");
             }
         }
-        if (encryptedChat == null) {
-            sb.append(message.messageText);
-            if (!message.isMediaEmpty()) {
-                if (!TextUtils.isEmpty(message.caption)) {
-                    sb.append(". ");
-                    sb.append(message.caption);
-                }
+        sb.append(message.messageText);
+        if (!message.isMediaEmpty()) {
+            if (!TextUtils.isEmpty(message.caption)) {
+                sb.append(". ");
+                sb.append(message.caption);
             }
         }
         event.setContentDescription(sb.toString());

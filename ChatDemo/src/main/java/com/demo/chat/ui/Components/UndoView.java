@@ -267,7 +267,8 @@ public class UndoView extends FrameLayout {
             currentCancelRunnable = null;
         }
         if (currentAction == ACTION_CLEAR || currentAction == ACTION_DELETE) {
-            MessagesController.getInstance(currentAccount).removeDialogAction(currentDialogId, currentAction == ACTION_CLEAR, apply);
+            //TODO
+//            MessagesController.getInstance(currentAccount).removeDialogAction(currentDialogId, currentAction == ACTION_CLEAR, apply);
         }
         if (animated != 0) {
             AnimatorSet animatorSet = new AnimatorSet();
@@ -350,7 +351,7 @@ public class UndoView extends FrameLayout {
         infoTextView.setMinHeight(0);
 
         if (isTooltipAction()) {
-            CharSequence infoText;
+            CharSequence infoText = null;
             String subInfoText;
             int icon;
             int size = 36;
@@ -386,38 +387,41 @@ public class UndoView extends FrameLayout {
                 size = 44;
             } else if (action == ACTION_ARCHIVE_PINNED) {
                 infoText = LocaleController.getString("ArchivePinned", R.string.ArchivePinned);
-                if (MessagesController.getInstance(currentAccount).dialogFilters.isEmpty()) {
-                    subInfoText = LocaleController.getString("ArchivePinnedInfo", R.string.ArchivePinnedInfo);
-                } else {
-                    subInfoText = null;
-                }
+                //TODO
+//                if (MessagesController.getInstance(currentAccount).dialogFilters.isEmpty()) {
+//                    subInfoText = LocaleController.getString("ArchivePinnedInfo", R.string.ArchivePinnedInfo);
+//                } else {
+//                    subInfoText = null;
+//                }
+                subInfoText = null;
                 icon = R.raw.chats_infotip;
             } else if (action == ACTION_ADDED_TO_FOLDER || action == ACTION_REMOVED_FROM_FOLDER) {
-                MessagesController.DialogFilter filter = (MessagesController.DialogFilter) infoObject2;
-                if (did != 0) {
-                    int lowerId = (int) did;
-                    if (lowerId > 0) {
-                        User user = MessagesController.getInstance(currentAccount).getUser(lowerId);
-                        if (action == ACTION_ADDED_TO_FOLDER) {
-                            infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterUserAddedToExisting", R.string.FilterUserAddedToExisting, UserObject.getFirstName(user), filter.name));
-                        } else {
-                            infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterUserRemovedFrom", R.string.FilterUserRemovedFrom, UserObject.getFirstName(user), filter.name));
-                        }
-                    } else {
-                        Chat chat = MessagesController.getInstance(currentAccount).getChat(-lowerId);
-                        if (action == ACTION_ADDED_TO_FOLDER) {
-                            infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterChatAddedToExisting", R.string.FilterChatAddedToExisting, chat.title, filter.name));
-                        } else {
-                            infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterChatRemovedFrom", R.string.FilterChatRemovedFrom, chat.title, filter.name));
-                        }
-                    }
-                } else {
-                    if (action == ACTION_ADDED_TO_FOLDER) {
-                        infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterChatsAddedToExisting", R.string.FilterChatsAddedToExisting, LocaleController.formatPluralString("Chats", (Integer) infoObject), filter.name));
-                    } else {
-                        infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterChatsRemovedFrom", R.string.FilterChatsRemovedFrom, LocaleController.formatPluralString("Chats", (Integer) infoObject), filter.name));
-                    }
-                }
+                //TODO
+//                MessagesController.DialogFilter filter = (MessagesController.DialogFilter) infoObject2;
+//                if (did != 0) {
+//                    int lowerId = (int) did;
+//                    if (lowerId > 0) {
+//                        User user = MessagesController.getInstance(currentAccount).getUser(lowerId);
+//                        if (action == ACTION_ADDED_TO_FOLDER) {
+//                            infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterUserAddedToExisting", R.string.FilterUserAddedToExisting, UserObject.getFirstName(user), filter.name));
+//                        } else {
+//                            infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterUserRemovedFrom", R.string.FilterUserRemovedFrom, UserObject.getFirstName(user), filter.name));
+//                        }
+//                    } else {
+//                        Chat chat = MessagesController.getInstance(currentAccount).getChat(-lowerId);
+//                        if (action == ACTION_ADDED_TO_FOLDER) {
+//                            infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterChatAddedToExisting", R.string.FilterChatAddedToExisting, chat.title, filter.name));
+//                        } else {
+//                            infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterChatRemovedFrom", R.string.FilterChatRemovedFrom, chat.title, filter.name));
+//                        }
+//                    }
+//                } else {
+//                    if (action == ACTION_ADDED_TO_FOLDER) {
+//                        infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterChatsAddedToExisting", R.string.FilterChatsAddedToExisting, LocaleController.formatPluralString("Chats", (Integer) infoObject), filter.name));
+//                    } else {
+//                        infoText = AndroidUtilities.replaceTags(LocaleController.formatString("FilterChatsRemovedFrom", R.string.FilterChatsRemovedFrom, LocaleController.formatPluralString("Chats", (Integer) infoObject), filter.name));
+//                    }
+//                }
                 subInfoText = null;
                 icon = R.raw.contact_check;
                 /*iconIsDrawable = true;
@@ -436,11 +440,13 @@ public class UndoView extends FrameLayout {
                 } else {
                     infoText = LocaleController.getString("ChatsArchived", R.string.ChatsArchived);
                 }
-                if (MessagesController.getInstance(currentAccount).dialogFilters.isEmpty()) {
-                    subInfoText = LocaleController.getString("ChatArchivedInfo", R.string.ChatArchivedInfo);
-                } else {
-                    subInfoText = null;
-                }
+                //TODO
+//                if (MessagesController.getInstance(currentAccount).dialogFilters.isEmpty()) {
+//                    subInfoText = LocaleController.getString("ChatArchivedInfo", R.string.ChatArchivedInfo);
+//                } else {
+//                    subInfoText = null;
+//                }
+                subInfoText = null;
                 icon = R.raw.chats_infotip;
             }
 
@@ -478,25 +484,26 @@ public class UndoView extends FrameLayout {
                 leftImageView.playAnimation();
             }
         } else if (currentAction == ACTION_QR_SESSION_ACCEPTED) {
-            TLRPC.TL_authorization authorization = (TLRPC.TL_authorization) infoObject;
-
-            infoTextView.setText(LocaleController.getString("AuthAnotherClientOk", R.string.AuthAnotherClientOk));
-            leftImageView.setAnimation(R.raw.contact_check, 36, 36);
-
-            layoutParams.leftMargin = AndroidUtilities.dp(58);
-            layoutParams.topMargin = AndroidUtilities.dp(6);
-            subinfoTextView.setText(authorization.app_name);
-            subinfoTextView.setVisibility(VISIBLE);
-            infoTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
-            infoTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
-
-            undoTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteRedText2));
-            undoImageView.setVisibility(GONE);
-            undoButton.setVisibility(VISIBLE);
-            leftImageView.setVisibility(VISIBLE);
-
-            leftImageView.setProgress(0);
-            leftImageView.playAnimation();
+            //TODO
+//            TLRPC.TL_authorization authorization = (TLRPC.TL_authorization) infoObject;
+//
+//            infoTextView.setText(LocaleController.getString("AuthAnotherClientOk", R.string.AuthAnotherClientOk));
+//            leftImageView.setAnimation(R.raw.contact_check, 36, 36);
+//
+//            layoutParams.leftMargin = AndroidUtilities.dp(58);
+//            layoutParams.topMargin = AndroidUtilities.dp(6);
+//            subinfoTextView.setText(authorization.app_name);
+//            subinfoTextView.setVisibility(VISIBLE);
+//            infoTextView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 14);
+//            infoTextView.setTypeface(AndroidUtilities.getTypeface("fonts/rmedium.ttf"));
+//
+//            undoTextView.setTextColor(Theme.getColor(Theme.key_windowBackgroundWhiteRedText2));
+//            undoImageView.setVisibility(GONE);
+//            undoButton.setVisibility(VISIBLE);
+//            leftImageView.setVisibility(VISIBLE);
+//
+//            leftImageView.setProgress(0);
+//            leftImageView.playAnimation();
         } else if (currentAction == ACTION_FILTERS_AVAILABLE) {
             timeLeft = 10000;
             undoTextView.setText(LocaleController.getString("Open", R.string.Open).toUpperCase());
@@ -671,7 +678,8 @@ public class UndoView extends FrameLayout {
                     infoTextView.setText(LocaleController.getString("ChatDeletedUndo", R.string.ChatDeletedUndo));
                 }
             }
-            MessagesController.getInstance(currentAccount).addDialogAction(did, currentAction == ACTION_CLEAR);
+            //TODO
+//            MessagesController.getInstance(currentAccount).addDialogAction(did, currentAction == ACTION_CLEAR);
         }
 
         AndroidUtilities.makeAccessibilityAnnouncement(infoTextView.getText() + (subinfoTextView.getVisibility() == VISIBLE ? ". " + subinfoTextView.getText() : ""));

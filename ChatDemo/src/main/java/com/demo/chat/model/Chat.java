@@ -17,7 +17,7 @@ import java.util.ArrayList;
  * 根据 type 区分是和人、机器人、群、订阅通道、加密聊天
  * @usage null
  */
-public class Chat {
+public class Chat extends UserChat {
     public static int UserType = 0;
     public static int RobotType = 1;
     public static int GroupType = 2;
@@ -42,9 +42,11 @@ public class Chat {
     public boolean isForbidden() {
         return false;
     }
+
     public boolean isPublic() {
         return false;
     }
+
     public int type = 0;
     public int id = 0;
     public String title;
@@ -100,7 +102,6 @@ public class Chat {
     public int available_min_id;
     public int call_msg_id;
     public int linked_chat_id;
-    public ChannelLocation location;
     public int slowmode_seconds;
     public int slowmode_next_send_date;
     public int stats_dc;
@@ -139,7 +140,7 @@ public class Chat {
         public int until_date;
     }
 
-    public static class ChatParticipants{
+    public static class ChatParticipants {
         public int flags;
         public int chat_id;
         public ChatParticipant self_participant;
@@ -148,7 +149,7 @@ public class Chat {
         public int admin_id;
     }
 
-    public static class ChatParticipant{
+    public static class ChatParticipant {
         public int user_id;
         public int inviter_id;
         public int date;
@@ -157,9 +158,11 @@ public class Chat {
     public void readParams(AbstractSerializedData stream, boolean exception) {
 
     }
+
     public void serializeToStream(AbstractSerializedData stream) {
 
     }
+
     public static Chat TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
         Chat result = new Chat();
         result.readParams(stream, exception);

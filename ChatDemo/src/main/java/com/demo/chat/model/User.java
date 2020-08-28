@@ -10,7 +10,7 @@ import com.demo.chat.model.small.FileLocation;
  * @description 登录的用户
  * @usage null
  */
-public class User {
+public class User extends UserChat{
     public int id;
     public String first_name;
     public String last_name;

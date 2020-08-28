@@ -1,5 +1,7 @@
 package com.demo.chat.model.small;
 
+import com.demo.chat.messager.AbstractSerializedData;
+
 /**
  * @author 林学渊
  * @email linxy59@mail2.sysu.edu.cn
@@ -61,10 +63,46 @@ public class MessageEntity {
     public boolean isTextUrl() {
         return false;
     }
+
     public boolean isUrl() {
         return false;
     }
+
     public boolean isEmail() {
         return false;
+    }
+
+    public boolean isBlockquote() {
+        return false;
+    }
+
+    public boolean isMention() {
+        return false;
+    }
+
+    public boolean isHashtag() {
+        return false;
+    }
+
+    public boolean isBotCommand() {
+        return false;
+    }
+
+    public boolean isPhone() {
+        return false;
+    }
+
+    public boolean isBankCard() {
+        return false;
+    }
+
+    public boolean isCashtag() {
+        return false;
+    }
+
+
+    public static MessageEntity TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
+        MessageEntity result = new MessageEntity();
+        return result;
     }
 }

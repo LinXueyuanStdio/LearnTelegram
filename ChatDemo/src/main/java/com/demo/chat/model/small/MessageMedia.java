@@ -149,5 +149,17 @@ public class MessageMedia {
     public boolean isWebPage(){return false;}
     public boolean isContact(){return false;}
     public boolean isInvoice(){return false;}
+    public boolean isDice(){return false;}
+    public boolean isUnsupported(){return false;}
+    public boolean isGeo(){return false;}
+    public boolean isGeoLive(){return false;}
+    public boolean isVenue(){return false;}
 //    public boolean is(){return false;}
+
+
+    public static MessageMedia TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
+        MessageMedia result = new MessageMedia();
+        return result;
+    }
+
 }

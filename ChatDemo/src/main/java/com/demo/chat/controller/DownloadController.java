@@ -15,6 +15,7 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Message;
 import com.demo.chat.model.action.MessageObject;
+import com.demo.chat.model.setting.AutoDownloadSettings;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.MessageMedia;
@@ -147,7 +148,7 @@ public class DownloadController extends BaseController implements NotificationCe
             maxVideoBitrate = preset.maxVideoBitrate;
         }
 
-        public void set(TLRPC.TL_autoDownloadSettings settings) {
+        public void set(AutoDownloadSettings settings) {
             preloadMusic = settings.audio_preload_next;
             preloadVideo = settings.video_preload_large;
             lessCallData = settings.phonecalls_less_data;

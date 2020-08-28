@@ -3,9 +3,8 @@ package com.demo.chat.messager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.model.Chat;
-import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
-import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.model.small.Media;
@@ -14,7 +13,6 @@ import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.small.VideoSize;
 import com.demo.chat.model.small.WebFile;
 import com.demo.chat.model.sticker.InputStickerSet;
-import com.demo.chat.theme.Theme;
 
 /**
  * @author 林学渊
@@ -39,7 +37,6 @@ public class ImageLocation {
     public PhotoSize photoSize;
     public MessageMedia.Photo photo;
     public boolean photoPeerBig;
-    public InputPeer photoPeer;
     public InputStickerSet stickerSet;
     public int imageType;
 
@@ -105,7 +102,7 @@ public class ImageLocation {
         } else {
             dc_id = photoSize.location.dc_id;
         }
-        return getForPhoto(photoSize.location, photoSize.size, photo, null, null, false, dc_id, null, photoSize.type);
+        return getForPhoto(photoSize.location, photoSize.size, photo, null,  false, dc_id, null, photoSize.type);
     }
 
     public static ImageLocation getForUser(User user, boolean big) {
@@ -116,16 +113,13 @@ public class ImageLocation {
         if (fileLocation == null) {
             return null;
         }
-        TL_inputPeerUser inputPeer = new TL_inputPeerUser();
-        inputPeer.user_id = user.id;
-        inputPeer.access_hash = user.access_hash;
         int dc_id;
         if (user.photo.dc_id != 0) {
             dc_id = user.photo.dc_id;
         } else {
             dc_id = fileLocation.dc_id;
         }
-        return getForPhoto(fileLocation, 0, null, null, inputPeer, big, dc_id, null, null);
+        return getForPhoto(fileLocation, 0, null, null, big, dc_id, null, null);
     }
 
     public static ImageLocation getForChat(Chat chat, boolean big) {
@@ -136,29 +130,17 @@ public class ImageLocation {
         if (fileLocation == null) {
             return null;
         }
-        InputPeer inputPeer;
-        if (ChatObject.isChannel(chat)) {
-            if (chat.access_hash == 0) {
-                return null;
-            }
-            inputPeer = new TL_inputPeerChannel();
-            inputPeer.channel_id = chat.id;
-            inputPeer.access_hash = chat.access_hash;
-        } else {
-            inputPeer = new TL_inputPeerChat();
-            inputPeer.chat_id = chat.id;
-        }
         int dc_id;
         if (chat.photo.dc_id != 0) {
             dc_id = chat.photo.dc_id;
         } else {
             dc_id = fileLocation.dc_id;
         }
-        return getForPhoto(fileLocation, 0, null, null, inputPeer, big, dc_id, null, null);
+        return getForPhoto(fileLocation, 0, null, null, big, dc_id, null, null);
     }
 
     public static ImageLocation getForSticker(PhotoSize photoSize, Document sticker) {
-        if (photoSize instanceof TL_photoStrippedSize) {
+        if (photoSize !=null) {
             ImageLocation imageLocation = new ImageLocation();
             imageLocation.photoSize = photoSize;
             return imageLocation;
@@ -169,7 +151,7 @@ public class ImageLocation {
         if (stickerSet == null) {
             return null;
         }
-        ImageLocation imageLocation = getForPhoto(photoSize.location, photoSize.size, null, null, null, false, sticker.dc_id, stickerSet, photoSize.type);
+        ImageLocation imageLocation = getForPhoto(photoSize.location, photoSize.size, null, null, false, sticker.dc_id, stickerSet, photoSize.type);
         if (MessageObject.isAnimatedStickerDocument(sticker, true)) {
             imageLocation.imageType = FileLoader.IMAGE_TYPE_LOTTIE;
         }
@@ -180,35 +162,35 @@ public class ImageLocation {
         if (videoSize == null || document == null) {
             return null;
         }
-        ImageLocation location = getForPhoto(videoSize.location, videoSize.size, null, document, null, false, document.dc_id, null, videoSize.type);
+        ImageLocation location = getForPhoto(videoSize.location, videoSize.size, null, document, false, document.dc_id, null, videoSize.type);
         location.imageType = FileLoader.IMAGE_TYPE_ANIMATION;
         return location;
     }
 
     public static ImageLocation getForDocument(PhotoSize photoSize, Document document) {
-        if (photoSize instanceof TL_photoStrippedSize) {
+        if (photoSize!=null) {
             ImageLocation imageLocation = new ImageLocation();
             imageLocation.photoSize = photoSize;
             return imageLocation;
         } else if (photoSize == null || document == null) {
             return null;
         }
-        return getForPhoto(photoSize.location, photoSize.size, null, document, null, false, document.dc_id, null, photoSize.type);
+        return getForPhoto(photoSize.location, photoSize.size, null, document, false, document.dc_id, null, photoSize.type);
     }
 
-    private static ImageLocation getForPhoto(FileLocation location, int size, MessageMedia.Photo photo, Document document, InputPeer photoPeer, boolean photoPeerBig, int dc_id, InputStickerSet stickerSet, String thumbSize) {
-        if (location == null || photo == null && photoPeer == null && stickerSet == null && document == null) {
+    private static ImageLocation getForPhoto(FileLocation location, int size, MessageMedia.Photo photo,
+            Document document, boolean photoPeerBig, int dc_id, InputStickerSet stickerSet, String thumbSize) {
+        if (location == null || photo == null && stickerSet == null && document == null) {
             return null;
         }
         ImageLocation imageLocation = new ImageLocation();
         imageLocation.dc_id = dc_id;
         imageLocation.photo = photo;
         imageLocation.currentSize = size;
-        imageLocation.photoPeer = photoPeer;
         imageLocation.photoPeerBig = photoPeerBig;
         imageLocation.stickerSet = stickerSet;
-        if (location instanceof TL_fileLocationToBeDeprecated) {
-            imageLocation.location = (TL_fileLocationToBeDeprecated) location;
+        if (location instanceof FileLocation) {
+            imageLocation.location = (FileLocation) location;
             if (photo != null) {
                 imageLocation.file_reference = photo.file_reference;
                 imageLocation.access_hash = photo.access_hash;
@@ -221,7 +203,7 @@ public class ImageLocation {
                 imageLocation.thumbSize = thumbSize;
             }
         } else {
-            imageLocation.location = new TL_fileLocationToBeDeprecated();
+            imageLocation.location = new FileLocation();
             imageLocation.location.local_id = location.local_id;
             imageLocation.location.volume_id = location.volume_id;
             imageLocation.location.secret = location.secret;
@@ -235,42 +217,43 @@ public class ImageLocation {
     }
 
     public static String getStippedKey(Object parentObject, Object fullObject, Object strippedObject) {
-        if (parentObject instanceof WebPage) {
-            if (fullObject instanceof ImageLocation) {
-                ImageLocation imageLocation = (ImageLocation) fullObject;
-                if (imageLocation.document != null) {
-                    fullObject = imageLocation.document;
-                } else if (imageLocation.photoSize != null) {
-                    fullObject = imageLocation.photoSize;
-                } else if (imageLocation.photo != null) {
-                    fullObject = imageLocation.photo;
-                }
-            }
-            if (fullObject == null) {
-                return "stripped" + FileRefController.getKeyForParentObject(parentObject) + "_" + strippedObject;
-            } else if (fullObject instanceof Document) {
-                Document document = (Document) fullObject;
-                return "stripped" + FileRefController.getKeyForParentObject(parentObject) + "_" + document.id;
-            } else if (fullObject instanceof Photo) {
-                Photo photo = (Photo) fullObject;
-                return "stripped" + FileRefController.getKeyForParentObject(parentObject) + "_" + photo.id;
-            } else if (fullObject instanceof PhotoSize) {
-                PhotoSize size = (PhotoSize) fullObject;
-                if (size.location != null) {
-                    return "stripped" + FileRefController.getKeyForParentObject(parentObject) + "_" + size.location.local_id + "_" + size.location.volume_id;
-                } else {
-                    return "stripped" + FileRefController.getKeyForParentObject(parentObject);
-                }
-            } else if (fullObject instanceof FileLocation) {
-                FileLocation loc = (FileLocation) fullObject;
-                return "stripped" + FileRefController.getKeyForParentObject(parentObject) + "_" + loc.local_id + "_" + loc.volume_id;
-            }
-        }
-        return "stripped" + FileRefController.getKeyForParentObject(parentObject);
+        return "";
+//        if (parentObject instanceof MessageMedia.WebPage) {
+//            if (fullObject instanceof ImageLocation) {
+//                ImageLocation imageLocation = (ImageLocation) fullObject;
+//                if (imageLocation.document != null) {
+//                    fullObject = imageLocation.document;
+//                } else if (imageLocation.photoSize != null) {
+//                    fullObject = imageLocation.photoSize;
+//                } else if (imageLocation.photo != null) {
+//                    fullObject = imageLocation.photo;
+//                }
+//            }
+//            if (fullObject == null) {
+//                return "stripped" + FileRefController.getKeyForParentObject(parentObject) + "_" + strippedObject;
+//            } else if (fullObject instanceof Document) {
+//                Document document = (Document) fullObject;
+//                return "stripped" + FileRefController.getKeyForParentObject(parentObject) + "_" + document.id;
+//            } else if (fullObject instanceof MessageMedia.Photo) {
+//                MessageMedia.Photo photo = (MessageMedia.Photo) fullObject;
+//                return "stripped" + FileRefController.getKeyForParentObject(parentObject) + "_" + photo.id;
+//            } else if (fullObject instanceof PhotoSize) {
+//                PhotoSize size = (PhotoSize) fullObject;
+//                if (size.location != null) {
+//                    return "stripped" + FileRefController.getKeyForParentObject(parentObject) + "_" + size.location.local_id + "_" + size.location.volume_id;
+//                } else {
+//                    return "stripped" + FileRefController.getKeyForParentObject(parentObject);
+//                }
+//            } else if (fullObject instanceof FileLocation) {
+//                FileLocation loc = (FileLocation) fullObject;
+//                return "stripped" + FileRefController.getKeyForParentObject(parentObject) + "_" + loc.local_id + "_" + loc.volume_id;
+//            }
+//        }
+//        return "stripped" + FileRefController.getKeyForParentObject(parentObject);
     }
 
     public String getKey(Object parentObject, Object fullObject, boolean url) {
-        if (photoSize instanceof TL_photoStrippedSize) {
+        if (photoSize !=null) {
             if (photoSize.bytes.length > 0) {
                 return getStippedKey(parentObject, fullObject, photoSize);
             }
@@ -279,12 +262,12 @@ public class ImageLocation {
         } else if (webFile != null) {
             return Utilities.MD5(webFile.url);
         } else if (document != null) {
-            if (!url && document instanceof DocumentObject.ThemeDocument) {
-                DocumentObject.ThemeDocument themeDocument = (DocumentObject.ThemeDocument) document;
-                return document.dc_id + "_" + document.id + "_" + Theme.getBaseThemeKey(themeDocument.themeSettings) + "_" + themeDocument.themeSettings.accent_color + "_" + themeDocument.themeSettings.message_top_color + "_" + themeDocument.themeSettings.message_bottom_color;
-            } else if (document.id != 0 && document.dc_id != 0) {
-                return document.dc_id + "_" + document.id;
-            }
+//            if (!url && document instanceof DocumentObject.ThemeDocument) {
+//                DocumentObject.ThemeDocument themeDocument = (DocumentObject.ThemeDocument) document;
+//                return document.dc_id + "_" + document.id + "_" + Theme.getBaseThemeKey(themeDocument.themeSettings) + "_" + themeDocument.themeSettings.accent_color + "_" + themeDocument.themeSettings.message_top_color + "_" + themeDocument.themeSettings.message_bottom_color;
+//            } else if (document.id != 0 && document.dc_id != 0) {
+//                return document.dc_id + "_" + document.id;
+//            }
         } else if (path != null) {
             return Utilities.MD5(path);
         }

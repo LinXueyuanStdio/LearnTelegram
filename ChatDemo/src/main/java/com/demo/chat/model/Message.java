@@ -66,7 +66,6 @@ public class Message {
     public String post_author;
     public long grouped_id;
     public MessageReactions reactions;
-    public ArrayList<TL_restrictionReason> restriction_reason = new ArrayList<>();
     public int send_state = 0; //custom
     public int fwd_msg_id = 0; //custom
     public String attachPath = ""; //custom
@@ -84,84 +83,12 @@ public class Message {
     public int reqId; //custom
     public int realId; //custom
     public int stickerVerified = 1; //custom
+    public void readParams(AbstractSerializedData stream, boolean exception) {
 
+    }
 
     public static Message TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
-        Message result = null;
-        switch (constructor) {
-            case 0x1d86f70e:
-                result = new TL_messageService_old2();
-                break;
-            case 0xa7ab1991:
-                result = new TL_message_old3();
-                break;
-            case 0xc3060325:
-                result = new TL_message_old4();
-                break;
-            case 0x555555fa:
-                result = new TL_message_secret();
-                break;
-            case 0x555555f9:
-                result = new TL_message_secret_layer72();
-                break;
-            case 0x90dddc11:
-                result = new TL_message_layer72();
-                break;
-            case 0xc09be45f:
-                result = new TL_message_layer68();
-                break;
-            case 0xc992e15c:
-                result = new TL_message_layer47();
-                break;
-            case 0x5ba66c13:
-                result = new TL_message_old7();
-                break;
-            case 0xc06b9607:
-                result = new TL_messageService_layer48();
-                break;
-            case 0x83e5de54:
-                result = new TL_messageEmpty();
-                break;
-            case 0x2bebfa86:
-                result = new TL_message_old6();
-                break;
-            case 0x44f9b43d:
-                result = new TL_message_layer104();
-                break;
-            case 0x1c9b1027:
-                result = new TL_message_layer104_2();
-                break;
-            case 0xa367e716:
-                result = new TL_messageForwarded_old2(); //custom
-                break;
-            case 0x5f46804:
-                result = new TL_messageForwarded_old(); //custom
-                break;
-            case 0x567699b3:
-                result = new TL_message_old2(); //custom
-                break;
-            case 0x9f8d60bb:
-                result = new TL_messageService_old(); //custom
-                break;
-            case 0x22eb6aba:
-                result = new TL_message_old(); //custom
-                break;
-            case 0x555555F8:
-                result = new TL_message_secret_old(); //custom
-                break;
-            case 0x9789dac4:
-                result = new TL_message_layer104_3();
-                break;
-            case 0x452c0e65:
-                result = new TL_message();
-                break;
-            case 0x9e19a1f6:
-                result = new TL_messageService();
-                break;
-            case 0xf07814c8:
-                result = new TL_message_old5(); //custom
-                break;
-        }
+        Message result = new Message();
         if (result == null && exception) {
             throw new RuntimeException(String.format("can't parse magic %x in Message", constructor));
         }
@@ -172,7 +99,7 @@ public class Message {
     }
 
     public void readAttachPath(AbstractSerializedData stream, int currentUserId) {
-        boolean hasMedia = media != null && !(media instanceof TL_messageMediaEmpty) && !(media.isWebPage());
+        boolean hasMedia = media != null && !(media.isWebPage());
         boolean fixCaption = !TextUtils.isEmpty(message) && message.startsWith("-1");
         if ((out || to_id != 0 && to_id == from_id && from_id == currentUserId) && (id < 0 || hasMedia || send_state == 3) || legacy) {
             if (hasMedia && fixCaption) {
@@ -216,34 +143,24 @@ public class Message {
     }
 
     protected void writeAttachPath(AbstractSerializedData stream) {
-        if (this instanceof TL_message_secret || this instanceof TL_message_secret_layer72) {
-            String path = attachPath != null ? attachPath : "";
-            if (send_state == 1 && params != null && params.size() > 0) {
-                for (HashMap.Entry<String, String> entry : params.entrySet()) {
-                    path = entry.getKey() + "|=|" + entry.getValue() + "||" + path;
-                }
-                path = "||" + path;
+        String path = !TextUtils.isEmpty(attachPath) ? attachPath : " ";
+        if (legacy) {
+            if (params == null) {
+                params = new HashMap<>();
             }
-            stream.writeString(path);
-        } else {
-            String path = !TextUtils.isEmpty(attachPath) ? attachPath : " ";
-            if (legacy) {
-                if (params == null) {
-                    params = new HashMap<>();
-                }
-                layer = LAYER;
-                params.put("legacy_layer", "" + LAYER);
+            int LAYER = 1;
+            layer = LAYER;
+            params.put("legacy_layer", "" + LAYER);
+        }
+        if ((id < 0 || send_state == 3 || legacy) && params != null && params.size() > 0) {
+            for (HashMap.Entry<String, String> entry : params.entrySet()) {
+                path = entry.getKey() + "|=|" + entry.getValue() + "||" + path;
             }
-            if ((id < 0 || send_state == 3 || legacy) && params != null && params.size() > 0) {
-                for (HashMap.Entry<String, String> entry : params.entrySet()) {
-                    path = entry.getKey() + "|=|" + entry.getValue() + "||" + path;
-                }
-                path = "||" + path;
-            }
-            stream.writeString(path);
-            if ((flags & MESSAGE_FLAG_FWD) != 0 && id < 0) {
-                stream.writeInt32(fwd_msg_id);
-            }
+            path = "||" + path;
+        }
+        stream.writeString(path);
+        if ((flags & MESSAGE_FLAG_FWD) != 0 && id < 0) {
+            stream.writeInt32(fwd_msg_id);
         }
     }
 }

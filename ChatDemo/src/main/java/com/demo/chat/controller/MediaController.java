@@ -2901,7 +2901,7 @@ public class MediaController
             }
 
             sendAfterDone = 0;
-            recordingAudio = new TLRPC.TL_document();
+            recordingAudio = new Document();
             recordingGuid = guid;
             recordingAudio.file_reference = new byte[0];
             recordingAudio.dc_id = Integer.MIN_VALUE;
