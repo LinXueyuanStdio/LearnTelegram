@@ -10,7 +10,6 @@ import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
 import android.content.Intent;
@@ -84,9 +83,7 @@ import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.RadioButton;
 import android.widget.Scroller;
-import android.widget.SeekBar;
 import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -112,12 +109,13 @@ import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.small.WebFile;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
@@ -147,6 +145,7 @@ import com.demo.chat.ui.Components.LinkPath;
 import com.demo.chat.ui.Components.MediaActionDrawable;
 import com.demo.chat.ui.Components.RadialProgress2;
 import com.demo.chat.ui.Components.RecyclerListView;
+import com.demo.chat.ui.Components.SeekBar;
 import com.demo.chat.ui.Components.SeekBarView;
 import com.demo.chat.ui.Components.ShareAlert;
 import com.demo.chat.ui.Components.TextPaintUrlSpan;
@@ -2746,10 +2745,10 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
     }
 
     private void openWebpageUrl(String url, String anchor) {
-        if (openUrlReqId != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(openUrlReqId, false);
-            openUrlReqId = 0;
-        }
+//        if (openUrlReqId != 0) {
+//            ConnectionsManager.getInstance(currentAccount).cancelRequest(openUrlReqId, false);
+//            openUrlReqId = 0;
+//        }TODO 取消请求
         int reqId = ++lastReqId;
         closePhoto(false);
         showProgressView(true, true);
@@ -4366,7 +4365,7 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
         return open(messageObject, null, null, true);
     }
 
-    public boolean open(TLRPC.TL_webPage webpage, String url) {
+    public boolean open(MessageMedia.WebPage webpage, String url) {
         return open(null, webpage, url, true);
     }
 
@@ -4865,16 +4864,16 @@ public class ArticleViewer implements NotificationCenter.NotificationCenterDeleg
             showSearch(false);
             return;
         }
-        if (openUrlReqId != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(openUrlReqId, true);
-            openUrlReqId = 0;
-            showProgressView(true, false);
-        }
-        if (previewsReqId != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(previewsReqId, true);
-            previewsReqId = 0;
-            showProgressView(true, false);
-        }
+//        if (openUrlReqId != 0) {
+//            ConnectionsManager.getInstance(currentAccount).cancelRequest(openUrlReqId, true);
+//            openUrlReqId = 0;
+//            showProgressView(true, false);
+//        }
+//        if (previewsReqId != 0) {
+//            ConnectionsManager.getInstance(currentAccount).cancelRequest(previewsReqId, true);
+//            previewsReqId = 0;
+//            showProgressView(true, false);
+//        }TODO 取消请求
         saveCurrentPagePosition();
         if (byBackPress && !force) {
             if (removeLastPageFromStack()) {

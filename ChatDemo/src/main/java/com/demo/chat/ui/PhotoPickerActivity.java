@@ -441,10 +441,10 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
     @Override
     public void onFragmentDestroy() {
         NotificationCenter.getInstance(currentAccount).removeObserver(this, NotificationCenter.closeChats);
-        if (imageReqId != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(imageReqId, true);
-            imageReqId = 0;
-        }
+//        if (imageReqId != 0) {
+//            ConnectionsManager.getInstance(currentAccount).cancelRequest(imageReqId, true);
+//            imageReqId = 0;
+//        }TODO 取消请求
         if (commentTextView != null) {
             commentTextView.onDestroy();
         }
@@ -532,10 +532,10 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
                         lastSearchString = null;
                         imageSearchEndReached = true;
                         searching = false;
-                        if (imageReqId != 0) {
-                            ConnectionsManager.getInstance(currentAccount).cancelRequest(imageReqId, true);
-                            imageReqId = 0;
-                        }
+//                        if (imageReqId != 0) {
+//                            ConnectionsManager.getInstance(currentAccount).cancelRequest(imageReqId, true);
+//                            imageReqId = 0;
+//                        }TODO 取消请求
                         emptyView.setText(LocaleController.getString("NoRecentSearches", R.string.NoRecentSearches));
                         updateSearchInterface();
                     }
@@ -1540,10 +1540,10 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
     private void searchImages(boolean gif, final String query, final String offset, boolean searchUser) {
         if (searching) {
             searching = false;
-            if (imageReqId != 0) {
-                ConnectionsManager.getInstance(currentAccount).cancelRequest(imageReqId, true);
-                imageReqId = 0;
-            }
+//            if (imageReqId != 0) {
+//                ConnectionsManager.getInstance(currentAccount).cancelRequest(imageReqId, true);
+//                imageReqId = 0;
+//            }TODO 取消请求
         }
 
         lastSearchImageString = query;
