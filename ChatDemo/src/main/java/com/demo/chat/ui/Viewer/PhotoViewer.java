@@ -129,6 +129,7 @@ import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.small.VideoSize;
 import com.demo.chat.model.small.WebDocument;
 import com.demo.chat.model.small.WebFile;
+import com.demo.chat.model.text.PageBlock;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.service.BringAppForegroundService;
 import com.demo.chat.theme.Theme;
@@ -3423,7 +3424,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
             }
 
             @Override
-            public ArrayList<MessageMedia.PageBlock> getPageBlockArr() {
+            public ArrayList<PageBlock> getPageBlockArr() {
                 return null;
             }
 

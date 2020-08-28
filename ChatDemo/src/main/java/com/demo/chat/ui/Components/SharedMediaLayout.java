@@ -3360,51 +3360,52 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 notifyDataSetChanged();
                 return;
             }
-            TLRPC.TL_messages_search req = new TLRPC.TL_messages_search();
-            req.limit = 50;
-            req.offset_id = max_id;
-            if (currentType == 1) {
-                req.filter = new TLRPC.TL_inputMessagesFilterDocument();
-            } else if (currentType == 3) {
-                req.filter = new TLRPC.TL_inputMessagesFilterUrl();
-            } else if (currentType == 4) {
-                req.filter = new TLRPC.TL_inputMessagesFilterMusic();
-            }
-            req.q = query;
-            req.peer = profileActivity.getMessagesController().getInputPeer(uid);
-            if (req.peer == null) {
-                return;
-            }
-            final int currentReqId = ++lastReqId;
-            searchesInProgress++;
-            reqId = profileActivity.getConnectionsManager().sendRequest(req, (response, error) -> {
-                final ArrayList<MessageObject> messageObjects = new ArrayList<>();
-                if (error == null) {
-                    TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
-                    for (int a = 0; a < res.messages.size(); a++) {
-                        TLRPC.Message message = res.messages.get(a);
-                        if (max_id != 0 && message.id > max_id) {
-                            continue;
-                        }
-                        messageObjects.add(new MessageObject(profileActivity.getCurrentAccount(), message, false));
-                    }
-                }
-                AndroidUtilities.runOnUIThread(() -> {
-                    if (reqId != 0) {
-                        if (currentReqId == lastReqId) {
-                            globalSearch = messageObjects;
-                            searchesInProgress--;
-                            int count = getItemCount();
-                            if (searchesInProgress == 0 || count != 0) {
-                                switchToCurrentSelectedMode(false);
-                            }
-                            notifyDataSetChanged();
-                        }
-                        reqId = 0;
-                    }
-                });
-            }, ConnectionsManager.RequestFlagFailOnServerErrors);
-            profileActivity.getConnectionsManager().bindRequestToGuid(reqId, profileActivity.getClassGuid());
+            //TODO 发起请求
+//            TLRPC.TL_messages_search req = new TLRPC.TL_messages_search();
+//            req.limit = 50;
+//            req.offset_id = max_id;
+//            if (currentType == 1) {
+//                req.filter = new TLRPC.TL_inputMessagesFilterDocument();
+//            } else if (currentType == 3) {
+//                req.filter = new TLRPC.TL_inputMessagesFilterUrl();
+//            } else if (currentType == 4) {
+//                req.filter = new TLRPC.TL_inputMessagesFilterMusic();
+//            }
+//            req.q = query;
+//            req.peer = profileActivity.getMessagesController().getInputPeer(uid);
+//            if (req.peer == null) {
+//                return;
+//            }
+//            final int currentReqId = ++lastReqId;
+//            searchesInProgress++;
+//            reqId = profileActivity.getConnectionsManager().sendRequest(req, (response, error) -> {
+//                final ArrayList<MessageObject> messageObjects = new ArrayList<>();
+//                if (error == null) {
+//                    TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
+//                    for (int a = 0; a < res.messages.size(); a++) {
+//                        TLRPC.Message message = res.messages.get(a);
+//                        if (max_id != 0 && message.id > max_id) {
+//                            continue;
+//                        }
+//                        messageObjects.add(new MessageObject(profileActivity.getCurrentAccount(), message, false));
+//                    }
+//                }
+//                AndroidUtilities.runOnUIThread(() -> {
+//                    if (reqId != 0) {
+//                        if (currentReqId == lastReqId) {
+//                            globalSearch = messageObjects;
+//                            searchesInProgress--;
+//                            int count = getItemCount();
+//                            if (searchesInProgress == 0 || count != 0) {
+//                                switchToCurrentSelectedMode(false);
+//                            }
+//                            notifyDataSetChanged();
+//                        }
+//                        reqId = 0;
+//                    }
+//                });
+//            }, ConnectionsManager.RequestFlagFailOnServerErrors);
+//            profileActivity.getConnectionsManager().bindRequestToGuid(reqId, profileActivity.getClassGuid());
         }
 
         public void search(final String query) {
@@ -3727,50 +3728,51 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             if (loading) {
                 return;
             }
-            TLRPC.TL_messages_getCommonChats req = new TLRPC.TL_messages_getCommonChats();
-            int uid;
-            int lowerId = (int) dialog_id;
-            int hightId = (int) (dialog_id >> 32);
-            if (lowerId != 0) {
-                uid = lowerId;
-            } else {
-                TLRPC.EncryptedChat encryptedChat = profileActivity.getMessagesController().getEncryptedChat(hightId);
-                uid = encryptedChat.user_id;
-            }
-            req.user_id = profileActivity.getMessagesController().getInputUser(uid);
-            if (req.user_id instanceof TLRPC.TL_inputUserEmpty) {
-                return;
-            }
-            req.limit = count;
-            req.max_id = max_id;
-            loading = true;
-            notifyDataSetChanged();
-            int reqId = profileActivity.getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (error == null) {
-                    TLRPC.messages_Chats res = (TLRPC.messages_Chats) response;
-                    profileActivity.getMessagesController().putChats(res.chats, false);
-                    endReached = res.chats.isEmpty() || res.chats.size() != count;
-                    chats.addAll(res.chats);
-                } else {
-                    endReached = true;
-                }
-                loading = false;
-                firstLoaded = true;
-                for (int a = 0; a < mediaPages.length; a++) {
-                    if (mediaPages[a].selectedType == 6) {
-                        if (mediaPages[a].progressView != null) {
-                            mediaPages[a].progressView.setVisibility(View.GONE);
-                        }
-                        if (mediaPages[a].listView != null) {
-                            if (mediaPages[a].listView.getEmptyView() == null) {
-                                mediaPages[a].listView.setEmptyView(mediaPages[a].emptyView);
-                            }
-                        }
-                    }
-                }
-                notifyDataSetChanged();
-            }));
-            profileActivity.getConnectionsManager().bindRequestToGuid(reqId, profileActivity.getClassGuid());
+            //TODO 发起请求
+//            TLRPC.TL_messages_getCommonChats req = new TLRPC.TL_messages_getCommonChats();
+//            int uid;
+//            int lowerId = (int) dialog_id;
+//            int hightId = (int) (dialog_id >> 32);
+//            if (lowerId != 0) {
+//                uid = lowerId;
+//            } else {
+//                TLRPC.EncryptedChat encryptedChat = profileActivity.getMessagesController().getEncryptedChat(hightId);
+//                uid = encryptedChat.user_id;
+//            }
+//            req.user_id = profileActivity.getMessagesController().getInputUser(uid);
+//            if (req.user_id instanceof TLRPC.TL_inputUserEmpty) {
+//                return;
+//            }
+//            req.limit = count;
+//            req.max_id = max_id;
+//            loading = true;
+//            notifyDataSetChanged();
+//            int reqId = profileActivity.getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                if (error == null) {
+//                    TLRPC.messages_Chats res = (TLRPC.messages_Chats) response;
+//                    profileActivity.getMessagesController().putChats(res.chats, false);
+//                    endReached = res.chats.isEmpty() || res.chats.size() != count;
+//                    chats.addAll(res.chats);
+//                } else {
+//                    endReached = true;
+//                }
+//                loading = false;
+//                firstLoaded = true;
+//                for (int a = 0; a < mediaPages.length; a++) {
+//                    if (mediaPages[a].selectedType == 6) {
+//                        if (mediaPages[a].progressView != null) {
+//                            mediaPages[a].progressView.setVisibility(View.GONE);
+//                        }
+//                        if (mediaPages[a].listView != null) {
+//                            if (mediaPages[a].listView.getEmptyView() == null) {
+//                                mediaPages[a].listView.setEmptyView(mediaPages[a].emptyView);
+//                            }
+//                        }
+//                    }
+//                }
+//                notifyDataSetChanged();
+//            }));
+//            profileActivity.getConnectionsManager().bindRequestToGuid(reqId, profileActivity.getClassGuid());
         }
 
         @Override

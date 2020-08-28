@@ -473,13 +473,14 @@ public class ImageLoader {
                         if (provider == 3 || provider == 4) {
                             WebFile webFile = testWebFile.get(location);
                             if (webFile != null) {
-                                TLRPC.TL_upload_getWebFile req = new TLRPC.TL_upload_getWebFile();
-                                req.location = webFile.location;
-                                req.offset = 0;
-                                req.limit = 0;
-                                ConnectionsManager.getInstance(cacheImage.currentAccount).sendRequest(req, (response, error) -> {
-
-                                });
+                                //TODO 发起请求
+//                                TLRPC.TL_upload_getWebFile req = new TLRPC.TL_upload_getWebFile();
+//                                req.location = webFile.location;
+//                                req.offset = 0;
+//                                req.limit = 0;
+//                                ConnectionsManager.getInstance(cacheImage.currentAccount).sendRequest(req, (response, error) -> {
+//
+//                                });
                             }
                         }
                     }

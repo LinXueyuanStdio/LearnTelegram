@@ -1240,45 +1240,46 @@ public class FileLoadOperation {
             return;
         }
         requestingCdnOffsets = true;
-        TLRPC.TL_upload_getCdnFileHashes req = new TLRPC.TL_upload_getCdnFileHashes();
-        req.file_token = cdnToken;
-        req.offset = offset;
-        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-            if (error != null) {
-                onFail(false, 0);
-            } else {
-                requestingCdnOffsets = false;
-                TLRPC.Vector vector = (TLRPC.Vector) response;
-                if (!vector.objects.isEmpty()) {
-                    if (cdnHashes == null) {
-                        cdnHashes = new SparseArray<>();
-                    }
-                    for (int a = 0; a < vector.objects.size(); a++) {
-                        TLRPC.TL_fileHash hash = (TLRPC.TL_fileHash) vector.objects.get(a);
-                        cdnHashes.put(hash.offset, hash);
-                    }
-                }
-                for (int a = 0; a < delayedRequestInfos.size(); a++) {
-                    RequestInfo delayedRequestInfo = delayedRequestInfos.get(a);
-                    if (notLoadedBytesRanges != null || downloadedBytes == delayedRequestInfo.offset) {
-                        delayedRequestInfos.remove(a);
-                        if (!processRequestResult(delayedRequestInfo, null)) {
-                            if (delayedRequestInfo.response != null) {
-                                delayedRequestInfo.response.disableFree = false;
-                                delayedRequestInfo.response.freeResources();
-                            } else if (delayedRequestInfo.responseWeb != null) {
-                                delayedRequestInfo.responseWeb.disableFree = false;
-                                delayedRequestInfo.responseWeb.freeResources();
-                            } else if (delayedRequestInfo.responseCdn != null) {
-                                delayedRequestInfo.responseCdn.disableFree = false;
-                                delayedRequestInfo.responseCdn.freeResources();
-                            }
-                        }
-                        break;
-                    }
-                }
-            }
-        }, null, null, 0, datacenterId, ConnectionsManager.ConnectionTypeGeneric, true);
+        //TODO 发起请求
+//        TLRPC.TL_upload_getCdnFileHashes req = new TLRPC.TL_upload_getCdnFileHashes();
+//        req.file_token = cdnToken;
+//        req.offset = offset;
+//        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
+//            if (error != null) {
+//                onFail(false, 0);
+//            } else {
+//                requestingCdnOffsets = false;
+//                TLRPC.Vector vector = (TLRPC.Vector) response;
+//                if (!vector.objects.isEmpty()) {
+//                    if (cdnHashes == null) {
+//                        cdnHashes = new SparseArray<>();
+//                    }
+//                    for (int a = 0; a < vector.objects.size(); a++) {
+//                        TLRPC.TL_fileHash hash = (TLRPC.TL_fileHash) vector.objects.get(a);
+//                        cdnHashes.put(hash.offset, hash);
+//                    }
+//                }
+//                for (int a = 0; a < delayedRequestInfos.size(); a++) {
+//                    RequestInfo delayedRequestInfo = delayedRequestInfos.get(a);
+//                    if (notLoadedBytesRanges != null || downloadedBytes == delayedRequestInfo.offset) {
+//                        delayedRequestInfos.remove(a);
+//                        if (!processRequestResult(delayedRequestInfo, null)) {
+//                            if (delayedRequestInfo.response != null) {
+//                                delayedRequestInfo.response.disableFree = false;
+//                                delayedRequestInfo.response.freeResources();
+//                            } else if (delayedRequestInfo.responseWeb != null) {
+//                                delayedRequestInfo.responseWeb.disableFree = false;
+//                                delayedRequestInfo.responseWeb.freeResources();
+//                            } else if (delayedRequestInfo.responseCdn != null) {
+//                                delayedRequestInfo.responseCdn.disableFree = false;
+//                                delayedRequestInfo.responseCdn.freeResources();
+//                            }
+//                        }
+//                        break;
+//                    }
+//                }
+//            }
+//        }, null, null, 0, datacenterId, ConnectionsManager.ConnectionTypeGeneric, true);
     }
 
     protected boolean processRequestResult(RequestInfo requestInfo, TLRPC.TL_error error) {
@@ -1695,175 +1696,176 @@ public class FileLoadOperation {
                 break;
             }
             boolean isLast = totalBytesCount <= 0 || a == count - 1 || totalBytesCount > 0 && downloadOffset + currentDownloadChunkSize >= totalBytesCount;
-            final TLObject request;
-            int connectionType = requestsCount % 2 == 0 ? ConnectionsManager.ConnectionTypeDownload : ConnectionsManager.ConnectionTypeDownload2;
-            int flags = (isForceRequest ? ConnectionsManager.RequestFlagForceDownload : 0);
-            if (isCdn) {
-                TLRPC.TL_upload_getCdnFile req = new TLRPC.TL_upload_getCdnFile();
-                req.file_token = cdnToken;
-                req.offset = downloadOffset;
-                req.limit = currentDownloadChunkSize;
-                request = req;
-                flags |= ConnectionsManager.RequestFlagEnableUnauthorized;
-            } else {
-                if (webLocation != null) {
-                    TLRPC.TL_upload_getWebFile req = new TLRPC.TL_upload_getWebFile();
-                    req.location = webLocation;
-                    req.offset = downloadOffset;
-                    req.limit = currentDownloadChunkSize;
-                    request = req;
-                } else {
-                    TLRPC.TL_upload_getFile req = new TLRPC.TL_upload_getFile();
-                    req.location = location;
-                    req.offset = downloadOffset;
-                    req.limit = currentDownloadChunkSize;
-                    req.cdn_supported = true;
-                    request = req;
-                }
-            }
-            requestedBytesCount += currentDownloadChunkSize;
-            final RequestInfo requestInfo = new RequestInfo();
-            requestInfos.add(requestInfo);
-            requestInfo.offset = downloadOffset;
-
-            if (!isPreloadVideoOperation && supportsPreloading && preloadStream != null && preloadedBytesRanges != null) {
-                PreloadRange range = preloadedBytesRanges.get(requestInfo.offset);
-                if (range != null) {
-                    requestInfo.response = new TLRPC.TL_upload_file();
-                    try {
-                        NativeByteBuffer buffer = new NativeByteBuffer(range.length);
-                        preloadStream.seek(range.fileOffset);
-                        preloadStream.getChannel().read(buffer.buffer);
-                        buffer.buffer.position(0);
-                        requestInfo.response.bytes = buffer;
-                        Utilities.stageQueue.postRunnable(() -> {
-                            processRequestResult(requestInfo, null);
-                            requestInfo.response.freeResources();
-                        });
-                        continue;
-                    } catch (Exception ignore) {
-
-                    }
-                }
-            }
-            if (streamPriorityStartOffset != 0) {
-                if (BuildVars.DEBUG_VERSION) {
-                    FileLog.d("frame get offset = " + streamPriorityStartOffset);
-                }
-                streamPriorityStartOffset = 0;
-                priorityRequestInfo = requestInfo;
-            }
-
-            requestInfo.requestToken = ConnectionsManager.getInstance(currentAccount).sendRequest(request, (response, error) -> {
-                if (!requestInfos.contains(requestInfo)) {
-                    return;
-                }
-                if (requestInfo == priorityRequestInfo) {
-                    if (BuildVars.DEBUG_VERSION) {
-                        FileLog.d("frame get request completed " + priorityRequestInfo.offset);
-                    }
-                    priorityRequestInfo = null;
-                }
-                if (error != null) {
-                    if (FileRefController.isFileRefError(error.text)) {
-                        requestReference(requestInfo);
-                        return;
-                    } else if (request instanceof TLRPC.TL_upload_getCdnFile) {
-                        if (error.text.equals("FILE_TOKEN_INVALID")) {
-                            isCdn = false;
-                            clearOperaion(requestInfo, false);
-                            startDownloadRequest();
-                            return;
-                        }
-                    }
-                }
-                if (response instanceof TLRPC.TL_upload_fileCdnRedirect) {
-                    TLRPC.TL_upload_fileCdnRedirect res = (TLRPC.TL_upload_fileCdnRedirect) response;
-                    if (!res.file_hashes.isEmpty()) {
-                        if (cdnHashes == null) {
-                            cdnHashes = new SparseArray<>();
-                        }
-                        for (int a1 = 0; a1 < res.file_hashes.size(); a1++) {
-                            TLRPC.TL_fileHash hash = res.file_hashes.get(a1);
-                            cdnHashes.put(hash.offset, hash);
-                        }
-                    }
-                    if (res.encryption_iv == null || res.encryption_key == null || res.encryption_iv.length != 16 || res.encryption_key.length != 32) {
-                        error = new TLRPC.TL_error();
-                        error.text = "bad redirect response";
-                        error.code = 400;
-                        processRequestResult(requestInfo, error);
-                    } else {
-                        isCdn = true;
-                        if (notCheckedCdnRanges == null) {
-                            notCheckedCdnRanges = new ArrayList<>();
-                            notCheckedCdnRanges.add(new Range(0, maxCdnParts));
-                        }
-                        cdnDatacenterId = res.dc_id;
-                        cdnIv = res.encryption_iv;
-                        cdnKey = res.encryption_key;
-                        cdnToken = res.file_token;
-                        clearOperaion(requestInfo, false);
-                        startDownloadRequest();
-                    }
-                } else if (response instanceof TLRPC.TL_upload_cdnFileReuploadNeeded) {
-                    if (!reuploadingCdn) {
-                        clearOperaion(requestInfo, false);
-                        reuploadingCdn = true;
-                        TLRPC.TL_upload_cdnFileReuploadNeeded res = (TLRPC.TL_upload_cdnFileReuploadNeeded) response;
-                        TLRPC.TL_upload_reuploadCdnFile req = new TLRPC.TL_upload_reuploadCdnFile();
-                        req.file_token = cdnToken;
-                        req.request_token = res.request_token;
-                        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response1, error1) -> {
-                            reuploadingCdn = false;
-                            if (error1 == null) {
-                                TLRPC.Vector vector = (TLRPC.Vector) response1;
-                                if (!vector.objects.isEmpty()) {
-                                    if (cdnHashes == null) {
-                                        cdnHashes = new SparseArray<>();
-                                    }
-                                    for (int a1 = 0; a1 < vector.objects.size(); a1++) {
-                                        TLRPC.TL_fileHash hash = (TLRPC.TL_fileHash) vector.objects.get(a1);
-                                        cdnHashes.put(hash.offset, hash);
-                                    }
-                                }
-                                startDownloadRequest();
-                            } else {
-                                if (error1.text.equals("FILE_TOKEN_INVALID") || error1.text.equals("REQUEST_TOKEN_INVALID")) {
-                                    isCdn = false;
-                                    clearOperaion(requestInfo, false);
-                                    startDownloadRequest();
-                                } else {
-                                    onFail(false, 0);
-                                }
-                            }
-                        }, null, null, 0, datacenterId, ConnectionsManager.ConnectionTypeGeneric, true);
-                    }
-                } else {
-                    if (response instanceof TLRPC.TL_upload_file) {
-                        requestInfo.response = (TLRPC.TL_upload_file) response;
-                    } else if (response instanceof TLRPC.TL_upload_webFile) {
-                        requestInfo.responseWeb = (TLRPC.TL_upload_webFile) response;
-                        if (totalBytesCount == 0 && requestInfo.responseWeb.size != 0) {
-                            totalBytesCount = requestInfo.responseWeb.size;
-                        }
-                    } else {
-                        requestInfo.responseCdn = (TLRPC.TL_upload_cdnFile) response;
-                    }
-                    if (response != null) {
-                        if (currentType == ConnectionsManager.FileTypeAudio) {
-                            StatsController.getInstance(currentAccount).incrementReceivedBytesCount(response.networkType, StatsController.TYPE_AUDIOS, response.getObjectSize() + 4);
-                        } else if (currentType == ConnectionsManager.FileTypeVideo) {
-                            StatsController.getInstance(currentAccount).incrementReceivedBytesCount(response.networkType, StatsController.TYPE_VIDEOS, response.getObjectSize() + 4);
-                        } else if (currentType == ConnectionsManager.FileTypePhoto) {
-                            StatsController.getInstance(currentAccount).incrementReceivedBytesCount(response.networkType, StatsController.TYPE_PHOTOS, response.getObjectSize() + 4);
-                        } else if (currentType == ConnectionsManager.FileTypeFile) {
-                            StatsController.getInstance(currentAccount).incrementReceivedBytesCount(response.networkType, StatsController.TYPE_FILES, response.getObjectSize() + 4);
-                        }
-                    }
-                    processRequestResult(requestInfo, error);
-                }
-            }, null, null, flags, isCdn ? cdnDatacenterId : datacenterId, connectionType, isLast);
+            //TODO 发起请求
+//            final TLObject request;
+//            int connectionType = requestsCount % 2 == 0 ? ConnectionsManager.ConnectionTypeDownload : ConnectionsManager.ConnectionTypeDownload2;
+//            int flags = (isForceRequest ? ConnectionsManager.RequestFlagForceDownload : 0);
+//            if (isCdn) {
+//                TLRPC.TL_upload_getCdnFile req = new TLRPC.TL_upload_getCdnFile();
+//                req.file_token = cdnToken;
+//                req.offset = downloadOffset;
+//                req.limit = currentDownloadChunkSize;
+//                request = req;
+//                flags |= ConnectionsManager.RequestFlagEnableUnauthorized;
+//            } else {
+//                if (webLocation != null) {
+//                    TLRPC.TL_upload_getWebFile req = new TLRPC.TL_upload_getWebFile();
+//                    req.location = webLocation;
+//                    req.offset = downloadOffset;
+//                    req.limit = currentDownloadChunkSize;
+//                    request = req;
+//                } else {
+//                    TLRPC.TL_upload_getFile req = new TLRPC.TL_upload_getFile();
+//                    req.location = location;
+//                    req.offset = downloadOffset;
+//                    req.limit = currentDownloadChunkSize;
+//                    req.cdn_supported = true;
+//                    request = req;
+//                }
+//            }
+//            requestedBytesCount += currentDownloadChunkSize;
+//            final RequestInfo requestInfo = new RequestInfo();
+//            requestInfos.add(requestInfo);
+//            requestInfo.offset = downloadOffset;
+//
+//            if (!isPreloadVideoOperation && supportsPreloading && preloadStream != null && preloadedBytesRanges != null) {
+//                PreloadRange range = preloadedBytesRanges.get(requestInfo.offset);
+//                if (range != null) {
+//                    requestInfo.response = new TLRPC.TL_upload_file();
+//                    try {
+//                        NativeByteBuffer buffer = new NativeByteBuffer(range.length);
+//                        preloadStream.seek(range.fileOffset);
+//                        preloadStream.getChannel().read(buffer.buffer);
+//                        buffer.buffer.position(0);
+//                        requestInfo.response.bytes = buffer;
+//                        Utilities.stageQueue.postRunnable(() -> {
+//                            processRequestResult(requestInfo, null);
+//                            requestInfo.response.freeResources();
+//                        });
+//                        continue;
+//                    } catch (Exception ignore) {
+//
+//                    }
+//                }
+//            }
+//            if (streamPriorityStartOffset != 0) {
+//                if (BuildVars.DEBUG_VERSION) {
+//                    FileLog.d("frame get offset = " + streamPriorityStartOffset);
+//                }
+//                streamPriorityStartOffset = 0;
+//                priorityRequestInfo = requestInfo;
+//            }
+//
+//            requestInfo.requestToken = ConnectionsManager.getInstance(currentAccount).sendRequest(request, (response, error) -> {
+//                if (!requestInfos.contains(requestInfo)) {
+//                    return;
+//                }
+//                if (requestInfo == priorityRequestInfo) {
+//                    if (BuildVars.DEBUG_VERSION) {
+//                        FileLog.d("frame get request completed " + priorityRequestInfo.offset);
+//                    }
+//                    priorityRequestInfo = null;
+//                }
+//                if (error != null) {
+//                    if (FileRefController.isFileRefError(error.text)) {
+//                        requestReference(requestInfo);
+//                        return;
+//                    } else if (request instanceof TLRPC.TL_upload_getCdnFile) {
+//                        if (error.text.equals("FILE_TOKEN_INVALID")) {
+//                            isCdn = false;
+//                            clearOperaion(requestInfo, false);
+//                            startDownloadRequest();
+//                            return;
+//                        }
+//                    }
+//                }
+//                if (response instanceof TLRPC.TL_upload_fileCdnRedirect) {
+//                    TLRPC.TL_upload_fileCdnRedirect res = (TLRPC.TL_upload_fileCdnRedirect) response;
+//                    if (!res.file_hashes.isEmpty()) {
+//                        if (cdnHashes == null) {
+//                            cdnHashes = new SparseArray<>();
+//                        }
+//                        for (int a1 = 0; a1 < res.file_hashes.size(); a1++) {
+//                            TLRPC.TL_fileHash hash = res.file_hashes.get(a1);
+//                            cdnHashes.put(hash.offset, hash);
+//                        }
+//                    }
+//                    if (res.encryption_iv == null || res.encryption_key == null || res.encryption_iv.length != 16 || res.encryption_key.length != 32) {
+//                        error = new TLRPC.TL_error();
+//                        error.text = "bad redirect response";
+//                        error.code = 400;
+//                        processRequestResult(requestInfo, error);
+//                    } else {
+//                        isCdn = true;
+//                        if (notCheckedCdnRanges == null) {
+//                            notCheckedCdnRanges = new ArrayList<>();
+//                            notCheckedCdnRanges.add(new Range(0, maxCdnParts));
+//                        }
+//                        cdnDatacenterId = res.dc_id;
+//                        cdnIv = res.encryption_iv;
+//                        cdnKey = res.encryption_key;
+//                        cdnToken = res.file_token;
+//                        clearOperaion(requestInfo, false);
+//                        startDownloadRequest();
+//                    }
+//                } else if (response instanceof TLRPC.TL_upload_cdnFileReuploadNeeded) {
+//                    if (!reuploadingCdn) {
+//                        clearOperaion(requestInfo, false);
+//                        reuploadingCdn = true;
+//                        TLRPC.TL_upload_cdnFileReuploadNeeded res = (TLRPC.TL_upload_cdnFileReuploadNeeded) response;
+//                        TLRPC.TL_upload_reuploadCdnFile req = new TLRPC.TL_upload_reuploadCdnFile();
+//                        req.file_token = cdnToken;
+//                        req.request_token = res.request_token;
+//                        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response1, error1) -> {
+//                            reuploadingCdn = false;
+//                            if (error1 == null) {
+//                                TLRPC.Vector vector = (TLRPC.Vector) response1;
+//                                if (!vector.objects.isEmpty()) {
+//                                    if (cdnHashes == null) {
+//                                        cdnHashes = new SparseArray<>();
+//                                    }
+//                                    for (int a1 = 0; a1 < vector.objects.size(); a1++) {
+//                                        TLRPC.TL_fileHash hash = (TLRPC.TL_fileHash) vector.objects.get(a1);
+//                                        cdnHashes.put(hash.offset, hash);
+//                                    }
+//                                }
+//                                startDownloadRequest();
+//                            } else {
+//                                if (error1.text.equals("FILE_TOKEN_INVALID") || error1.text.equals("REQUEST_TOKEN_INVALID")) {
+//                                    isCdn = false;
+//                                    clearOperaion(requestInfo, false);
+//                                    startDownloadRequest();
+//                                } else {
+//                                    onFail(false, 0);
+//                                }
+//                            }
+//                        }, null, null, 0, datacenterId, ConnectionsManager.ConnectionTypeGeneric, true);
+//                    }
+//                } else {
+//                    if (response instanceof TLRPC.TL_upload_file) {
+//                        requestInfo.response = (TLRPC.TL_upload_file) response;
+//                    } else if (response instanceof TLRPC.TL_upload_webFile) {
+//                        requestInfo.responseWeb = (TLRPC.TL_upload_webFile) response;
+//                        if (totalBytesCount == 0 && requestInfo.responseWeb.size != 0) {
+//                            totalBytesCount = requestInfo.responseWeb.size;
+//                        }
+//                    } else {
+//                        requestInfo.responseCdn = (TLRPC.TL_upload_cdnFile) response;
+//                    }
+//                    if (response != null) {
+//                        if (currentType == ConnectionsManager.FileTypeAudio) {
+//                            StatsController.getInstance(currentAccount).incrementReceivedBytesCount(response.networkType, StatsController.TYPE_AUDIOS, response.getObjectSize() + 4);
+//                        } else if (currentType == ConnectionsManager.FileTypeVideo) {
+//                            StatsController.getInstance(currentAccount).incrementReceivedBytesCount(response.networkType, StatsController.TYPE_VIDEOS, response.getObjectSize() + 4);
+//                        } else if (currentType == ConnectionsManager.FileTypePhoto) {
+//                            StatsController.getInstance(currentAccount).incrementReceivedBytesCount(response.networkType, StatsController.TYPE_PHOTOS, response.getObjectSize() + 4);
+//                        } else if (currentType == ConnectionsManager.FileTypeFile) {
+//                            StatsController.getInstance(currentAccount).incrementReceivedBytesCount(response.networkType, StatsController.TYPE_FILES, response.getObjectSize() + 4);
+//                        }
+//                    }
+//                    processRequestResult(requestInfo, error);
+//                }
+//            }, null, null, flags, isCdn ? cdnDatacenterId : datacenterId, connectionType, isLast);
             requestsCount++;
         }
     }

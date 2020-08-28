@@ -1,5 +1,6 @@
 package com.demo.chat.model;
 
+import com.demo.chat.messager.AbstractSerializedData;
 import com.demo.chat.model.bot.BotInfo;
 import com.demo.chat.model.small.ChatPhoto;
 import com.demo.chat.model.small.MessageMedia;
@@ -147,10 +148,22 @@ public class Chat {
         public int admin_id;
     }
 
-
     public static class ChatParticipant{
         public int user_id;
         public int inviter_id;
         public int date;
     }
+
+    public void readParams(AbstractSerializedData stream, boolean exception) {
+
+    }
+    public void serializeToStream(AbstractSerializedData stream) {
+
+    }
+    public static Chat TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
+        Chat result = new Chat();
+        result.readParams(stream, exception);
+        return result;
+    }
+
 }

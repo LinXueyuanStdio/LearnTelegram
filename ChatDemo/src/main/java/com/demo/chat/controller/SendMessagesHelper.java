@@ -301,7 +301,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         public TLObject locationParent;
         public String httpLocation;
         public MessageObject obj;
-        public EncryptedChat encryptedChat;
         public VideoEditedInfo videoEditedInfo;
         public boolean performMediaUpload;
 
@@ -931,33 +930,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             if (messageObject.messageOwner.random_id == 0) {
                 messageObject.messageOwner.random_id = getNextRandomId();
             }
-            if (messageObject.messageOwner.action.encryptedAction instanceof TL_decryptedMessageActionSetMessageTTL) {
-                getSecretChatHelper().sendTTLMessage(encryptedChat, messageObject.messageOwner);
-            } else if (messageObject.messageOwner.action.encryptedAction instanceof TL_decryptedMessageActionDeleteMessages) {
-                getSecretChatHelper().sendMessagesDeleteMessage(encryptedChat, null, messageObject.messageOwner);
-            } else if (messageObject.messageOwner.action.encryptedAction instanceof TL_decryptedMessageActionFlushHistory) {
-                getSecretChatHelper().sendClearHistoryMessage(encryptedChat, messageObject.messageOwner);
-            } else if (messageObject.messageOwner.action.encryptedAction instanceof TL_decryptedMessageActionNotifyLayer) {
-                getSecretChatHelper().sendNotifyLayerMessage(encryptedChat, messageObject.messageOwner);
-            } else if (messageObject.messageOwner.action.encryptedAction instanceof TL_decryptedMessageActionReadMessages) {
-                getSecretChatHelper().sendMessagesReadMessage(encryptedChat, null, messageObject.messageOwner);
-            } else if (messageObject.messageOwner.action.encryptedAction instanceof TL_decryptedMessageActionScreenshotMessages) {
-                getSecretChatHelper().sendScreenshotMessage(encryptedChat, null, messageObject.messageOwner);
-            } else if (messageObject.messageOwner.action.encryptedAction instanceof TL_decryptedMessageActionTyping) {
-
-            } else if (messageObject.messageOwner.action.encryptedAction instanceof TL_decryptedMessageActionResend) {
-                getSecretChatHelper().sendResendMessage(encryptedChat, 0, 0, messageObject.messageOwner);
-            } else if (messageObject.messageOwner.action.encryptedAction instanceof TL_decryptedMessageActionCommitKey) {
-                getSecretChatHelper().sendCommitKeyMessage(encryptedChat, messageObject.messageOwner);
-            } else if (messageObject.messageOwner.action.encryptedAction instanceof TL_decryptedMessageActionAbortKey) {
-                getSecretChatHelper().sendAbortKeyMessage(encryptedChat, messageObject.messageOwner, 0);
-            } else if (messageObject.messageOwner.action.encryptedAction instanceof TL_decryptedMessageActionRequestKey) {
-                getSecretChatHelper().sendRequestKeyMessage(encryptedChat, messageObject.messageOwner);
-            } else if (messageObject.messageOwner.action.encryptedAction instanceof TL_decryptedMessageActionAcceptKey) {
-                getSecretChatHelper().sendAcceptKeyMessage(encryptedChat, messageObject.messageOwner);
-            } else if (messageObject.messageOwner.action.encryptedAction instanceof TL_decryptedMessageActionNoop) {
-                getSecretChatHelper().sendNoopMessage(encryptedChat, messageObject.messageOwner);
-            }
             return true;
         } else if (messageObject.messageOwner.action instanceof TL_messageActionScreenshotTaken) {
             User user = getMessagesController().getUser((int) messageObject.getDialogId());
@@ -1441,161 +1413,162 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
                     getUserConfig().saveConfig(false);
 
-                    final TL_messages_forwardMessages req = new TL_messages_forwardMessages();
-                    req.to_peer = inputPeer;
-                    req.grouped = lastGroupedId != 0;
-                    req.silent = !notify || MessagesController.getNotificationsSettings(currentAccount).getBoolean("silent_" + peer, false);
-                    if (scheduleDate != 0) {
-                        req.schedule_date = scheduleDate;
-                        req.flags |= 1024;
-                    }
-                    if (msgObj.messageOwner.to_id instanceof TL_peerChannel) {
-                        Chat channel = getMessagesController().getChat(msgObj.messageOwner.to_id.channel_id);
-                        req.from_peer = new TL_inputPeerChannel();
-                        req.from_peer.channel_id = msgObj.messageOwner.to_id.channel_id;
-                        if (channel != null) {
-                            req.from_peer.access_hash = channel.access_hash;
-                        }
-                    } else {
-                        req.from_peer = new TL_inputPeerEmpty();
-                    }
-                    req.random_id = randomIds;
-                    req.id = ids;
-                    req.with_my_score = messages.size() == 1 && messages.get(0).messageOwner.with_my_score;
-
-                    final ArrayList<Message> newMsgObjArr = arr;
-                    final ArrayList<MessageObject> newMsgArr = objArr;
-                    final LongSparseArray<Message> messagesByRandomIdsFinal = messagesByRandomIds;
-                    final boolean isMegagroupFinal = isMegagroup;
-                    boolean scheduledOnline = scheduleDate == 0x7FFFFFFE;
-                    getConnectionsManager().sendRequest(req, (response, error) -> {
-                        if (error == null) {
-                            SparseLongArray newMessagesByIds = new SparseLongArray();
-                            Updates updates = (Updates) response;
-                            for (int a1 = 0; a1 < updates.updates.size(); a1++) {
-                                Update update = updates.updates.get(a1);
-                                if (update instanceof TL_updateMessageID) {
-                                    TL_updateMessageID updateMessageID = (TL_updateMessageID) update;
-                                    newMessagesByIds.put(updateMessageID.id, updateMessageID.random_id);
-                                    updates.updates.remove(a1);
-                                    a1--;
-                                }
-                            }
-                            Integer value = getMessagesController().dialogs_read_outbox_max.get(peer);
-                            if (value == null) {
-                                value = getMessagesStorage().getDialogReadMax(true, peer);
-                                getMessagesController().dialogs_read_outbox_max.put(peer, value);
-                            }
-
-                            int sentCount = 0;
-                            for (int a1 = 0; a1 < updates.updates.size(); a1++) {
-                                Update update = updates.updates.get(a1);
-                                if (update instanceof TL_updateNewMessage || update instanceof TL_updateNewChannelMessage || update instanceof TL_updateNewScheduledMessage) {
-
-                                    boolean currentSchedule = scheduleDate != 0;
-
-                                    updates.updates.remove(a1);
-                                    a1--;
-                                    final Message message;
-                                    if (update instanceof TL_updateNewMessage) {
-                                        TL_updateNewMessage updateNewMessage = (TL_updateNewMessage) update;
-                                        message = updateNewMessage.message;
-                                        getMessagesController().processNewDifferenceParams(-1, updateNewMessage.pts, -1, updateNewMessage.pts_count);
-                                    } else if (update instanceof TL_updateNewScheduledMessage) {
-                                        TL_updateNewScheduledMessage updateNewMessage = (TL_updateNewScheduledMessage) update;
-                                        message = updateNewMessage.message;
-                                    } else {
-                                        TL_updateNewChannelMessage updateNewChannelMessage = (TL_updateNewChannelMessage) update;
-                                        message = updateNewChannelMessage.message;
-                                        getMessagesController().processNewChannelDifferenceParams(updateNewChannelMessage.pts, updateNewChannelMessage.pts_count, message.to_id.channel_id);
-                                        if (isMegagroupFinal) {
-                                            message.flags |= Message.MESSAGE_FLAG_MEGAGROUP;
-                                        }
-                                    }
-                                    if (scheduledOnline && message.date != 0x7FFFFFFE) {
-                                        currentSchedule = false;
-                                    }
-                                    ImageLoader.saveMessageThumbs(message);
-                                    if (!currentSchedule) {
-                                        message.unread = value < message.id;
-                                    }
-                                    if (toMyself) {
-                                        message.out = true;
-                                        message.unread = false;
-                                        message.media_unread = false;
-                                    }
-                                    long random_id = newMessagesByIds.get(message.id);
-                                    if (random_id != 0) {
-                                        final Message newMsgObj1 = messagesByRandomIdsFinal.get(random_id);
-                                        if (newMsgObj1 == null) {
-                                            continue;
-                                        }
-                                        int index = newMsgObjArr.indexOf(newMsgObj1);
-                                        if (index == -1) {
-                                            continue;
-                                        }
-                                        MessageObject msgObj1 = newMsgArr.get(index);
-                                        newMsgObjArr.remove(index);
-                                        newMsgArr.remove(index);
-                                        final int oldId = newMsgObj1.id;
-                                        final ArrayList<Message> sentMessages = new ArrayList<>();
-                                        sentMessages.add(message);
-                                        updateMediaPaths(msgObj1, message, message.id, null, true);
-                                        int existFlags = msgObj1.getMediaExistanceFlags();
-                                        newMsgObj1.id = message.id;
-                                        sentCount++;
-
-                                        if (scheduleDate != 0 && !currentSchedule) {
-                                            AndroidUtilities.runOnUIThread(() -> {
-                                                ArrayList<Integer> messageIds = new ArrayList<>();
-                                                messageIds.add(oldId);
-                                                getMessagesController().deleteMessages(messageIds, null, null, newMsgObj1.dialog_id, newMsgObj1.to_id.channel_id, false, true);
-                                                getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                                                    getMessagesStorage().putMessages(sentMessages, true, false, false, 0, false);
-                                                    AndroidUtilities.runOnUIThread(() -> {
-                                                        ArrayList<MessageObject> messageObjects = new ArrayList<>();
-                                                        messageObjects.add(new MessageObject(msgObj.currentAccount, msgObj.messageOwner, true));
-                                                        getMessagesController().updateInterfaceWithMessages(newMsgObj1.dialog_id, messageObjects, false);
-                                                        getMediaDataController().increasePeerRaiting(newMsgObj1.dialog_id);
-                                                        processSentMessage(oldId);
-                                                        removeFromSendingMessages(oldId, scheduleDate != 0);
-                                                    });
-                                                });
-                                            });
-                                        } else {
-                                            getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                                                getMessagesStorage().updateMessageStateAndId(newMsgObj1.random_id, oldId, newMsgObj1.id, 0, false, to_id.channel_id, scheduleDate != 0 ? 1 : 0);
-                                                getMessagesStorage().putMessages(sentMessages, true, false, false, 0, scheduleDate != 0);
-                                                AndroidUtilities.runOnUIThread(() -> {
-                                                    newMsgObj1.send_state = MessageObject.MESSAGE_SEND_STATE_SENT;
-                                                    getMediaDataController().increasePeerRaiting(peer);
-                                                    getNotificationCenter().postNotificationName(NotificationCenter.messageReceivedByServer, oldId, message.id, message, peer, 0L, existFlags, scheduleDate != 0);
-                                                    processSentMessage(oldId);
-                                                    removeFromSendingMessages(oldId, scheduleDate != 0);
-                                                });
-                                            });
-                                        }
-                                    }
-                                }
-                            }
-                            if (!updates.updates.isEmpty()) {
-                                getMessagesController().processUpdates(updates, false);
-                            }
-                            getStatsController().incrementSentItemsCount(ApplicationLoader.getCurrentNetworkType(), StatsController.TYPE_MESSAGES, sentCount);
-                        } else {
-                            AndroidUtilities.runOnUIThread(() -> AlertsCreator.processError(currentAccount, error, null, req));
-                        }
-                        for (int a1 = 0; a1 < newMsgObjArr.size(); a1++) {
-                            final Message newMsgObj1 = newMsgObjArr.get(a1);
-                            getMessagesStorage().markMessageAsSendError(newMsgObj1, scheduleDate != 0);
-                            AndroidUtilities.runOnUIThread(() -> {
-                                newMsgObj1.send_state = MessageObject.MESSAGE_SEND_STATE_SEND_ERROR;
-                                getNotificationCenter().postNotificationName(NotificationCenter.messageSendError, newMsgObj1.id);
-                                processSentMessage(newMsgObj1.id);
-                                removeFromSendingMessages(newMsgObj1.id, scheduleDate != 0);
-                            });
-                        }
-                    }, ConnectionsManager.RequestFlagCanCompress | ConnectionsManager.RequestFlagInvokeAfter);
+                    //TODO 发起请求
+//                    final TL_messages_forwardMessages req = new TL_messages_forwardMessages();
+//                    req.to_peer = inputPeer;
+//                    req.grouped = lastGroupedId != 0;
+//                    req.silent = !notify || MessagesController.getNotificationsSettings(currentAccount).getBoolean("silent_" + peer, false);
+//                    if (scheduleDate != 0) {
+//                        req.schedule_date = scheduleDate;
+//                        req.flags |= 1024;
+//                    }
+//                    if (msgObj.messageOwner.to_id instanceof TL_peerChannel) {
+//                        Chat channel = getMessagesController().getChat(msgObj.messageOwner.to_id.channel_id);
+//                        req.from_peer = new TL_inputPeerChannel();
+//                        req.from_peer.channel_id = msgObj.messageOwner.to_id.channel_id;
+//                        if (channel != null) {
+//                            req.from_peer.access_hash = channel.access_hash;
+//                        }
+//                    } else {
+//                        req.from_peer = new TL_inputPeerEmpty();
+//                    }
+//                    req.random_id = randomIds;
+//                    req.id = ids;
+//                    req.with_my_score = messages.size() == 1 && messages.get(0).messageOwner.with_my_score;
+//
+//                    final ArrayList<Message> newMsgObjArr = arr;
+//                    final ArrayList<MessageObject> newMsgArr = objArr;
+//                    final LongSparseArray<Message> messagesByRandomIdsFinal = messagesByRandomIds;
+//                    final boolean isMegagroupFinal = isMegagroup;
+//                    boolean scheduledOnline = scheduleDate == 0x7FFFFFFE;
+//                    getConnectionsManager().sendRequest(req, (response, error) -> {
+//                        if (error == null) {
+//                            SparseLongArray newMessagesByIds = new SparseLongArray();
+//                            Updates updates = (Updates) response;
+//                            for (int a1 = 0; a1 < updates.updates.size(); a1++) {
+//                                Update update = updates.updates.get(a1);
+//                                if (update instanceof TL_updateMessageID) {
+//                                    TL_updateMessageID updateMessageID = (TL_updateMessageID) update;
+//                                    newMessagesByIds.put(updateMessageID.id, updateMessageID.random_id);
+//                                    updates.updates.remove(a1);
+//                                    a1--;
+//                                }
+//                            }
+//                            Integer value = getMessagesController().dialogs_read_outbox_max.get(peer);
+//                            if (value == null) {
+//                                value = getMessagesStorage().getDialogReadMax(true, peer);
+//                                getMessagesController().dialogs_read_outbox_max.put(peer, value);
+//                            }
+//
+//                            int sentCount = 0;
+//                            for (int a1 = 0; a1 < updates.updates.size(); a1++) {
+//                                Update update = updates.updates.get(a1);
+//                                if (update instanceof TL_updateNewMessage || update instanceof TL_updateNewChannelMessage || update instanceof TL_updateNewScheduledMessage) {
+//
+//                                    boolean currentSchedule = scheduleDate != 0;
+//
+//                                    updates.updates.remove(a1);
+//                                    a1--;
+//                                    final Message message;
+//                                    if (update instanceof TL_updateNewMessage) {
+//                                        TL_updateNewMessage updateNewMessage = (TL_updateNewMessage) update;
+//                                        message = updateNewMessage.message;
+//                                        getMessagesController().processNewDifferenceParams(-1, updateNewMessage.pts, -1, updateNewMessage.pts_count);
+//                                    } else if (update instanceof TL_updateNewScheduledMessage) {
+//                                        TL_updateNewScheduledMessage updateNewMessage = (TL_updateNewScheduledMessage) update;
+//                                        message = updateNewMessage.message;
+//                                    } else {
+//                                        TL_updateNewChannelMessage updateNewChannelMessage = (TL_updateNewChannelMessage) update;
+//                                        message = updateNewChannelMessage.message;
+//                                        getMessagesController().processNewChannelDifferenceParams(updateNewChannelMessage.pts, updateNewChannelMessage.pts_count, message.to_id.channel_id);
+//                                        if (isMegagroupFinal) {
+//                                            message.flags |= Message.MESSAGE_FLAG_MEGAGROUP;
+//                                        }
+//                                    }
+//                                    if (scheduledOnline && message.date != 0x7FFFFFFE) {
+//                                        currentSchedule = false;
+//                                    }
+//                                    ImageLoader.saveMessageThumbs(message);
+//                                    if (!currentSchedule) {
+//                                        message.unread = value < message.id;
+//                                    }
+//                                    if (toMyself) {
+//                                        message.out = true;
+//                                        message.unread = false;
+//                                        message.media_unread = false;
+//                                    }
+//                                    long random_id = newMessagesByIds.get(message.id);
+//                                    if (random_id != 0) {
+//                                        final Message newMsgObj1 = messagesByRandomIdsFinal.get(random_id);
+//                                        if (newMsgObj1 == null) {
+//                                            continue;
+//                                        }
+//                                        int index = newMsgObjArr.indexOf(newMsgObj1);
+//                                        if (index == -1) {
+//                                            continue;
+//                                        }
+//                                        MessageObject msgObj1 = newMsgArr.get(index);
+//                                        newMsgObjArr.remove(index);
+//                                        newMsgArr.remove(index);
+//                                        final int oldId = newMsgObj1.id;
+//                                        final ArrayList<Message> sentMessages = new ArrayList<>();
+//                                        sentMessages.add(message);
+//                                        updateMediaPaths(msgObj1, message, message.id, null, true);
+//                                        int existFlags = msgObj1.getMediaExistanceFlags();
+//                                        newMsgObj1.id = message.id;
+//                                        sentCount++;
+//
+//                                        if (scheduleDate != 0 && !currentSchedule) {
+//                                            AndroidUtilities.runOnUIThread(() -> {
+//                                                ArrayList<Integer> messageIds = new ArrayList<>();
+//                                                messageIds.add(oldId);
+//                                                getMessagesController().deleteMessages(messageIds, null, null, newMsgObj1.dialog_id, newMsgObj1.to_id.channel_id, false, true);
+//                                                getMessagesStorage().getStorageQueue().postRunnable(() -> {
+//                                                    getMessagesStorage().putMessages(sentMessages, true, false, false, 0, false);
+//                                                    AndroidUtilities.runOnUIThread(() -> {
+//                                                        ArrayList<MessageObject> messageObjects = new ArrayList<>();
+//                                                        messageObjects.add(new MessageObject(msgObj.currentAccount, msgObj.messageOwner, true));
+//                                                        getMessagesController().updateInterfaceWithMessages(newMsgObj1.dialog_id, messageObjects, false);
+//                                                        getMediaDataController().increasePeerRaiting(newMsgObj1.dialog_id);
+//                                                        processSentMessage(oldId);
+//                                                        removeFromSendingMessages(oldId, scheduleDate != 0);
+//                                                    });
+//                                                });
+//                                            });
+//                                        } else {
+//                                            getMessagesStorage().getStorageQueue().postRunnable(() -> {
+//                                                getMessagesStorage().updateMessageStateAndId(newMsgObj1.random_id, oldId, newMsgObj1.id, 0, false, to_id.channel_id, scheduleDate != 0 ? 1 : 0);
+//                                                getMessagesStorage().putMessages(sentMessages, true, false, false, 0, scheduleDate != 0);
+//                                                AndroidUtilities.runOnUIThread(() -> {
+//                                                    newMsgObj1.send_state = MessageObject.MESSAGE_SEND_STATE_SENT;
+//                                                    getMediaDataController().increasePeerRaiting(peer);
+//                                                    getNotificationCenter().postNotificationName(NotificationCenter.messageReceivedByServer, oldId, message.id, message, peer, 0L, existFlags, scheduleDate != 0);
+//                                                    processSentMessage(oldId);
+//                                                    removeFromSendingMessages(oldId, scheduleDate != 0);
+//                                                });
+//                                            });
+//                                        }
+//                                    }
+//                                }
+//                            }
+//                            if (!updates.updates.isEmpty()) {
+//                                getMessagesController().processUpdates(updates, false);
+//                            }
+//                            getStatsController().incrementSentItemsCount(ApplicationLoader.getCurrentNetworkType(), StatsController.TYPE_MESSAGES, sentCount);
+//                        } else {
+//                            AndroidUtilities.runOnUIThread(() -> AlertsCreator.processError(currentAccount, error, null, req));
+//                        }
+//                        for (int a1 = 0; a1 < newMsgObjArr.size(); a1++) {
+//                            final Message newMsgObj1 = newMsgObjArr.get(a1);
+//                            getMessagesStorage().markMessageAsSendError(newMsgObj1, scheduleDate != 0);
+//                            AndroidUtilities.runOnUIThread(() -> {
+//                                newMsgObj1.send_state = MessageObject.MESSAGE_SEND_STATE_SEND_ERROR;
+//                                getNotificationCenter().postNotificationName(NotificationCenter.messageSendError, newMsgObj1.id);
+//                                processSentMessage(newMsgObj1.id);
+//                                removeFromSendingMessages(newMsgObj1.id, scheduleDate != 0);
+//                            });
+//                        }
+//                    }, ConnectionsManager.RequestFlagCanCompress | ConnectionsManager.RequestFlagInvokeAfter);
 
                     if (a != messages.size() - 1) {
                         objArr = new ArrayList<>();
@@ -1962,33 +1935,34 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (fragment == null || fragment.getParentActivity() == null) {
             return 0;
         }
+        return 0;
 
-        final TL_messages_editMessage req = new TL_messages_editMessage();
-        req.peer = getMessagesController().getInputPeer((int) messageObject.getDialogId());
-        if (message != null) {
-            req.message = message;
-            req.flags |= 2048;
-            req.no_webpage = !searchLinks;
-        }
-        req.id = messageObject.getId();
-        if (entities != null) {
-            req.entities = entities;
-            req.flags |= 8;
-        }
-        if (scheduleDate != 0) {
-            req.schedule_date = scheduleDate;
-            req.flags |= 32768;
-        }
-        return getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (error == null) {
-                getMessagesController().processUpdates((Updates) response, false);
-            } else {
-                AndroidUtilities.runOnUIThread(() -> AlertsCreator.processError(currentAccount, error, fragment, req));
-            }
-            if (callback != null) {
-                AndroidUtilities.runOnUIThread(callback);
-            }
-        });
+//        final TL_messages_editMessage req = new TL_messages_editMessage();
+//        req.peer = getMessagesController().getInputPeer((int) messageObject.getDialogId());
+//        if (message != null) {
+//            req.message = message;
+//            req.flags |= 2048;
+//            req.no_webpage = !searchLinks;
+//        }
+//        req.id = messageObject.getId();
+//        if (entities != null) {
+//            req.entities = entities;
+//            req.flags |= 8;
+//        }
+//        if (scheduleDate != 0) {
+//            req.schedule_date = scheduleDate;
+//            req.flags |= 32768;
+//        }
+//        return getConnectionsManager().sendRequest(req, (response, error) -> {
+//            if (error == null) {
+//                getMessagesController().processUpdates((Updates) response, false);
+//            } else {
+//                AndroidUtilities.runOnUIThread(() -> AlertsCreator.processError(currentAccount, error, fragment, req));
+//            }
+//            if (callback != null) {
+//                AndroidUtilities.runOnUIThread(callback);
+//            }
+//        });
     }
 
     private void sendLocation(Location location) {
@@ -2020,40 +1994,41 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
     }
 
     public void sendNotificationCallback(final long dialogId, final int msgId, final byte[] data) {
-        AndroidUtilities.runOnUIThread(() -> {
-            int lowerId = (int) dialogId;
-            final String key = dialogId + "_" + msgId + "_" + Utilities.bytesToHex(data) + "_" + 0;
-            waitingForCallback.put(key, true);
-
-            if (lowerId > 0) {
-                User user = getMessagesController().getUser(lowerId);
-                if (user == null) {
-                    user = getMessagesStorage().getUserSync(lowerId);
-                    if (user != null) {
-                        getMessagesController().putUser(user, true);
-                    }
-                }
-            } else {
-                Chat chat = getMessagesController().getChat(-lowerId);
-                if (chat == null) {
-                    chat = getMessagesStorage().getChatSync(-lowerId);
-                    if (chat != null) {
-                        getMessagesController().putChat(chat, true);
-                    }
-                }
-            }
-
-            TL_messages_getBotCallbackAnswer req = new TL_messages_getBotCallbackAnswer();
-            req.peer = getMessagesController().getInputPeer(lowerId);
-            req.msg_id = msgId;
-            req.game = false;
-            if (data != null) {
-                req.flags |= 1;
-                req.data = data;
-            }
-            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> waitingForCallback.remove(key)), ConnectionsManager.RequestFlagFailOnServerErrors);
-            getMessagesController().markDialogAsRead(dialogId, msgId, msgId, 0, false, 0, true, 0);
-        });
+        //TODO 发起请求
+//        AndroidUtilities.runOnUIThread(() -> {
+//            int lowerId = (int) dialogId;
+//            final String key = dialogId + "_" + msgId + "_" + Utilities.bytesToHex(data) + "_" + 0;
+//            waitingForCallback.put(key, true);
+//
+//            if (lowerId > 0) {
+//                User user = getMessagesController().getUser(lowerId);
+//                if (user == null) {
+//                    user = getMessagesStorage().getUserSync(lowerId);
+//                    if (user != null) {
+//                        getMessagesController().putUser(user, true);
+//                    }
+//                }
+//            } else {
+//                Chat chat = getMessagesController().getChat(-lowerId);
+//                if (chat == null) {
+//                    chat = getMessagesStorage().getChatSync(-lowerId);
+//                    if (chat != null) {
+//                        getMessagesController().putChat(chat, true);
+//                    }
+//                }
+//            }
+//
+//            TL_messages_getBotCallbackAnswer req = new TL_messages_getBotCallbackAnswer();
+//            req.peer = getMessagesController().getInputPeer(lowerId);
+//            req.msg_id = msgId;
+//            req.game = false;
+//            if (data != null) {
+//                req.flags |= 1;
+//                req.data = data;
+//            }
+//            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> waitingForCallback.remove(key)), ConnectionsManager.RequestFlagFailOnServerErrors);
+//            getMessagesController().markDialogAsRead(dialogId, msgId, msgId, 0, false, 0, true, 0);
+//        });
     }
 
     public byte[] isSendingVote(MessageObject messageObject) {
@@ -2072,34 +2047,36 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (waitingForCallback.containsKey(key)) {
             return 0;
         }
-        TL_messages_sendVote req = new TL_messages_sendVote();
-        req.msg_id = messageObject.getId();
-        req.peer = getMessagesController().getInputPeer((int) messageObject.getDialogId());
-        byte[] options;
-        if (answers != null) {
-            options = new byte[answers.size()];
-            for (int a = 0; a < answers.size(); a++) {
-                TL_pollAnswer answer = answers.get(a);
-                req.options.add(answer.option);
-                options[a] = answer.option[0];
-            }
-        } else {
-            options = new byte[0];
-        }
-        waitingForVote.put(key, options);
-        return getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (error == null) {
-                voteSendTime.put(messageObject.getPollId(), 0L);
-                getMessagesController().processUpdates((Updates) response, false);
-                voteSendTime.put(messageObject.getPollId(), SystemClock.elapsedRealtime());
-            }
-            AndroidUtilities.runOnUIThread(() -> {
-                waitingForVote.remove(key);
-                if (finishRunnable != null) {
-                    finishRunnable.run();
-                }
-            });
-        });
+        return 0;
+        //TODO 发起请求
+//        TL_messages_sendVote req = new TL_messages_sendVote();
+//        req.msg_id = messageObject.getId();
+//        req.peer = getMessagesController().getInputPeer((int) messageObject.getDialogId());
+//        byte[] options;
+//        if (answers != null) {
+//            options = new byte[answers.size()];
+//            for (int a = 0; a < answers.size(); a++) {
+//                TL_pollAnswer answer = answers.get(a);
+//                req.options.add(answer.option);
+//                options[a] = answer.option[0];
+//            }
+//        } else {
+//            options = new byte[0];
+//        }
+//        waitingForVote.put(key, options);
+//        return getConnectionsManager().sendRequest(req, (response, error) -> {
+//            if (error == null) {
+//                voteSendTime.put(messageObject.getPollId(), 0L);
+//                getMessagesController().processUpdates((Updates) response, false);
+//                voteSendTime.put(messageObject.getPollId(), SystemClock.elapsedRealtime());
+//            }
+//            AndroidUtilities.runOnUIThread(() -> {
+//                waitingForVote.remove(key);
+//                if (finishRunnable != null) {
+//                    finishRunnable.run();
+//                }
+//            });
+//        });
     }
 
     protected long getVoteSendTime(long pollId) {
@@ -2110,27 +2087,28 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (messageObject == null || parentFragment == null) {
             return;
         }
-        TL_messages_sendReaction req = new TL_messages_sendReaction();
-        req.peer = getMessagesController().getInputPeer((int) messageObject.getDialogId());
-        req.msg_id = messageObject.getId();
-        if (reaction != null) {
-            req.reaction = reaction.toString();
-            req.flags |= 1;
-        }
-        getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (response != null) {
-                getMessagesController().processUpdates((Updates) response, false);
-            }
-            /*AndroidUtilities.runOnUIThread(new Runnable() {
-                @Override
-                public void run() {
-                    waitingForVote.remove(key);
-                    if (finishRunnable != null) {
-                        finishRunnable.run();
-                    }
-                }
-            });*/
-        });
+        //TODO 发起请求
+//        TL_messages_sendReaction req = new TL_messages_sendReaction();
+//        req.peer = getMessagesController().getInputPeer((int) messageObject.getDialogId());
+//        req.msg_id = messageObject.getId();
+//        if (reaction != null) {
+//            req.reaction = reaction.toString();
+//            req.flags |= 1;
+//        }
+//        getConnectionsManager().sendRequest(req, (response, error) -> {
+//            if (response != null) {
+//                getMessagesController().processUpdates((Updates) response, false);
+//            }
+//            /*AndroidUtilities.runOnUIThread(new Runnable() {
+//                @Override
+//                public void run() {
+//                    waitingForVote.remove(key);
+//                    if (finishRunnable != null) {
+//                        finishRunnable.run();
+//                    }
+//                }
+//            });*/
+//        });
     }
 
     public void sendCallback(final boolean cache, final MessageObject messageObject, final KeyboardButton button, final ChatActivity parentFragment) {
@@ -2238,32 +2216,24 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             getMessagesStorage().getBotCache(key, requestDelegate);
         } else {
             if (button instanceof TL_keyboardButtonUrlAuth) {
-                TL_messages_requestUrlAuth req = new TL_messages_requestUrlAuth();
-                req.peer = getMessagesController().getInputPeer((int) messageObject.getDialogId());
-                req.msg_id = messageObject.getId();
-                req.button_id = button.button_id;
-                request[0] = req;
-                getConnectionsManager().sendRequest(req, requestDelegate, ConnectionsManager.RequestFlagFailOnServerErrors);
-            } else if (button instanceof TL_keyboardButtonBuy) {
-                if ((messageObject.messageOwner.media.flags & 4) == 0) {
-                    TL_payments_getPaymentForm req = new TL_payments_getPaymentForm();
-                    req.msg_id = messageObject.getId();
-                    getConnectionsManager().sendRequest(req, requestDelegate, ConnectionsManager.RequestFlagFailOnServerErrors);
-                } else {
-                    TL_payments_getPaymentReceipt req = new TL_payments_getPaymentReceipt();
-                    req.msg_id = messageObject.messageOwner.media.receipt_msg_id;
-                    getConnectionsManager().sendRequest(req, requestDelegate, ConnectionsManager.RequestFlagFailOnServerErrors);
-                }
+                //TODO 发起请求
+//                TL_messages_requestUrlAuth req = new TL_messages_requestUrlAuth();
+//                req.peer = getMessagesController().getInputPeer((int) messageObject.getDialogId());
+//                req.msg_id = messageObject.getId();
+//                req.button_id = button.button_id;
+//                request[0] = req;
+//                getConnectionsManager().sendRequest(req, requestDelegate, ConnectionsManager.RequestFlagFailOnServerErrors);
             } else {
-                TL_messages_getBotCallbackAnswer req = new TL_messages_getBotCallbackAnswer();
-                req.peer = getMessagesController().getInputPeer((int) messageObject.getDialogId());
-                req.msg_id = messageObject.getId();
-                req.game = button instanceof TL_keyboardButtonGame;
-                if (button.data != null) {
-                    req.flags |= 1;
-                    req.data = button.data;
-                }
-                getConnectionsManager().sendRequest(req, requestDelegate, ConnectionsManager.RequestFlagFailOnServerErrors);
+                //TODO 发起请求
+//                TL_messages_getBotCallbackAnswer req = new TL_messages_getBotCallbackAnswer();
+//                req.peer = getMessagesController().getInputPeer((int) messageObject.getDialogId());
+//                req.msg_id = messageObject.getId();
+//                req.game = button instanceof TL_keyboardButtonGame;
+//                if (button.data != null) {
+//                    req.flags |= 1;
+//                    req.data = button.data;
+//                }
+//                getConnectionsManager().sendRequest(req, requestDelegate, ConnectionsManager.RequestFlagFailOnServerErrors);
             }
         }
     }
@@ -2284,48 +2254,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         }
         final String key = messageObject.getDialogId() + "_" + messageObject.getId() + "_" + Utilities.bytesToHex(button.data) + "_" + type;
         return waitingForCallback.containsKey(key);
-    }
-
-    public void sendGame(InputPeer peer, TL_inputMediaGame game, long random_id, final long taskId) {
-        if (peer == null || game == null) {
-            return;
-        }
-        TL_messages_sendMedia request = new TL_messages_sendMedia();
-        request.peer = peer;
-        if (request.peer instanceof TL_inputPeerChannel) {
-            request.silent = MessagesController.getNotificationsSettings(currentAccount).getBoolean("silent_" + -peer.channel_id, false);
-        } else if (request.peer instanceof TL_inputPeerChat) {
-            request.silent = MessagesController.getNotificationsSettings(currentAccount).getBoolean("silent_" + -peer.chat_id, false);
-        } else {
-            request.silent = MessagesController.getNotificationsSettings(currentAccount).getBoolean("silent_" + peer.user_id, false);
-        }
-        request.random_id = random_id != 0 ? random_id : getNextRandomId();
-        request.message = "";
-        request.media = game;
-        final long newTaskId;
-        if (taskId == 0) {
-            NativeByteBuffer data = null;
-            try {
-                data = new NativeByteBuffer(peer.getObjectSize() + game.getObjectSize() + 4 + 8);
-                data.writeInt32(3);
-                data.writeInt64(random_id);
-                peer.serializeToStream(data);
-                game.serializeToStream(data);
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-            newTaskId = getMessagesStorage().createPendingTask(data);
-        } else {
-            newTaskId = taskId;
-        }
-        getConnectionsManager().sendRequest(request, (response, error) -> {
-            if (error == null) {
-                getMessagesController().processUpdates((Updates) response, false);
-            }
-            if (newTaskId != 0) {
-                getMessagesStorage().removePendingTask(newTaskId);
-            }
-        });
     }
 
     public void sendMessage(MessageObject retryMessageObject) {
@@ -2621,7 +2549,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                     } else {
                                         if (attribute.stickerset instanceof TL_inputStickerSetID) {
                                             delayedMessage = new DelayedMessage(peer);
-                                            delayedMessage.encryptedChat = encryptedChat;
                                             delayedMessage.locationParent = attributeSticker;
                                             delayedMessage.type = 5;
                                             delayedMessage.parentObject = attribute.stickerset;
@@ -2803,7 +2730,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 if (delayedMessage == null) {
                     delayedMessage = new DelayedMessage(peer);
                     delayedMessage.initForGroup(groupId);
-                    delayedMessage.encryptedChat = encryptedChat;
                     delayedMessage.scheduled = scheduleDate != 0;
                 }
                 delayedMessage.performMediaUpload = false;
@@ -3272,7 +3198,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         if (big.location.key == null || groupId != 0) {
                             if (delayedMessage == null) {
                                 delayedMessage = new DelayedMessage(peer);
-                                delayedMessage.encryptedChat = encryptedChat;
                                 delayedMessage.type = 0;
                                 delayedMessage.originalPath = originalPath;
                                 delayedMessage.sendEncryptedRequest = reqSend;
@@ -3338,7 +3263,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         if (document.key == null || groupId != 0) {
                             if (delayedMessage == null) {
                                 delayedMessage = new DelayedMessage(peer);
-                                delayedMessage.encryptedChat = encryptedChat;
                                 delayedMessage.type = 1;
                                 delayedMessage.sendEncryptedRequest = reqSend;
                                 delayedMessage.originalPath = originalPath;
@@ -3423,7 +3347,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                                 } else {
                                     delayedMessage.parentObject = parentObject;
                                 }
-                                delayedMessage.encryptedChat = encryptedChat;
                                 delayedMessage.performMediaUpload = true;
                                 if (path != null && path.length() > 0 && path.startsWith("http")) {
                                     delayedMessage.httpLocation = path;
@@ -3441,7 +3364,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         }
                     } else if (type == 8) {
                         delayedMessage = new DelayedMessage(peer);
-                        delayedMessage.encryptedChat = encryptedChat;
                         delayedMessage.sendEncryptedRequest = reqSend;
                         delayedMessage.obj = newMsgObj;
                         delayedMessage.type = 3;
@@ -3837,28 +3759,29 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             sendReadyToSendGroup(message, add, true);
         } else if (message.type == 5) {
             String key = "stickerset_" + message.obj.getId();
-            TL_messages_getStickerSet req = new TL_messages_getStickerSet();
-            req.stickerset = (InputStickerSet) message.parentObject;
-            getConnectionsManager().sendRequest(req, (response, error) -> {
-                AndroidUtilities.runOnUIThread(() -> {
-                    boolean found = false;
-                    if (response != null) {
-                        TL_messages_stickerSet set = (TL_messages_stickerSet) response;
-                        getMediaDataController().storeTempStickerSet(set);
-                        TL_documentAttributeSticker_layer55 attributeSticker = (TL_documentAttributeSticker_layer55) message.locationParent;
-                        attributeSticker.stickerset = new TL_inputStickerSetShortName();
-                        attributeSticker.stickerset.short_name = set.set.short_name;
-                        found = true;
-                    }
-                    ArrayList<DelayedMessage> arrayList = delayedMessages.remove(key);
-                    if (arrayList != null && !arrayList.isEmpty()) {
-                        if (found) {
-                            getMessagesStorage().replaceMessageIfExists(arrayList.get(0).obj.messageOwner, null, null, false);
-                        }
-                        getSecretChatHelper().performSendEncryptedRequest((DecryptedMessage) message.sendEncryptedRequest, message.obj.messageOwner, message.encryptedChat, null, null, message.obj);
-                    }
-                });
-            });
+            //TODO 发起请求
+//            TL_messages_getStickerSet req = new TL_messages_getStickerSet();
+//            req.stickerset = (InputStickerSet) message.parentObject;
+//            getConnectionsManager().sendRequest(req, (response, error) -> {
+//                AndroidUtilities.runOnUIThread(() -> {
+//                    boolean found = false;
+//                    if (response != null) {
+//                        TL_messages_stickerSet set = (TL_messages_stickerSet) response;
+//                        getMediaDataController().storeTempStickerSet(set);
+//                        TL_documentAttributeSticker_layer55 attributeSticker = (TL_documentAttributeSticker_layer55) message.locationParent;
+//                        attributeSticker.stickerset = new TL_inputStickerSetShortName();
+//                        attributeSticker.stickerset.short_name = set.set.short_name;
+//                        found = true;
+//                    }
+//                    ArrayList<DelayedMessage> arrayList = delayedMessages.remove(key);
+//                    if (arrayList != null && !arrayList.isEmpty()) {
+//                        if (found) {
+//                            getMessagesStorage().replaceMessageIfExists(arrayList.get(0).obj.messageOwner, null, null, false);
+//                        }
+//                        getSecretChatHelper().performSendEncryptedRequest((DecryptedMessage) message.sendEncryptedRequest, message.obj.messageOwner, message.encryptedChat, null, null, message.obj);
+//                    }
+//                });
+//            });
             putToDelayedMessages(key, message);
         }
     }
@@ -3874,46 +3797,47 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 }
             }
 
-            TL_messages_uploadMedia req = new TL_messages_uploadMedia();
-            req.media = inputMedia;
-            req.peer = ((TL_messages_sendMultiMedia) message.sendRequest).peer;
-            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                InputMedia newInputMedia = null;
-                if (response != null) {
-                    MessageMedia messageMedia = (MessageMedia) response;
-                    if (inputMedia instanceof TL_inputMediaUploadedPhoto && messageMedia instanceof TL_messageMediaPhoto) {
-                        TL_inputMediaPhoto inputMediaPhoto = new TL_inputMediaPhoto();
-                        inputMediaPhoto.id = new TL_inputPhoto();
-                        inputMediaPhoto.id.id = messageMedia.photo.id;
-                        inputMediaPhoto.id.access_hash = messageMedia.photo.access_hash;
-                        inputMediaPhoto.id.file_reference = messageMedia.photo.file_reference;
-                        newInputMedia = inputMediaPhoto;
-                    } else if (inputMedia instanceof TL_inputMediaUploadedDocument && messageMedia instanceof TL_messageMediaDocument) {
-                        TL_inputMediaDocument inputMediaDocument = new TL_inputMediaDocument();
-                        inputMediaDocument.id = new TL_inputDocument();
-                        inputMediaDocument.id.id = messageMedia.document.id;
-                        inputMediaDocument.id.access_hash = messageMedia.document.access_hash;
-                        inputMediaDocument.id.file_reference = messageMedia.document.file_reference;
-                        newInputMedia = inputMediaDocument;
-                    }
-                }
-                if (newInputMedia != null) {
-                    if (inputMedia.ttl_seconds != 0) {
-                        newInputMedia.ttl_seconds = inputMedia.ttl_seconds;
-                        newInputMedia.flags |= 1;
-                    }
-                    TL_messages_sendMultiMedia req1 = (TL_messages_sendMultiMedia) message.sendRequest;
-                    for (int a = 0; a < req1.multi_media.size(); a++) {
-                        if (req1.multi_media.get(a).media == inputMedia) {
-                            req1.multi_media.get(a).media = newInputMedia;
-                            break;
-                        }
-                    }
-                    sendReadyToSendGroup(message, false, true);
-                } else {
-                    message.markAsError();
-                }
-            }));
+            //TODO 发起请求
+//            TL_messages_uploadMedia req = new TL_messages_uploadMedia();
+//            req.media = inputMedia;
+//            req.peer = ((TL_messages_sendMultiMedia) message.sendRequest).peer;
+//            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                InputMedia newInputMedia = null;
+//                if (response != null) {
+//                    MessageMedia messageMedia = (MessageMedia) response;
+//                    if (inputMedia instanceof TL_inputMediaUploadedPhoto && messageMedia instanceof TL_messageMediaPhoto) {
+//                        TL_inputMediaPhoto inputMediaPhoto = new TL_inputMediaPhoto();
+//                        inputMediaPhoto.id = new TL_inputPhoto();
+//                        inputMediaPhoto.id.id = messageMedia.photo.id;
+//                        inputMediaPhoto.id.access_hash = messageMedia.photo.access_hash;
+//                        inputMediaPhoto.id.file_reference = messageMedia.photo.file_reference;
+//                        newInputMedia = inputMediaPhoto;
+//                    } else if (inputMedia instanceof TL_inputMediaUploadedDocument && messageMedia instanceof TL_messageMediaDocument) {
+//                        TL_inputMediaDocument inputMediaDocument = new TL_inputMediaDocument();
+//                        inputMediaDocument.id = new TL_inputDocument();
+//                        inputMediaDocument.id.id = messageMedia.document.id;
+//                        inputMediaDocument.id.access_hash = messageMedia.document.access_hash;
+//                        inputMediaDocument.id.file_reference = messageMedia.document.file_reference;
+//                        newInputMedia = inputMediaDocument;
+//                    }
+//                }
+//                if (newInputMedia != null) {
+//                    if (inputMedia.ttl_seconds != 0) {
+//                        newInputMedia.ttl_seconds = inputMedia.ttl_seconds;
+//                        newInputMedia.flags |= 1;
+//                    }
+//                    TL_messages_sendMultiMedia req1 = (TL_messages_sendMultiMedia) message.sendRequest;
+//                    for (int a = 0; a < req1.multi_media.size(); a++) {
+//                        if (req1.multi_media.get(a).media == inputMedia) {
+//                            req1.multi_media.get(a).media = newInputMedia;
+//                            break;
+//                        }
+//                    }
+//                    sendReadyToSendGroup(message, false, true);
+//                } else {
+//                    message.markAsError();
+//                }
+//            }));
         } else if (inputEncryptedFile != null) {
             TL_messages_sendEncryptedMultiMedia multiMedia = (TL_messages_sendEncryptedMultiMedia) message.sendEncryptedRequest;
             for (int a = 0; a < multiMedia.files.size(); a++) {

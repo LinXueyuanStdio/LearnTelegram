@@ -314,40 +314,42 @@ public class MediaDataController extends BaseController {
             } else {
                 Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("AddedToFavorites", R.string.AddedToFavorites), Toast.LENGTH_SHORT).show();
             }
-            TL_messages_faveSticker req = new TL_messages_faveSticker();
-            req.id = new TL_inputDocument();
-            req.id.id = document.id;
-            req.id.access_hash = document.access_hash;
-            req.id.file_reference = document.file_reference;
-            if (req.id.file_reference == null) {
-                req.id.file_reference = new byte[0];
-            }
-            req.unfave = remove;
-            getConnectionsManager().sendRequest(req, (response, error) -> {
-                if (error != null && FileRefController.isFileRefError(error.text) && parentObject != null) {
-                    getFileRefController().requestReference(parentObject, req);
-                } else {
-                    AndroidUtilities.runOnUIThread(() -> getMediaDataController().loadRecents(MediaDataController.TYPE_FAVE, false, false, true));
-                }
-            });
+            //TODO 发起请求
+//            TL_messages_faveSticker req = new TL_messages_faveSticker();
+//            req.id = new TL_inputDocument();
+//            req.id.id = document.id;
+//            req.id.access_hash = document.access_hash;
+//            req.id.file_reference = document.file_reference;
+//            if (req.id.file_reference == null) {
+//                req.id.file_reference = new byte[0];
+//            }
+//            req.unfave = remove;
+//            getConnectionsManager().sendRequest(req, (response, error) -> {
+//                if (error != null && FileRefController.isFileRefError(error.text) && parentObject != null) {
+//                    getFileRefController().requestReference(parentObject, req);
+//                } else {
+//                    AndroidUtilities.runOnUIThread(() -> getMediaDataController().loadRecents(MediaDataController.TYPE_FAVE, false, false, true));
+//                }
+//            });
             maxCount = getMessagesController().maxFaveStickersCount;
         } else {
             if (type == TYPE_IMAGE && remove) {
                 Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("RemovedFromRecent", R.string.RemovedFromRecent), Toast.LENGTH_SHORT).show();
-                TL_messages_saveRecentSticker req = new TL_messages_saveRecentSticker();
-                req.id = new TL_inputDocument();
-                req.id.id = document.id;
-                req.id.access_hash = document.access_hash;
-                req.id.file_reference = document.file_reference;
-                if (req.id.file_reference == null) {
-                    req.id.file_reference = new byte[0];
-                }
-                req.unsave = true;
-                getConnectionsManager().sendRequest(req, (response, error) -> {
-                    if (error != null && FileRefController.isFileRefError(error.text) && parentObject != null) {
-                        getFileRefController().requestReference(parentObject, req);
-                    }
-                });
+                //TODO 发起请求
+//                TL_messages_saveRecentSticker req = new TL_messages_saveRecentSticker();
+//                req.id = new TL_inputDocument();
+//                req.id.id = document.id;
+//                req.id.access_hash = document.access_hash;
+//                req.id.file_reference = document.file_reference;
+//                if (req.id.file_reference == null) {
+//                    req.id.file_reference = new byte[0];
+//                }
+//                req.unsave = true;
+//                getConnectionsManager().sendRequest(req, (response, error) -> {
+//                    if (error != null && FileRefController.isFileRefError(error.text) && parentObject != null) {
+//                        getFileRefController().requestReference(parentObject, req);
+//                    }
+//                });
             }
             maxCount = getMessagesController().maxRecentStickersCount;
         }
@@ -390,20 +392,21 @@ public class MediaDataController extends BaseController {
                 break;
             }
         }
-        TL_messages_saveGif req = new TL_messages_saveGif();
-        req.id = new TL_inputDocument();
-        req.id.id = document.id;
-        req.id.access_hash = document.access_hash;
-        req.id.file_reference = document.file_reference;
-        if (req.id.file_reference == null) {
-            req.id.file_reference = new byte[0];
-        }
-        req.unsave = true;
-        getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (error != null && FileRefController.isFileRefError(error.text)) {
-                getFileRefController().requestReference("gif", req);
-            }
-        });
+        //TODO 发起请求
+//        TL_messages_saveGif req = new TL_messages_saveGif();
+//        req.id = new TL_inputDocument();
+//        req.id.id = document.id;
+//        req.id.access_hash = document.access_hash;
+//        req.id.file_reference = document.file_reference;
+//        if (req.id.file_reference == null) {
+//            req.id.file_reference = new byte[0];
+//        }
+//        req.unsave = true;
+//        getConnectionsManager().sendRequest(req, (response, error) -> {
+//            if (error != null && FileRefController.isFileRefError(error.text)) {
+//                getFileRefController().requestReference("gif", req);
+//            }
+//        });
         getMessagesStorage().getStorageQueue().postRunnable(() -> {
             try {
                 getMessagesStorage().getDatabase().executeFast("DELETE FROM web_recent_v3 WHERE id = '" + document.id + "' AND type = 2").stepThis().dispose();
@@ -584,19 +587,20 @@ public class MediaDataController extends BaseController {
                 }
             });
         } else {
-            TL_messages_getStickerSet req = new TL_messages_getStickerSet();
-            req.stickerset = new TL_inputStickerSetID();
-            req.stickerset.id = stickerSet.id;
-            req.stickerset.access_hash = stickerSet.access_hash;
-            getConnectionsManager().sendRequest(req, (response, error) -> {
-                if (response != null) {
-                    MessagesStickerSet set = (MessagesStickerSet) response;
-                    AndroidUtilities.runOnUIThread(() -> {
-                        groupStickerSets.put(set.set.id, set);
-                        getNotificationCenter().postNotificationName(NotificationCenter.groupStickersDidLoad, set.set.id);
-                    });
-                }
-            });
+            //TODO 发起请求
+//            TL_messages_getStickerSet req = new TL_messages_getStickerSet();
+//            req.stickerset = new TL_inputStickerSetID();
+//            req.stickerset.id = stickerSet.id;
+//            req.stickerset.access_hash = stickerSet.access_hash;
+//            getConnectionsManager().sendRequest(req, (response, error) -> {
+//                if (response != null) {
+//                    MessagesStickerSet set = (MessagesStickerSet) response;
+//                    AndroidUtilities.runOnUIThread(() -> {
+//                        groupStickerSets.put(set.set.id, set);
+//                        getNotificationCenter().postNotificationName(NotificationCenter.groupStickersDidLoad, set.set.id);
+//                    });
+//                }
+//            });
         }
     }
 
@@ -1061,16 +1065,17 @@ public class MediaDataController extends BaseController {
                 processLoadedFeaturedStickers(newStickerArray, unread, true, date, hash);
             });
         } else {
-            final TL_messages_getFeaturedStickers req = new TL_messages_getFeaturedStickers();
-            req.hash = force ? 0 : loadFeaturedHash;
-            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (response instanceof TL_messages_featuredStickers) {
-                    TL_messages_featuredStickers res = (TL_messages_featuredStickers) response;
-                    processLoadedFeaturedStickers(res.sets, res.unread, false, (int) (System.currentTimeMillis() / 1000), res.hash);
-                } else {
-                    processLoadedFeaturedStickers(null, null, false, (int) (System.currentTimeMillis() / 1000), req.hash);
-                }
-            }));
+            //TODO 发起请求
+//            final TL_messages_getFeaturedStickers req = new TL_messages_getFeaturedStickers();
+//            req.hash = force ? 0 : loadFeaturedHash;
+//            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                if (response instanceof TL_messages_featuredStickers) {
+//                    TL_messages_featuredStickers res = (TL_messages_featuredStickers) response;
+//                    processLoadedFeaturedStickers(res.sets, res.unread, false, (int) (System.currentTimeMillis() / 1000), res.hash);
+//                } else {
+//                    processLoadedFeaturedStickers(null, null, false, (int) (System.currentTimeMillis() / 1000), req.hash);
+//                }
+//            }));
         }
     }
 
@@ -1194,10 +1199,11 @@ public class MediaDataController extends BaseController {
         getNotificationCenter().postNotificationName(NotificationCenter.featuredStickersDidLoad);
         putFeaturedStickersToCache(featuredStickerSets, unreadStickerSets, loadFeaturedDate, loadFeaturedHash);
         if (query) {
-            TL_messages_readFeaturedStickers req = new TL_messages_readFeaturedStickers();
-            getConnectionsManager().sendRequest(req, (response, error) -> {
-
-            });
+            //TODO 发起请求
+//            TL_messages_readFeaturedStickers req = new TL_messages_readFeaturedStickers();
+//            getConnectionsManager().sendRequest(req, (response, error) -> {
+//
+//            });
         }
     }
 
@@ -1279,35 +1285,36 @@ public class MediaDataController extends BaseController {
             verifyingMessages.put(name, messages);
         }
         messages.add(message);
-        TL_messages_getStickerSet req = new TL_messages_getStickerSet();
-        req.stickerset = MessageObject.getInputStickerSet(message);
-        getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            ArrayList<Message> arrayList = verifyingMessages.get(name);
-            if (response != null) {
-                MessagesStickerSet set = (MessagesStickerSet) response;
-                storeTempStickerSet(set);
-                for (int b = 0, N2 = arrayList.size(); b < N2; b++) {
-                    Message m = arrayList.get(b);
-                    Document d = MessageObject.getDocument(m);
-                    for (int a = 0, N = set.documents.size(); a < N; a++) {
-                        Document sticker = set.documents.get(a);
-                        if (sticker.id == d.id && sticker.dc_id == d.dc_id) {
-                            m.stickerVerified = 1;
-                            break;
-                        }
-                    }
-                    if (m.stickerVerified == 0) {
-                        m.stickerVerified = 2;
-                    }
-                }
-            } else {
-                for (int b = 0, N2 = arrayList.size(); b < N2; b++) {
-                    arrayList.get(b).stickerVerified = 2;
-                }
-            }
-            getNotificationCenter().postNotificationName(NotificationCenter.didVerifyMessagesStickers, arrayList);
-            getMessagesStorage().updateMessageVerifyFlags(arrayList);
-        }));
+        //TODO 发起请求
+//        TL_messages_getStickerSet req = new TL_messages_getStickerSet();
+//        req.stickerset = MessageObject.getInputStickerSet(message);
+//        getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//            ArrayList<Message> arrayList = verifyingMessages.get(name);
+//            if (response != null) {
+//                MessagesStickerSet set = (MessagesStickerSet) response;
+//                storeTempStickerSet(set);
+//                for (int b = 0, N2 = arrayList.size(); b < N2; b++) {
+//                    Message m = arrayList.get(b);
+//                    Document d = MessageObject.getDocument(m);
+//                    for (int a = 0, N = set.documents.size(); a < N; a++) {
+//                        Document sticker = set.documents.get(a);
+//                        if (sticker.id == d.id && sticker.dc_id == d.dc_id) {
+//                            m.stickerVerified = 1;
+//                            break;
+//                        }
+//                    }
+//                    if (m.stickerVerified == 0) {
+//                        m.stickerVerified = 2;
+//                    }
+//                }
+//            } else {
+//                for (int b = 0, N2 = arrayList.size(); b < N2; b++) {
+//                    arrayList.get(b).stickerVerified = 2;
+//                }
+//            }
+//            getNotificationCenter().postNotificationName(NotificationCenter.didVerifyMessagesStickers, arrayList);
+//            getMessagesStorage().updateMessageVerifyFlags(arrayList);
+//        }));
     }
 
     public void loadArchivedStickersCount(final int type, boolean cache) {
@@ -1321,18 +1328,19 @@ public class MediaDataController extends BaseController {
                 getNotificationCenter().postNotificationName(NotificationCenter.archivedStickersCountDidLoad, type);
             }
         } else {
-            TL_messages_getArchivedStickers req = new TL_messages_getArchivedStickers();
-            req.limit = 0;
-            req.masks = type == TYPE_MASK;
-            int reqId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (error == null) {
-                    TL_messages_archivedStickers res = (TL_messages_archivedStickers) response;
-                    archivedStickersCount[type] = res.count;
-                    SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
-                    preferences.edit().putInt("archivedStickersCount" + type, res.count).commit();
-                    getNotificationCenter().postNotificationName(NotificationCenter.archivedStickersCountDidLoad, type);
-                }
-            }));
+            //TODO 发起请求
+//            TL_messages_getArchivedStickers req = new TL_messages_getArchivedStickers();
+//            req.limit = 0;
+//            req.masks = type == TYPE_MASK;
+//            int reqId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                if (error == null) {
+//                    TL_messages_archivedStickers res = (TL_messages_archivedStickers) response;
+//                    archivedStickersCount[type] = res.count;
+//                    SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
+//                    preferences.edit().putInt("archivedStickersCount" + type, res.count).commit();
+//                    getNotificationCenter().postNotificationName(NotificationCenter.archivedStickersCountDidLoad, type);
+//                }
+//            }));
         }
     }
 
@@ -1362,25 +1370,26 @@ public class MediaDataController extends BaseController {
                 newStickerArray.add(null);
                 final int index = a;
 
-                TL_messages_getStickerSet req = new TL_messages_getStickerSet();
-                req.stickerset = new TL_inputStickerSetID();
-                req.stickerset.id = stickerSet.id;
-                req.stickerset.access_hash = stickerSet.access_hash;
-
-                getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                    MessagesStickerSet res1 = (MessagesStickerSet) response;
-                    newStickerArray.set(index, res1);
-                    newStickerSets.put(stickerSet.id, res1);
-                    if (newStickerSets.size() == res.sets.size()) {
-                        for (int a1 = 0; a1 < newStickerArray.size(); a1++) {
-                            if (newStickerArray.get(a1) == null) {
-                                newStickerArray.remove(a1);
-                                a1--;
-                            }
-                        }
-                        processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), res.hash);
-                    }
-                }));
+                //TODO 发起请求
+//                TL_messages_getStickerSet req = new TL_messages_getStickerSet();
+//                req.stickerset = new TL_inputStickerSetID();
+//                req.stickerset.id = stickerSet.id;
+//                req.stickerset.access_hash = stickerSet.access_hash;
+//
+//                getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                    MessagesStickerSet res1 = (MessagesStickerSet) response;
+//                    newStickerArray.set(index, res1);
+//                    newStickerSets.put(stickerSet.id, res1);
+//                    if (newStickerSets.size() == res.sets.size()) {
+//                        for (int a1 = 0; a1 < newStickerArray.size(); a1++) {
+//                            if (newStickerArray.get(a1) == null) {
+//                                newStickerArray.remove(a1);
+//                                a1--;
+//                            }
+//                        }
+//                        processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), res.hash);
+//                    }
+//                }));
             }
         }
     }
@@ -1543,34 +1552,36 @@ public class MediaDataController extends BaseController {
                 }
                 processLoadStickersResponse(type, response);
             } else if (type == TYPE_EMOJI) {
-                TL_messages_getStickerSet req = new TL_messages_getStickerSet();
-                req.stickerset = new TL_inputStickerSetAnimatedEmoji();
-                getConnectionsManager().sendRequest(req, (response, error) -> {
-                    if (response instanceof MessagesStickerSet) {
-                        final ArrayList<MessagesStickerSet> newStickerArray = new ArrayList<>();
-                        newStickerArray.add((MessagesStickerSet) response);
-                        processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), calcStickersHash(newStickerArray));
-                    } else {
-                        processLoadedStickers(type, null, false, (int) (System.currentTimeMillis() / 1000), 0);
-                    }
-                });
+                //TODO 发起请求
+//                TL_messages_getStickerSet req = new TL_messages_getStickerSet();
+//                req.stickerset = new TL_inputStickerSetAnimatedEmoji();
+//                getConnectionsManager().sendRequest(req, (response, error) -> {
+//                    if (response instanceof MessagesStickerSet) {
+//                        final ArrayList<MessagesStickerSet> newStickerArray = new ArrayList<>();
+//                        newStickerArray.add((MessagesStickerSet) response);
+//                        processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), calcStickersHash(newStickerArray));
+//                    } else {
+//                        processLoadedStickers(type, null, false, (int) (System.currentTimeMillis() / 1000), 0);
+//                    }
+//                });
             } else {
-                TLObject req;
-                final int hash;
-                if (type == TYPE_IMAGE) {
-                    req = new TL_messages_getAllStickers();
-                    hash = ((TL_messages_getAllStickers) req).hash = force ? 0 : loadHash[type];
-                } else {
-                    req = new TL_messages_getMaskStickers();
-                    hash = ((TL_messages_getMaskStickers) req).hash = force ? 0 : loadHash[type];
-                }
-                getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                    if (response instanceof TL_messages_allStickers) {
-                        processLoadStickersResponse(type, (TL_messages_allStickers) response);
-                    } else {
-                        processLoadedStickers(type, null, false, (int) (System.currentTimeMillis() / 1000), hash);
-                    }
-                }));
+                //TODO 发起请求
+//                TLObject req;
+//                final int hash;
+//                if (type == TYPE_IMAGE) {
+//                    req = new TL_messages_getAllStickers();
+//                    hash = ((TL_messages_getAllStickers) req).hash = force ? 0 : loadHash[type];
+//                } else {
+//                    req = new TL_messages_getMaskStickers();
+//                    hash = ((TL_messages_getMaskStickers) req).hash = force ? 0 : loadHash[type];
+//                }
+//                getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                    if (response instanceof TL_messages_allStickers) {
+//                        processLoadStickersResponse(type, (TL_messages_allStickers) response);
+//                    } else {
+//                        processLoadedStickers(type, null, false, (int) (System.currentTimeMillis() / 1000), hash);
+//                    }
+//                }));
             }
         }
     }
@@ -1954,29 +1965,30 @@ public class MediaDataController extends BaseController {
         putStickersToCache(type, this.stickerSets[type], loadDate[type], loadHash[type]);
         getNotificationCenter().postNotificationName(NotificationCenter.stickersDidLoad, type);
 
-        final TL_messages_toggleStickerSets req = new TL_messages_toggleStickerSets();
-        req.stickersets = inputStickerSets;
-        switch (toggle) {
-            case 0:
-                req.uninstall = true;
-                break;
-            case 1:
-                req.archive = true;
-                break;
-            case 2:
-                req.unarchive = true;
-                break;
-        }
-        getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            if (toggle != 0) {
-                if (response instanceof TL_messages_stickerSetInstallResultArchive) {
-                    processStickerSetInstallResultArchive(baseFragment, showSettings, type, (TL_messages_stickerSetInstallResultArchive) response);
-                }
-                loadStickers(type, false, false, true);
-            } else {
-                loadStickers(type, false, true);
-            }
-        }));
+        //TODO 发起请求
+//        final TL_messages_toggleStickerSets req = new TL_messages_toggleStickerSets();
+//        req.stickersets = inputStickerSets;
+//        switch (toggle) {
+//            case 0:
+//                req.uninstall = true;
+//                break;
+//            case 1:
+//                req.archive = true;
+//                break;
+//            case 2:
+//                req.unarchive = true;
+//                break;
+//        }
+//        getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//            if (toggle != 0) {
+//                if (response instanceof TL_messages_stickerSetInstallResultArchive) {
+//                    processStickerSetInstallResultArchive(baseFragment, showSettings, type, (TL_messages_stickerSetInstallResultArchive) response);
+//                }
+//                loadStickers(type, false, false, true);
+//            } else {
+//                loadStickers(type, false, true);
+//            }
+//        }));
     }
 
     public void processStickerSetInstallResultArchive(BaseFragment baseFragment, boolean showSettings, int type, TL_messages_stickerSetInstallResultArchive response) {
@@ -2124,31 +2136,32 @@ public class MediaDataController extends BaseController {
         }
         if (queryWithDialog == dialogId && firstQuery) {
             if (mergeDialogId != 0) {
-                InputPeer inputPeer = getMessagesController().getInputPeer((int) mergeDialogId);
-                if (inputPeer == null) {
-                    return;
-                }
-                final TL_messages_search req = new TL_messages_search();
-                req.peer = inputPeer;
-                lastMergeDialogId = mergeDialogId;
-                req.limit = 1;
-                req.q = query != null ? query : "";
-                if (user != null) {
-                    req.from_id = getMessagesController().getInputUser(user);
-                    req.flags |= 1;
-                }
-                req.filter = new TL_inputMessagesFilterEmpty();
-                mergeReqId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                    if (lastMergeDialogId == mergeDialogId) {
-                        mergeReqId = 0;
-                        if (response != null) {
-                            messages_Messages res = (messages_Messages) response;
-                            messagesSearchEndReached[1] = res.messages.isEmpty();
-                            messagesSearchCount[1] = res instanceof TL_messages_messagesSlice ? res.count : res.messages.size();
-                            searchMessagesInChat(req.q, dialogId, mergeDialogId, guid, direction, true, user, jumpToMessage);
-                        }
-                    }
-                }), ConnectionsManager.RequestFlagFailOnServerErrors);
+                //TODO 发起请求
+//                InputPeer inputPeer = getMessagesController().getInputPeer((int) mergeDialogId);
+//                if (inputPeer == null) {
+//                    return;
+//                }
+//                final TL_messages_search req = new TL_messages_search();
+//                req.peer = inputPeer;
+//                lastMergeDialogId = mergeDialogId;
+//                req.limit = 1;
+//                req.q = query != null ? query : "";
+//                if (user != null) {
+//                    req.from_id = getMessagesController().getInputUser(user);
+//                    req.flags |= 1;
+//                }
+//                req.filter = new TL_inputMessagesFilterEmpty();
+//                mergeReqId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                    if (lastMergeDialogId == mergeDialogId) {
+//                        mergeReqId = 0;
+//                        if (response != null) {
+//                            messages_Messages res = (messages_Messages) response;
+//                            messagesSearchEndReached[1] = res.messages.isEmpty();
+//                            messagesSearchCount[1] = res instanceof TL_messages_messagesSlice ? res.count : res.messages.size();
+//                            searchMessagesInChat(req.q, dialogId, mergeDialogId, guid, direction, true, user, jumpToMessage);
+//                        }
+//                    }
+//                }), ConnectionsManager.RequestFlagFailOnServerErrors);
                 return;
             } else {
                 lastMergeDialogId = 0;
@@ -2156,79 +2169,80 @@ public class MediaDataController extends BaseController {
                 messagesSearchCount[1] = 0;
             }
         }
-        final TL_messages_search req = new TL_messages_search();
-        req.peer = getMessagesController().getInputPeer((int) queryWithDialog);
-        if (req.peer == null) {
-            return;
-        }
-        lastGuid = guid;
-        lastDialogId = dialogId;
-        lastSearchUser = user;
-        req.limit = 21;
-        req.q = query != null ? query : "";
-        req.offset_id = max_id;
-        if (user != null) {
-            req.from_id = getMessagesController().getInputUser(user);
-            req.flags |= 1;
-        }
-        req.filter = new TL_inputMessagesFilterEmpty();
-        final int currentReqId = ++lastReqId;
-        lastSearchQuery = query;
-        final long queryWithDialogFinal = queryWithDialog;
-        reqId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            if (currentReqId == lastReqId) {
-                reqId = 0;
-                if (!jumpToMessage) {
-                    loadingMoreSearchMessages = false;
-                }
-                if (response != null) {
-                    messages_Messages res = (messages_Messages) response;
-                    for (int a = 0; a < res.messages.size(); a++) {
-                        Message message = res.messages.get(a);
-                        if (message instanceof TL_messageEmpty || message.action instanceof TL_messageActionHistoryClear) {
-                            res.messages.remove(a);
-                            a--;
-                        }
-                    }
-                    getMessagesStorage().putUsersAndChats(res.users, res.chats, true, true);
-                    getMessagesController().putUsers(res.users, false);
-                    getMessagesController().putChats(res.chats, false);
-                    if (req.offset_id == 0 && queryWithDialogFinal == dialogId) {
-                        lastReturnedNum = 0;
-                        searchResultMessages.clear();
-                        searchResultMessagesMap[0].clear();
-                        searchResultMessagesMap[1].clear();
-                        messagesSearchCount[0] = 0;
-                        getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsLoading, guid);
-                    }
-                    boolean added = false;
-                    int N = Math.min(res.messages.size(), 20);
-                    for (int a = 0; a < N; a++) {
-                        Message message = res.messages.get(a);
-                        added = true;
-                        MessageObject messageObject = new MessageObject(currentAccount, message, false);
-                        searchResultMessages.add(messageObject);
-                        searchResultMessagesMap[queryWithDialogFinal == dialogId ? 0 : 1].put(messageObject.getId(), messageObject);
-                    }
-                    messagesSearchEndReached[queryWithDialogFinal == dialogId ? 0 : 1] = res.messages.size() != 21;
-                    messagesSearchCount[queryWithDialogFinal == dialogId ? 0 : 1] = res instanceof TL_messages_messagesSlice || res instanceof TL_messages_channelMessages ? res.count : res.messages.size();
-                    if (searchResultMessages.isEmpty()) {
-                        getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), (long) 0, 0, 0, jumpToMessage);
-                    } else {
-                        if (added) {
-                            if (lastReturnedNum >= searchResultMessages.size()) {
-                                lastReturnedNum = searchResultMessages.size() - 1;
-                            }
-                            MessageObject messageObject = searchResultMessages.get(lastReturnedNum);
-                            getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, messageObject.getId(), getMask(), messageObject.getDialogId(), lastReturnedNum, messagesSearchCount[0] + messagesSearchCount[1], jumpToMessage);
-                        }
-                    }
-                    if (queryWithDialogFinal == dialogId && messagesSearchEndReached[0] && mergeDialogId != 0 && !messagesSearchEndReached[1]) {
-                        searchMessagesInChat(lastSearchQuery, dialogId, mergeDialogId, guid, 0, true, user, jumpToMessage);
-                    }
-                }
-            }
-        }), ConnectionsManager.RequestFlagFailOnServerErrors);
+        //TODO 发起请求
+//        final TL_messages_search req = new TL_messages_search();
+//        req.peer = getMessagesController().getInputPeer((int) queryWithDialog);
+//        if (req.peer == null) {
+//            return;
+//        }
+//        lastGuid = guid;
+//        lastDialogId = dialogId;
+//        lastSearchUser = user;
+//        req.limit = 21;
+//        req.q = query != null ? query : "";
+//        req.offset_id = max_id;
+//        if (user != null) {
+//            req.from_id = getMessagesController().getInputUser(user);
+//            req.flags |= 1;
+//        }
+//        req.filter = new TL_inputMessagesFilterEmpty();
+//        final int currentReqId = ++lastReqId;
+//        lastSearchQuery = query;
+//        final long queryWithDialogFinal = queryWithDialog;
+//        reqId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//            if (currentReqId == lastReqId) {
+//                reqId = 0;
+//                if (!jumpToMessage) {
+//                    loadingMoreSearchMessages = false;
+//                }
+//                if (response != null) {
+//                    messages_Messages res = (messages_Messages) response;
+//                    for (int a = 0; a < res.messages.size(); a++) {
+//                        Message message = res.messages.get(a);
+//                        if (message instanceof TL_messageEmpty || message.action instanceof TL_messageActionHistoryClear) {
+//                            res.messages.remove(a);
+//                            a--;
+//                        }
+//                    }
+//                    getMessagesStorage().putUsersAndChats(res.users, res.chats, true, true);
+//                    getMessagesController().putUsers(res.users, false);
+//                    getMessagesController().putChats(res.chats, false);
+//                    if (req.offset_id == 0 && queryWithDialogFinal == dialogId) {
+//                        lastReturnedNum = 0;
+//                        searchResultMessages.clear();
+//                        searchResultMessagesMap[0].clear();
+//                        searchResultMessagesMap[1].clear();
+//                        messagesSearchCount[0] = 0;
+//                        getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsLoading, guid);
+//                    }
+//                    boolean added = false;
+//                    int N = Math.min(res.messages.size(), 20);
+//                    for (int a = 0; a < N; a++) {
+//                        Message message = res.messages.get(a);
+//                        added = true;
+//                        MessageObject messageObject = new MessageObject(currentAccount, message, false);
+//                        searchResultMessages.add(messageObject);
+//                        searchResultMessagesMap[queryWithDialogFinal == dialogId ? 0 : 1].put(messageObject.getId(), messageObject);
+//                    }
+//                    messagesSearchEndReached[queryWithDialogFinal == dialogId ? 0 : 1] = res.messages.size() != 21;
+//                    messagesSearchCount[queryWithDialogFinal == dialogId ? 0 : 1] = res instanceof TL_messages_messagesSlice || res instanceof TL_messages_channelMessages ? res.count : res.messages.size();
+//                    if (searchResultMessages.isEmpty()) {
+//                        getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, 0, getMask(), (long) 0, 0, 0, jumpToMessage);
+//                    } else {
+//                        if (added) {
+//                            if (lastReturnedNum >= searchResultMessages.size()) {
+//                                lastReturnedNum = searchResultMessages.size() - 1;
+//                            }
+//                            MessageObject messageObject = searchResultMessages.get(lastReturnedNum);
+//                            getNotificationCenter().postNotificationName(NotificationCenter.chatSearchResultsAvailable, guid, messageObject.getId(), getMask(), messageObject.getDialogId(), lastReturnedNum, messagesSearchCount[0] + messagesSearchCount[1], jumpToMessage);
+//                        }
+//                    }
+//                    if (queryWithDialogFinal == dialogId && messagesSearchEndReached[0] && mergeDialogId != 0 && !messagesSearchEndReached[1]) {
+//                        searchMessagesInChat(lastSearchQuery, dialogId, mergeDialogId, guid, 0, true, user, jumpToMessage);
+//                    }
+//                }
+//            }
+//        }), ConnectionsManager.RequestFlagFailOnServerErrors);
     }
 
     public String getLastSearchQuery() {
@@ -2310,48 +2324,49 @@ public class MediaDataController extends BaseController {
             }
 
             if (result == null) {
-                if (channelId != 0) {
-                    final TL_channels_getMessages req = new TL_channels_getMessages();
-                    req.channel = getMessagesController().getInputChannel(channelId);
-                    req.id.add(mid);
-                    getConnectionsManager().sendRequest(req, (response, error) -> {
-                        boolean ok = false;
-                        if (error == null) {
-                            messages_Messages messagesRes = (messages_Messages) response;
-                            removeEmptyMessages(messagesRes.messages);
-                            if (!messagesRes.messages.isEmpty()) {
-                                ImageLoader.saveMessagesThumbs(messagesRes.messages);
-                                broadcastPinnedMessage(messagesRes.messages.get(0), messagesRes.users, messagesRes.chats, false, false);
-                                getMessagesStorage().putUsersAndChats(messagesRes.users, messagesRes.chats, true, true);
-                                savePinnedMessage(messagesRes.messages.get(0));
-                                ok = true;
-                            }
-                        }
-                        if (!ok) {
-                            getMessagesStorage().updateChatPinnedMessage(channelId, 0);
-                        }
-                    });
-                } else {
-                    final TL_messages_getMessages req = new TL_messages_getMessages();
-                    req.id.add(mid);
-                    getConnectionsManager().sendRequest(req, (response, error) -> {
-                        boolean ok = false;
-                        if (error == null) {
-                            messages_Messages messagesRes = (messages_Messages) response;
-                            removeEmptyMessages(messagesRes.messages);
-                            if (!messagesRes.messages.isEmpty()) {
-                                ImageLoader.saveMessagesThumbs(messagesRes.messages);
-                                broadcastPinnedMessage(messagesRes.messages.get(0), messagesRes.users, messagesRes.chats, false, false);
-                                getMessagesStorage().putUsersAndChats(messagesRes.users, messagesRes.chats, true, true);
-                                savePinnedMessage(messagesRes.messages.get(0));
-                                ok = true;
-                            }
-                        }
-                        if (!ok) {
-                            getMessagesStorage().updateChatPinnedMessage(channelId, 0);
-                        }
-                    });
-                }
+                //TODO 发起请求
+//                if (channelId != 0) {
+//                    final TL_channels_getMessages req = new TL_channels_getMessages();
+//                    req.channel = getMessagesController().getInputChannel(channelId);
+//                    req.id.add(mid);
+//                    getConnectionsManager().sendRequest(req, (response, error) -> {
+//                        boolean ok = false;
+//                        if (error == null) {
+//                            messages_Messages messagesRes = (messages_Messages) response;
+//                            removeEmptyMessages(messagesRes.messages);
+//                            if (!messagesRes.messages.isEmpty()) {
+//                                ImageLoader.saveMessagesThumbs(messagesRes.messages);
+//                                broadcastPinnedMessage(messagesRes.messages.get(0), messagesRes.users, messagesRes.chats, false, false);
+//                                getMessagesStorage().putUsersAndChats(messagesRes.users, messagesRes.chats, true, true);
+//                                savePinnedMessage(messagesRes.messages.get(0));
+//                                ok = true;
+//                            }
+//                        }
+//                        if (!ok) {
+//                            getMessagesStorage().updateChatPinnedMessage(channelId, 0);
+//                        }
+//                    });
+//                } else {
+//                    final TL_messages_getMessages req = new TL_messages_getMessages();
+//                    req.id.add(mid);
+//                    getConnectionsManager().sendRequest(req, (response, error) -> {
+//                        boolean ok = false;
+//                        if (error == null) {
+//                            messages_Messages messagesRes = (messages_Messages) response;
+//                            removeEmptyMessages(messagesRes.messages);
+//                            if (!messagesRes.messages.isEmpty()) {
+//                                ImageLoader.saveMessagesThumbs(messagesRes.messages);
+//                                broadcastPinnedMessage(messagesRes.messages.get(0), messagesRes.users, messagesRes.chats, false, false);
+//                                getMessagesStorage().putUsersAndChats(messagesRes.users, messagesRes.chats, true, true);
+//                                savePinnedMessage(messagesRes.messages.get(0));
+//                                ok = true;
+//                            }
+//                        }
+//                        if (!ok) {
+//                            getMessagesStorage().updateChatPinnedMessage(channelId, 0);
+//                        }
+//                    });
+//                }
             } else {
                 if (returnValue) {
                     return broadcastPinnedMessage(result, users, chats, true, returnValue);
@@ -2574,38 +2589,39 @@ public class MediaDataController extends BaseController {
                     broadcastReplyMessages(result, replyMessageOwners, users, chats, dialogId, true);
 
                     if (!replyMessages.isEmpty()) {
-                        if (channelIdFinal != 0) {
-                            final TL_channels_getMessages req = new TL_channels_getMessages();
-                            req.channel = getMessagesController().getInputChannel(channelIdFinal);
-                            req.id = replyMessages;
-                            getConnectionsManager().sendRequest(req, (response, error) -> {
-                                if (error == null) {
-                                    messages_Messages messagesRes = (messages_Messages) response;
-                                    ImageLoader.saveMessagesThumbs(messagesRes.messages);
-                                    broadcastReplyMessages(messagesRes.messages, replyMessageOwners, messagesRes.users, messagesRes.chats, dialogId, false);
-                                    getMessagesStorage().putUsersAndChats(messagesRes.users, messagesRes.chats, true, true);
-                                    saveReplyMessages(replyMessageOwners, messagesRes.messages, scheduled);
-                                }
-                                if (callback != null) {
-                                    AndroidUtilities.runOnUIThread(callback);
-                                }
-                            });
-                        } else {
-                            TL_messages_getMessages req = new TL_messages_getMessages();
-                            req.id = replyMessages;
-                            getConnectionsManager().sendRequest(req, (response, error) -> {
-                                if (error == null) {
-                                    messages_Messages messagesRes = (messages_Messages) response;
-                                    ImageLoader.saveMessagesThumbs(messagesRes.messages);
-                                    broadcastReplyMessages(messagesRes.messages, replyMessageOwners, messagesRes.users, messagesRes.chats, dialogId, false);
-                                    getMessagesStorage().putUsersAndChats(messagesRes.users, messagesRes.chats, true, true);
-                                    saveReplyMessages(replyMessageOwners, messagesRes.messages, scheduled);
-                                }
-                                if (callback != null) {
-                                    AndroidUtilities.runOnUIThread(callback);
-                                }
-                            });
-                        }
+                        //TODO 发起请求
+//                        if (channelIdFinal != 0) {
+//                            final TL_channels_getMessages req = new TL_channels_getMessages();
+//                            req.channel = getMessagesController().getInputChannel(channelIdFinal);
+//                            req.id = replyMessages;
+//                            getConnectionsManager().sendRequest(req, (response, error) -> {
+//                                if (error == null) {
+//                                    messages_Messages messagesRes = (messages_Messages) response;
+//                                    ImageLoader.saveMessagesThumbs(messagesRes.messages);
+//                                    broadcastReplyMessages(messagesRes.messages, replyMessageOwners, messagesRes.users, messagesRes.chats, dialogId, false);
+//                                    getMessagesStorage().putUsersAndChats(messagesRes.users, messagesRes.chats, true, true);
+//                                    saveReplyMessages(replyMessageOwners, messagesRes.messages, scheduled);
+//                                }
+//                                if (callback != null) {
+//                                    AndroidUtilities.runOnUIThread(callback);
+//                                }
+//                            });
+//                        } else {
+//                            TL_messages_getMessages req = new TL_messages_getMessages();
+//                            req.id = replyMessages;
+//                            getConnectionsManager().sendRequest(req, (response, error) -> {
+//                                if (error == null) {
+//                                    messages_Messages messagesRes = (messages_Messages) response;
+//                                    ImageLoader.saveMessagesThumbs(messagesRes.messages);
+//                                    broadcastReplyMessages(messagesRes.messages, replyMessageOwners, messagesRes.users, messagesRes.chats, dialogId, false);
+//                                    getMessagesStorage().putUsersAndChats(messagesRes.users, messagesRes.chats, true, true);
+//                                    saveReplyMessages(replyMessageOwners, messagesRes.messages, scheduled);
+//                                }
+//                                if (callback != null) {
+//                                    AndroidUtilities.runOnUIThread(callback);
+//                                }
+//                            });
+//                        }
                     } else {
                         if (callback != null) {
                             AndroidUtilities.runOnUIThread(callback);
@@ -3207,19 +3223,20 @@ public class MediaDataController extends BaseController {
             return;
         }
         loadingDrafts = true;
-        getConnectionsManager().sendRequest(new TL_messages_getAllDrafts(), (response, error) -> {
-            if (error != null) {
-                AndroidUtilities.runOnUIThread(() -> loadingDrafts = false);
-            } else {
-                getMessagesController().processUpdates((Updates) response, false);
-                AndroidUtilities.runOnUIThread(() -> {
-                    loadingDrafts = false;
-                    final UserConfig userConfig = getUserConfig();
-                    userConfig.draftsLoaded = true;
-                    userConfig.saveConfig(false);
-                });
-            }
-        });
+        //TODO 发起请求
+//        getConnectionsManager().sendRequest(new TL_messages_getAllDrafts(), (response, error) -> {
+//            if (error != null) {
+//                AndroidUtilities.runOnUIThread(() -> loadingDrafts = false);
+//            } else {
+//                getMessagesController().processUpdates((Updates) response, false);
+//                AndroidUtilities.runOnUIThread(() -> {
+//                    loadingDrafts = false;
+//                    final UserConfig userConfig = getUserConfig();
+//                    userConfig.draftsLoaded = true;
+//                    userConfig.saveConfig(false);
+//                });
+//            }
+//        });
     }
 
     public int getDraftFolderId(long did) {
@@ -3280,19 +3297,20 @@ public class MediaDataController extends BaseController {
         saveDraft(did, draftMessage, replyToMessage, false);
         int lower_id = (int) did;
         if (lower_id != 0) {
-            TL_messages_saveDraft req = new TL_messages_saveDraft();
-            req.peer = getMessagesController().getInputPeer(lower_id);
-            if (req.peer == null) {
-                return;
-            }
-            req.message = draftMessage.message;
-            req.no_webpage = draftMessage.no_webpage;
-            req.reply_to_msg_id = draftMessage.reply_to_msg_id;
-            req.entities = draftMessage.entities;
-            req.flags = draftMessage.flags;
-            getConnectionsManager().sendRequest(req, (response, error) -> {
-
-            });
+            //TODO 发起请求
+//            TL_messages_saveDraft req = new TL_messages_saveDraft();
+//            req.peer = getMessagesController().getInputPeer(lower_id);
+//            if (req.peer == null) {
+//                return;
+//            }
+//            req.message = draftMessage.message;
+//            req.no_webpage = draftMessage.no_webpage;
+//            req.reply_to_msg_id = draftMessage.reply_to_msg_id;
+//            req.entities = draftMessage.entities;
+//            req.flags = draftMessage.flags;
+//            getConnectionsManager().sendRequest(req, (response, error) -> {
+//
+//            });
         }
         getMessagesController().sortDialogs(null);
         getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
@@ -3364,30 +3382,31 @@ public class MediaDataController extends BaseController {
                             }
                             cursor.dispose();
                             if (message == null) {
-                                if (channelIdFinal != 0) {
-                                    final TL_channels_getMessages req = new TL_channels_getMessages();
-                                    req.channel = getMessagesController().getInputChannel(channelIdFinal);
-                                    req.id.add((int) messageIdFinal);
-                                    getConnectionsManager().sendRequest(req, (response, error) -> {
-                                        if (error == null) {
-                                            messages_Messages messagesRes = (messages_Messages) response;
-                                            if (!messagesRes.messages.isEmpty()) {
-                                                saveDraftReplyMessage(did, messagesRes.messages.get(0));
-                                            }
-                                        }
-                                    });
-                                } else {
-                                    TL_messages_getMessages req = new TL_messages_getMessages();
-                                    req.id.add((int) messageIdFinal);
-                                    getConnectionsManager().sendRequest(req, (response, error) -> {
-                                        if (error == null) {
-                                            messages_Messages messagesRes = (messages_Messages) response;
-                                            if (!messagesRes.messages.isEmpty()) {
-                                                saveDraftReplyMessage(did, messagesRes.messages.get(0));
-                                            }
-                                        }
-                                    });
-                                }
+                                //TODO 发起请求
+//                                if (channelIdFinal != 0) {
+//                                    final TL_channels_getMessages req = new TL_channels_getMessages();
+//                                    req.channel = getMessagesController().getInputChannel(channelIdFinal);
+//                                    req.id.add((int) messageIdFinal);
+//                                    getConnectionsManager().sendRequest(req, (response, error) -> {
+//                                        if (error == null) {
+//                                            messages_Messages messagesRes = (messages_Messages) response;
+//                                            if (!messagesRes.messages.isEmpty()) {
+//                                                saveDraftReplyMessage(did, messagesRes.messages.get(0));
+//                                            }
+//                                        }
+//                                    });
+//                                } else {
+//                                    TL_messages_getMessages req = new TL_messages_getMessages();
+//                                    req.id.add((int) messageIdFinal);
+//                                    getConnectionsManager().sendRequest(req, (response, error) -> {
+//                                        if (error == null) {
+//                                            messages_Messages messagesRes = (messages_Messages) response;
+//                                            if (!messagesRes.messages.isEmpty()) {
+//                                                saveDraftReplyMessage(did, messagesRes.messages.get(0));
+//                                            }
+//                                        }
+//                                    });
+//                                }
                             } else {
                                 saveDraftReplyMessage(did, message);
                             }
@@ -3503,45 +3522,46 @@ public class MediaDataController extends BaseController {
                     AndroidUtilities.runOnUIThread(() -> currentFetchingEmoji.remove(langCode));
                     return;
                 }
-                TLObject request;
-                if (version == -1) {
-                    TL_messages_getEmojiKeywords req = new TL_messages_getEmojiKeywords();
-                    req.lang_code = langCode;
-                    request = req;
-                } else {
-                    TL_messages_getEmojiKeywordsDifference req = new TL_messages_getEmojiKeywordsDifference();
-                    req.lang_code = langCode;
-                    req.from_version = version;
-                    request = req;
-                }
-                String aliasFinal = alias;
-                int versionFinal = version;
-                getConnectionsManager().sendRequest(request, (response, error) -> {
-                    if (response != null) {
-                        TL_emojiKeywordsDifference res = (TL_emojiKeywordsDifference) response;
-                        if (versionFinal != -1 && !res.lang_code.equals(aliasFinal)) {
-                            getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                                try {
-                                    SQLitePreparedStatement deleteState = getMessagesStorage().getDatabase().executeFast("DELETE FROM emoji_keywords_info_v2 WHERE lang = ?");
-                                    deleteState.bindString(1, langCode);
-                                    deleteState.step();
-                                    deleteState.dispose();
-
-                                    AndroidUtilities.runOnUIThread(() -> {
-                                        currentFetchingEmoji.remove(langCode);
-                                        fetchNewEmojiKeywords(new String[]{langCode});
-                                    });
-                                } catch (Exception e) {
-                                    FileLog.e(e);
-                                }
-                            });
-                        } else {
-                            putEmojiKeywords(langCode, res);
-                        }
-                    } else {
-                        AndroidUtilities.runOnUIThread(() -> currentFetchingEmoji.remove(langCode));
-                    }
-                });
+                //TODO 发起请求
+//                TLObject request;
+//                if (version == -1) {
+//                    TL_messages_getEmojiKeywords req = new TL_messages_getEmojiKeywords();
+//                    req.lang_code = langCode;
+//                    request = req;
+//                } else {
+//                    TL_messages_getEmojiKeywordsDifference req = new TL_messages_getEmojiKeywordsDifference();
+//                    req.lang_code = langCode;
+//                    req.from_version = version;
+//                    request = req;
+//                }
+//                String aliasFinal = alias;
+//                int versionFinal = version;
+//                getConnectionsManager().sendRequest(request, (response, error) -> {
+//                    if (response != null) {
+//                        TL_emojiKeywordsDifference res = (TL_emojiKeywordsDifference) response;
+//                        if (versionFinal != -1 && !res.lang_code.equals(aliasFinal)) {
+//                            getMessagesStorage().getStorageQueue().postRunnable(() -> {
+//                                try {
+//                                    SQLitePreparedStatement deleteState = getMessagesStorage().getDatabase().executeFast("DELETE FROM emoji_keywords_info_v2 WHERE lang = ?");
+//                                    deleteState.bindString(1, langCode);
+//                                    deleteState.step();
+//                                    deleteState.dispose();
+//
+//                                    AndroidUtilities.runOnUIThread(() -> {
+//                                        currentFetchingEmoji.remove(langCode);
+//                                        fetchNewEmojiKeywords(new String[]{langCode});
+//                                    });
+//                                } catch (Exception e) {
+//                                    FileLog.e(e);
+//                                }
+//                            });
+//                        } else {
+//                            putEmojiKeywords(langCode, res);
+//                        }
+//                    } else {
+//                        AndroidUtilities.runOnUIThread(() -> currentFetchingEmoji.remove(langCode));
+//                    }
+//                });
             });
         }
     }
@@ -3756,35 +3776,36 @@ public class MediaDataController extends BaseController {
         if (fromCache != 0 || lower_part == 0) {
             loadMediaDatabase(uid, count, max_id, type, classGuid, isChannel, fromCache);
         } else {
-            TL_messages_search req = new TL_messages_search();
-            req.limit = count;
-            req.offset_id = max_id;
-            if (type == MEDIA_PHOTOVIDEO) {
-                req.filter = new TL_inputMessagesFilterPhotoVideo();
-            } else if (type == MEDIA_FILE) {
-                req.filter = new TL_inputMessagesFilterDocument();
-            } else if (type == MEDIA_AUDIO) {
-                req.filter = new TL_inputMessagesFilterRoundVoice();
-            } else if (type == MEDIA_URL) {
-                req.filter = new TL_inputMessagesFilterUrl();
-            } else if (type == MEDIA_MUSIC) {
-                req.filter = new TL_inputMessagesFilterMusic();
-            } else if (type == MEDIA_GIF) {
-                req.filter = new TL_inputMessagesFilterGif();
-            }
-            req.q = "";
-            req.peer = getMessagesController().getInputPeer(lower_part);
-            if (req.peer == null) {
-                return;
-            }
-            int reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
-                if (error == null) {
-                    final messages_Messages res = (messages_Messages) response;
-                    getMessagesController().removeDeletedMessagesFromArray(uid, res.messages);
-                    processLoadedMedia(res, uid, count, max_id, type, 0, classGuid, isChannel, res.messages.size() == 0);
-                }
-            });
-            getConnectionsManager().bindRequestToGuid(reqId, classGuid);
+            //TODO 发起请求
+//            TL_messages_search req = new TL_messages_search();
+//            req.limit = count;
+//            req.offset_id = max_id;
+//            if (type == MEDIA_PHOTOVIDEO) {
+//                req.filter = new TL_inputMessagesFilterPhotoVideo();
+//            } else if (type == MEDIA_FILE) {
+//                req.filter = new TL_inputMessagesFilterDocument();
+//            } else if (type == MEDIA_AUDIO) {
+//                req.filter = new TL_inputMessagesFilterRoundVoice();
+//            } else if (type == MEDIA_URL) {
+//                req.filter = new TL_inputMessagesFilterUrl();
+//            } else if (type == MEDIA_MUSIC) {
+//                req.filter = new TL_inputMessagesFilterMusic();
+//            } else if (type == MEDIA_GIF) {
+//                req.filter = new TL_inputMessagesFilterGif();
+//            }
+//            req.q = "";
+//            req.peer = getMessagesController().getInputPeer(lower_part);
+//            if (req.peer == null) {
+//                return;
+//            }
+//            int reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
+//                if (error == null) {
+//                    final messages_Messages res = (messages_Messages) response;
+//                    getMessagesController().removeDeletedMessagesFromArray(uid, res.messages);
+//                    processLoadedMedia(res, uid, count, max_id, type, 0, classGuid, isChannel, res.messages.size() == 0);
+//                }
+//            });
+//            getConnectionsManager().bindRequestToGuid(reqId, classGuid);
         }
     }
 
@@ -3824,52 +3845,53 @@ public class MediaDataController extends BaseController {
                         if (counts[a] == -1 || old[a] == 1) {
                             final int type = a;
 
-                            TL_messages_search req = new TL_messages_search();
-                            req.limit = 1;
-                            req.offset_id = 0;
-                            if (a == MEDIA_PHOTOVIDEO) {
-                                req.filter = new TL_inputMessagesFilterPhotoVideo();
-                            } else if (a == MEDIA_FILE) {
-                                req.filter = new TL_inputMessagesFilterDocument();
-                            } else if (a == MEDIA_AUDIO) {
-                                req.filter = new TL_inputMessagesFilterRoundVoice();
-                            } else if (a == MEDIA_URL) {
-                                req.filter = new TL_inputMessagesFilterUrl();
-                            } else if (a == MEDIA_MUSIC) {
-                                req.filter = new TL_inputMessagesFilterMusic();
-                            } else if (a == MEDIA_GIF) {
-                                req.filter = new TL_inputMessagesFilterGif();
-                            }
-                            req.q = "";
-                            req.peer = getMessagesController().getInputPeer(lower_part);
-                            if (req.peer == null) {
-                                counts[a] = 0;
-                                continue;
-                            }
-                            int reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
-                                if (error == null) {
-                                    final messages_Messages res = (messages_Messages) response;
-                                    if (res instanceof TL_messages_messages) {
-                                        counts[type] = res.messages.size();
-                                    } else {
-                                        counts[type] = res.count;
-                                    }
-                                    putMediaCountDatabase(uid, type, counts[type]);
-                                } else {
-                                    counts[type] = 0;
-                                }
-                                boolean finished = true;
-                                for (int b = 0; b < counts.length; b++) {
-                                    if (counts[b] == -1) {
-                                        finished = false;
-                                        break;
-                                    }
-                                }
-                                if (finished) {
-                                    AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.mediaCountsDidLoad, uid, counts));
-                                }
-                            });
-                            getConnectionsManager().bindRequestToGuid(reqId, classGuid);
+                            //TODO 发起请求
+//                            TL_messages_search req = new TL_messages_search();
+//                            req.limit = 1;
+//                            req.offset_id = 0;
+//                            if (a == MEDIA_PHOTOVIDEO) {
+//                                req.filter = new TL_inputMessagesFilterPhotoVideo();
+//                            } else if (a == MEDIA_FILE) {
+//                                req.filter = new TL_inputMessagesFilterDocument();
+//                            } else if (a == MEDIA_AUDIO) {
+//                                req.filter = new TL_inputMessagesFilterRoundVoice();
+//                            } else if (a == MEDIA_URL) {
+//                                req.filter = new TL_inputMessagesFilterUrl();
+//                            } else if (a == MEDIA_MUSIC) {
+//                                req.filter = new TL_inputMessagesFilterMusic();
+//                            } else if (a == MEDIA_GIF) {
+//                                req.filter = new TL_inputMessagesFilterGif();
+//                            }
+//                            req.q = "";
+//                            req.peer = getMessagesController().getInputPeer(lower_part);
+//                            if (req.peer == null) {
+//                                counts[a] = 0;
+//                                continue;
+//                            }
+//                            int reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
+//                                if (error == null) {
+//                                    final messages_Messages res = (messages_Messages) response;
+//                                    if (res instanceof TL_messages_messages) {
+//                                        counts[type] = res.messages.size();
+//                                    } else {
+//                                        counts[type] = res.count;
+//                                    }
+//                                    putMediaCountDatabase(uid, type, counts[type]);
+//                                } else {
+//                                    counts[type] = 0;
+//                                }
+//                                boolean finished = true;
+//                                for (int b = 0; b < counts.length; b++) {
+//                                    if (counts[b] == -1) {
+//                                        finished = false;
+//                                        break;
+//                                    }
+//                                }
+//                                if (finished) {
+//                                    AndroidUtilities.runOnUIThread(() -> getNotificationCenter().postNotificationName(NotificationCenter.mediaCountsDidLoad, uid, counts));
+//                                }
+//                            });
+//                            getConnectionsManager().bindRequestToGuid(reqId, classGuid);
                             if (counts[a] == -1) {
                                 missing = true;
                             } else if (old[a] == 1) {
@@ -3892,46 +3914,47 @@ public class MediaDataController extends BaseController {
         if (fromCache || lower_part == 0) {
             getMediaCountDatabase(uid, type, classGuid);
         } else {
-            TL_messages_search req = new TL_messages_search();
-            req.limit = 1;
-            req.offset_id = 0;
-            if (type == MEDIA_PHOTOVIDEO) {
-                req.filter = new TL_inputMessagesFilterPhotoVideo();
-            } else if (type == MEDIA_FILE) {
-                req.filter = new TL_inputMessagesFilterDocument();
-            } else if (type == MEDIA_AUDIO) {
-                req.filter = new TL_inputMessagesFilterRoundVoice();
-            } else if (type == MEDIA_URL) {
-                req.filter = new TL_inputMessagesFilterUrl();
-            } else if (type == MEDIA_MUSIC) {
-                req.filter = new TL_inputMessagesFilterMusic();
-            } else if (type == MEDIA_GIF) {
-                req.filter = new TL_inputMessagesFilterGif();
-            }
-            req.q = "";
-            req.peer = getMessagesController().getInputPeer(lower_part);
-            if (req.peer == null) {
-                return;
-            }
-            int reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
-                if (error == null) {
-                    final messages_Messages res = (messages_Messages) response;
-                    getMessagesStorage().putUsersAndChats(res.users, res.chats, true, true);
-                    int count;
-                    if (res instanceof TL_messages_messages) {
-                        count = res.messages.size();
-                    } else {
-                        count = res.count;
-                    }
-                    AndroidUtilities.runOnUIThread(() -> {
-                        getMessagesController().putUsers(res.users, false);
-                        getMessagesController().putChats(res.chats, false);
-                    });
-
-                    processLoadedMediaCount(count, uid, type, classGuid, false, 0);
-                }
-            });
-            getConnectionsManager().bindRequestToGuid(reqId, classGuid);
+            //TODO 发起请求
+//            TL_messages_search req = new TL_messages_search();
+//            req.limit = 1;
+//            req.offset_id = 0;
+//            if (type == MEDIA_PHOTOVIDEO) {
+//                req.filter = new TL_inputMessagesFilterPhotoVideo();
+//            } else if (type == MEDIA_FILE) {
+//                req.filter = new TL_inputMessagesFilterDocument();
+//            } else if (type == MEDIA_AUDIO) {
+//                req.filter = new TL_inputMessagesFilterRoundVoice();
+//            } else if (type == MEDIA_URL) {
+//                req.filter = new TL_inputMessagesFilterUrl();
+//            } else if (type == MEDIA_MUSIC) {
+//                req.filter = new TL_inputMessagesFilterMusic();
+//            } else if (type == MEDIA_GIF) {
+//                req.filter = new TL_inputMessagesFilterGif();
+//            }
+//            req.q = "";
+//            req.peer = getMessagesController().getInputPeer(lower_part);
+//            if (req.peer == null) {
+//                return;
+//            }
+//            int reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
+//                if (error == null) {
+//                    final messages_Messages res = (messages_Messages) response;
+//                    getMessagesStorage().putUsersAndChats(res.users, res.chats, true, true);
+//                    int count;
+//                    if (res instanceof TL_messages_messages) {
+//                        count = res.messages.size();
+//                    } else {
+//                        count = res.count;
+//                    }
+//                    AndroidUtilities.runOnUIThread(() -> {
+//                        getMessagesController().putUsers(res.users, false);
+//                        getMessagesController().putChats(res.chats, false);
+//                    });
+//
+//                    processLoadedMediaCount(count, uid, type, classGuid, false, 0);
+//                }
+//            });
+//            getConnectionsManager().bindRequestToGuid(reqId, classGuid);
         }
     }
 
@@ -4709,99 +4732,100 @@ public class MediaDataController extends BaseController {
             loaded = true;
         } else {
             loading = true;
-            TLRPC.TL_contacts_getTopPeers req = new TLRPC.TL_contacts_getTopPeers();
-            req.hash = 0;
-            req.bots_pm = false;
-            req.correspondents = true;
-            req.groups = false;
-            req.channels = false;
-            req.bots_inline = true;
-            req.offset = 0;
-            req.limit = 20;
-            getConnectionsManager().sendRequest(req, (response, error) -> {
-                if (response instanceof TLRPC.TL_contacts_topPeers) {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        final TLRPC.TL_contacts_topPeers topPeers = (TLRPC.TL_contacts_topPeers) response;
-                        getMessagesController().putUsers(topPeers.users, false);
-                        getMessagesController().putChats(topPeers.chats, false);
-                        for (int a = 0; a < topPeers.categories.size(); a++) {
-                            TLRPC.TL_topPeerCategoryPeers category = topPeers.categories.get(a);
-                            if (category.category instanceof TLRPC.TL_topPeerCategoryBotsInline) {
-                                inlineBots = category.peers;
-                                getUserConfig().botRatingLoadTime = (int) (System.currentTimeMillis() / 1000);
-                            } else {
-                                hints = category.peers;
-                                int selfUserId = getUserConfig().getClientUserId();
-                                for (int b = 0; b < hints.size(); b++) {
-                                    TLRPC.TL_topPeer topPeer = hints.get(b);
-                                    if (topPeer.peer.user_id == selfUserId) {
-                                        hints.remove(b);
-                                        break;
-                                    }
-                                }
-                                getUserConfig().ratingLoadTime = (int) (System.currentTimeMillis() / 1000);
-                            }
-                        }
-                        getUserConfig().saveConfig(false);
-                        buildShortcuts();
-                        getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
-                        getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
-                        getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                            try {
-                                getMessagesStorage().getDatabase().executeFast("DELETE FROM chat_hints WHERE 1").stepThis().dispose();
-                                getMessagesStorage().getDatabase().beginTransaction();
-                                getMessagesStorage().putUsersAndChats(topPeers.users, topPeers.chats, false, false);
-
-                                SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO chat_hints VALUES(?, ?, ?, ?)");
-                                for (int a = 0; a < topPeers.categories.size(); a++) {
-                                    int type;
-                                    TLRPC.TL_topPeerCategoryPeers category = topPeers.categories.get(a);
-                                    if (category.category instanceof TLRPC.TL_topPeerCategoryBotsInline) {
-                                        type = 1;
-                                    } else {
-                                        type = 0;
-                                    }
-                                    for (int b = 0; b < category.peers.size(); b++) {
-                                        TLRPC.TL_topPeer peer = category.peers.get(b);
-                                        int did;
-                                        if (peer.peer instanceof TLRPC.TL_peerUser) {
-                                            did = peer.peer.user_id;
-                                        } else if (peer.peer instanceof TLRPC.TL_peerChat) {
-                                            did = -peer.peer.chat_id;
-                                        } else {
-                                            did = -peer.peer.channel_id;
-                                        }
-                                        state.requery();
-                                        state.bindInteger(1, did);
-                                        state.bindInteger(2, type);
-                                        state.bindDouble(3, peer.rating);
-                                        state.bindInteger(4, 0);
-                                        state.step();
-                                    }
-                                }
-
-                                state.dispose();
-
-                                getMessagesStorage().getDatabase().commitTransaction();
-                                AndroidUtilities.runOnUIThread(() -> {
-                                    getUserConfig().suggestContacts = true;
-                                    getUserConfig().lastHintsSyncTime = (int) (System.currentTimeMillis() / 1000);
-                                    getUserConfig().saveConfig(false);
-                                });
-                            } catch (Exception e) {
-                                FileLog.e(e);
-                            }
-                        });
-                    });
-                } else if (response instanceof TLRPC.TL_contacts_topPeersDisabled) {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        getUserConfig().suggestContacts = false;
-                        getUserConfig().lastHintsSyncTime = (int) (System.currentTimeMillis() / 1000);
-                        getUserConfig().saveConfig(false);
-                        clearTopPeers();
-                    });
-                }
-            });
+            //TODO 发起请求
+//            TLRPC.TL_contacts_getTopPeers req = new TLRPC.TL_contacts_getTopPeers();
+//            req.hash = 0;
+//            req.bots_pm = false;
+//            req.correspondents = true;
+//            req.groups = false;
+//            req.channels = false;
+//            req.bots_inline = true;
+//            req.offset = 0;
+//            req.limit = 20;
+//            getConnectionsManager().sendRequest(req, (response, error) -> {
+//                if (response instanceof TLRPC.TL_contacts_topPeers) {
+//                    AndroidUtilities.runOnUIThread(() -> {
+//                        final TLRPC.TL_contacts_topPeers topPeers = (TLRPC.TL_contacts_topPeers) response;
+//                        getMessagesController().putUsers(topPeers.users, false);
+//                        getMessagesController().putChats(topPeers.chats, false);
+//                        for (int a = 0; a < topPeers.categories.size(); a++) {
+//                            TLRPC.TL_topPeerCategoryPeers category = topPeers.categories.get(a);
+//                            if (category.category instanceof TLRPC.TL_topPeerCategoryBotsInline) {
+//                                inlineBots = category.peers;
+//                                getUserConfig().botRatingLoadTime = (int) (System.currentTimeMillis() / 1000);
+//                            } else {
+//                                hints = category.peers;
+//                                int selfUserId = getUserConfig().getClientUserId();
+//                                for (int b = 0; b < hints.size(); b++) {
+//                                    TLRPC.TL_topPeer topPeer = hints.get(b);
+//                                    if (topPeer.peer.user_id == selfUserId) {
+//                                        hints.remove(b);
+//                                        break;
+//                                    }
+//                                }
+//                                getUserConfig().ratingLoadTime = (int) (System.currentTimeMillis() / 1000);
+//                            }
+//                        }
+//                        getUserConfig().saveConfig(false);
+//                        buildShortcuts();
+//                        getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
+//                        getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
+//                        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+//                            try {
+//                                getMessagesStorage().getDatabase().executeFast("DELETE FROM chat_hints WHERE 1").stepThis().dispose();
+//                                getMessagesStorage().getDatabase().beginTransaction();
+//                                getMessagesStorage().putUsersAndChats(topPeers.users, topPeers.chats, false, false);
+//
+//                                SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO chat_hints VALUES(?, ?, ?, ?)");
+//                                for (int a = 0; a < topPeers.categories.size(); a++) {
+//                                    int type;
+//                                    TLRPC.TL_topPeerCategoryPeers category = topPeers.categories.get(a);
+//                                    if (category.category instanceof TLRPC.TL_topPeerCategoryBotsInline) {
+//                                        type = 1;
+//                                    } else {
+//                                        type = 0;
+//                                    }
+//                                    for (int b = 0; b < category.peers.size(); b++) {
+//                                        TLRPC.TL_topPeer peer = category.peers.get(b);
+//                                        int did;
+//                                        if (peer.peer instanceof TLRPC.TL_peerUser) {
+//                                            did = peer.peer.user_id;
+//                                        } else if (peer.peer instanceof TLRPC.TL_peerChat) {
+//                                            did = -peer.peer.chat_id;
+//                                        } else {
+//                                            did = -peer.peer.channel_id;
+//                                        }
+//                                        state.requery();
+//                                        state.bindInteger(1, did);
+//                                        state.bindInteger(2, type);
+//                                        state.bindDouble(3, peer.rating);
+//                                        state.bindInteger(4, 0);
+//                                        state.step();
+//                                    }
+//                                }
+//
+//                                state.dispose();
+//
+//                                getMessagesStorage().getDatabase().commitTransaction();
+//                                AndroidUtilities.runOnUIThread(() -> {
+//                                    getUserConfig().suggestContacts = true;
+//                                    getUserConfig().lastHintsSyncTime = (int) (System.currentTimeMillis() / 1000);
+//                                    getUserConfig().saveConfig(false);
+//                                });
+//                            } catch (Exception e) {
+//                                FileLog.e(e);
+//                            }
+//                        });
+//                    });
+//                } else if (response instanceof TLRPC.TL_contacts_topPeersDisabled) {
+//                    AndroidUtilities.runOnUIThread(() -> {
+//                        getUserConfig().suggestContacts = false;
+//                        getUserConfig().lastHintsSyncTime = (int) (System.currentTimeMillis() / 1000);
+//                        getUserConfig().saveConfig(false);
+//                        clearTopPeers();
+//                    });
+//                }
+//            });
         }
     }
 
@@ -4834,21 +4858,22 @@ public class MediaDataController extends BaseController {
     }
 
     public void removeInline(final int uid) {
-        TLRPC.TL_topPeerCategoryPeers category = null;
-        for (int a = 0; a < inlineBots.size(); a++) {
-            if (inlineBots.get(a).peer.user_id == uid) {
-                inlineBots.remove(a);
-                TLRPC.TL_contacts_resetTopPeerRating req = new TLRPC.TL_contacts_resetTopPeerRating();
-                req.category = new TLRPC.TL_topPeerCategoryBotsInline();
-                req.peer = getMessagesController().getInputPeer(uid);
-                getConnectionsManager().sendRequest(req, (response, error) -> {
-
-                });
-                deletePeer(uid, 1);
-                getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
-                return;
-            }
-        }
+        //TODO 发起请求
+//        TLRPC.TL_topPeerCategoryPeers category = null;
+//        for (int a = 0; a < inlineBots.size(); a++) {
+//            if (inlineBots.get(a).peer.user_id == uid) {
+//                inlineBots.remove(a);
+//                TLRPC.TL_contacts_resetTopPeerRating req = new TLRPC.TL_contacts_resetTopPeerRating();
+//                req.category = new TLRPC.TL_topPeerCategoryBotsInline();
+//                req.peer = getMessagesController().getInputPeer(uid);
+//                getConnectionsManager().sendRequest(req, (response, error) -> {
+//
+//                });
+//                deletePeer(uid, 1);
+//                getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
+//                return;
+//            }
+//        }
     }
 
     public void removePeer(final int uid) {
@@ -4856,13 +4881,14 @@ public class MediaDataController extends BaseController {
             if (hints.get(a).peer.user_id == uid) {
                 hints.remove(a);
                 getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
-                TLRPC.TL_contacts_resetTopPeerRating req = new TLRPC.TL_contacts_resetTopPeerRating();
-                req.category = new TLRPC.TL_topPeerCategoryCorrespondents();
-                req.peer = getMessagesController().getInputPeer(uid);
-                deletePeer(uid, 0);
-                getConnectionsManager().sendRequest(req, (response, error) -> {
-
-                });
+                //TODO 发起请求
+//                TLRPC.TL_contacts_resetTopPeerRating req = new TLRPC.TL_contacts_resetTopPeerRating();
+//                req.category = new TLRPC.TL_topPeerCategoryCorrespondents();
+//                req.peer = getMessagesController().getInputPeer(uid);
+//                deletePeer(uid, 0);
+//                getConnectionsManager().sendRequest(req, (response, error) -> {
+//
+//                });
                 return;
             }
         }

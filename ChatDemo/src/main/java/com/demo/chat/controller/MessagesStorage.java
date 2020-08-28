@@ -1081,182 +1081,182 @@ public class MessagesStorage extends BaseController {
                     NativeByteBuffer data = cursor.byteBufferValue(1);
                     if (data != null) {
                         int type = data.readInt32(false);
-                        switch (type) {
-                            case 0: {
-                                final Chat chat = Chat.TLdeserialize(data, data.readInt32(false), false);
-                                if (chat != null) {
-                                    Utilities.stageQueue.postRunnable(() -> getMessagesController().loadUnknownChannel(chat, taskId));
-                                }
-                                break;
-                            }
-                            case 1: {
-                                final int channelId = data.readInt32(false);
-                                final int newDialogType = data.readInt32(false);
-                                Utilities.stageQueue.postRunnable(() -> getMessagesController().getChannelDifference(channelId, newDialogType, taskId, null));
-                                break;
-                            }
-                            case 2:
-                            case 5:
-                            case 8:
-                            case 10:
-                            case 14: {
-                                final Dialog dialog = new TL_dialog();
-                                dialog.id = data.readInt64(false);
-                                dialog.top_message = data.readInt32(false);
-                                dialog.read_inbox_max_id = data.readInt32(false);
-                                dialog.read_outbox_max_id = data.readInt32(false);
-                                dialog.unread_count = data.readInt32(false);
-                                dialog.last_message_date = data.readInt32(false);
-                                dialog.pts = data.readInt32(false);
-                                dialog.flags = data.readInt32(false);
-                                if (type >= 5) {
-                                    dialog.pinned = data.readBool(false);
-                                    dialog.pinnedNum = data.readInt32(false);
-                                }
-                                if (type >= 8) {
-                                    dialog.unread_mentions_count = data.readInt32(false);
-                                }
-                                if (type >= 10) {
-                                    dialog.unread_mark = data.readBool(false);
-                                }
-                                if (type >= 14) {
-                                    dialog.folder_id = data.readInt32(false);
-                                }
-                                final InputPeer peer = InputPeer.TLdeserialize(data, data.readInt32(false), false);
-                                AndroidUtilities.runOnUIThread(() -> getMessagesController().checkLastDialogMessage(dialog, peer, taskId));
-                                break;
-                            }
-                            case 3: {
-                                long random_id = data.readInt64(false);
-                                InputPeer peer = InputPeer.TLdeserialize(data, data.readInt32(false), false);
-                                TL_inputMediaGame game = (TL_inputMediaGame) InputMedia.TLdeserialize(data, data.readInt32(false), false);
-                                getSendMessagesHelper().sendGame(peer, game, random_id, taskId);
-                                break;
-                            }
-                            case 4: {
-                                final long did = data.readInt64(false);
-                                final boolean pin = data.readBool(false);
-                                final InputPeer peer = InputPeer.TLdeserialize(data, data.readInt32(false), false);
-                                AndroidUtilities.runOnUIThread(() -> getMessagesController().pinDialog(did, pin, peer, taskId));
-                                break;
-                            }
-                            case 6: {
-                                final int channelId = data.readInt32(false);
-                                final int newDialogType = data.readInt32(false);
-                                final InputChannel inputChannel = InputChannel.TLdeserialize(data, data.readInt32(false), false);
-                                Utilities.stageQueue.postRunnable(() -> getMessagesController().getChannelDifference(channelId, newDialogType, taskId, inputChannel));
-                                break;
-                            }
-                            case 7: {
-                                final int channelId = data.readInt32(false);
-                                int constructor = data.readInt32(false);
-                                TLObject request = TL_messages_deleteMessages.TLdeserialize(data, constructor, false);
-                                if (request == null) {
-                                    request = TL_channels_deleteMessages.TLdeserialize(data, constructor, false);
-                                }
-                                if (request == null) {
-                                    removePendingTask(taskId);
-                                } else {
-                                    final TLObject finalRequest = request;
-                                    AndroidUtilities.runOnUIThread(() -> getMessagesController().deleteMessages(null, null, null, 0, channelId, true, false, taskId, finalRequest));
-                                }
-                                break;
-                            }
-                            case 9: {
-                                final long did = data.readInt64(false);
-                                final InputPeer peer = InputPeer.TLdeserialize(data, data.readInt32(false), false);
-                                AndroidUtilities.runOnUIThread(() -> getMessagesController().markDialogAsUnread(did, peer, taskId));
-                                break;
-                            }
-                            case 11: {
-                                InputChannel inputChannel;
-                                final int mid = data.readInt32(false);
-                                final int channelId = data.readInt32(false);
-                                final int ttl = data.readInt32(false);
-                                if (channelId != 0) {
-                                    inputChannel = InputChannel.TLdeserialize(data, data.readInt32(false), false);
-                                } else {
-                                    inputChannel = null;
-                                }
-                                AndroidUtilities.runOnUIThread(() -> getMessagesController().markMessageAsRead(mid, channelId, inputChannel, ttl, taskId));
-                                break;
-                            }
-                            case 12:
-                            case 19:
-                            case 20:
-                                removePendingTask(taskId);
-                                break;
-                            case 21: {
-                                Theme.OverrideWallpaperInfo info = new Theme.OverrideWallpaperInfo();
-                                long id = data.readInt64(false);
-                                info.isBlurred = data.readBool(false);
-                                info.isMotion = data.readBool(false);
-                                info.color = data.readInt32(false);
-                                info.gradientColor = data.readInt32(false);
-                                info.rotation = data.readInt32(false);
-                                info.intensity = (float) data.readDouble(false);
-                                boolean install = data.readBool(false);
-                                info.slug = data.readString(false);
-                                info.originalFileName = data.readString(false);
-                                AndroidUtilities.runOnUIThread(() -> getMessagesController().saveWallpaperToServer(null, info, install, taskId));
-                                break;
-                            }
-                            case 13: {
-                                final long did = data.readInt64(false);
-                                final boolean first = data.readBool(false);
-                                final int onlyHistory = data.readInt32(false);
-                                final int maxIdDelete = data.readInt32(false);
-                                final boolean revoke = data.readBool(false);
-                                InputPeer inputPeer = InputPeer.TLdeserialize(data, data.readInt32(false), false);
-                                AndroidUtilities.runOnUIThread(() -> getMessagesController().deleteDialog(did, first, onlyHistory, maxIdDelete, revoke, inputPeer, taskId));
-                                break;
-                            }
-                            case 15: {
-                                InputPeer inputPeer = InputPeer.TLdeserialize(data, data.readInt32(false), false);
-                                Utilities.stageQueue.postRunnable(() -> getMessagesController().loadUnknownDialog(inputPeer, taskId));
-                                break;
-                            }
-                            case 16: {
-                                final int folderId = data.readInt32(false);
-                                int count = data.readInt32(false);
-                                ArrayList<InputDialogPeer> peers = new ArrayList<>();
-                                for (int a = 0; a < count; a++) {
-                                    InputDialogPeer inputPeer = InputDialogPeer.TLdeserialize(data, data.readInt32(false), false);
-                                    peers.add(inputPeer);
-                                }
-                                AndroidUtilities.runOnUIThread(() -> getMessagesController().reorderPinnedDialogs(folderId, peers, taskId));
-                                break;
-                            }
-                            case 17: {
-                                final int folderId = data.readInt32(false);
-                                int count = data.readInt32(false);
-                                ArrayList<TL_inputFolderPeer> peers = new ArrayList<>();
-                                for (int a = 0; a < count; a++) {
-                                    TL_inputFolderPeer inputPeer = TL_inputFolderPeer.TLdeserialize(data, data.readInt32(false), false);
-                                    peers.add(inputPeer);
-                                }
-                                AndroidUtilities.runOnUIThread(() -> getMessagesController().addDialogToFolder(null, folderId, -1, peers, taskId));
-                                break;
-                            }
-                            case 18: {
-                                final long dialogId = data.readInt64(false);
-                                final int channelId = data.readInt32(false);
-                                int constructor = data.readInt32(false);
-                                TLObject request = TL_messages_deleteScheduledMessages.TLdeserialize(data, constructor, false);
-                                if (request == null) {
-                                    removePendingTask(taskId);
-                                } else {
-                                    final TLObject finalRequest = request;
-                                    AndroidUtilities.runOnUIThread(() -> MessagesController.getInstance(currentAccount).deleteMessages(null, null, null, dialogId, channelId, true, true, taskId, finalRequest));
-                                }
-                                break;
-                            }
-                            case 22: {
-                                InputPeer inputPeer = InputPeer.TLdeserialize(data, data.readInt32(false), false);
-                                AndroidUtilities.runOnUIThread(() -> getMessagesController().reloadMentionsCountForChannel(inputPeer, taskId));
-                                break;
-                            }
-                        }
+//                        switch (type) {
+//                            case 0: {
+//                                final Chat chat = Chat.TLdeserialize(data, data.readInt32(false), false);
+//                                if (chat != null) {
+//                                    Utilities.stageQueue.postRunnable(() -> getMessagesController().loadUnknownChannel(chat, taskId));
+//                                }
+//                                break;
+//                            }
+//                            case 1: {
+//                                final int channelId = data.readInt32(false);
+//                                final int newDialogType = data.readInt32(false);
+//                                Utilities.stageQueue.postRunnable(() -> getMessagesController().getChannelDifference(channelId, newDialogType, taskId, null));
+//                                break;
+//                            }
+//                            case 2:
+//                            case 5:
+//                            case 8:
+//                            case 10:
+//                            case 14: {
+//                                final Dialog dialog = new TL_dialog();
+//                                dialog.id = data.readInt64(false);
+//                                dialog.top_message = data.readInt32(false);
+//                                dialog.read_inbox_max_id = data.readInt32(false);
+//                                dialog.read_outbox_max_id = data.readInt32(false);
+//                                dialog.unread_count = data.readInt32(false);
+//                                dialog.last_message_date = data.readInt32(false);
+//                                dialog.pts = data.readInt32(false);
+//                                dialog.flags = data.readInt32(false);
+//                                if (type >= 5) {
+//                                    dialog.pinned = data.readBool(false);
+//                                    dialog.pinnedNum = data.readInt32(false);
+//                                }
+//                                if (type >= 8) {
+//                                    dialog.unread_mentions_count = data.readInt32(false);
+//                                }
+//                                if (type >= 10) {
+//                                    dialog.unread_mark = data.readBool(false);
+//                                }
+//                                if (type >= 14) {
+//                                    dialog.folder_id = data.readInt32(false);
+//                                }
+//                                final InputPeer peer = InputPeer.TLdeserialize(data, data.readInt32(false), false);
+//                                AndroidUtilities.runOnUIThread(() -> getMessagesController().checkLastDialogMessage(dialog, peer, taskId));
+//                                break;
+//                            }
+//                            case 3: {
+//                                long random_id = data.readInt64(false);
+//                                InputPeer peer = InputPeer.TLdeserialize(data, data.readInt32(false), false);
+//                                TL_inputMediaGame game = (TL_inputMediaGame) InputMedia.TLdeserialize(data, data.readInt32(false), false);
+//                                getSendMessagesHelper().sendGame(peer, game, random_id, taskId);
+//                                break;
+//                            }
+//                            case 4: {
+//                                final long did = data.readInt64(false);
+//                                final boolean pin = data.readBool(false);
+//                                final InputPeer peer = InputPeer.TLdeserialize(data, data.readInt32(false), false);
+//                                AndroidUtilities.runOnUIThread(() -> getMessagesController().pinDialog(did, pin, peer, taskId));
+//                                break;
+//                            }
+//                            case 6: {
+//                                final int channelId = data.readInt32(false);
+//                                final int newDialogType = data.readInt32(false);
+//                                final InputChannel inputChannel = InputChannel.TLdeserialize(data, data.readInt32(false), false);
+//                                Utilities.stageQueue.postRunnable(() -> getMessagesController().getChannelDifference(channelId, newDialogType, taskId, inputChannel));
+//                                break;
+//                            }
+//                            case 7: {
+//                                final int channelId = data.readInt32(false);
+//                                int constructor = data.readInt32(false);
+//                                TLObject request = TL_messages_deleteMessages.TLdeserialize(data, constructor, false);
+//                                if (request == null) {
+//                                    request = TL_channels_deleteMessages.TLdeserialize(data, constructor, false);
+//                                }
+//                                if (request == null) {
+//                                    removePendingTask(taskId);
+//                                } else {
+//                                    final TLObject finalRequest = request;
+//                                    AndroidUtilities.runOnUIThread(() -> getMessagesController().deleteMessages(null, null, null, 0, channelId, true, false, taskId, finalRequest));
+//                                }
+//                                break;
+//                            }
+//                            case 9: {
+//                                final long did = data.readInt64(false);
+//                                final InputPeer peer = InputPeer.TLdeserialize(data, data.readInt32(false), false);
+//                                AndroidUtilities.runOnUIThread(() -> getMessagesController().markDialogAsUnread(did, peer, taskId));
+//                                break;
+//                            }
+//                            case 11: {
+//                                InputChannel inputChannel;
+//                                final int mid = data.readInt32(false);
+//                                final int channelId = data.readInt32(false);
+//                                final int ttl = data.readInt32(false);
+//                                if (channelId != 0) {
+//                                    inputChannel = InputChannel.TLdeserialize(data, data.readInt32(false), false);
+//                                } else {
+//                                    inputChannel = null;
+//                                }
+//                                AndroidUtilities.runOnUIThread(() -> getMessagesController().markMessageAsRead(mid, channelId, inputChannel, ttl, taskId));
+//                                break;
+//                            }
+//                            case 12:
+//                            case 19:
+//                            case 20:
+//                                removePendingTask(taskId);
+//                                break;
+//                            case 21: {
+//                                Theme.OverrideWallpaperInfo info = new Theme.OverrideWallpaperInfo();
+//                                long id = data.readInt64(false);
+//                                info.isBlurred = data.readBool(false);
+//                                info.isMotion = data.readBool(false);
+//                                info.color = data.readInt32(false);
+//                                info.gradientColor = data.readInt32(false);
+//                                info.rotation = data.readInt32(false);
+//                                info.intensity = (float) data.readDouble(false);
+//                                boolean install = data.readBool(false);
+//                                info.slug = data.readString(false);
+//                                info.originalFileName = data.readString(false);
+//                                AndroidUtilities.runOnUIThread(() -> getMessagesController().saveWallpaperToServer(null, info, install, taskId));
+//                                break;
+//                            }
+//                            case 13: {
+//                                final long did = data.readInt64(false);
+//                                final boolean first = data.readBool(false);
+//                                final int onlyHistory = data.readInt32(false);
+//                                final int maxIdDelete = data.readInt32(false);
+//                                final boolean revoke = data.readBool(false);
+//                                InputPeer inputPeer = InputPeer.TLdeserialize(data, data.readInt32(false), false);
+//                                AndroidUtilities.runOnUIThread(() -> getMessagesController().deleteDialog(did, first, onlyHistory, maxIdDelete, revoke, inputPeer, taskId));
+//                                break;
+//                            }
+//                            case 15: {
+//                                InputPeer inputPeer = InputPeer.TLdeserialize(data, data.readInt32(false), false);
+//                                Utilities.stageQueue.postRunnable(() -> getMessagesController().loadUnknownDialog(inputPeer, taskId));
+//                                break;
+//                            }
+//                            case 16: {
+//                                final int folderId = data.readInt32(false);
+//                                int count = data.readInt32(false);
+//                                ArrayList<InputDialogPeer> peers = new ArrayList<>();
+//                                for (int a = 0; a < count; a++) {
+//                                    InputDialogPeer inputPeer = InputDialogPeer.TLdeserialize(data, data.readInt32(false), false);
+//                                    peers.add(inputPeer);
+//                                }
+//                                AndroidUtilities.runOnUIThread(() -> getMessagesController().reorderPinnedDialogs(folderId, peers, taskId));
+//                                break;
+//                            }
+//                            case 17: {
+//                                final int folderId = data.readInt32(false);
+//                                int count = data.readInt32(false);
+//                                ArrayList<TL_inputFolderPeer> peers = new ArrayList<>();
+//                                for (int a = 0; a < count; a++) {
+//                                    TL_inputFolderPeer inputPeer = TL_inputFolderPeer.TLdeserialize(data, data.readInt32(false), false);
+//                                    peers.add(inputPeer);
+//                                }
+//                                AndroidUtilities.runOnUIThread(() -> getMessagesController().addDialogToFolder(null, folderId, -1, peers, taskId));
+//                                break;
+//                            }
+//                            case 18: {
+//                                final long dialogId = data.readInt64(false);
+//                                final int channelId = data.readInt32(false);
+//                                int constructor = data.readInt32(false);
+//                                TLObject request = TL_messages_deleteScheduledMessages.TLdeserialize(data, constructor, false);
+//                                if (request == null) {
+//                                    removePendingTask(taskId);
+//                                } else {
+//                                    final TLObject finalRequest = request;
+//                                    AndroidUtilities.runOnUIThread(() -> MessagesController.getInstance(currentAccount).deleteMessages(null, null, null, dialogId, channelId, true, true, taskId, finalRequest));
+//                                }
+//                                break;
+//                            }
+//                            case 22: {
+//                                InputPeer inputPeer = InputPeer.TLdeserialize(data, data.readInt32(false), false);
+//                                AndroidUtilities.runOnUIThread(() -> getMessagesController().reloadMentionsCountForChannel(inputPeer, taskId));
+//                                break;
+//                            }
+//                        }
                         data.reuse();
                     }
                 }

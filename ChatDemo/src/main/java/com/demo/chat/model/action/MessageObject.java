@@ -54,6 +54,7 @@ import com.demo.chat.model.small.VideoSize;
 import com.demo.chat.model.small.WebDocument;
 import com.demo.chat.model.small.WebFile;
 import com.demo.chat.model.sticker.InputStickerSet;
+import com.demo.chat.model.text.PageBlock;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.Cells.ChatMessageCell;
 import com.demo.chat.ui.Components.TextStyleSpan;
@@ -1851,7 +1852,7 @@ public class MessageObject {
         return null;
     }
 
-    private MessageObject getMessageObjectForBlock(MessageMedia.WebPage webPage, MessageMedia.PageBlock pageBlock) {
+    private MessageObject getMessageObjectForBlock(MessageMedia.WebPage webPage, PageBlock pageBlock) {
         Message message = null;
         if (pageBlock instanceof TLRPC.TL_pageBlockPhoto) {
             TLRPC.TL_pageBlockPhoto pageBlockPhoto = (TLRPC.TL_pageBlockPhoto) pageBlock;
@@ -1882,7 +1883,7 @@ public class MessageObject {
         return new MessageObject(currentAccount, message, false);
     }
 
-    public ArrayList<MessageObject> getWebPagePhotos(ArrayList<MessageObject> array, ArrayList<MessageMedia.PageBlock> blocksToSearch) {
+    public ArrayList<MessageObject> getWebPagePhotos(ArrayList<MessageObject> array, ArrayList<PageBlock> blocksToSearch) {
         ArrayList<MessageObject> messageObjects = array == null ? new ArrayList<>() : array;
         if (messageOwner.media == null || messageOwner.media.webpage == null) {
             return messageObjects;

@@ -605,84 +605,85 @@ public class ContactsController extends BaseController {
                     completedRequestsCount = 0;
                     final int count = (int) Math.ceil(toImport.size() / 500.0);
                     for (int a = 0; a < count; a++) {
-                        final TLRPC.TL_contacts_importContacts req = new TLRPC.TL_contacts_importContacts();
-                        int start = a * 500;
-                        int end = Math.min(start + 500, toImport.size());
-                        req.contacts = new ArrayList<>(toImport.subList(start, end));
-                        getConnectionsManager().sendRequest(req, (response, error) -> {
-                            completedRequestsCount++;
-                            if (error == null) {
-                                if (BuildVars.LOGS_ENABLED) {
-                                    FileLog.d("contacts imported");
-                                }
-                                final TLRPC.TL_contacts_importedContacts res = (TLRPC.TL_contacts_importedContacts) response;
-                                if (!res.retry_contacts.isEmpty()) {
-                                    for (int a1 = 0; a1 < res.retry_contacts.size(); a1++) {
-                                        long id = res.retry_contacts.get(a1);
-                                        contactsMapToSave.remove(contactIdToKey.get((int) id));
-                                    }
-                                    hasErrors[0] = true;
-                                    if (BuildVars.LOGS_ENABLED) {
-                                        FileLog.d("result has retry contacts");
-                                    }
-                                }
-                                for (int a1 = 0; a1 < res.popular_invites.size(); a1++) {
-                                    TLRPC.TL_popularContact popularContact = res.popular_invites.get(a1);
-                                    Contact contact = contactsMap.get(contactIdToKey.get((int) popularContact.client_id));
-                                    if (contact != null) {
-                                        contact.imported = popularContact.importers;
-                                    }
-                                }
-
-                                /*if (BuildVars.LOGS_ENABLED) {
-                                    for (User user : res.users) {
-                                        FileLog.e("received user " + user.first_name + " " + user.last_name + " " + user.phone);
-                                    }
-                                }*/
-                                getMessagesStorage().putUsersAndChats(res.users, null, true, true);
-                                ArrayList<TLRPC.TL_contact> cArr = new ArrayList<>();
-                                for (int a1 = 0; a1 < res.imported.size(); a1++) {
-                                    TLRPC.TL_contact contact = new TLRPC.TL_contact();
-                                    contact.user_id = res.imported.get(a1).user_id;
-                                    cArr.add(contact);
-                                }
-                                processLoadedContacts(cArr, res.users, 2);
-                            } else {
-                                for (int a1 = 0; a1 < req.contacts.size(); a1++) {
-                                    TLRPC.TL_inputPhoneContact contact = req.contacts.get(a1);
-                                    contactsMapToSave.remove(contactIdToKey.get((int) contact.client_id));
-                                }
-                                hasErrors[0] = true;
-                                if (BuildVars.LOGS_ENABLED) {
-                                    FileLog.d("import contacts error " + error.text);
-                                }
-                            }
-                            if (completedRequestsCount == count) {
-                                if (!contactsMapToSave.isEmpty()) {
-                                    getMessagesStorage().putCachedPhoneBook(contactsMapToSave, false, false);
-                                }
-                                Utilities.stageQueue.postRunnable(() -> {
-                                    contactsBookSPhones = contactsBookShort;
-                                    contactsBook = contactsMap;
-                                    contactsSyncInProgress = false;
-                                    contactsBookLoaded = true;
-                                    if (first) {
-                                        contactsLoaded = true;
-                                    }
-                                    if (!delayedContactsUpdate.isEmpty() && contactsLoaded) {
-                                        applyContactsUpdates(delayedContactsUpdate, null, null, null);
-                                        delayedContactsUpdate.clear();
-                                    }
-                                    AndroidUtilities.runOnUIThread(() -> {
-                                        mergePhonebookAndTelegramContacts(phoneBookSectionsDictFinal, phoneBookSectionsArrayFinal, phoneBookByShortPhonesFinal);
-                                        getNotificationCenter().postNotificationName(NotificationCenter.contactsImported);
-                                    });
-                                    if (hasErrors[0]) {
-                                        Utilities.globalQueue.postRunnable(() -> getMessagesStorage().getCachedPhoneBook(true), 60000 * 5);
-                                    }
-                                });
-                            }
-                        }, ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagCanCompress);
+                        //TODO 发起请求
+//                        final TLRPC.TL_contacts_importContacts req = new TLRPC.TL_contacts_importContacts();
+//                        int start = a * 500;
+//                        int end = Math.min(start + 500, toImport.size());
+//                        req.contacts = new ArrayList<>(toImport.subList(start, end));
+//                        getConnectionsManager().sendRequest(req, (response, error) -> {
+//                            completedRequestsCount++;
+//                            if (error == null) {
+//                                if (BuildVars.LOGS_ENABLED) {
+//                                    FileLog.d("contacts imported");
+//                                }
+//                                final TLRPC.TL_contacts_importedContacts res = (TLRPC.TL_contacts_importedContacts) response;
+//                                if (!res.retry_contacts.isEmpty()) {
+//                                    for (int a1 = 0; a1 < res.retry_contacts.size(); a1++) {
+//                                        long id = res.retry_contacts.get(a1);
+//                                        contactsMapToSave.remove(contactIdToKey.get((int) id));
+//                                    }
+//                                    hasErrors[0] = true;
+//                                    if (BuildVars.LOGS_ENABLED) {
+//                                        FileLog.d("result has retry contacts");
+//                                    }
+//                                }
+//                                for (int a1 = 0; a1 < res.popular_invites.size(); a1++) {
+//                                    TLRPC.TL_popularContact popularContact = res.popular_invites.get(a1);
+//                                    Contact contact = contactsMap.get(contactIdToKey.get((int) popularContact.client_id));
+//                                    if (contact != null) {
+//                                        contact.imported = popularContact.importers;
+//                                    }
+//                                }
+//
+//                                /*if (BuildVars.LOGS_ENABLED) {
+//                                    for (User user : res.users) {
+//                                        FileLog.e("received user " + user.first_name + " " + user.last_name + " " + user.phone);
+//                                    }
+//                                }*/
+//                                getMessagesStorage().putUsersAndChats(res.users, null, true, true);
+//                                ArrayList<TLRPC.TL_contact> cArr = new ArrayList<>();
+//                                for (int a1 = 0; a1 < res.imported.size(); a1++) {
+//                                    TLRPC.TL_contact contact = new TLRPC.TL_contact();
+//                                    contact.user_id = res.imported.get(a1).user_id;
+//                                    cArr.add(contact);
+//                                }
+//                                processLoadedContacts(cArr, res.users, 2);
+//                            } else {
+//                                for (int a1 = 0; a1 < req.contacts.size(); a1++) {
+//                                    TLRPC.TL_inputPhoneContact contact = req.contacts.get(a1);
+//                                    contactsMapToSave.remove(contactIdToKey.get((int) contact.client_id));
+//                                }
+//                                hasErrors[0] = true;
+//                                if (BuildVars.LOGS_ENABLED) {
+//                                    FileLog.d("import contacts error " + error.text);
+//                                }
+//                            }
+//                            if (completedRequestsCount == count) {
+//                                if (!contactsMapToSave.isEmpty()) {
+//                                    getMessagesStorage().putCachedPhoneBook(contactsMapToSave, false, false);
+//                                }
+//                                Utilities.stageQueue.postRunnable(() -> {
+//                                    contactsBookSPhones = contactsBookShort;
+//                                    contactsBook = contactsMap;
+//                                    contactsSyncInProgress = false;
+//                                    contactsBookLoaded = true;
+//                                    if (first) {
+//                                        contactsLoaded = true;
+//                                    }
+//                                    if (!delayedContactsUpdate.isEmpty() && contactsLoaded) {
+//                                        applyContactsUpdates(delayedContactsUpdate, null, null, null);
+//                                        delayedContactsUpdate.clear();
+//                                    }
+//                                    AndroidUtilities.runOnUIThread(() -> {
+//                                        mergePhonebookAndTelegramContacts(phoneBookSectionsDictFinal, phoneBookSectionsArrayFinal, phoneBookByShortPhonesFinal);
+//                                        getNotificationCenter().postNotificationName(NotificationCenter.contactsImported);
+//                                    });
+//                                    if (hasErrors[0]) {
+//                                        Utilities.globalQueue.postRunnable(() -> getMessagesStorage().getCachedPhoneBook(true), 60000 * 5);
+//                                    }
+//                                });
+//                            }
+//                        }, ConnectionsManager.RequestFlagFailOnServerErrors | ConnectionsManager.RequestFlagCanCompress);
                     }
                 } else {
                     Utilities.stageQueue.postRunnable(() -> {

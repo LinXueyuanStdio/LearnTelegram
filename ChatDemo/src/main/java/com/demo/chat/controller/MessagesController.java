@@ -845,86 +845,87 @@ public class MessagesController extends BaseController implements NotificationCe
         }
 
         if (chat_id > 0) {
-            final TLObject request;
-
-            final boolean isChannel = ChatObject.isChannel(chat_id, currentAccount);
-            final boolean isMegagroup = isChannel && getChat(chat_id).megagroup;
-            final TLRPC.InputUser inputUser = getInputUser(user);
-            if (botHash == null || isChannel && !isMegagroup) {
-                if (isChannel) {
-                    if (inputUser instanceof TLRPC.TL_inputUserSelf) {
-                        if (joiningToChannels.contains(chat_id)) {
-                            return;
-                        }
-                        TLRPC.TL_channels_joinChannel req = new TLRPC.TL_channels_joinChannel();
-                        req.channel = getInputChannel(chat_id);
-                        request = req;
-                        joiningToChannels.add(chat_id);
-                    } else {
-                        TLRPC.TL_channels_inviteToChannel req = new TLRPC.TL_channels_inviteToChannel();
-                        req.channel = getInputChannel(chat_id);
-                        req.users.add(inputUser);
-                        request = req;
-                    }
-                } else {
-                    TLRPC.TL_messages_addChatUser req = new TLRPC.TL_messages_addChatUser();
-                    req.chat_id = chat_id;
-                    req.fwd_limit = count_fwd;
-                    req.user_id = inputUser;
-                    request = req;
-                }
-            } else {
-                TLRPC.TL_messages_startBot req = new TLRPC.TL_messages_startBot();
-                req.bot = inputUser;
-                if (isChannel) {
-                    req.peer = getInputPeer(-chat_id);
-                } else {
-                    req.peer = new TLRPC.TL_inputPeerChat();
-                    req.peer.chat_id = chat_id;
-                }
-                req.start_param = botHash;
-                req.random_id = Utilities.random.nextLong();
-                request = req;
-            }
-
-            getConnectionsManager().sendRequest(request, (response, error) -> {
-                if (isChannel && inputUser instanceof TLRPC.TL_inputUserSelf) {
-                    AndroidUtilities.runOnUIThread(() -> joiningToChannels.remove((Integer) chat_id));
-                }
-                if (error != null) {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        AlertsCreator.processError(currentAccount, error, fragment, request, isChannel && !isMegagroup);
-                        if (isChannel && inputUser instanceof TLRPC.TL_inputUserSelf) {
-                            getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, UPDATE_MASK_CHAT);
-                        }
-                    });
-                    return;
-                }
-                boolean hasJoinMessage = false;
-                TLRPC.Updates updates = (TLRPC.Updates) response;
-                for (int a = 0; a < updates.updates.size(); a++) {
-                    TLRPC.Update update = updates.updates.get(a);
-                    if (update instanceof TLRPC.TL_updateNewChannelMessage) {
-                        if (((TLRPC.TL_updateNewChannelMessage) update).message.action instanceof TLRPC.TL_messageActionChatAddUser) {
-                            hasJoinMessage = true;
-                            break;
-                        }
-                    }
-                }
-                processUpdates(updates, false);
-                if (isChannel) {
-                    if (!hasJoinMessage && inputUser instanceof TLRPC.TL_inputUserSelf) {
-                        generateJoinMessage(chat_id, true);
-                    }
-                    AndroidUtilities.runOnUIThread(() -> loadFullChat(chat_id, 0, true), 1000);
-                }
-                if (isChannel && inputUser instanceof TLRPC.TL_inputUserSelf) {
-                    getMessagesStorage().updateDialogsWithDeletedMessages(new ArrayList<>(), null, true, chat_id);
-                }
-                if (onFinishRunnable != null) {
-                    AndroidUtilities.runOnUIThread(onFinishRunnable);
-                }
-            });
+            //TODO 发起请求
+//            final TLObject request;
+//
+//            final boolean isChannel = ChatObject.isChannel(chat_id, currentAccount);
+//            final boolean isMegagroup = isChannel && getChat(chat_id).megagroup;
+//            final TLRPC.InputUser inputUser = getInputUser(user);
+//            if (botHash == null || isChannel && !isMegagroup) {
+//                if (isChannel) {
+//                    if (inputUser instanceof TLRPC.TL_inputUserSelf) {
+//                        if (joiningToChannels.contains(chat_id)) {
+//                            return;
+//                        }
+//                        TLRPC.TL_channels_joinChannel req = new TLRPC.TL_channels_joinChannel();
+//                        req.channel = getInputChannel(chat_id);
+//                        request = req;
+//                        joiningToChannels.add(chat_id);
+//                    } else {
+//                        TLRPC.TL_channels_inviteToChannel req = new TLRPC.TL_channels_inviteToChannel();
+//                        req.channel = getInputChannel(chat_id);
+//                        req.users.add(inputUser);
+//                        request = req;
+//                    }
+//                } else {
+//                    TLRPC.TL_messages_addChatUser req = new TLRPC.TL_messages_addChatUser();
+//                    req.chat_id = chat_id;
+//                    req.fwd_limit = count_fwd;
+//                    req.user_id = inputUser;
+//                    request = req;
+//                }
+//            } else {
+//                TLRPC.TL_messages_startBot req = new TLRPC.TL_messages_startBot();
+//                req.bot = inputUser;
+//                if (isChannel) {
+//                    req.peer = getInputPeer(-chat_id);
+//                } else {
+//                    req.peer = new TLRPC.TL_inputPeerChat();
+//                    req.peer.chat_id = chat_id;
+//                }
+//                req.start_param = botHash;
+//                req.random_id = Utilities.random.nextLong();
+//                request = req;
+//            }
+//
+//            getConnectionsManager().sendRequest(request, (response, error) -> {
+//                if (isChannel && inputUser instanceof TLRPC.TL_inputUserSelf) {
+//                    AndroidUtilities.runOnUIThread(() -> joiningToChannels.remove((Integer) chat_id));
+//                }
+//                if (error != null) {
+//                    AndroidUtilities.runOnUIThread(() -> {
+//                        AlertsCreator.processError(currentAccount, error, fragment, request, isChannel && !isMegagroup);
+//                        if (isChannel && inputUser instanceof TLRPC.TL_inputUserSelf) {
+//                            getNotificationCenter().postNotificationName(NotificationCenter.updateInterfaces, UPDATE_MASK_CHAT);
+//                        }
+//                    });
+//                    return;
+//                }
+//                boolean hasJoinMessage = false;
+//                TLRPC.Updates updates = (TLRPC.Updates) response;
+//                for (int a = 0; a < updates.updates.size(); a++) {
+//                    TLRPC.Update update = updates.updates.get(a);
+//                    if (update instanceof TLRPC.TL_updateNewChannelMessage) {
+//                        if (((TLRPC.TL_updateNewChannelMessage) update).message.action instanceof TLRPC.TL_messageActionChatAddUser) {
+//                            hasJoinMessage = true;
+//                            break;
+//                        }
+//                    }
+//                }
+//                processUpdates(updates, false);
+//                if (isChannel) {
+//                    if (!hasJoinMessage && inputUser instanceof TLRPC.TL_inputUserSelf) {
+//                        generateJoinMessage(chat_id, true);
+//                    }
+//                    AndroidUtilities.runOnUIThread(() -> loadFullChat(chat_id, 0, true), 1000);
+//                }
+//                if (isChannel && inputUser instanceof TLRPC.TL_inputUserSelf) {
+//                    getMessagesStorage().updateDialogsWithDeletedMessages(new ArrayList<>(), null, true, chat_id);
+//                }
+//                if (onFinishRunnable != null) {
+//                    AndroidUtilities.runOnUIThread(onFinishRunnable);
+//                }
+//            });
         } else {
             if (info instanceof TLRPC.TL_chatFull) {
                 for (int a = 0; a < info.participants.participants.size(); a++) {
@@ -987,37 +988,38 @@ public class MessagesController extends BaseController implements NotificationCe
             int did = (int) originalMessage.getDialogId();
             if (did != 0) {
                 final AlertDialog progressDialog = new AlertDialog(fragment.getParentActivity(), 3);
-                TLObject req;
-                if (did < 0) {
-                    chat = getChat(-did);
-                }
-                if (did > 0 || !ChatObject.isChannel(chat)) {
-                    TLRPC.TL_messages_getMessages request = new TLRPC.TL_messages_getMessages();
-                    request.id.add(originalMessage.getId());
-                    req = request;
-                } else {
-                    chat = getChat(-did);
-                    TLRPC.TL_channels_getMessages request = new TLRPC.TL_channels_getMessages();
-                    request.channel = getInputChannel(chat);
-                    request.id.add(originalMessage.getId());
-                    req = request;
-                }
-                final int reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
-                    if (response != null) {
-                        AndroidUtilities.runOnUIThread(() -> {
-                            try {
-                                progressDialog.dismiss();
-                            } catch (Exception e) {
-                                FileLog.e(e);
-                            }
-                            TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
-                            putUsers(res.users, false);
-                            putChats(res.chats, false);
-                            getMessagesStorage().putUsersAndChats(res.users, res.chats, true, true);
-                            fragment.presentFragment(new ChatActivity(bundle), true);
-                        });
-                    }
-                });
+                //TODO 发起请求
+//                TLObject req;
+//                if (did < 0) {
+//                    chat = getChat(-did);
+//                }
+//                if (did > 0 || !ChatObject.isChannel(chat)) {
+//                    TLRPC.TL_messages_getMessages request = new TLRPC.TL_messages_getMessages();
+//                    request.id.add(originalMessage.getId());
+//                    req = request;
+//                } else {
+//                    chat = getChat(-did);
+//                    TLRPC.TL_channels_getMessages request = new TLRPC.TL_channels_getMessages();
+//                    request.channel = getInputChannel(chat);
+//                    request.id.add(originalMessage.getId());
+//                    req = request;
+//                }
+//                final int reqId = getConnectionsManager().sendRequest(req, (response, error) -> {
+//                    if (response != null) {
+//                        AndroidUtilities.runOnUIThread(() -> {
+//                            try {
+//                                progressDialog.dismiss();
+//                            } catch (Exception e) {
+//                                FileLog.e(e);
+//                            }
+//                            TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
+//                            putUsers(res.users, false);
+//                            putChats(res.chats, false);
+//                            getMessagesStorage().putUsersAndChats(res.users, res.chats, true, true);
+//                            fragment.presentFragment(new ChatActivity(bundle), true);
+//                        });
+//                    }
+//                });
                 progressDialog.setOnCancelListener(dialog -> {
 //                    getConnectionsManager().cancelRequest(reqId, true);TODO 取消请求
                     if (fragment != null) {

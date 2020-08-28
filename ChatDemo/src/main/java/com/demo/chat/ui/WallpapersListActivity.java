@@ -33,8 +33,6 @@ import android.widget.TextView;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
-import com.demo.chat.controller.ConnectionsManager;
-import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
 import com.demo.chat.controller.MessagesController;
@@ -43,9 +41,6 @@ import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.NotificationCenter;
-import com.demo.chat.model.User;
-import com.demo.chat.model.bot.BotInlineResult;
-import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.small.WallPaper;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
@@ -394,27 +389,28 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                         for (int b = 0; b < selectedWallPapers.size(); b++) {
                             WallPaper wallPaper = (WallPaper) selectedWallPapers.valueAt(b);
 
-                            TLRPC.TL_account_saveWallPaper req = new TLRPC.TL_account_saveWallPaper();
-                            req.settings = new WallPaper.WallPaperSettings();
-                            req.unsave = true;
-
-                            TLRPC.TL_inputWallPaper inputWallPaper = new TLRPC.TL_inputWallPaper();
-                            inputWallPaper.id = wallPaper.id;
-                            inputWallPaper.access_hash = wallPaper.access_hash;
-                            req.wallpaper = inputWallPaper;
-
-                            if (wallPaper.slug.equals(selectedBackgroundSlug)) {
-                                selectedBackgroundSlug = Theme.hasWallpaperFromTheme() ? Theme.THEME_BACKGROUND_SLUG : Theme.DEFAULT_BACKGROUND_SLUG;
-                                Theme.getActiveTheme().setOverrideWallpaper(null);
-                                Theme.reloadWallpaper();
-                            }
-
-                            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                                deleteCount[0]--;
-                                if (deleteCount[0] == 0) {
-                                    loadWallpapers();
-                                }
-                            }));
+                            //TODO 发起请求
+//                            TLRPC.TL_account_saveWallPaper req = new TLRPC.TL_account_saveWallPaper();
+//                            req.settings = new WallPaper.WallPaperSettings();
+//                            req.unsave = true;
+//
+//                            TLRPC.TL_inputWallPaper inputWallPaper = new TLRPC.TL_inputWallPaper();
+//                            inputWallPaper.id = wallPaper.id;
+//                            inputWallPaper.access_hash = wallPaper.access_hash;
+//                            req.wallpaper = inputWallPaper;
+//
+//                            if (wallPaper.slug.equals(selectedBackgroundSlug)) {
+//                                selectedBackgroundSlug = Theme.hasWallpaperFromTheme() ? Theme.THEME_BACKGROUND_SLUG : Theme.DEFAULT_BACKGROUND_SLUG;
+//                                Theme.getActiveTheme().setOverrideWallpaper(null);
+//                                Theme.reloadWallpaper();
+//                            }
+//
+//                            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                                deleteCount[0]--;
+//                                if (deleteCount[0] == 0) {
+//                                    loadWallpapers();
+//                                }
+//                            }));
                         }
                         selectedWallPapers.clear();
                         actionBar.hideActionMode();
@@ -617,8 +613,9 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                     progressDialog = new AlertDialog(getParentActivity(), 3);
                     progressDialog.setCanCacnel(false);
                     progressDialog.show();
-                    TLRPC.TL_account_resetWallPapers req = new TLRPC.TL_account_resetWallPapers();
-                    ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(this::loadWallpapers));
+                    //TODO 发起请求
+//                    TLRPC.TL_account_resetWallPapers req = new TLRPC.TL_account_resetWallPapers();
+//                    ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(this::loadWallpapers));
                 });
                 builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
                 AlertDialog dialog = builder.create();
@@ -857,37 +854,38 @@ public class WallpapersListActivity extends BaseFragment implements Notification
             acc = ((acc * 20261) + 0x80000000L + high_id) % 0x80000000L;
             acc = ((acc * 20261) + 0x80000000L + lower_id) % 0x80000000L;
         }
-        TLRPC.TL_account_getWallPapers req = new TLRPC.TL_account_getWallPapers();
-        req.hash = (int) acc;
-        int reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            if (response instanceof TLRPC.TL_account_wallPapers) {
-                TLRPC.TL_account_wallPapers res = (TLRPC.TL_account_wallPapers) response;
-                patterns.clear();
-                if (currentType != TYPE_COLOR) {
-                    wallPapers.clear();
-                    allWallPapersDict.clear();
-                    allWallPapers.clear();
-                    allWallPapers.addAll(res.wallpapers);
-                }
-                for (int a = 0, N = res.wallpapers.size(); a < N; a++) {
-                    WallPaper wallPaper = (WallPaper) res.wallpapers.get(a);
-                    allWallPapersDict.put(wallPaper.slug, wallPaper);
-                    if (wallPaper.pattern) {
-                        patterns.add(wallPaper);
-                    }
-                    if (currentType != TYPE_COLOR && (!wallPaper.pattern || wallPaper.settings != null && wallPaper.settings.background_color != 0)) {
-                        wallPapers.add(wallPaper);
-                    }
-                }
-                fillWallpapersWithCustom();
-                MessagesStorage.getInstance(currentAccount).putWallpapers(res.wallpapers, 1);
-            }
-            if (progressDialog != null) {
-                progressDialog.dismiss();
-                listView.smoothScrollToPosition(0);
-            }
-        }));
-        ConnectionsManager.getInstance(currentAccount).bindRequestToGuid(reqId, classGuid);
+        //TODO 发起请求
+//        TLRPC.TL_account_getWallPapers req = new TLRPC.TL_account_getWallPapers();
+//        req.hash = (int) acc;
+//        int reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//            if (response instanceof TLRPC.TL_account_wallPapers) {
+//                TLRPC.TL_account_wallPapers res = (TLRPC.TL_account_wallPapers) response;
+//                patterns.clear();
+//                if (currentType != TYPE_COLOR) {
+//                    wallPapers.clear();
+//                    allWallPapersDict.clear();
+//                    allWallPapers.clear();
+//                    allWallPapers.addAll(res.wallpapers);
+//                }
+//                for (int a = 0, N = res.wallpapers.size(); a < N; a++) {
+//                    WallPaper wallPaper = (WallPaper) res.wallpapers.get(a);
+//                    allWallPapersDict.put(wallPaper.slug, wallPaper);
+//                    if (wallPaper.pattern) {
+//                        patterns.add(wallPaper);
+//                    }
+//                    if (currentType != TYPE_COLOR && (!wallPaper.pattern || wallPaper.settings != null && wallPaper.settings.background_color != 0)) {
+//                        wallPapers.add(wallPaper);
+//                    }
+//                }
+//                fillWallpapersWithCustom();
+//                MessagesStorage.getInstance(currentAccount).putWallpapers(res.wallpapers, 1);
+//            }
+//            if (progressDialog != null) {
+//                progressDialog.dismiss();
+//                listView.smoothScrollToPosition(0);
+//            }
+//        }));
+//        ConnectionsManager.getInstance(currentAccount).bindRequestToGuid(reqId, classGuid);
     }
 
     private void fillWallpapersWithCustom() {
@@ -1208,21 +1206,22 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                 return;
             }
             searchingUser = true;
-            TLRPC.TL_contacts_resolveUsername req = new TLRPC.TL_contacts_resolveUsername();
-            req.username = MessagesController.getInstance(currentAccount).imageSearchBot;
-            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-                if (response != null) {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        TLRPC.TL_contacts_resolvedPeer res = (TLRPC.TL_contacts_resolvedPeer) response;
-                        MessagesController.getInstance(currentAccount).putUsers(res.users, false);
-                        MessagesController.getInstance(currentAccount).putChats(res.chats, false);
-                        MessagesStorage.getInstance(currentAccount).putUsersAndChats(res.users, res.chats, true, true);
-                        String str = lastSearchImageString;
-                        lastSearchImageString = null;
-                        searchImages(str, "", false);
-                    });
-                }
-            });
+            //TODO 发起请求
+//            TLRPC.TL_contacts_resolveUsername req = new TLRPC.TL_contacts_resolveUsername();
+//            req.username = MessagesController.getInstance(currentAccount).imageSearchBot;
+//            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
+//                if (response != null) {
+//                    AndroidUtilities.runOnUIThread(() -> {
+//                        TLRPC.TL_contacts_resolvedPeer res = (TLRPC.TL_contacts_resolvedPeer) response;
+//                        MessagesController.getInstance(currentAccount).putUsers(res.users, false);
+//                        MessagesController.getInstance(currentAccount).putChats(res.chats, false);
+//                        MessagesStorage.getInstance(currentAccount).putUsersAndChats(res.users, res.chats, true, true);
+//                        String str = lastSearchImageString;
+//                        lastSearchImageString = null;
+//                        searchImages(str, "", false);
+//                    });
+//                }
+//            });
         }
 
         public void loadMoreResults() {
@@ -1239,95 +1238,96 @@ public class WallpapersListActivity extends BaseFragment implements Notification
 //            }TODO 取消请求
             lastSearchImageString = query;
 
-            TLObject object = MessagesController.getInstance(currentAccount).getUserOrChat(MessagesController.getInstance(currentAccount).imageSearchBot);
-            if (!(object instanceof User)) {
-                if (searchUser) {
-                    searchBotUser();
-                }
-                return;
-            }
-            User user = (User) object;
+//            TLObject object = MessagesController.getInstance(currentAccount).getUserOrChat(MessagesController.getInstance(currentAccount).imageSearchBot);
+//            if (!(object instanceof User)) {
+//                if (searchUser) {
+//                    searchBotUser();
+//                }
+//                return;
+//            }
+//            User user = (User) object;
 
-            TLRPC.TL_messages_getInlineBotResults req = new TLRPC.TL_messages_getInlineBotResults();
-            req.query = "#wallpaper " + query;
-            req.bot = MessagesController.getInstance(currentAccount).getInputUser(user);
-            req.offset = offset;
-            req.peer = new TLRPC.TL_inputPeerEmpty();
-
-            final int token = ++lastSearchToken;
-            imageReqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (token != lastSearchToken) {
-                    return;
-                }
-                imageReqId = 0;
-                int oldCount = searchResult.size();
-                if (response != null) {
-                    TLRPC.messages_BotResults res = (TLRPC.messages_BotResults) response;
-                    nextImagesSearchOffset = res.next_offset;
-
-                    for (int a = 0, count = res.results.size(); a < count; a++) {
-                        BotInlineResult result = res.results.get(a);
-                        if (!"photo".equals(result.type)) {
-                            continue;
-                        }
-                        if (searchResultKeys.containsKey(result.id)) {
-                            continue;
-                        }
-
-                        MediaController.SearchImage bingImage = new MediaController.SearchImage();
-                        if (result.photo != null) {
-                            PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, AndroidUtilities.getPhotoSize());
-                            PhotoSize size2 = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, 320);
-                            if (size == null) {
-                                continue;
-                            }
-                            bingImage.width = size.w;
-                            bingImage.height = size.h;
-                            bingImage.photoSize = size;
-                            bingImage.photo = result.photo;
-                            bingImage.size = size.size;
-                            bingImage.thumbPhotoSize = size2;
-                        } else {
-                            if (result.content == null) {
-                                continue;
-                            }
-                            for (int b = 0; b < result.content.attributes.size(); b++) {
-                                DocumentAttribute attribute = result.content.attributes.get(b);
-                                if (attribute.isImageSize()) {
-                                    bingImage.width = attribute.w;
-                                    bingImage.height = attribute.h;
-                                    break;
-                                }
-                            }
-                            if (result.thumb != null) {
-                                bingImage.thumbUrl = result.thumb.url;
-                            } else {
-                                bingImage.thumbUrl = null;
-                            }
-                            bingImage.imageUrl = result.content.url;
-                            bingImage.size = result.content.size;
-                        }
-
-                        bingImage.id = result.id;
-                        bingImage.type = 0;
-
-                        searchResult.add(bingImage);
-                        searchResultKeys.put(bingImage.id, bingImage);
-                    }
-                    bingSearchEndReached = oldCount == searchResult.size() || nextImagesSearchOffset == null;
-                }
-                if (oldCount != searchResult.size()) {
-                    int prevLastRow = oldCount % columnsCount;
-                    int oldRowCount = (int) Math.ceil(oldCount / (float) columnsCount);
-                    if (prevLastRow != 0) {
-                        notifyItemChanged((int) Math.ceil(oldCount / (float) columnsCount) - 1);
-                    }
-                    int newRowCount = (int) Math.ceil(searchResult.size() / (float) columnsCount);
-                    searchAdapter.notifyItemRangeInserted(oldRowCount, newRowCount - oldRowCount);
-                }
-                searchEmptyView.showTextView();
-            }));
-            ConnectionsManager.getInstance(currentAccount).bindRequestToGuid(imageReqId, classGuid);
+            //TODO 发起请求
+//            TLRPC.TL_messages_getInlineBotResults req = new TLRPC.TL_messages_getInlineBotResults();
+//            req.query = "#wallpaper " + query;
+//            req.bot = MessagesController.getInstance(currentAccount).getInputUser(user);
+//            req.offset = offset;
+//            req.peer = new TLRPC.TL_inputPeerEmpty();
+//
+//            final int token = ++lastSearchToken;
+//            imageReqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                if (token != lastSearchToken) {
+//                    return;
+//                }
+//                imageReqId = 0;
+//                int oldCount = searchResult.size();
+//                if (response != null) {
+//                    TLRPC.messages_BotResults res = (TLRPC.messages_BotResults) response;
+//                    nextImagesSearchOffset = res.next_offset;
+//
+//                    for (int a = 0, count = res.results.size(); a < count; a++) {
+//                        BotInlineResult result = res.results.get(a);
+//                        if (!"photo".equals(result.type)) {
+//                            continue;
+//                        }
+//                        if (searchResultKeys.containsKey(result.id)) {
+//                            continue;
+//                        }
+//
+//                        MediaController.SearchImage bingImage = new MediaController.SearchImage();
+//                        if (result.photo != null) {
+//                            PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, AndroidUtilities.getPhotoSize());
+//                            PhotoSize size2 = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, 320);
+//                            if (size == null) {
+//                                continue;
+//                            }
+//                            bingImage.width = size.w;
+//                            bingImage.height = size.h;
+//                            bingImage.photoSize = size;
+//                            bingImage.photo = result.photo;
+//                            bingImage.size = size.size;
+//                            bingImage.thumbPhotoSize = size2;
+//                        } else {
+//                            if (result.content == null) {
+//                                continue;
+//                            }
+//                            for (int b = 0; b < result.content.attributes.size(); b++) {
+//                                DocumentAttribute attribute = result.content.attributes.get(b);
+//                                if (attribute.isImageSize()) {
+//                                    bingImage.width = attribute.w;
+//                                    bingImage.height = attribute.h;
+//                                    break;
+//                                }
+//                            }
+//                            if (result.thumb != null) {
+//                                bingImage.thumbUrl = result.thumb.url;
+//                            } else {
+//                                bingImage.thumbUrl = null;
+//                            }
+//                            bingImage.imageUrl = result.content.url;
+//                            bingImage.size = result.content.size;
+//                        }
+//
+//                        bingImage.id = result.id;
+//                        bingImage.type = 0;
+//
+//                        searchResult.add(bingImage);
+//                        searchResultKeys.put(bingImage.id, bingImage);
+//                    }
+//                    bingSearchEndReached = oldCount == searchResult.size() || nextImagesSearchOffset == null;
+//                }
+//                if (oldCount != searchResult.size()) {
+//                    int prevLastRow = oldCount % columnsCount;
+//                    int oldRowCount = (int) Math.ceil(oldCount / (float) columnsCount);
+//                    if (prevLastRow != 0) {
+//                        notifyItemChanged((int) Math.ceil(oldCount / (float) columnsCount) - 1);
+//                    }
+//                    int newRowCount = (int) Math.ceil(searchResult.size() / (float) columnsCount);
+//                    searchAdapter.notifyItemRangeInserted(oldRowCount, newRowCount - oldRowCount);
+//                }
+//                searchEmptyView.showTextView();
+//            }));
+//            ConnectionsManager.getInstance(currentAccount).bindRequestToGuid(imageReqId, classGuid);
         }
 
         @Override

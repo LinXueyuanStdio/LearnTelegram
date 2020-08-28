@@ -1520,21 +1520,22 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
             return;
         }
         searchingUser = true;
-        TLRPC.TL_contacts_resolveUsername req = new TLRPC.TL_contacts_resolveUsername();
-        req.username = gif ? MessagesController.getInstance(currentAccount).gifSearchBot : MessagesController.getInstance(currentAccount).imageSearchBot;
-        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-            if (response != null) {
-                AndroidUtilities.runOnUIThread(() -> {
-                    TLRPC.TL_contacts_resolvedPeer res = (TLRPC.TL_contacts_resolvedPeer) response;
-                    MessagesController.getInstance(currentAccount).putUsers(res.users, false);
-                    MessagesController.getInstance(currentAccount).putChats(res.chats, false);
-                    MessagesStorage.getInstance(currentAccount).putUsersAndChats(res.users, res.chats, true, true);
-                    String str = lastSearchImageString;
-                    lastSearchImageString = null;
-                    searchImages(gif, str, "", false);
-                });
-            }
-        });
+        //TODO 发起请求
+//        TLRPC.TL_contacts_resolveUsername req = new TLRPC.TL_contacts_resolveUsername();
+//        req.username = gif ? MessagesController.getInstance(currentAccount).gifSearchBot : MessagesController.getInstance(currentAccount).imageSearchBot;
+//        ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
+//            if (response != null) {
+//                AndroidUtilities.runOnUIThread(() -> {
+//                    TLRPC.TL_contacts_resolvedPeer res = (TLRPC.TL_contacts_resolvedPeer) response;
+//                    MessagesController.getInstance(currentAccount).putUsers(res.users, false);
+//                    MessagesController.getInstance(currentAccount).putChats(res.chats, false);
+//                    MessagesStorage.getInstance(currentAccount).putUsersAndChats(res.users, res.chats, true, true);
+//                    String str = lastSearchImageString;
+//                    lastSearchImageString = null;
+//                    searchImages(gif, str, "", false);
+//                });
+//            }
+//        });
     }
 
     private void searchImages(boolean gif, final String query, final String offset, boolean searchUser) {
@@ -1549,135 +1550,136 @@ public class PhotoPickerActivity extends BaseFragment implements NotificationCen
         lastSearchImageString = query;
         searching = true;
 
-        TLObject object = MessagesController.getInstance(currentAccount).getUserOrChat(gif ? MessagesController.getInstance(currentAccount).gifSearchBot : MessagesController.getInstance(currentAccount).imageSearchBot);
-        if (!(object instanceof User)) {
-            if (searchUser) {
-                searchBotUser(gif);
-            }
-            return;
-        }
-        User user = (User) object;
+//        TLObject object = MessagesController.getInstance(currentAccount).getUserOrChat(gif ? MessagesController.getInstance(currentAccount).gifSearchBot : MessagesController.getInstance(currentAccount).imageSearchBot);
+//        if (!(object instanceof User)) {
+//            if (searchUser) {
+//                searchBotUser(gif);
+//            }
+//            return;
+//        }
+//        User user = (User) object;
 
-        TLRPC.TL_messages_getInlineBotResults req = new TLRPC.TL_messages_getInlineBotResults();
-        req.query = query == null ? "" : query;
-        req.bot = MessagesController.getInstance(currentAccount).getInputUser(user);
-        req.offset = offset;
-
-        if (chatActivity != null) {
-            long dialogId = chatActivity.getDialogId();
-            int lower_id = (int) dialogId;
-            int high_id = (int) (dialogId >> 32);
-            if (lower_id != 0) {
-                req.peer = MessagesController.getInstance(currentAccount).getInputPeer(lower_id);
-            } else {
-                req.peer = new TLRPC.TL_inputPeerEmpty();
-            }
-        } else {
-            req.peer = new TLRPC.TL_inputPeerEmpty();
-        }
-
-        final int token = ++lastSearchToken;
-        imageReqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            if (token != lastSearchToken) {
-                return;
-            }
-            int addedCount = 0;
-            int oldCount = searchResult.size();
-            if (response != null) {
-
-                Messages_BotResults res = (Messages_BotResults) response;
-                nextImagesSearchOffset = res.next_offset;
-
-                for (int a = 0, count = res.results.size(); a < count; a++) {
-                    BotInlineResult result = res.results.get(a);
-                    if (!gif && !"photo".equals(result.type) || gif && !"gif".equals(result.type)) {
-                        continue;
-                    }
-                    if (searchResultKeys.containsKey(result.id)) {
-                        continue;
-                    }
-
-                    MediaController.SearchImage image = new MediaController.SearchImage();
-
-                    if (gif && result.document != null) {
-                        for (int b = 0; b < result.document.attributes.size(); b++) {
-                            DocumentAttribute attribute = result.document.attributes.get(b);
-                            if (attribute.isImageSize() || attribute.isVideo()) {
-                                image.width = attribute.w;
-                                image.height = attribute.h;
-                                break;
-                            }
-                        }
-                        image.document = result.document;
-                        image.size = 0;
-                        if (result.photo != null && result.document != null) {
-                            PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, itemSize, true);
-                            if (size != null) {
-                                result.document.thumbs.add(size);
-                                result.document.flags |= 1;
-                            }
-                        }
-                    } else if (!gif && result.photo != null) {
-                        PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, AndroidUtilities.getPhotoSize());
-                        PhotoSize size2 = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, 320);
-                        if (size == null) {
-                            continue;
-                        }
-                        image.width = size.w;
-                        image.height = size.h;
-                        image.photoSize = size;
-                        image.photo = result.photo;
-                        image.size = size.size;
-                        image.thumbPhotoSize = size2;
-                    } else {
-                        if (result.content == null) {
-                            continue;
-                        }
-                        for (int b = 0; b < result.content.attributes.size(); b++) {
-                            DocumentAttribute attribute = result.content.attributes.get(b);
-                            if (attribute.isImageSize()) {
-                                image.width = attribute.w;
-                                image.height = attribute.h;
-                                break;
-                            }
-                        }
-                        if (result.thumb != null) {
-                            image.thumbUrl = result.thumb.url;
-                        } else {
-                            image.thumbUrl = null;
-                        }
-                        image.imageUrl = result.content.url;
-                        image.size = gif ? 0 : result.content.size;
-                    }
-
-                    image.id = result.id;
-                    image.type = gif ? 1 : 0;
-                    image.inlineResult = result;
-                    image.params = new HashMap<>();
-                    image.params.put("id", result.id);
-                    image.params.put("query_id", "" + res.query_id);
-                    image.params.put("bot_name", user.username);
-
-                    searchResult.add(image);
-
-                    searchResultKeys.put(image.id, image);
-                    addedCount++;
-                }
-                imageSearchEndReached = oldCount == searchResult.size() || nextImagesSearchOffset == null;
-            }
-            searching = false;
-            if (addedCount != 0) {
-                listAdapter.notifyItemRangeInserted(oldCount, addedCount);
-            } else if (imageSearchEndReached) {
-                listAdapter.notifyItemRemoved(searchResult.size() - 1);
-            }
-            if (searching && searchResult.isEmpty()) {
-                emptyView.showProgress();
-            } else {
-                emptyView.showTextView();
-            }
-        }));
-        ConnectionsManager.getInstance(currentAccount).bindRequestToGuid(imageReqId, classGuid);
+        //TODO 发起请求
+//        TLRPC.TL_messages_getInlineBotResults req = new TLRPC.TL_messages_getInlineBotResults();
+//        req.query = query == null ? "" : query;
+//        req.bot = MessagesController.getInstance(currentAccount).getInputUser(user);
+//        req.offset = offset;
+//
+//        if (chatActivity != null) {
+//            long dialogId = chatActivity.getDialogId();
+//            int lower_id = (int) dialogId;
+//            int high_id = (int) (dialogId >> 32);
+//            if (lower_id != 0) {
+//                req.peer = MessagesController.getInstance(currentAccount).getInputPeer(lower_id);
+//            } else {
+//                req.peer = new TLRPC.TL_inputPeerEmpty();
+//            }
+//        } else {
+//            req.peer = new TLRPC.TL_inputPeerEmpty();
+//        }
+//
+//        final int token = ++lastSearchToken;
+//        imageReqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//            if (token != lastSearchToken) {
+//                return;
+//            }
+//            int addedCount = 0;
+//            int oldCount = searchResult.size();
+//            if (response != null) {
+//
+//                Messages_BotResults res = (Messages_BotResults) response;
+//                nextImagesSearchOffset = res.next_offset;
+//
+//                for (int a = 0, count = res.results.size(); a < count; a++) {
+//                    BotInlineResult result = res.results.get(a);
+//                    if (!gif && !"photo".equals(result.type) || gif && !"gif".equals(result.type)) {
+//                        continue;
+//                    }
+//                    if (searchResultKeys.containsKey(result.id)) {
+//                        continue;
+//                    }
+//
+//                    MediaController.SearchImage image = new MediaController.SearchImage();
+//
+//                    if (gif && result.document != null) {
+//                        for (int b = 0; b < result.document.attributes.size(); b++) {
+//                            DocumentAttribute attribute = result.document.attributes.get(b);
+//                            if (attribute.isImageSize() || attribute.isVideo()) {
+//                                image.width = attribute.w;
+//                                image.height = attribute.h;
+//                                break;
+//                            }
+//                        }
+//                        image.document = result.document;
+//                        image.size = 0;
+//                        if (result.photo != null && result.document != null) {
+//                            PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, itemSize, true);
+//                            if (size != null) {
+//                                result.document.thumbs.add(size);
+//                                result.document.flags |= 1;
+//                            }
+//                        }
+//                    } else if (!gif && result.photo != null) {
+//                        PhotoSize size = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, AndroidUtilities.getPhotoSize());
+//                        PhotoSize size2 = FileLoader.getClosestPhotoSizeWithSize(result.photo.sizes, 320);
+//                        if (size == null) {
+//                            continue;
+//                        }
+//                        image.width = size.w;
+//                        image.height = size.h;
+//                        image.photoSize = size;
+//                        image.photo = result.photo;
+//                        image.size = size.size;
+//                        image.thumbPhotoSize = size2;
+//                    } else {
+//                        if (result.content == null) {
+//                            continue;
+//                        }
+//                        for (int b = 0; b < result.content.attributes.size(); b++) {
+//                            DocumentAttribute attribute = result.content.attributes.get(b);
+//                            if (attribute.isImageSize()) {
+//                                image.width = attribute.w;
+//                                image.height = attribute.h;
+//                                break;
+//                            }
+//                        }
+//                        if (result.thumb != null) {
+//                            image.thumbUrl = result.thumb.url;
+//                        } else {
+//                            image.thumbUrl = null;
+//                        }
+//                        image.imageUrl = result.content.url;
+//                        image.size = gif ? 0 : result.content.size;
+//                    }
+//
+//                    image.id = result.id;
+//                    image.type = gif ? 1 : 0;
+//                    image.inlineResult = result;
+//                    image.params = new HashMap<>();
+//                    image.params.put("id", result.id);
+//                    image.params.put("query_id", "" + res.query_id);
+//                    image.params.put("bot_name", user.username);
+//
+//                    searchResult.add(image);
+//
+//                    searchResultKeys.put(image.id, image);
+//                    addedCount++;
+//                }
+//                imageSearchEndReached = oldCount == searchResult.size() || nextImagesSearchOffset == null;
+//            }
+//            searching = false;
+//            if (addedCount != 0) {
+//                listAdapter.notifyItemRangeInserted(oldCount, addedCount);
+//            } else if (imageSearchEndReached) {
+//                listAdapter.notifyItemRemoved(searchResult.size() - 1);
+//            }
+//            if (searching && searchResult.isEmpty()) {
+//                emptyView.showProgress();
+//            } else {
+//                emptyView.showTextView();
+//            }
+//        }));
+//        ConnectionsManager.getInstance(currentAccount).bindRequestToGuid(imageReqId, classGuid);
     }
 
     public void setDelegate(PhotoPickerActivityDelegate photoPickerActivityDelegate) {

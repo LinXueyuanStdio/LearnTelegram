@@ -871,22 +871,23 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                         finishFragment();
                     } else {
                         final AlertDialog[] progressDialog = new AlertDialog[]{new AlertDialog(getParentActivity(), 3)};
-                        TLRPC.TL_channels_editLocation req = new TLRPC.TL_channels_editLocation();
-                        req.address = venue.address;
-                        req.channel = getMessagesController().getInputChannel(-(int) dialogId);
-                        req.geo_point = new TLRPC.TL_inputGeoPoint();
-                        req.geo_point.lat = venue.geo.lat;
-                        req.geo_point._long = venue.geo._long;
-                        int requestId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                            try {
-                                progressDialog[0].dismiss();
-                            } catch (Throwable ignore) {
-
-                            }
-                            progressDialog[0] = null;
-                            delegate.didSelectLocation(venue, LOCATION_TYPE_GROUP, true, 0);
-                            finishFragment();
-                        }));
+                        //TODO 发起请求
+//                        TLRPC.TL_channels_editLocation req = new TLRPC.TL_channels_editLocation();
+//                        req.address = venue.address;
+//                        req.channel = getMessagesController().getInputChannel(-(int) dialogId);
+//                        req.geo_point = new TLRPC.TL_inputGeoPoint();
+//                        req.geo_point.lat = venue.geo.lat;
+//                        req.geo_point._long = venue.geo._long;
+//                        int requestId = getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                            try {
+//                                progressDialog[0].dismiss();
+//                            } catch (Throwable ignore) {
+//
+//                            }
+//                            progressDialog[0] = null;
+//                            delegate.didSelectLocation(venue, LOCATION_TYPE_GROUP, true, 0);
+//                            finishFragment();
+//                        }));
 //                        progressDialog[0].setOnCancelListener(dialog -> getConnectionsManager().cancelRequest(requestId, true));TODO 取消请求
                         showDialog(progressDialog[0]);
                     }
@@ -1874,43 +1875,44 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                 return false;
             }
         }
-        TLRPC.TL_messages_getRecentLocations req = new TLRPC.TL_messages_getRecentLocations();
-        final long dialog_id = messageObject.getDialogId();
-        req.peer = getMessagesController().getInputPeer((int) dialog_id);
-        req.limit = 100;
-        getConnectionsManager().sendRequest(req, (response, error) -> {
-            if (response != null) {
-                AndroidUtilities.runOnUIThread(() -> {
-                    if (googleMap == null) {
-                        return;
-                    }
-                    TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
-                    for (int a = 0; a < res.messages.size(); a++) {
-                        if (!(res.messages.get(a).media instanceof TLRPC.TL_messageMediaGeoLive)) {
-                            res.messages.remove(a);
-                            a--;
-                        }
-                    }
-                    getMessagesStorage().putUsersAndChats(res.users, res.chats, true, true);
-                    getMessagesController().putUsers(res.users, false);
-                    getMessagesController().putChats(res.chats, false);
-                    getLocationController().locationsCache.put(dialog_id, res.messages);
-                    getNotificationCenter().postNotificationName(NotificationCenter.liveLocationsCacheChanged, dialog_id);
-                    fetchRecentLocations(res.messages);
-                    getLocationController().markLiveLoactionsAsRead(dialogId);
-                    if (markAsReadRunnable == null) {
-                        markAsReadRunnable = () -> {
-                            getLocationController().markLiveLoactionsAsRead(dialogId);
-                            if (isPaused || markAsReadRunnable == null) {
-                                return;
-                            }
-                            AndroidUtilities.runOnUIThread(markAsReadRunnable, 5000);
-                        };
-                        AndroidUtilities.runOnUIThread(markAsReadRunnable, 5000);
-                    }
-                });
-            }
-        });
+        //TODO 发起请求
+//        TLRPC.TL_messages_getRecentLocations req = new TLRPC.TL_messages_getRecentLocations();
+//        final long dialog_id = messageObject.getDialogId();
+//        req.peer = getMessagesController().getInputPeer((int) dialog_id);
+//        req.limit = 100;
+//        getConnectionsManager().sendRequest(req, (response, error) -> {
+//            if (response != null) {
+//                AndroidUtilities.runOnUIThread(() -> {
+//                    if (googleMap == null) {
+//                        return;
+//                    }
+//                    TLRPC.messages_Messages res = (TLRPC.messages_Messages) response;
+//                    for (int a = 0; a < res.messages.size(); a++) {
+//                        if (!(res.messages.get(a).media instanceof TLRPC.TL_messageMediaGeoLive)) {
+//                            res.messages.remove(a);
+//                            a--;
+//                        }
+//                    }
+//                    getMessagesStorage().putUsersAndChats(res.users, res.chats, true, true);
+//                    getMessagesController().putUsers(res.users, false);
+//                    getMessagesController().putChats(res.chats, false);
+//                    getLocationController().locationsCache.put(dialog_id, res.messages);
+//                    getNotificationCenter().postNotificationName(NotificationCenter.liveLocationsCacheChanged, dialog_id);
+//                    fetchRecentLocations(res.messages);
+//                    getLocationController().markLiveLoactionsAsRead(dialogId);
+//                    if (markAsReadRunnable == null) {
+//                        markAsReadRunnable = () -> {
+//                            getLocationController().markLiveLoactionsAsRead(dialogId);
+//                            if (isPaused || markAsReadRunnable == null) {
+//                                return;
+//                            }
+//                            AndroidUtilities.runOnUIThread(markAsReadRunnable, 5000);
+//                        };
+//                        AndroidUtilities.runOnUIThread(markAsReadRunnable, 5000);
+//                    }
+//                });
+//            }
+//        });
         return messages != null;
     }
 

@@ -1,5 +1,8 @@
 package com.demo.chat.model.small;
 
+import com.demo.chat.messager.AbstractSerializedData;
+import com.demo.chat.model.text.Page;
+
 import java.util.ArrayList;
 
 /**
@@ -71,6 +74,30 @@ public class MessageMedia {
         public double _long;
         public double lat;
         public long access_hash;
+
+
+        public void readParams(AbstractSerializedData stream, boolean exception) {
+
+        }
+        public void serializeToStream(AbstractSerializedData stream) {
+
+        }
+        public static GeoPoint TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
+            GeoPoint result = null;
+            switch (constructor) {
+                case 0x296f104:
+                    result = new GeoPoint();
+                    break;
+            }
+            if (result == null && exception) {
+                throw new RuntimeException(String.format("can't parse magic %x in GeoPoint", constructor));
+            }
+            if (result != null) {
+                result.readParams(stream, exception);
+            }
+            return result;
+        }
+
     }
 
     public static class Video extends Media {
@@ -110,28 +137,6 @@ public class MessageMedia {
         public Document document;
         public Page cached_page;
         public int date;
-    }
-
-    public static class Page {
-        public int flags;
-        public boolean part;
-        public boolean rtl;
-        public String url;
-        public ArrayList<PageBlock> blocks = new ArrayList<>();
-        public ArrayList<Photo> photos = new ArrayList<>();
-        public ArrayList<Document> documents = new ArrayList<>();
-        public boolean v2;
-        public int views;
-    }
-
-    public static class PageBlock {
-        public boolean first; //custom
-        public boolean bottom; //custom
-        public int level; //custom
-        public int mid; //custom
-        public int groupId; //custom
-        public PhotoSize thumb; //custom
-        public Media thumbObject; //custom
     }
 
     public MessageMedia setDocument(boolean isDocument){return this;}

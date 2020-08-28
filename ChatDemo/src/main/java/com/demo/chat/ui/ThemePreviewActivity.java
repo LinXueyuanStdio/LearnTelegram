@@ -1034,7 +1034,8 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                     wallpaperInfo.gradientColor = gradientColor;
                     wallpaperInfo.rotation = rotation;
                     wallpaperInfo.intensity = currentIntensity;
-                    MessagesController.getInstance(currentAccount).saveWallpaperToServer(path, wallpaperInfo, slug != null, 0);
+                    //TODO 发起请求
+//                    MessagesController.getInstance(currentAccount).saveWallpaperToServer(path, wallpaperInfo, slug != null, 0);
 
                     if (done) {
                         Theme.serviceMessageColorBackup = Theme.getColor(Theme.key_chat_serviceBackground);
@@ -1395,7 +1396,8 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                                 if (share) {
                                     if (accent.info == null) {
                                         finishFragment();
-                                        MessagesController.getInstance(currentAccount).saveThemeToServer(accent.parentTheme, accent);
+                                        //TODO 发起请求
+//                                        MessagesController.getInstance(currentAccount).saveThemeToServer(accent.parentTheme, accent);
                                         NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needShareTheme, accent.parentTheme, accent);
                                     } else {
                                         String link = "https://" + MessagesController.getInstance(currentAccount).linkPrefix + "/addtheme/" + accent.info.slug;
@@ -1651,7 +1653,8 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                 } else {
                     parentLayout.rebuildAllFragmentViews(false, false);
                     Theme.applyThemeFile(new File(applyingTheme.pathToFile), applyingTheme.name, applyingTheme.info, false);
-                    MessagesController.getInstance(applyingTheme.account).saveTheme(applyingTheme, null, false, false);
+                    //TODO 发起请求
+//                    MessagesController.getInstance(applyingTheme.account).saveTheme(applyingTheme, null, false, false);
                     SharedPreferences.Editor editor = ApplicationLoader.applicationContext.getSharedPreferences("themeconfig", Activity.MODE_PRIVATE).edit();
                     editor.putString("lastDayTheme", applyingTheme.getKey());
                     editor.commit();
@@ -2095,58 +2098,59 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                 acc = ((acc * 20261) + 0x80000000L + high_id) % 0x80000000L;
                 acc = ((acc * 20261) + 0x80000000L + lower_id) % 0x80000000L;
             }
-            TLRPC.TL_account_getWallPapers req = new TLRPC.TL_account_getWallPapers();
-            req.hash = (int) acc;
-            int reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (response instanceof TLRPC.TL_account_wallPapers) {
-                    TLRPC.TL_account_wallPapers res = (TLRPC.TL_account_wallPapers) response;
-                    patterns.clear();
-                    boolean added2 = false;
-                    for (int a = 0, N = res.wallpapers.size(); a < N; a++) {
-                        WallPaper wallPaper = (WallPaper) res.wallpapers.get(a);
-                        if (wallPaper.pattern) {
-                            patterns.add(wallPaper);
-                            if (accent != null && accent.patternSlug.equals(wallPaper.slug)) {
-                                selectedPattern = wallPaper;
-                                added2 = true;
-                                setCurrentImage(false);
-                                updateButtonState(false, false);
-                                updateCheckboxes();
-                            }
-                        }
-                    }
-                    if (!added2 && selectedPattern != null) {
-                        patterns.add(0, selectedPattern);
-                    }
-                    if (patternsAdapter != null) {
-                        patternsAdapter.notifyDataSetChanged();
-                    }
-                    MessagesStorage.getInstance(currentAccount).putWallpapers(res.wallpapers, 1);
-                }
-                if (selectedPattern == null && accent != null && !TextUtils.isEmpty(accent.patternSlug)) {
-                    TLRPC.TL_account_getWallPaper req2 = new TLRPC.TL_account_getWallPaper();
-                    TLRPC.TL_inputWallPaperSlug inputWallPaperSlug = new TLRPC.TL_inputWallPaperSlug();
-                    inputWallPaperSlug.slug = accent.patternSlug;
-                    req2.wallpaper = inputWallPaperSlug;
-                    int reqId2 = getConnectionsManager().sendRequest(req2, (response1, error1) -> AndroidUtilities.runOnUIThread(() -> {
-                        if (response1 instanceof WallPaper) {
-                            WallPaper wallPaper = (WallPaper) response1;
-                            if (wallPaper.pattern) {
-                                selectedPattern = wallPaper;
-                                setCurrentImage(false);
-                                updateButtonState(false, false);
-                                updateCheckboxes();
-                                patterns.add(0, selectedPattern);
-                                if (patternsAdapter != null) {
-                                    patternsAdapter.notifyDataSetChanged();
-                                }
-                            }
-                        }
-                    }));
-                    ConnectionsManager.getInstance(currentAccount).bindRequestToGuid(reqId2, classGuid);
-                }
-            }));
-            ConnectionsManager.getInstance(currentAccount).bindRequestToGuid(reqId, classGuid);
+            //TODO 发起请求
+//            TLRPC.TL_account_getWallPapers req = new TLRPC.TL_account_getWallPapers();
+//            req.hash = (int) acc;
+//            int reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                if (response instanceof TLRPC.TL_account_wallPapers) {
+//                    TLRPC.TL_account_wallPapers res = (TLRPC.TL_account_wallPapers) response;
+//                    patterns.clear();
+//                    boolean added2 = false;
+//                    for (int a = 0, N = res.wallpapers.size(); a < N; a++) {
+//                        WallPaper wallPaper = (WallPaper) res.wallpapers.get(a);
+//                        if (wallPaper.pattern) {
+//                            patterns.add(wallPaper);
+//                            if (accent != null && accent.patternSlug.equals(wallPaper.slug)) {
+//                                selectedPattern = wallPaper;
+//                                added2 = true;
+//                                setCurrentImage(false);
+//                                updateButtonState(false, false);
+//                                updateCheckboxes();
+//                            }
+//                        }
+//                    }
+//                    if (!added2 && selectedPattern != null) {
+//                        patterns.add(0, selectedPattern);
+//                    }
+//                    if (patternsAdapter != null) {
+//                        patternsAdapter.notifyDataSetChanged();
+//                    }
+//                    MessagesStorage.getInstance(currentAccount).putWallpapers(res.wallpapers, 1);
+//                }
+//                if (selectedPattern == null && accent != null && !TextUtils.isEmpty(accent.patternSlug)) {
+//                    TLRPC.TL_account_getWallPaper req2 = new TLRPC.TL_account_getWallPaper();
+//                    TLRPC.TL_inputWallPaperSlug inputWallPaperSlug = new TLRPC.TL_inputWallPaperSlug();
+//                    inputWallPaperSlug.slug = accent.patternSlug;
+//                    req2.wallpaper = inputWallPaperSlug;
+//                    int reqId2 = getConnectionsManager().sendRequest(req2, (response1, error1) -> AndroidUtilities.runOnUIThread(() -> {
+//                        if (response1 instanceof WallPaper) {
+//                            WallPaper wallPaper = (WallPaper) response1;
+//                            if (wallPaper.pattern) {
+//                                selectedPattern = wallPaper;
+//                                setCurrentImage(false);
+//                                updateButtonState(false, false);
+//                                updateCheckboxes();
+//                                patterns.add(0, selectedPattern);
+//                                if (patternsAdapter != null) {
+//                                    patternsAdapter.notifyDataSetChanged();
+//                                }
+//                            }
+//                        }
+//                    }));
+//                    ConnectionsManager.getInstance(currentAccount).bindRequestToGuid(reqId2, classGuid);
+//                }
+//            }));
+//            ConnectionsManager.getInstance(currentAccount).bindRequestToGuid(reqId, classGuid);
         }
     }
 

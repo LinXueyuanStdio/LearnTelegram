@@ -1321,41 +1321,42 @@ public class AlertsCreator {
             final AlertDialog progressDialog = new AlertDialog(fragment.getParentActivity(), 3);
             progressDialog.setCanCacnel(false);
             progressDialog.show();
-            TLRPC.TL_help_getSupport req = new TLRPC.TL_help_getSupport();
-            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-                if (error == null) {
-                    final TLRPC.TL_help_support res = (TLRPC.TL_help_support) response;
-                    AndroidUtilities.runOnUIThread(() -> {
-                        SharedPreferences.Editor editor = preferences.edit();
-                        editor.putInt("support_id", res.user.id);
-                        SerializedData data = new SerializedData();
-                        res.user.serializeToStream(data);
-                        editor.putString("support_user", Base64.encodeToString(data.toByteArray(), Base64.DEFAULT));
-                        editor.commit();
-                        data.cleanup();
-                        try {
-                            progressDialog.dismiss();
-                        } catch (Exception e) {
-                            FileLog.e(e);
-                        }
-                        ArrayList<User> users = new ArrayList<>();
-                        users.add(res.user);
-                        MessagesStorage.getInstance(currentAccount).putUsersAndChats(users, null, true, true);
-                        MessagesController.getInstance(currentAccount).putUser(res.user, false);
-                        Bundle args = new Bundle();
-                        args.putInt("user_id", res.user.id);
-                        fragment.presentFragment(new ChatActivity(args));
-                    });
-                } else {
-                    AndroidUtilities.runOnUIThread(() -> {
-                        try {
-                            progressDialog.dismiss();
-                        } catch (Exception e) {
-                            FileLog.e(e);
-                        }
-                    });
-                }
-            });
+            //TODO 发起请求
+//            TLRPC.TL_help_getSupport req = new TLRPC.TL_help_getSupport();
+//            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
+//                if (error == null) {
+//                    final TLRPC.TL_help_support res = (TLRPC.TL_help_support) response;
+//                    AndroidUtilities.runOnUIThread(() -> {
+//                        SharedPreferences.Editor editor = preferences.edit();
+//                        editor.putInt("support_id", res.user.id);
+//                        SerializedData data = new SerializedData();
+//                        res.user.serializeToStream(data);
+//                        editor.putString("support_user", Base64.encodeToString(data.toByteArray(), Base64.DEFAULT));
+//                        editor.commit();
+//                        data.cleanup();
+//                        try {
+//                            progressDialog.dismiss();
+//                        } catch (Exception e) {
+//                            FileLog.e(e);
+//                        }
+//                        ArrayList<User> users = new ArrayList<>();
+//                        users.add(res.user);
+//                        MessagesStorage.getInstance(currentAccount).putUsersAndChats(users, null, true, true);
+//                        MessagesController.getInstance(currentAccount).putUser(res.user, false);
+//                        Bundle args = new Bundle();
+//                        args.putInt("user_id", res.user.id);
+//                        fragment.presentFragment(new ChatActivity(args));
+//                    });
+//                } else {
+//                    AndroidUtilities.runOnUIThread(() -> {
+//                        try {
+//                            progressDialog.dismiss();
+//                        } catch (Exception e) {
+//                            FileLog.e(e);
+//                        }
+//                    });
+//                }
+//            });
         } else {
             MessagesController.getInstance(currentAccount).putUser(supportUser, true);
             Bundle args = new Bundle();
@@ -2064,39 +2065,40 @@ public class AlertsCreator {
                         parentFragment.presentFragment(new ReportOtherActivity(args));
                         return;
                     }
-                    TLObject req;
-                    TLRPC.InputPeer peer = MessagesController.getInstance(UserConfig.selectedAccount).getInputPeer((int) dialog_id);
-                    if (messageId != 0) {
-                        TLRPC.TL_messages_report request = new TLRPC.TL_messages_report();
-                        request.peer = peer;
-                        request.id.add(messageId);
-                        if (i == 0) {
-                            request.reason = new TLRPC.TL_inputReportReasonSpam();
-                        } else if (i == 1) {
-                            request.reason = new TLRPC.TL_inputReportReasonViolence();
-                        } else if (i == 2) {
-                            request.reason = new TLRPC.TL_inputReportReasonChildAbuse();
-                        } else if (i == 3) {
-                            request.reason = new TLRPC.TL_inputReportReasonPornography();
-                        }
-                        req = request;
-                    } else {
-                        TLRPC.TL_account_reportPeer request = new TLRPC.TL_account_reportPeer();
-                        request.peer = peer;
-                        if (i == 0) {
-                            request.reason = new TLRPC.TL_inputReportReasonSpam();
-                        } else if (i == 1) {
-                            request.reason = new TLRPC.TL_inputReportReasonViolence();
-                        } else if (i == 2) {
-                            request.reason = new TLRPC.TL_inputReportReasonChildAbuse();
-                        } else if (i == 3) {
-                            request.reason = new TLRPC.TL_inputReportReasonPornography();
-                        }
-                        req = request;
-                    }
-                    ConnectionsManager.getInstance(UserConfig.selectedAccount).sendRequest(req, (response, error) -> {
-
-                    });
+                    //TODO 发起请求
+//                    TLObject req;
+//                    TLRPC.InputPeer peer = MessagesController.getInstance(UserConfig.selectedAccount).getInputPeer((int) dialog_id);
+//                    if (messageId != 0) {
+//                        TLRPC.TL_messages_report request = new TLRPC.TL_messages_report();
+//                        request.peer = peer;
+//                        request.id.add(messageId);
+//                        if (i == 0) {
+//                            request.reason = new TLRPC.TL_inputReportReasonSpam();
+//                        } else if (i == 1) {
+//                            request.reason = new TLRPC.TL_inputReportReasonViolence();
+//                        } else if (i == 2) {
+//                            request.reason = new TLRPC.TL_inputReportReasonChildAbuse();
+//                        } else if (i == 3) {
+//                            request.reason = new TLRPC.TL_inputReportReasonPornography();
+//                        }
+//                        req = request;
+//                    } else {
+//                        TLRPC.TL_account_reportPeer request = new TLRPC.TL_account_reportPeer();
+//                        request.peer = peer;
+//                        if (i == 0) {
+//                            request.reason = new TLRPC.TL_inputReportReasonSpam();
+//                        } else if (i == 1) {
+//                            request.reason = new TLRPC.TL_inputReportReasonViolence();
+//                        } else if (i == 2) {
+//                            request.reason = new TLRPC.TL_inputReportReasonChildAbuse();
+//                        } else if (i == 3) {
+//                            request.reason = new TLRPC.TL_inputReportReasonPornography();
+//                        }
+//                        req = request;
+//                    }
+//                    ConnectionsManager.getInstance(UserConfig.selectedAccount).sendRequest(req, (response, error) -> {
+//
+//                    });
                     Toast.makeText(context, LocaleController.getString("ReportChatSent", R.string.ReportChatSent), Toast.LENGTH_SHORT).show();
                 }
         );
@@ -2872,25 +2874,26 @@ public class AlertsCreator {
                 if (loadParticipant == 1 && !chat.creator) {
                     final AlertDialog[] progressDialog = new AlertDialog[]{new AlertDialog(activity, 3)};
 
-                    TLRPC.TL_channels_getParticipant req = new TLRPC.TL_channels_getParticipant();
-                    req.channel = MessagesController.getInputChannel(chat);
-                    req.user_id = MessagesController.getInstance(currentAccount).getInputUser(actionUser);
-                    int requestId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                        try {
-                            progressDialog[0].dismiss();
-                        } catch (Throwable ignore) {
-
-                        }
-                        progressDialog[0] = null;
-                        int loadType = 2;
-                        if (response != null) {
-                            TLRPC.TL_channels_channelParticipant participant = (TLRPC.TL_channels_channelParticipant) response;
-                            if (!(participant.participant instanceof TLRPC.TL_channelParticipantAdmin || participant.participant instanceof TLRPC.TL_channelParticipantCreator)) {
-                                loadType = 0;
-                            }
-                        }
-                        createDeleteMessagesAlert(fragment, user, chat, encryptedChat, chatInfo, mergeDialogId, selectedMessage, selectedMessages, selectedGroup, scheduled, loadType, onDelete);
-                    }));
+                    //TODO 发起请求
+//                    TLRPC.TL_channels_getParticipant req = new TLRPC.TL_channels_getParticipant();
+//                    req.channel = MessagesController.getInputChannel(chat);
+//                    req.user_id = MessagesController.getInstance(currentAccount).getInputUser(actionUser);
+//                    int requestId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                        try {
+//                            progressDialog[0].dismiss();
+//                        } catch (Throwable ignore) {
+//
+//                        }
+//                        progressDialog[0] = null;
+//                        int loadType = 2;
+//                        if (response != null) {
+//                            TLRPC.TL_channels_channelParticipant participant = (TLRPC.TL_channels_channelParticipant) response;
+//                            if (!(participant.participant instanceof TLRPC.TL_channelParticipantAdmin || participant.participant instanceof TLRPC.TL_channelParticipantCreator)) {
+//                                loadType = 0;
+//                            }
+//                        }
+//                        createDeleteMessagesAlert(fragment, user, chat, encryptedChat, chatInfo, mergeDialogId, selectedMessage, selectedMessages, selectedGroup, scheduled, loadType, onDelete);
+//                    }));
                     AndroidUtilities.runOnUIThread(() -> {
                         if (progressDialog[0] == null) {
                             return;
@@ -3060,13 +3063,14 @@ public class AlertsCreator {
                     MessagesController.getInstance(currentAccount).deleteUserFromChat(chat.id, userFinal, chatInfo);
                 }
                 if (checks[1]) {
-                    TLRPC.TL_channels_reportSpam req = new TLRPC.TL_channels_reportSpam();
-                    req.channel = MessagesController.getInputChannel(chat);
-                    req.user_id = MessagesController.getInstance(currentAccount).getInputUser(userFinal);
-                    req.id = ids;
-                    ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-
-                    });
+                    //TODO 发起请求
+//                    TLRPC.TL_channels_reportSpam req = new TLRPC.TL_channels_reportSpam();
+//                    req.channel = MessagesController.getInputChannel(chat);
+//                    req.user_id = MessagesController.getInstance(currentAccount).getInputUser(userFinal);
+//                    req.id = ids;
+//                    ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
+//
+//                    });
                 }
                 if (checks[2]) {
                     MessagesController.getInstance(currentAccount).deleteUserChannelHistory(chat, userFinal, 0);

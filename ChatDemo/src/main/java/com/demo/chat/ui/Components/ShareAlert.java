@@ -99,7 +99,6 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
     private Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
     private TextPaint textPaint = new TextPaint(Paint.ANTI_ALIAS_FLAG);
 
-    private TLRPC.TL_exportedMessageLink exportedMessageLink;
     private boolean loadingLink;
     private boolean copyLinkOnEnd;
 
@@ -277,18 +276,19 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
 
         if (channel) {
             loadingLink = true;
-            TLRPC.TL_channels_exportMessageLink req = new TLRPC.TL_channels_exportMessageLink();
-            req.id = messages.get(0).getId();
-            req.channel = MessagesController.getInstance(currentAccount).getInputChannel(messages.get(0).messageOwner.to_id.channel_id);
-            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (response != null) {
-                    exportedMessageLink = (TLRPC.TL_exportedMessageLink) response;
-                    if (copyLinkOnEnd) {
-                        copyLink(context);
-                    }
-                }
-                loadingLink = false;
-            }));
+            //TODO 发起请求
+//            TLRPC.TL_channels_exportMessageLink req = new TLRPC.TL_channels_exportMessageLink();
+//            req.id = messages.get(0).getId();
+//            req.channel = MessagesController.getInstance(currentAccount).getInputChannel(messages.get(0).messageOwner.to_id.channel_id);
+//            ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                if (response != null) {
+//                    exportedMessageLink = (TLRPC.TL_exportedMessageLink) response;
+//                    if (copyLinkOnEnd) {
+//                        copyLink(context);
+//                    }
+//                }
+//                loadingLink = false;
+//            }));
         }
 
 
@@ -899,18 +899,14 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
     }
 
     private void copyLink(Context context) {
-        if (exportedMessageLink == null && linkToCopy == null) {
+        if (linkToCopy == null) {
             return;
         }
         try {
             android.content.ClipboardManager clipboard = (android.content.ClipboardManager) ApplicationLoader.applicationContext.getSystemService(Context.CLIPBOARD_SERVICE);
-            android.content.ClipData clip = android.content.ClipData.newPlainText("label", linkToCopy != null ? linkToCopy : exportedMessageLink.link);
+            android.content.ClipData clip = android.content.ClipData.newPlainText("label", linkToCopy);
             clipboard.setPrimaryClip(clip);
-            if (exportedMessageLink != null && exportedMessageLink.link.contains("/c/")) {
-                Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("LinkCopiedPrivate", R.string.LinkCopiedPrivate), Toast.LENGTH_SHORT).show();
-            } else {
-                Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("LinkCopied", R.string.LinkCopied), Toast.LENGTH_SHORT).show();
-            }
+            Toast.makeText(ApplicationLoader.applicationContext, LocaleController.getString("LinkCopied", R.string.LinkCopied), Toast.LENGTH_SHORT).show();
         } catch (Exception e) {
             FileLog.e(e);
         }
