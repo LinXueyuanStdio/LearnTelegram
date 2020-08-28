@@ -170,23 +170,33 @@ public class ChatObject {
     }
 
     public static boolean isLeftFromChat(Chat chat) {
-        return chat == null || chat instanceof TL_chatEmpty || chat instanceof TL_chatForbidden || chat instanceof TL_channelForbidden || chat.left || chat.deactivated;
+        return chat == null
+                || chat.isForbidden()
+                || chat.left || chat.deactivated;
     }
 
     public static boolean isKickedFromChat(Chat chat) {
-        return chat == null || chat instanceof TL_chatEmpty || chat instanceof TL_chatForbidden || chat instanceof TL_channelForbidden || chat.kicked || chat.deactivated || chat.banned_rights != null && chat.banned_rights.view_messages;
+        return chat == null
+                || chat.isForbidden()
+                || chat.kicked
+                || chat.deactivated
+                || chat.banned_rights != null && chat.banned_rights.view_messages;
     }
 
     public static boolean isNotInChat(Chat chat) {
-        return chat == null || chat instanceof TL_chatEmpty || chat instanceof TL_chatForbidden || chat instanceof TL_channelForbidden || chat.left || chat.kicked || chat.deactivated;
+        return chat == null
+                || chat.isForbidden()
+                || chat.left
+                || chat.kicked
+                || chat.deactivated;
     }
 
     public static boolean isChannel(Chat chat) {
-        return chat instanceof TL_channel || chat instanceof TL_channelForbidden;
+        return chat!=null && chat.isChannel();
     }
 
     public static boolean isMegagroup(Chat chat) {
-        return (chat instanceof TL_channel || chat instanceof TL_channelForbidden) && chat.megagroup;
+        return (chat.isGroup() || chat.isForbidden()) && chat.megagroup;
     }
 
     public static boolean hasAdminRights(Chat chat) {
@@ -235,11 +245,7 @@ public class ChatObject {
 
     public static boolean canAddBotsToChat(Chat chat) {
         if (isChannel(chat)) {
-            if (chat != null && chat.megagroup && (chat.admin_rights != null && (chat.admin_rights.post_messages || chat.admin_rights.add_admins) || chat.creator)) {
-                return true;
-            }
-        } else {
-            if (chat.migrated_to == null) {
+            if (chat.megagroup && (chat.admin_rights != null && (chat.admin_rights.post_messages || chat.admin_rights.add_admins) || chat.creator)) {
                 return true;
             }
         }
@@ -252,7 +258,7 @@ public class ChatObject {
 
     public static boolean isChannel(int chatId, int currentAccount) {
         Chat chat = MessagesController.getInstance(currentAccount).getChat(chatId);
-        return chat instanceof TL_channel || chat instanceof TL_channelForbidden;
+        return chat.isChannel() || chat.isForbidden();
     }
 
     public static boolean isCanWriteToChannel(int chatId, int currentAccount) {

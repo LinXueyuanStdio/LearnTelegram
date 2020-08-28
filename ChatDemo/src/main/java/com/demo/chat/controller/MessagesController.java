@@ -1019,7 +1019,7 @@ public class MessagesController extends BaseController implements NotificationCe
                     }
                 });
                 progressDialog.setOnCancelListener(dialog -> {
-                    getConnectionsManager().cancelRequest(reqId, true);
+//                    getConnectionsManager().cancelRequest(reqId, true);TODO 取消请求
                     if (fragment != null) {
                         fragment.setVisibleDialog(null);
                     }

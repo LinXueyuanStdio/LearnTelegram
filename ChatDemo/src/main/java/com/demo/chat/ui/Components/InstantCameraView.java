@@ -66,8 +66,12 @@ import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.camera.CameraController;
 import com.demo.chat.messager.camera.CameraInfo;
 import com.demo.chat.messager.camera.CameraSession;
+import com.demo.chat.messager.video.MP4Builder;
+import com.demo.chat.messager.video.Mp4Movie;
 import com.demo.chat.model.VideoEditedInfo;
+import com.demo.chat.model.small.InputFile;
 import com.demo.chat.receiver.ImageReceiver;
+import com.demo.chat.messager.camera.Size;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ChatActivity;
 import com.google.android.exoplayer2.ExoPlayer;
@@ -113,8 +117,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
     private boolean isFrontface = true;
     private volatile boolean cameraReady;
     private AnimatorSet muteAnimation;
-    private TLRPC.InputFile file;
-    private TLRPC.InputEncryptedFile encryptedFile;
+    private InputFile file;
     private byte[] key;
     private byte[] iv;
     private long size;
@@ -378,13 +381,8 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
         if (id == NotificationCenter.FileDidUpload) {
             final String location = (String) args[0];
             if (cameraFile != null && cameraFile.getAbsolutePath().equals(location)) {
-                file = (TLRPC.InputFile) args[1];
-                encryptedFile = (TLRPC.InputEncryptedFile) args[2];
-                size = (Long) args[5];
-                if (encryptedFile != null) {
-                    key = (byte[]) args[3];
-                    iv = (byte[]) args[4];
-                }
+                file = (InputFile) args[1];
+                size = (Long) args[4];
             }
         }
     }
@@ -487,7 +485,6 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
         progress = 0;
         cancelled = false;
         file = null;
-        encryptedFile = null;
         key = null;
         iv = null;
 
@@ -655,7 +652,6 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
         if (state == 4) {
             if (videoEditedInfo.needConvert()) {
                 file = null;
-                encryptedFile = null;
                 key = null;
                 iv = null;
                 double totalDuration = videoEditedInfo.estimatedDuration;
@@ -675,7 +671,6 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                 videoEditedInfo.estimatedSize = Math.max(1, size);
             }
             videoEditedInfo.file = file;
-            videoEditedInfo.encryptedFile = encryptedFile;
             videoEditedInfo.key = key;
             videoEditedInfo.iv = iv;
             baseFragment.sendMedia(new MediaController.PhotoEntry(0, 0, 0, cameraFile.getAbsolutePath(), 0, true, 0, 0, 0), videoEditedInfo, notify, scheduleDate);
@@ -829,6 +824,7 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
         if (selectedCamera == null) {
             return false;
         }
+
 
         ArrayList<Size> previewSizes = selectedCamera.getPreviewSizes();
         ArrayList<Size> pictureSizes = selectedCamera.getPictureSizes();
@@ -1952,7 +1948,6 @@ public class InstantCameraView extends FrameLayout implements NotificationCenter
                     videoEditedInfo.startTime = -1;
                     videoEditedInfo.endTime = -1;
                     videoEditedInfo.file = file;
-                    videoEditedInfo.encryptedFile = encryptedFile;
                     videoEditedInfo.key = key;
                     videoEditedInfo.iv = iv;
                     videoEditedInfo.estimatedSize = Math.max(1, size);

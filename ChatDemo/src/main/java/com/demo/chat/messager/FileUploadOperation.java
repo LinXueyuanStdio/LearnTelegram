@@ -8,6 +8,7 @@ import android.util.SparseIntArray;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.controller.ConnectionsManager;
+import com.demo.chat.model.small.InputFile;
 
 import java.io.File;
 import java.io.RandomAccessFile;
@@ -74,7 +75,7 @@ public class FileUploadOperation {
     private SparseArray<UploadCachedResult> cachedResults = new SparseArray<>();
 
     public interface FileUploadOperationDelegate {
-        void didFinishUploadingFile(FileUploadOperation operation, TLRPC.InputFile inputFile, TLRPC.InputEncryptedFile inputEncryptedFile, byte[] key, byte[] iv);
+        void didFinishUploadingFile(FileUploadOperation operation, InputFile inputFile, byte[] key, byte[] iv);
         void didFailedUploadingFile(FileUploadOperation operation);
         void didChangedUploadProgress(FileUploadOperation operation, long uploadedSize, long totalSize);
     }
@@ -117,7 +118,7 @@ public class FileUploadOperation {
      * 控制上传文件的速度
      * @param slow
      */
-    protected void onNetworkChanged(final boolean slow) {
+    public void onNetworkChanged(final boolean slow) {
         if (state != 1) {
             return;
         }
@@ -127,9 +128,9 @@ public class FileUploadOperation {
                 if (BuildVars.LOGS_ENABLED) {
                     FileLog.d("network changed to slow = " + slowNetwork);
                 }
-                for (int a = 0; a < requestTokens.size(); a++) {
-                    ConnectionsManager.getInstance(currentAccount).cancelRequest(requestTokens.valueAt(a), true);
-                }
+//                for (int a = 0; a < requestTokens.size(); a++) {
+//                    ConnectionsManager.getInstance(currentAccount).cancelRequest(requestTokens.valueAt(a), true);
+//                }TODO 取消请求
                 requestTokens.clear();
                 cleanup();
                 isLastPart = false;
@@ -161,9 +162,9 @@ public class FileUploadOperation {
         }
         state = 2;
         Utilities.stageQueue.postRunnable(() -> {
-            for (int a = 0; a < requestTokens.size(); a++) {
-                ConnectionsManager.getInstance(currentAccount).cancelRequest(requestTokens.valueAt(a), true);
-            }
+//            for (int a = 0; a < requestTokens.size(); a++) {
+//                ConnectionsManager.getInstance(currentAccount).cancelRequest(requestTokens.valueAt(a), true);
+//            }TODO 取消请求
         });
         delegate.didFailedUploadingFile(this);
         cleanup();

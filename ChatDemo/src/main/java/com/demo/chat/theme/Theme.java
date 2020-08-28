@@ -69,11 +69,13 @@ import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.time.SunDate;
 import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.WallPaper;
+import com.demo.chat.model.theme.Skin;
 import com.demo.chat.ui.Components.AudioVisualizerDrawable;
 import com.demo.chat.ui.Components.BackgroundGradientDrawable;
 import com.demo.chat.ui.Components.CombinedDrawable;
 import com.demo.chat.ui.Components.RLottieDrawable;
 import com.demo.chat.ui.Components.ScamDrawable;
+import com.demo.chat.ui.Components.ThemeEditorView;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -885,7 +887,7 @@ public class Theme {
         public float patternIntensity;
         public boolean patternMotion;
 
-        public TLRPC.TL_theme info;
+        public Skin info;
         public WallPaper pattern;
         public int account;
 
@@ -1290,7 +1292,7 @@ public class Theme {
 
         public int account;
 
-        public TLRPC.TL_theme info;
+        public Skin info;
         public boolean loaded = true;
 
         public String uploadingThumb;
@@ -1540,7 +1542,7 @@ public class Theme {
                 if (object.has("info")) {
                     try {
                         SerializedData serializedData = new SerializedData(Utilities.hexToBytes(object.getString("info")));
-                        themeInfo.info = (TLRPC.TL_theme) TLRPC.Theme.TLdeserialize(serializedData, serializedData.readInt32(true), true);
+                        themeInfo.info = (Skin) TLRPC.Theme.TLdeserialize(serializedData, serializedData.readInt32(true), true);
                     } catch (Throwable e) {
                         FileLog.e(e);
                     }
@@ -1645,7 +1647,7 @@ public class Theme {
             }
         }
 
-        public static boolean accentEquals(ThemeAccent accent, TLRPC.TL_themeSettings settings) {
+        public static boolean accentEquals(ThemeAccent accent, SkinSettings settings) {
             int myMessagesGradientAccentColor = settings.message_top_color;
             if (settings.message_bottom_color == myMessagesGradientAccentColor) {
                 myMessagesGradientAccentColor = 0;
@@ -1678,7 +1680,7 @@ public class Theme {
                     Math.abs(patternIntensity - accent.patternIntensity) < 0.001;
         }
 
-        public static void fillAccentValues(ThemeAccent themeAccent, TLRPC.TL_themeSettings settings) {
+        public static void fillAccentValues(ThemeAccent themeAccent, SkinSettings settings) {
             themeAccent.accentColor = settings.accent_color;
             themeAccent.myMessagesAccentColor = settings.message_bottom_color;
             themeAccent.myMessagesGradientAccentColor = settings.message_top_color;
@@ -1701,14 +1703,14 @@ public class Theme {
             }
         }
 
-        public ThemeAccent createNewAccent(TLRPC.TL_themeSettings settings) {
+        public ThemeAccent createNewAccent(Skin.SkinSettings settings) {
             ThemeAccent themeAccent = new ThemeAccent();
             fillAccentValues(themeAccent, settings);
             themeAccent.parentTheme = this;
             return themeAccent;
         }
 
-        public ThemeAccent createNewAccent(TLRPC.TL_theme info, int account) {
+        public ThemeAccent createNewAccent(Skin info, int account) {
             if (info == null) {
                 return null;
             }
@@ -4054,7 +4056,7 @@ public class Theme {
                                 if (version >= 5) {
                                     if (data.readBool(true)) {
                                         accent.account = data.readInt32(true);
-                                        accent.info = (TLRPC.TL_theme) TLRPC.Theme.TLdeserialize(data, data.readInt32(true), true);
+                                        accent.info = (Skin) TLRPC.Theme.TLdeserialize(data, data.readInt32(true), true);
                                     }
                                 }
                                 info.themeAccentsMap.put(accent.id, accent);
@@ -4738,7 +4740,7 @@ public class Theme {
         }
     }
 
-    public static ThemeInfo fillThemeValues(File file, String themeName, TLRPC.TL_theme theme) {
+    public static ThemeInfo fillThemeValues(File file, String themeName, Skin theme) {
         try {
             ThemeInfo themeInfo = new ThemeInfo();
             themeInfo.name = themeName;
@@ -4812,7 +4814,7 @@ public class Theme {
         return null;
     }
 
-    public static ThemeInfo applyThemeFile(File file, String themeName, TLRPC.TL_theme theme, boolean temporary) {
+    public static ThemeInfo applyThemeFile(File file, String themeName, Skin theme, boolean temporary) {
         try {
             if (!themeName.toLowerCase().endsWith(".attheme")) {
                 themeName += ".attheme";
@@ -5735,7 +5737,7 @@ public class Theme {
                 continue;
             }
             ThemeAccent accent = themeInfo.getAccent(false);
-            TLRPC.TL_theme info;
+            Skin info;
             int account;
             if (themeInfo.info != null) {
                 info = themeInfo.info;
@@ -5761,8 +5763,8 @@ public class Theme {
             ConnectionsManager.getInstance(account).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
                 loadingCurrentTheme--;
                 boolean changed = false;
-                if (response instanceof TLRPC.TL_theme) {
-                    TLRPC.TL_theme theme = (TLRPC.TL_theme) response;
+                if (response instanceof Skin) {
+                    Skin theme = (Skin) response;
                     if (accent != null && theme.settings != null) {
                         if (!ThemeInfo.accentEquals(accent, theme.settings)) {
                             File file = accent.getPathToWallpaper();
@@ -5828,10 +5830,10 @@ public class Theme {
                 boolean added = false;
                 for (int a = 0, N = res.themes.size(); a < N; a++) {
                     TLRPC.Theme t = res.themes.get(a);
-                    if (!(t instanceof TLRPC.TL_theme)) {
+                    if (!(t instanceof Skin)) {
                         continue;
                     }
-                    TLRPC.TL_theme theme = (TLRPC.TL_theme) t;
+                    Skin theme = (Skin) t;
                     if (theme.settings != null) {
                         String key = getBaseThemeKey(theme.settings);
                         if (key == null) {
@@ -5925,7 +5927,7 @@ public class Theme {
         }));
     }
 
-    public static String getBaseThemeKey(TLRPC.TL_themeSettings settings) {
+    public static String getBaseThemeKey(Skin.SkinSettings settings) {
         if (settings.base_theme instanceof TLRPC.TL_baseThemeClassic) {
             return "Blue";
         } else if (settings.base_theme instanceof TLRPC.TL_baseThemeDay) {
@@ -5955,7 +5957,7 @@ public class Theme {
         return null;
     }
 
-    public static void setThemeFileReference(TLRPC.TL_theme info) {
+    public static void setThemeFileReference(Skin info) {
         for (int a = 0, N = themes.size(); a < N; a++) {
             ThemeInfo themeInfo = themes.get(a);
             if (themeInfo.info != null && themeInfo.info.id == info.id) {
@@ -5972,7 +5974,7 @@ public class Theme {
         return themeInfo != null && themesDict.get(themeInfo.getKey()) != null;
     }
 
-    public static void setThemeUploadInfo(ThemeInfo theme, ThemeAccent accent, TLRPC.TL_theme info, int account, boolean update) {
+    public static void setThemeUploadInfo(ThemeInfo theme, ThemeAccent accent, Skin info, int account, boolean update) {
         if (info == null) {
             return;
         }

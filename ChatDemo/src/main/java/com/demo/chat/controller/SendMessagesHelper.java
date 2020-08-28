@@ -52,6 +52,7 @@ import com.demo.chat.model.reply.ReplyMarkup;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.model.small.InputDocument;
+import com.demo.chat.model.small.InputFile;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
@@ -456,7 +457,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         if (id == NotificationCenter.FileDidUpload) {
             final String location = (String) args[0];
             final InputFile file = (InputFile) args[1];
-            final InputEncryptedFile encryptedFile = (InputEncryptedFile) args[2];
             ArrayList<DelayedMessage> arr = delayedMessages.get(location);
             if (arr != null) {
                 for (int a = 0; a < arr.size(); a++) {
@@ -527,41 +527,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                             } else {
                                 media.file = file;
                                 uploadMultiMedia(message, media, null, location);
-                            }
-                        }
-                        arr.remove(a);
-                        a--;
-                    } else if (encryptedFile != null && message.sendEncryptedRequest != null) {
-                        TL_decryptedMessage decryptedMessage = null;
-                        if (message.type == 4) {
-                            TL_messages_sendEncryptedMultiMedia req = (TL_messages_sendEncryptedMultiMedia) message.sendEncryptedRequest;
-                            InputEncryptedFile inputEncryptedFile = (InputEncryptedFile) message.extraHashMap.get(location);
-                            int index = req.files.indexOf(inputEncryptedFile);
-                            if (index >= 0) {
-                                req.files.set(index, encryptedFile);
-                                if (inputEncryptedFile.id == 1) {
-                                    MessageObject messageObject = (MessageObject) message.extraHashMap.get(location + "_i");
-                                    message.photoSize = (PhotoSize) message.extraHashMap.get(location + "_t");
-                                    stopVideoService(message.messageObjects.get(index).messageOwner.attachPath);
-                                }
-                                decryptedMessage = req.messages.get(index);
-                            }
-                        } else {
-                            decryptedMessage = (TL_decryptedMessage) message.sendEncryptedRequest;
-                        }
-                        if (decryptedMessage != null) {
-                            if (decryptedMessage.media instanceof TL_decryptedMessageMediaVideo ||
-                                    decryptedMessage.media instanceof TL_decryptedMessageMediaPhoto ||
-                                    decryptedMessage.media instanceof TL_decryptedMessageMediaDocument) {
-                                long size = (Long) args[5];
-                                decryptedMessage.media.size = (int) size;
-                            }
-                            decryptedMessage.media.key = (byte[]) args[3];
-                            decryptedMessage.media.iv = (byte[]) args[4];
-                            if (message.type == 4) {
-                                uploadMultiMedia(message, null, encryptedFile, location);
-                            } else {
-                                getSecretChatHelper().performSendEncryptedRequest(decryptedMessage, message.obj.messageOwner, message.encryptedChat, encryptedFile, message.originalPath, message.obj);
                             }
                         }
                         arr.remove(a);
@@ -853,10 +818,10 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 scheduledDialogId = object.getDialogId();
             }
             messageIds.add(object.getId());
-            channelId = object.messageOwner.to_id.channel_id;
+            channelId = object.messageOwner.to_id;
             Message sendingMessage = removeFromSendingMessages(object.getId(), object.scheduled);
             if (sendingMessage != null) {
-                getConnectionsManager().cancelRequest(sendingMessage.reqId, true);
+//                getConnectionsManager().cancelRequest(sendingMessage.reqId, true);TODO 取消请求
             }
 
             for (HashMap.Entry<String, ArrayList<DelayedMessage>> entry : delayedMessages.entrySet()) {
@@ -3671,14 +3636,6 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         }
                         media.file = message.videoEditedInfo.file;
                         message.videoEditedInfo.file = null;
-                    } else if (message.videoEditedInfo.encryptedFile != null) {
-                        TL_decryptedMessage decryptedMessage = (TL_decryptedMessage) message.sendEncryptedRequest;
-                        decryptedMessage.media.size = (int) message.videoEditedInfo.estimatedSize;
-                        decryptedMessage.media.key = message.videoEditedInfo.key;
-                        decryptedMessage.media.iv = message.videoEditedInfo.iv;
-                        getSecretChatHelper().performSendEncryptedRequest(decryptedMessage, message.obj.messageOwner, message.encryptedChat, message.videoEditedInfo.encryptedFile, message.originalPath, message.obj);
-                        message.videoEditedInfo.encryptedFile = null;
-                        return;
                     }
                 }
                 if (message.sendRequest != null) {

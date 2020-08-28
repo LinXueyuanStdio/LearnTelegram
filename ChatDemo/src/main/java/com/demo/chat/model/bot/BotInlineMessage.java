@@ -30,4 +30,7 @@ public class BotInlineMessage {
     public String vcard;
     public boolean no_webpage;
     public int period;
+
+    public boolean isBotInlineMessageMediaVenue(){return false;}
+    public boolean isBotInlineMessageMediaGeo(){return false;}
 }

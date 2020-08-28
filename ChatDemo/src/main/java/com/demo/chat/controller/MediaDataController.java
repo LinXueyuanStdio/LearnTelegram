@@ -2059,14 +2059,14 @@ public class MediaDataController extends BaseController {
         int max_id = 0;
         long queryWithDialog = dialogId;
         boolean firstQuery = !internal;
-        if (reqId != 0) {
-            getConnectionsManager().cancelRequest(reqId, true);
-            reqId = 0;
-        }
-        if (mergeReqId != 0) {
-            getConnectionsManager().cancelRequest(mergeReqId, true);
-            mergeReqId = 0;
-        }
+//        if (reqId != 0) {
+//            getConnectionsManager().cancelRequest(reqId, true);
+//            reqId = 0;
+//        }
+//        if (mergeReqId != 0) {
+//            getConnectionsManager().cancelRequest(mergeReqId, true);
+//            mergeReqId = 0;
+//        }TODO 取消请求
         if (query == null) {
             if (searchResultMessages.isEmpty()) {
                 return;
@@ -4539,7 +4539,7 @@ public class MediaDataController extends BaseController {
                     Intent shortcutIntent = new Intent(ApplicationLoader.applicationContext, OpenChatReceiver.class);
                     TLRPC.TL_topPeer hint = hintsFinal.get(a);
 
-                    TLRPC.User user = null;
+                    User user = null;
                     TLRPC.Chat chat = null;
                     long did;
                     if (hint.peer.user_id != 0) {
@@ -4650,7 +4650,7 @@ public class MediaDataController extends BaseController {
             getMessagesStorage().getStorageQueue().postRunnable(() -> {
                 final ArrayList<TLRPC.TL_topPeer> hintsNew = new ArrayList<>();
                 final ArrayList<TLRPC.TL_topPeer> inlineBotsNew = new ArrayList<>();
-                final ArrayList<TLRPC.User> users = new ArrayList<>();
+                final ArrayList<User> users = new ArrayList<>();
                 final ArrayList<TLRPC.Chat> chats = new ArrayList<>();
                 int selfUserId = getUserConfig().getClientUserId();
                 try {
@@ -4877,7 +4877,7 @@ public class MediaDataController extends BaseController {
             return;
         }
         //remove chats and bots for now
-        final TLRPC.User user = lower_id > 0 ? getMessagesController().getUser(lower_id) : null;
+        final User user = lower_id > 0 ? getMessagesController().getUser(lower_id) : null;
         //final TLRPC.Chat chat = lower_id < 0 ? MessagesController.getInstance().getChat(-lower_id) : null;
         if (user == null || user.bot || user.self/*&& chat == null || ChatObject.isChannel(chat) && !chat.megagroup*/) {
             return;
@@ -4997,7 +4997,7 @@ public class MediaDataController extends BaseController {
             int lower_id = (int) did;
             int high_id = (int) (did >> 32);
 
-            TLRPC.User user = null;
+            User user = null;
             TLRPC.Chat chat = null;
             if (lower_id == 0) {
                 TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(high_id);
@@ -5155,7 +5155,7 @@ public class MediaDataController extends BaseController {
                 int lower_id = (int) did;
                 int high_id = (int) (did >> 32);
 
-                TLRPC.User user = null;
+                User user = null;
                 TLRPC.Chat chat = null;
                 if (lower_id == 0) {
                     TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(high_id);

@@ -42,6 +42,7 @@ import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.bot.KeyboardButton;
 import com.demo.chat.model.bot.ReactionCount;
+import com.demo.chat.model.message.MessageReactions;
 import com.demo.chat.model.reply.ReplyMarkup;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
@@ -1763,7 +1764,7 @@ public class MessageObject {
         }
     }
 
-    public static void updateReactions(Message message, TLRPC.TL_messageReactions reactions) {
+    public static void updateReactions(Message message, MessageReactions reactions) {
         if (message == null || reactions == null) {
             return;
         }

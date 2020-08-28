@@ -4505,7 +4505,6 @@ public class MessagesStorage extends BaseController {
                 }
                 state.dispose();
                 database.commitTransaction();
-                loadChatInfo(channel_id, null, false, true);
             } catch (Exception e) {
                 FileLog.e(e);
             }
@@ -4958,24 +4957,6 @@ public class MessagesStorage extends BaseController {
             getMessagesController().processChatInfo(chat_id, info, loadedUsers, true, force, byChannelUsers, pinnedMessageObject);
         }
         return info;
-    }
-
-    public ChatFull loadChatInfo(final int chat_id, final CountDownLatch countDownLatch, final boolean force, final boolean byChannelUsers) {
-        ChatFull[] result = new ChatFull[1];
-        storageQueue.postRunnable(() -> {
-            result[0] = loadChatInfoInternal(chat_id, force, byChannelUsers);
-            if (countDownLatch != null) {
-                countDownLatch.countDown();
-            }
-        });
-        if (countDownLatch != null) {
-            try {
-                countDownLatch.await();
-            } catch (Throwable ignore) {
-
-            }
-        }
-        return result[0];
     }
 
     public void processPendingRead(final long dialog_id, final long maxPositiveId, final long maxNegativeId, final boolean isChannel, final int scheduledCount) {
@@ -6318,14 +6299,6 @@ public class MessagesStorage extends BaseController {
         storageQueue.postRunnable(() -> {
             long mergeDialogIdFinal = mergeDialogId;
             int lowerId = (int) dialogId;
-            if (loadInfo) {
-                if (lowerId < 0) {
-                    ChatFull info = loadChatInfoInternal(-lowerId, true, false);
-                    if (info != null) {
-                        mergeDialogIdFinal = -info.migrated_from_chat_id;
-                    }
-                }
-            }
             Utilities.stageQueue.postRunnable(getMessagesInternal(dialogId, mergeDialogIdFinal, count, max_id, offset_date, minDate, classGuid, load_type, isChannel, scheduled, loadIndex));
         });
     }

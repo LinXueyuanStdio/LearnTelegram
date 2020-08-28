@@ -47,7 +47,6 @@ import android.widget.PopupWindow;
 import android.widget.TextView;
 
 import com.demo.chat.R;
-import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaDataController;
@@ -59,11 +58,11 @@ import com.demo.chat.messager.Emoji;
 import com.demo.chat.messager.EmojiData;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
-import com.demo.chat.messager.browser.Browser;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.User;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.bot.BotInlineResult;
+import com.demo.chat.model.bot.MessagesBotResults;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.PhotoSize;
@@ -90,6 +89,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import androidx.annotation.IntDef;
 import androidx.annotation.MainThread;
@@ -145,7 +145,7 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
     private GifLayoutManager gifLayoutManager;
     private GifAdapter gifSearchAdapter;
     private GifSearchPreloader gifSearchPreloader = new GifSearchPreloader();
-    private final Map<String, Messages_BotResults> gifCache = new HashMap<>();
+    private final Map<String, MessagesBotResults> gifCache = new HashMap<>();
     private RecyclerListView.OnItemClickListener gifOnItemClickListener;
     private GifAdapter gifAdapter;
     private SearchField gifSearchField;
@@ -4658,12 +4658,12 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
         }
 
         @MainThread
-        private void processResponse(final String query, final String offset, boolean searchUser, boolean isEmoji, boolean cache, String key, TLObject response) {
+        private void processResponse(final String query, final String offset, boolean searchUser, boolean isEmoji, boolean cache, String key, MessagesBotResults response) {
             if (query == null || !query.equals(lastSearchImageString)) {
                 return;
             }
             reqId = 0;
-            if (cache && (!(response instanceof Messages_BotResults) || ((Messages_BotResults) response).results.isEmpty())) {
+            if (cache) {
                 search(query, offset, searchUser, isEmoji, false);
                 return;
             }
@@ -4676,10 +4676,10 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
                 }
             }
 
-            if (response instanceof Messages_BotResults) {
+            if (response instanceof MessagesBotResults) {
                 int addedCount = 0;
                 int oldCount = results.size();
-                Messages_BotResults res = (Messages_BotResults) response;
+                MessagesBotResults res = (MessagesBotResults) response;
                 if (!gifCache.containsKey(key)) {
                     gifCache.put(key, res);
                 }
@@ -4781,10 +4781,10 @@ public class EmojiView extends FrameLayout implements NotificationCenter.Notific
 //            if (gifSearchAdapter.lastSearchIsEmoji && gifSearchAdapter.lastSearchImageString.equals(query)) {
 //                gifSearchAdapter.processResponse(query, offset, false, true, cache, key, response);
 //            } else {
-//                if (cache && (!(response instanceof Messages_BotResults) || ((Messages_BotResults) response).results.isEmpty())) {
+//                if (cache && (!(response instanceof MessagesBotResults) || ((MessagesBotResults) response).results.isEmpty())) {
 //                    preload(query, offset, false);
-//                } else if (response instanceof Messages_BotResults && !gifCache.containsKey(key)) {
-//                    gifCache.put(key, (Messages_BotResults) response);
+//                } else if (response instanceof MessagesBotResults && !gifCache.containsKey(key)) {
+//                    gifCache.put(key, (MessagesBotResults) response);
 //                }
 //            }
 //        }

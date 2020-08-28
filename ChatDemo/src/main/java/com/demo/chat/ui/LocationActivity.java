@@ -56,9 +56,9 @@ import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
@@ -68,6 +68,7 @@ import com.demo.chat.ui.ActionBar.ActionBarMenuItem;
 import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.Cells.HeaderCell;
+import com.demo.chat.ui.Cells.LocationCell;
 import com.demo.chat.ui.Cells.ShadowSectionCell;
 import com.demo.chat.ui.Components.AvatarDrawable;
 import com.demo.chat.ui.Components.BackupImageView;
@@ -886,7 +887,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
                             delegate.didSelectLocation(venue, LOCATION_TYPE_GROUP, true, 0);
                             finishFragment();
                         }));
-                        progressDialog[0].setOnCancelListener(dialog -> getConnectionsManager().cancelRequest(requestId, true));
+//                        progressDialog[0].setOnCancelListener(dialog -> getConnectionsManager().cancelRequest(requestId, true));TODO 取消请求
                         showDialog(progressDialog[0]);
                     }
                 }
@@ -1259,7 +1260,7 @@ public class LocationActivity extends BaseFragment implements NotificationCenter
         if (delegate == null || getParentActivity() == null || myLocation == null) {
             return;
         }
-        TLRPC.User user = null;
+        User user = null;
         if ((int) dialogId > 0) {
             user = getMessagesController().getUser((int) dialogId);
         }

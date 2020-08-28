@@ -74,8 +74,6 @@ public class Chat {
 
     public ChatParticipants participants;
     public MessageMedia.Photo chat_photo;
-    public PeerNotifySettings notify_settings;
-    public ExportedChatInvite exported_invite;
     public ArrayList<BotInfo> bot_info = new ArrayList<>();
     public boolean can_view_participants;
     public boolean can_set_username;

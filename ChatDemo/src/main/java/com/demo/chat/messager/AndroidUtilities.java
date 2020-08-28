@@ -78,6 +78,7 @@ import android.widget.TextView;
 
 import com.android.internal.telephony.ITelephony;
 import com.demo.chat.ApplicationLoader;
+import com.demo.chat.PhoneFormat.PhoneFormat;
 import com.demo.chat.R;
 import com.demo.chat.controller.ContactsController;
 import com.demo.chat.controller.FileLoader;
@@ -85,14 +86,19 @@ import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.model.Chat;
-import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.WallPaper;
+import com.demo.chat.receiver.CallReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.Components.BackgroundGradientDrawable;
 import com.demo.chat.ui.Components.ForegroundDetector;
+import com.demo.chat.ui.Components.ShareAlert;
+import com.demo.chat.ui.ThemePreviewActivity;
+import com.demo.chat.ui.WallpapersListActivity;
 import com.google.android.gms.auth.api.phone.SmsRetriever;
 import com.google.android.gms.auth.api.phone.SmsRetrieverClient;
 import com.google.android.gms.tasks.Task;
@@ -1081,24 +1087,11 @@ public class AndroidUtilities {
                     }
 
                     String phoneToUse = vcardData.phones.get(0);
-                    for (int b = 0; b < vcardData.phones.size(); b++) {
-                        String phone = vcardData.phones.get(b);
-                        String sphone = phone.substring(Math.max(0, phone.length() - 7));
-                        if (ContactsController.getInstance(currentAccount).contactsByShortPhone.get(sphone) != null) {
-                            phoneToUse = phone;
-                            break;
-                        }
-                    }
-                    User user = new TLRPC.TL_userContact_old2();
+                    User user = new User();
                     user.phone = phoneToUse;
                     user.first_name = vcardData.name;
                     user.last_name = "";
                     user.id = 0;
-                    TLRPC.TL_restrictionReason reason = new TLRPC.TL_restrictionReason();
-                    reason.text = vcardData.vcard.toString();
-                    reason.platform = "";
-                    reason.reason = "";
-                    user.restriction_reason.add(reason);
                     result.add(user);
                 }
             }
@@ -2591,7 +2584,7 @@ public class AndroidUtilities {
         return false;
     }
 
-    public static void openForView(TLObject media, Activity activity) {
+    public static void openForView(Media media, Activity activity) {
         if (media == null || activity == null) {
             return;
         }
@@ -2607,8 +2600,8 @@ public class AndroidUtilities {
                 String ext = fileName.substring(idx + 1);
                 realMimeType = myMime.getMimeTypeFromExtension(ext.toLowerCase());
                 if (realMimeType == null) {
-                    if (media instanceof TLRPC.TL_document) {
-                        realMimeType = ((TLRPC.TL_document) media).mime_type;
+                    if (media instanceof Document) {
+                        realMimeType = ((Document) media).mime_type;
                     }
                     if (realMimeType == null || realMimeType.length() == 0) {
                         realMimeType = null;

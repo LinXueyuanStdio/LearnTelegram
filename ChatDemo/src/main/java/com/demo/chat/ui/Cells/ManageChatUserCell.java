@@ -135,8 +135,8 @@ public class ManageChatUserCell extends FrameLayout {
     }
 
     public int getUserId() {
-        if (currentObject instanceof TLRPC.User) {
-            return ((TLRPC.User) currentObject).id;
+        if (currentObject instanceof User) {
+            return ((User) currentObject).id;
         }
         return 0;
     }

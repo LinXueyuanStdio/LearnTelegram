@@ -97,14 +97,14 @@ public class SearchAdapterHelper {
     }
 
     public void queryServerSearch(String query, boolean allowUsername, boolean allowChats, boolean allowBots, boolean allowSelf, boolean canAddGroupsOnly, int channelId, boolean phoneNumbers, int type, int searchId) {
-        if (reqId != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
-            reqId = 0;
-        }
-        if (channelReqId != 0) {
-            ConnectionsManager.getInstance(currentAccount).cancelRequest(channelReqId, true);
-            channelReqId = 0;
-        }
+//        if (reqId != 0) {
+//            ConnectionsManager.getInstance(currentAccount).cancelRequest(reqId, true);
+//            reqId = 0;
+//        }
+//        if (channelReqId != 0) {
+//            ConnectionsManager.getInstance(currentAccount).cancelRequest(channelReqId, true);
+//            channelReqId = 0;
+//        }TODO 取消请求
         if (query == null) {
             groupSearch.clear();
             groupSearchMap.clear();
@@ -188,13 +188,13 @@ public class SearchAdapterHelper {
                             MessagesController.getInstance(currentAccount).putUsers(res.users, false);
                             MessagesStorage.getInstance(currentAccount).putUsersAndChats(res.users, res.chats, true, true);
                             SparseArray<TLRPC.Chat> chatsMap = new SparseArray<>();
-                            SparseArray<TLRPC.User> usersMap = new SparseArray<>();
+                            SparseArray<User> usersMap = new SparseArray<>();
                             for (int a = 0; a < res.chats.size(); a++) {
                                 TLRPC.Chat chat = res.chats.get(a);
                                 chatsMap.put(chat.id, chat);
                             }
                             for (int a = 0; a < res.users.size(); a++) {
-                                TLRPC.User user = res.users.get(a);
+                                User user = res.users.get(a);
                                 usersMap.put(user.id, user);
                             }
                             for (int b = 0; b < 2; b++) {
@@ -209,7 +209,7 @@ public class SearchAdapterHelper {
                                 }
                                 for (int a = 0; a < arrayList.size(); a++) {
                                     TLRPC.Peer peer = arrayList.get(a);
-                                    TLRPC.User user = null;
+                                    User user = null;
                                     TLRPC.Chat chat = null;
                                     if (peer.user_id != 0) {
                                         user = usersMap.get(peer.user_id);
@@ -236,7 +236,7 @@ public class SearchAdapterHelper {
                             if (!allResultsAreGlobal) {
                                 for (int a = 0; a < res.my_results.size(); a++) {
                                     TLRPC.Peer peer = res.my_results.get(a);
-                                    TLRPC.User user = null;
+                                    User user = null;
                                     TLRPC.Chat chat = null;
                                     if (peer.user_id != 0) {
                                         user = usersMap.get(peer.user_id);
@@ -285,7 +285,7 @@ public class SearchAdapterHelper {
             boolean hasFullMatch = false;
             for (int a = 0, N = arrayList.size(); a < N; a++) {
                 TLRPC.TL_contact contact = arrayList.get(a);
-                TLRPC.User user = MessagesController.getInstance(currentAccount).getUser(contact.user_id);
+                User user = MessagesController.getInstance(currentAccount).getUser(contact.user_id);
                 if (user == null) {
                     continue;
                 }
@@ -357,9 +357,9 @@ public class SearchAdapterHelper {
         int count = localResults.size();
         for (int a = 0; a < count; a++) {
             TLObject obj = localResults.get(a);
-            if (obj instanceof TLRPC.User) {
-                TLRPC.User user = (TLRPC.User) obj;
-                TLRPC.User u = (TLRPC.User) globalSearchMap.get(user.id);
+            if (obj instanceof User) {
+                User user = (User) obj;
+                User u = (User) globalSearchMap.get(user.id);
                 if (u != null) {
                     globalSearch.remove(u);
                     localServerSearch.remove(u);
@@ -391,12 +391,12 @@ public class SearchAdapterHelper {
         if (delegate == null) {
             return;
         }
-        SparseArray<TLRPC.User> ignoreUsers = delegate.getExcludeUsers();
+        SparseArray<User> ignoreUsers = delegate.getExcludeUsers();
         if (ignoreUsers == null) {
             return;
         }
         for (int a = 0, size = ignoreUsers.size(); a < size; a++) {
-            TLRPC.User u = (TLRPC.User) globalSearchMap.get(ignoreUsers.keyAt(a));
+            User u = (User) globalSearchMap.get(ignoreUsers.keyAt(a));
             if (u != null) {
                 globalSearch.remove(u);
                 localServerSearch.remove(u);

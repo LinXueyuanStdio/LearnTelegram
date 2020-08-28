@@ -54,15 +54,20 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.audioinfo.AudioInfo;
-import com.demo.chat.model.action.MessageObject;
+import com.demo.chat.messager.video.MediaCodecVideoConvertor;
 import com.demo.chat.model.User;
 import com.demo.chat.model.VideoEditedInfo;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.InputDocument;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.service.MusicPlayerService;
+import com.demo.chat.service.VideoEncodingService;
 import com.demo.chat.theme.Theme;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ChatActivity;
 import com.demo.chat.ui.Components.EmbedBottomSheet;
@@ -218,7 +223,7 @@ public class MediaController
         public ArrayList<MessageEntity> entities;
         public SavedFilterState savedFilterState;
         public ArrayList<VideoEditedInfo.MediaEntity> mediaEntities;
-        public ArrayList<TLRPC.InputDocument> stickers;
+        public ArrayList<InputDocument> stickers;
         public VideoEditedInfo editedInfo;
         public long averageDuration;
         public boolean isFiltered;
@@ -668,7 +673,6 @@ public class MediaController
     private int lastChatAccount;
     private long lastChatLeaveTime;
     private long lastMediaCheckTime;
-    private TLRPC.EncryptedChat lastSecretChat;
     private User lastUser;
     private int lastMessageId;
     private ArrayList<Long> lastChatVisibleMessages;
@@ -1030,7 +1034,7 @@ public class MediaController
     private void processMediaObserver(Uri uri) {
         Cursor cursor = null;
         try {
-            Point size = AndroidUtilities.getRealScreenSize();
+            android.graphics.Point size = AndroidUtilities.getRealScreenSize();
 
             cursor = ApplicationLoader.applicationContext.getContentResolver().query(uri, mediaProjections, null, null, "date_added DESC LIMIT 1");
             final ArrayList<Long> screenshotDates = new ArrayList<>();
@@ -1086,7 +1090,7 @@ public class MediaController
     }
 
     private void checkScreenshots(ArrayList<Long> dates) {
-        if (dates == null || dates.isEmpty() || lastChatEnterTime == 0 || (lastUser == null && !(lastSecretChat instanceof TLRPC.TL_encryptedChat))) {
+        if (dates == null || dates.isEmpty() || lastChatEnterTime == 0 || lastUser == null) {
             return;
         }
         long dt = 2000;
@@ -1105,19 +1109,14 @@ public class MediaController
             }
         }
         if (send) {
-            if (lastSecretChat != null) {
-                SecretChatHelper.getInstance(lastChatAccount).sendScreenshotMessage(lastSecretChat, lastChatVisibleMessages, null);
-            } else {
-                SendMessagesHelper.getInstance(lastChatAccount).sendScreenshotMessage(lastUser, lastMessageId, null);
-            }
+            SendMessagesHelper.getInstance(lastChatAccount).sendScreenshotMessage(lastUser, lastMessageId, null);
         }
     }
 
-    public void setLastVisibleMessageIds(int account, long enterTime, long leaveTime, User user, TLRPC.EncryptedChat encryptedChat, ArrayList<Long> visibleMessages, int visibleMessage) {
+    public void setLastVisibleMessageIds(int account, long enterTime, long leaveTime, User user, ArrayList<Long> visibleMessages, int visibleMessage) {
         lastChatEnterTime = enterTime;
         lastChatLeaveTime = leaveTime;
         lastChatAccount = account;
-        lastSecretChat = encryptedChat;
         lastUser = user;
         lastMessageId = visibleMessage;
         lastChatVisibleMessages = visibleMessages;
@@ -1144,7 +1143,7 @@ public class MediaController
             int channelId = (Integer) args[1];
             ArrayList<Integer> markAsDeletedMessages = (ArrayList<Integer>) args[0];
             if (playingMessageObject != null) {
-                if (channelId == playingMessageObject.messageOwner.to_id.channel_id) {
+                if (channelId == playingMessageObject.messageOwner.to_id) {
                     if (markAsDeletedMessages.contains(playingMessageObject.getId())) {
                         cleanupPlayer(true, true);
                     }
@@ -1152,7 +1151,7 @@ public class MediaController
             }
             if (voiceMessagesPlaylist != null && !voiceMessagesPlaylist.isEmpty()) {
                 MessageObject messageObject = voiceMessagesPlaylist.get(0);
-                if (channelId == messageObject.messageOwner.to_id.channel_id) {
+                if (channelId == messageObject.messageOwner.to_id) {
                     for (int a = 0; a < markAsDeletedMessages.size(); a++) {
                         Integer key = markAsDeletedMessages.get(a);
                         messageObject = voiceMessagesPlaylistMap.get(key);
@@ -1223,7 +1222,7 @@ public class MediaController
     //region SensorEventListener 传感器
     @Override
     public void onSensorChanged(SensorEvent event) {
-        if (!sensorsStarted || VoIPService.getSharedInstance() != null) {
+        if (!sensorsStarted) {
             return;
         }
         if (event.sensor == proximitySensor) {
@@ -2404,7 +2403,7 @@ public class MediaController
         if (messageObject.isRoundVideo() || isVideo) {
             FileLoader.getInstance(messageObject.currentAccount).setLoadingVideoForPlayer(messageObject.getDocument(), true);
             playerWasReady = false;
-            boolean destroyAtEnd = !isVideo || messageObject.messageOwner.to_id.channel_id == 0 && messageObject.audioProgress <= 0.1f;
+            boolean destroyAtEnd = !isVideo || messageObject.messageOwner.to_id == 0 && messageObject.audioProgress <= 0.1f;
             int[] playCount = isVideo && messageObject.getDuration() <= 30 ? new int[]{1} : null;
             playlist.clear();
             shuffledPlaylist.clear();
@@ -2977,7 +2976,7 @@ public class MediaController
                 }
                 if (waveform != null) {
                     for (int a = 0; a < messageObject1.getDocument().attributes.size(); a++) {
-                        DocumentAttribute attribute = messageObject1.getDocument().attributes.get(a);
+                        Document.DocumentAttribute attribute = messageObject1.getDocument().attributes.get(a);
                         if (attribute.isAudio()) {
                             attribute.waveform = waveform;
                             attribute.flags |= 4;
@@ -3383,8 +3382,8 @@ public class MediaController
             intent.putExtra("currentAccount", messageObject.currentAccount);
             if (messageObject.messageOwner.media.document != null) {
                 for (int a = 0; a < messageObject.messageOwner.media.document.attributes.size(); a++) {
-                    DocumentAttribute documentAttribute = messageObject.messageOwner.media.document.attributes.get(a);
-                    if (documentAttribute instanceof TLRPC.TL_documentAttributeAnimated) {
+                    Document.DocumentAttribute documentAttribute = messageObject.messageOwner.media.document.attributes.get(a);
+                    if (documentAttribute.isAnimated()) {
                         intent.putExtra("gif", true);
                         break;
                     }

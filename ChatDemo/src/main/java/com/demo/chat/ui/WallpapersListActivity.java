@@ -43,6 +43,7 @@ import com.demo.chat.controller.SendMessagesHelper;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.NotificationCenter;
+import com.demo.chat.model.User;
 import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.small.WallPaper;
@@ -1148,10 +1149,10 @@ public class WallpapersListActivity extends BaseFragment implements Notification
         }
 
         public void onDestroy() {
-            if (imageReqId != 0) {
-                ConnectionsManager.getInstance(currentAccount).cancelRequest(imageReqId, true);
-                imageReqId = 0;
-            }
+//            if (imageReqId != 0) {
+//                ConnectionsManager.getInstance(currentAccount).cancelRequest(imageReqId, true);
+//                imageReqId = 0;
+//            }TODO 取消请求
         }
 
         public void clearColor() {
@@ -1172,10 +1173,10 @@ public class WallpapersListActivity extends BaseFragment implements Notification
                 searchResultKeys.clear();
                 bingSearchEndReached = true;
                 lastSearchString = null;
-                if (imageReqId != 0) {
-                    ConnectionsManager.getInstance(currentAccount).cancelRequest(imageReqId, true);
-                    imageReqId = 0;
-                }
+//                if (imageReqId != 0) {
+//                    ConnectionsManager.getInstance(currentAccount).cancelRequest(imageReqId, true);
+//                    imageReqId = 0;
+//                }TODO 取消请求
                 searchEmptyView.showTextView();
             } else {
                 searchEmptyView.showProgress();
@@ -1232,20 +1233,20 @@ public class WallpapersListActivity extends BaseFragment implements Notification
         }
 
         private void searchImages(final String query, final String offset, boolean searchUser) {
-            if (imageReqId != 0) {
-                ConnectionsManager.getInstance(currentAccount).cancelRequest(imageReqId, true);
-                imageReqId = 0;
-            }
+//            if (imageReqId != 0) {
+//                ConnectionsManager.getInstance(currentAccount).cancelRequest(imageReqId, true);
+//                imageReqId = 0;
+//            }TODO 取消请求
             lastSearchImageString = query;
 
             TLObject object = MessagesController.getInstance(currentAccount).getUserOrChat(MessagesController.getInstance(currentAccount).imageSearchBot);
-            if (!(object instanceof TLRPC.User)) {
+            if (!(object instanceof User)) {
                 if (searchUser) {
                     searchBotUser();
                 }
                 return;
             }
-            TLRPC.User user = (TLRPC.User) object;
+            User user = (User) object;
 
             TLRPC.TL_messages_getInlineBotResults req = new TLRPC.TL_messages_getInlineBotResults();
             req.query = "#wallpaper " + query;

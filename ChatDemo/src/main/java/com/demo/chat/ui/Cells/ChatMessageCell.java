@@ -77,11 +77,13 @@ import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.bot.KeyboardButton;
 import com.demo.chat.model.bot.ReactionCount;
 import com.demo.chat.model.message.MessageFwdHeader;
+import com.demo.chat.model.message.MessageReactions;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.small.WebFile;
+import com.demo.chat.model.theme.Skin;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ChatActivity;
@@ -462,7 +464,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     private boolean psaButtonVisible;
     private float psaButtonProgress;
 
-    private TLRPC.TL_messageReactions lastReactions;
+    private MessageReactions lastReactions;
 
     private boolean autoPlayingMedia;
 
@@ -2515,7 +2517,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 String siteName = hasLinkPreview ? messageObject.messageOwner.media.webpage.site_name : null;
                 String webpageType = hasLinkPreview ? messageObject.messageOwner.media.webpage.type : null;
                 Document androidThemeDocument = null;
-                TLRPC.TL_themeSettings androidThemeSettings = null;
+                Skin.SkinSettings androidThemeSettings = null;
                 if (!drawInstantView) {
                     if ("telegram_channel".equals(webpageType)) {
                         drawInstantView = true;

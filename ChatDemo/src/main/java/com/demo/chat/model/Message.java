@@ -6,6 +6,7 @@ import com.demo.chat.messager.AbstractSerializedData;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.message.MessageAction;
 import com.demo.chat.model.message.MessageFwdHeader;
+import com.demo.chat.model.message.MessageReactions;
 import com.demo.chat.model.reply.ReplyMarkup;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
@@ -64,7 +65,7 @@ public class Message {
     public int via_bot_id;
     public String post_author;
     public long grouped_id;
-    public TL_messageReactions reactions;
+    public MessageReactions reactions;
     public ArrayList<TL_restrictionReason> restriction_reason = new ArrayList<>();
     public int send_state = 0; //custom
     public int fwd_msg_id = 0; //custom

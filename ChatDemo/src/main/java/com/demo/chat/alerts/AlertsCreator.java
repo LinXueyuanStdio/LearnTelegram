@@ -1036,19 +1036,8 @@ public class AlertsCreator {
         if (lowerId < 0) {
             Chat chat = MessagesController.getInstance(currentAccount).getChat(-lowerId);
             if (chat != null && chat.slowmode_enabled && !ChatObject.hasAdminRights(chat)) {
-                if (!few) {
-                    ChatFull chatFull = MessagesController.getInstance(currentAccount).getChatFull(chat.id);
-                    if (chatFull == null) {
-                        chatFull = MessagesStorage.getInstance(currentAccount).loadChatInfo(chat.id, new CountDownLatch(1), false, false);
-                    }
-                    if (chatFull != null && chatFull.slowmode_next_send_date >= ConnectionsManager.getInstance(currentAccount).getCurrentTime()) {
-                        few = true;
-                    }
-                }
-                if (few) {
-                    AlertsCreator.createSimpleAlert(context, chat.title, LocaleController.getString("SlowmodeSendError", R.string.SlowmodeSendError)).show();
-                    return true;
-                }
+                AlertsCreator.createSimpleAlert(context, chat.title, LocaleController.getString("SlowmodeSendError", R.string.SlowmodeSendError)).show();
+                return true;
             }
         }
         return false;
@@ -2906,7 +2895,7 @@ public class AlertsCreator {
                         if (progressDialog[0] == null) {
                             return;
                         }
-                        progressDialog[0].setOnCancelListener(dialog -> ConnectionsManager.getInstance(currentAccount).cancelRequest(requestId, true));
+//                        progressDialog[0].setOnCancelListener(dialog -> ConnectionsManager.getInstance(currentAccount).cancelRequest(requestId, true));TODO 取消请求
                         fragment.showDialog(progressDialog[0]);
                     }, 1000);
                     return;

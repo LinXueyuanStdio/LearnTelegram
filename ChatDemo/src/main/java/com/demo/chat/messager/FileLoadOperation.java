@@ -8,6 +8,9 @@ import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.MessagesController;
 import com.demo.chat.model.action.MessageObject;
+import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.WebFile;
+import com.demo.chat.model.theme.Skin;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -233,17 +236,6 @@ public class FileLoadOperation {
         currentType = ConnectionsManager.FileTypePhoto;
         totalBytesCount = size;
         ext = extension != null ? extension : "jpg";
-    }
-
-    public FileLoadOperation(SecureDocument secureDocument) {
-        location = new TLRPC.TL_inputSecureFileLocation();
-        location.id = secureDocument.secureFile.id;
-        location.access_hash = secureDocument.secureFile.access_hash;
-        datacenterId = secureDocument.secureFile.dc_id;
-        totalBytesCount = secureDocument.secureFile.size;
-        allowDisordererFileSave = true;
-        currentType = ConnectionsManager.FileTypeFile;
-        ext = ".jpg";
     }
 
     public FileLoadOperation(int instance, WebFile webDocument) {
@@ -525,7 +517,7 @@ public class FileLoadOperation {
         }
     }
 
-    protected float getDownloadedLengthFromOffset(final float progress) {
+    public float getDownloadedLengthFromOffset(final float progress) {
         ArrayList<Range> ranges = notLoadedBytesRangesCopy;
         if (totalBytesCount == 0 || ranges == null) {
             return 0;
@@ -605,10 +597,10 @@ public class FileLoadOperation {
                         requestInfos.remove(priorityRequestInfo);
                         requestedBytesCount -= currentDownloadChunkSize;
                         removePart(notRequestedBytesRanges, priorityRequestInfo.offset, priorityRequestInfo.offset + currentDownloadChunkSize);
-                        if (priorityRequestInfo.requestToken != 0) {
-                            ConnectionsManager.getInstance(currentAccount).cancelRequest(priorityRequestInfo.requestToken, true);
-                            requestsCount--;
-                        }
+//                        if (priorityRequestInfo.requestToken != 0) {
+//                            ConnectionsManager.getInstance(currentAccount).cancelRequest(priorityRequestInfo.requestToken, true);
+//                            requestsCount--;
+//                        }TODO 取消请求
                         if (BuildVars.DEBUG_VERSION) {
                             FileLog.d("frame get cancel request at offset " + priorityRequestInfo.offset);
                         }
@@ -722,14 +714,14 @@ public class FileLoadOperation {
         delayedRequestInfos = new ArrayList<>(currentMaxDownloadRequests - 1);
         state = stateDownloading;
 
-        if (parentObject instanceof TLRPC.TL_theme) {
-            TLRPC.TL_theme theme = (TLRPC.TL_theme) parentObject;
+        if (parentObject instanceof Skin) {
+            Skin theme = (Skin) parentObject;
             cacheFileFinal = new File(ApplicationLoader.getFilesDirFixed(), "remote" + theme.id + ".attheme");
         } else {
             cacheFileFinal = new File(storePath, fileNameFinal);
         }
         boolean finalFileExist = cacheFileFinal.exists();
-        if (finalFileExist && (parentObject instanceof TLRPC.TL_theme || totalBytesCount != 0 && totalBytesCount != cacheFileFinal.length())) {
+        if (finalFileExist && (parentObject instanceof Skin || totalBytesCount != 0 && totalBytesCount != cacheFileFinal.length())) {
             cacheFileFinal.delete();
             finalFileExist = false;
         }
@@ -1012,9 +1004,9 @@ public class FileLoadOperation {
             if (requestInfos != null) {
                 for (int a = 0; a < requestInfos.size(); a++) {
                     RequestInfo requestInfo = requestInfos.get(a);
-                    if (requestInfo.requestToken != 0) {
-                        ConnectionsManager.getInstance(currentAccount).cancelRequest(requestInfo.requestToken, true);
-                    }
+//                    if (requestInfo.requestToken != 0) {
+//                        ConnectionsManager.getInstance(currentAccount).cancelRequest(requestInfo.requestToken, true);
+//                    }TODO 取消请求
                 }
             }
             onFail(false, 1);
@@ -1145,7 +1137,7 @@ public class FileLoadOperation {
                 }
                 if (!ungzip) {
                     boolean renameResult;
-                    if (parentObject instanceof TLRPC.TL_theme) {
+                    if (parentObject instanceof Skin) {
                         try {
                             renameResult = AndroidUtilities.copyFile(cacheFileTemp, cacheFileFinal);
                         } catch (Exception e) {
@@ -1565,9 +1557,9 @@ public class FileLoadOperation {
             if (currentInfo == info) {
                 continue;
             }
-            if (info.requestToken != 0) {
-                ConnectionsManager.getInstance(currentAccount).cancelRequest(info.requestToken, true);
-            }
+//            if (info.requestToken != 0) {
+//                ConnectionsManager.getInstance(currentAccount).cancelRequest(info.requestToken, true);
+//            }TODO 取消请求
         }
         requestInfos.clear();
         for (int a = 0; a < delayedRequestInfos.size(); a++) {

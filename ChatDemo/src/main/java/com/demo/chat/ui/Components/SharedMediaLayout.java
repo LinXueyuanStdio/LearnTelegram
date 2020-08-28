@@ -1497,7 +1497,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
     public void onActionBarItemClick(int id) {
         if (id == delete) {
             TLRPC.Chat currentChat = null;
-            TLRPC.User currentUser = null;
+            User currentUser = null;
             TLRPC.EncryptedChat currentEncryptedChat = null;
             int lower_id = (int) dialog_id;
             if (lower_id != 0) {
@@ -3349,11 +3349,11 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
             if (uid == 0) {
                 return;
             }
-            if (reqId != 0) {
-                profileActivity.getConnectionsManager().cancelRequest(reqId, true);
-                reqId = 0;
-                searchesInProgress--;
-            }
+//            if (reqId != 0) {
+//                profileActivity.getConnectionsManager().cancelRequest(reqId, true);
+//                reqId = 0;
+//                searchesInProgress--;
+//            }TODO 取消请求
             if (query == null || query.length() == 0) {
                 globalSearch.clear();
                 lastReqId = 0;
@@ -3416,11 +3416,11 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                 if (!searchResult.isEmpty() || !globalSearch.isEmpty() || searchesInProgress != 0) {
                     searchResult.clear();
                     globalSearch.clear();
-                    if (reqId != 0) {
-                        profileActivity.getConnectionsManager().cancelRequest(reqId, true);
-                        reqId = 0;
-                        searchesInProgress--;
-                    }
+//                    if (reqId != 0) {
+//                        profileActivity.getConnectionsManager().cancelRequest(reqId, true);
+//                        reqId = 0;
+//                        searchesInProgress--;
+//                    }TODO 取消请求
                 }
                 notifyDataSetChanged();
             } else {
@@ -3978,7 +3978,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
                                 } else {
                                     continue;
                                 }
-                                TLRPC.User user = profileActivity.getMessagesController().getUser(userId);
+                                User user = profileActivity.getMessagesController().getUser(userId);
                                 if (user.id == profileActivity.getUserConfig().getClientUserId()) {
                                     continue;
                                 }

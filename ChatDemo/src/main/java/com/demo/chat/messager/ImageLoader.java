@@ -31,7 +31,9 @@ import com.demo.chat.model.Message;
 import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.InputFile;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.small.WebFile;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.ui.Cells.ChatMessageCell;
 import com.demo.chat.ui.Components.AnimatedFileDrawable;
@@ -1667,9 +1669,9 @@ public class ImageLoader {
                 }
 
                 @Override
-                public void fileDidUploaded(final String location, final TLRPC.InputFile inputFile, final TLRPC.InputEncryptedFile inputEncryptedFile, final byte[] key, final byte[] iv, final long totalFileSize) {
+                public void fileDidUploaded(final String location, final InputFile inputFile, final byte[] key, final byte[] iv, final long totalFileSize) {
                     Utilities.stageQueue.postRunnable(() -> {
-                        AndroidUtilities.runOnUIThread(() -> NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.FileDidUpload, location, inputFile, inputEncryptedFile, key, iv, totalFileSize));
+                        AndroidUtilities.runOnUIThread(() -> NotificationCenter.getInstance(currentAccount).postNotificationName(NotificationCenter.FileDidUpload, location, inputFile, key, iv, totalFileSize));
                         fileProgresses.remove(location);
                     });
                 }
@@ -2441,8 +2443,6 @@ public class ImageLoader {
                                 FileLoader.getInstance(currentAccount).loadFile(imageLocation, parentObject, ext, thumb != 0 ? 2 : 1, localCacheType);
                             } else if (imageLocation.document != null) {
                                 FileLoader.getInstance(currentAccount).loadFile(imageLocation.document, parentObject, thumb != 0 ? 2 : 1, cacheType);
-                            } else if (imageLocation.secureDocument != null) {
-                                FileLoader.getInstance(currentAccount).loadFile(imageLocation.secureDocument, thumb != 0 ? 2 : 1);
                             } else if (imageLocation.webFile != null) {
                                 FileLoader.getInstance(currentAccount).loadFile(imageLocation.webFile, thumb != 0 ? 2 : 1, cacheType);
                             }

@@ -77,7 +77,7 @@ public class PhonebookShareAlert extends BottomSheet {
 
     private ArrayList<AndroidUtilities.VcardItem> other = new ArrayList<>();
     private ArrayList<AndroidUtilities.VcardItem> phones = new ArrayList<>();
-    private TLRPC.User currentUser;
+    private User currentUser;
 
     public class UserCell extends LinearLayout {
 
@@ -225,11 +225,11 @@ public class PhonebookShareAlert extends BottomSheet {
         }
     }
 
-    public PhonebookShareAlert(BaseFragment parent, ContactsController.Contact contact, TLRPC.User user, Uri uri, File file, String firstName, String lastName) {
+    public PhonebookShareAlert(BaseFragment parent, ContactsController.Contact contact, User user, Uri uri, File file, String firstName, String lastName) {
         super(parent.getParentActivity(), false);
 
         String name = ContactsController.formatName(firstName, lastName);
-        ArrayList<TLRPC.User> result = null;
+        ArrayList<User> result = null;
         ArrayList<AndroidUtilities.VcardItem> items = new ArrayList<>();
         ArrayList<TLRPC.TL_restrictionReason> vcard = null;
         if (uri != null) {

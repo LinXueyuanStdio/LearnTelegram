@@ -52,8 +52,9 @@ import com.demo.chat.messager.NativeByteBuffer;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
-import com.demo.chat.model.action.MessageObject;
+import com.demo.chat.model.User;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.BottomSheet;
 import com.demo.chat.ui.DialogsActivity;
@@ -1214,7 +1215,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
                                 if (found != 0) {
                                     NativeByteBuffer data = cursor.byteBufferValue(0);
                                     if (data != null) {
-                                        TLRPC.User user = TLRPC.User.TLdeserialize(data, data.readInt32(false), false);
+                                        User user = User.TLdeserialize(data, data.readInt32(false), false);
                                         data.reuse();
                                         DialogSearchResult dialogSearchResult = dialogsResult.get(user.id);
                                         if (user.status != null) {
@@ -1300,7 +1301,7 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
                             if (found != 0) {
                                 NativeByteBuffer data = cursor.byteBufferValue(0);
                                 if (data != null) {
-                                    TLRPC.User user = TLRPC.User.TLdeserialize(data, data.readInt32(false), false);
+                                    User user = User.TLdeserialize(data, data.readInt32(false), false);
                                     data.reuse();
                                     DialogSearchResult dialogSearchResult = new DialogSearchResult();
                                     if (user.status != null) {
@@ -1349,8 +1350,8 @@ public class ShareAlert extends BottomSheet implements NotificationCenter.Notifi
                 }
                 for (int a = 0; a < result.size(); a++) {
                     DialogSearchResult obj = result.get(a);
-                    if (obj.object instanceof TLRPC.User) {
-                        TLRPC.User user = (TLRPC.User) obj.object;
+                    if (obj.object instanceof User) {
+                        User user = (User) obj.object;
                         MessagesController.getInstance(currentAccount).putUser(user, true);
                     } else if (obj.object instanceof TLRPC.Chat) {
                         TLRPC.Chat chat = (TLRPC.Chat) obj.object;

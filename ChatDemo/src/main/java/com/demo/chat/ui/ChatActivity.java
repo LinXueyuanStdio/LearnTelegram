@@ -119,6 +119,7 @@ import com.demo.chat.model.bot.KeyboardButton;
 import com.demo.chat.model.bot.ReactionCount;
 import com.demo.chat.model.message.MessageAction;
 import com.demo.chat.model.message.MessageFwdHeader;
+import com.demo.chat.model.message.MessageReactions;
 import com.demo.chat.model.reply.ReplyMarkup;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.DraftMessage;
@@ -9028,12 +9029,10 @@ public class ChatActivity extends BaseFragment
         if (currentUser == null) {
             return;
         }
-        ArrayList<Long> visibleMessages;
-        int messageId = 0;
         SecretMediaViewer viewer = SecretMediaViewer.getInstance();
         MessageObject messageObject = viewer.getCurrentMessageObject();
         if (messageObject != null && !messageObject.isOut()) {
-            MediaController.getInstance().setLastVisibleMessageIds(currentAccount, viewer.getOpenTime(), viewer.getCloseTime(), currentUser, null, null, messageObject.getId());
+            MediaController.getInstance().setLastVisibleMessageIds(currentAccount, viewer.getOpenTime(), viewer.getCloseTime(), currentUser, null, messageObject.getId());
         }
     }
 
@@ -11484,7 +11483,7 @@ public class ChatActivity extends BaseFragment
                 }
             } else {
                 replyIconImageView.setImageResource(R.drawable.msg_link);
-                if (webPage instanceof TLRPC.TL_webPagePending) {
+                if (webPage != null) {
                     replyNameTextView.setText(LocaleController.getString("GettingLinkInfo", R.string.GettingLinkInfo));
                     replyObjectTextView.setText(pendingLinkSearchString);
                 } else {
@@ -14799,7 +14798,7 @@ public class ChatActivity extends BaseFragment
                 int msgId = (Integer) args[1];
                 MessageObject messageObject = messagesDict[did == dialog_id ? 0 : 1].get(msgId);
                 if (messageObject != null) {
-                    MessageObject.updateReactions(messageObject.messageOwner, (TLRPC.TL_messageReactions) args[2]);
+                    MessageObject.updateReactions(messageObject.messageOwner, (MessageReactions) args[2]);
                     messageObject.measureInlineBotButtons();
                     chatAdapter.updateRowWithMessageObject(messageObject, true);
                 }
@@ -14906,7 +14905,7 @@ public class ChatActivity extends BaseFragment
                 }
                 MessageObject currentMessage = messagesDict[did == dialog_id ? 0 : 1].get(message.id);
                 if (currentMessage != null) {
-                    currentMessage.messageOwner.media = new TLRPC.TL_messageMediaWebPage();
+                    currentMessage.messageOwner.media = new MessageMedia().setWebPage(true);
                     currentMessage.messageOwner.media.webpage = message.media.webpage;
                     currentMessage.generateThumbs(true);
                     updated = true;
@@ -14924,7 +14923,7 @@ public class ChatActivity extends BaseFragment
                 for (int a = 0; a < hashMap.size(); a++) {
                     MessageMedia.WebPage webPage = hashMap.valueAt(a);
                     if (webPage.id == foundWebPage.id) {
-                        showFieldPanelForWebPage(!(webPage instanceof TLRPC.TL_webPageEmpty), webPage, false);
+                        showFieldPanelForWebPage(true, webPage, false);
                         break;
                     }
                 }

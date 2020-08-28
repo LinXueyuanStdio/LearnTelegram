@@ -8,6 +8,7 @@ import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.SerializedData;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.InputFile;
 import com.demo.chat.ui.Components.PhotoFilterView;
 import com.demo.chat.ui.Components.Point;
 
@@ -40,8 +41,7 @@ public class VideoEditedInfo {
     public boolean roundVideo;
     public boolean muted;
     public long originalDuration;
-    public TLRPC.InputFile file;
-    public TLRPC.InputEncryptedFile encryptedFile;
+    public InputFile file;
     public byte[] key;
     public byte[] iv;
     public MediaController.SavedFilterState filterState;

@@ -266,7 +266,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
                 webDocument = (WebDocument) inlineResult.thumb;
             }
             if (webDocument == null && currentPhotoObject == null && currentPhotoObjectThumb == null) {
-                if (inlineResult.send_message instanceof TLRPC.TL_botInlineMessageMediaVenue || inlineResult.send_message instanceof TLRPC.TL_botInlineMessageMediaGeo) {
+                if (inlineResult.send_message.isBotInlineMessageMediaVenue() || inlineResult.send_message.isBotInlineMessageMediaGeo()) {
                     double lat = inlineResult.send_message.geo.lat;
                     double lon = inlineResult.send_message.geo._long;
                     if (MessagesController.getInstance(currentAccount).mapProvider == 2) {
@@ -682,7 +682,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
                 radialProgress.setProgress(0, false);
                 if (documentAttach != null) {
                     FileLoader.getInstance(currentAccount).loadFile(documentAttach, inlineResult, 1, 0);
-                } else if (inlineResult.content instanceof WebDocument) {
+                } else if (inlineResult.content != null) {
                     FileLoader.getInstance(currentAccount).loadFile(WebFile.createWithWebDocument(inlineResult.content), 1, 1);
                 }
                 buttonState = 4;
@@ -691,7 +691,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
             } else if (buttonState == 4) {
                 if (documentAttach != null) {
                     FileLoader.getInstance(currentAccount).cancelLoadFile(documentAttach);
-                } else if (inlineResult.content instanceof WebDocument) {
+                } else if (inlineResult.content != null) {
                     FileLoader.getInstance(currentAccount).cancelLoadFile(WebFile.createWithWebDocument(inlineResult.content));
                 }
                 buttonState = 2;
@@ -768,7 +768,7 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
                 letterDrawable.draw(canvas);
             }
         } else {
-            if (inlineResult != null && (inlineResult.send_message instanceof TLRPC.TL_botInlineMessageMediaGeo || inlineResult.send_message instanceof TLRPC.TL_botInlineMessageMediaVenue)) {
+            if (inlineResult != null && (inlineResult.send_message.isBotInlineMessageMediaGeo() || inlineResult.send_message.isBotInlineMessageMediaVenue())) {
                 int w = Theme.chat_inlineResultLocation.getIntrinsicWidth();
                 int h = Theme.chat_inlineResultLocation.getIntrinsicHeight();
                 int x = (int) (linkImageView.getImageX() + (linkImageView.getImageWidth() - w) / 2);

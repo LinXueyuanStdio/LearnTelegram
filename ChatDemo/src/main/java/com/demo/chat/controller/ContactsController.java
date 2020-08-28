@@ -387,7 +387,7 @@ public class ContactsController extends BaseController {
                             if (request) {
                                 TLRPC.TL_contact contact = contactsByPhone.get(sphone);
                                 if (contact != null) {
-                                    TLRPC.User user = getMessagesController().getUser(contact.user_id);
+                                    User user = getMessagesController().getUser(contact.user_id);
                                     if (user != null) {
                                         serverContactsInPhonebook++;
                                         if (TextUtils.isEmpty(user.first_name) && TextUtils.isEmpty(user.last_name) && (!TextUtils.isEmpty(value.first_name) || !TextUtils.isEmpty(value.last_name))) {
@@ -404,7 +404,7 @@ public class ContactsController extends BaseController {
                                     if (!emptyNameReimport) {
                                         TLRPC.TL_contact contact = contactsByPhone.get(sphone);
                                         if (contact != null) {
-                                            TLRPC.User user = getMessagesController().getUser(contact.user_id);
+                                            User user = getMessagesController().getUser(contact.user_id);
                                             if (user != null) {
                                                 serverContactsInPhonebook++;
                                                 String firstName = user.first_name != null ? user.first_name : "";
@@ -464,14 +464,14 @@ public class ContactsController extends BaseController {
                                 }
                             }*/
 
-                            final ArrayList<TLRPC.User> toDelete = new ArrayList<>();
+                            final ArrayList<User> toDelete = new ArrayList<>();
                             if (contactHashMap != null && !contactHashMap.isEmpty()) {
                                 try {
-                                    final HashMap<String, TLRPC.User> contactsPhonesShort = new HashMap<>();
+                                    final HashMap<String, User> contactsPhonesShort = new HashMap<>();
 
                                     for (int a = 0; a < contacts.size(); a++) {
                                         TLRPC.TL_contact value = contacts.get(a);
-                                        TLRPC.User user = getMessagesController().getUser(value.user_id);
+                                        User user = getMessagesController().getUser(value.user_id);
                                         if (user == null || TextUtils.isEmpty(user.phone)) {
                                             continue;
                                         }
@@ -483,7 +483,7 @@ public class ContactsController extends BaseController {
                                         boolean was = false;
                                         for (int a = 0; a < contact.shortPhones.size(); a++) {
                                             String phone = contact.shortPhones.get(a);
-                                            TLRPC.User user = contactsPhonesShort.get(phone);
+                                            User user = contactsPhonesShort.get(phone);
                                             if (user != null) {
                                                 was = true;
                                                 toDelete.add(user);
@@ -516,7 +516,7 @@ public class ContactsController extends BaseController {
                             String sphone9 = sphone.substring(Math.max(0, sphone.length() - 7));
                             TLRPC.TL_contact contact = contactsByPhone.get(sphone);
                             if (contact != null) {
-                                TLRPC.User user = getMessagesController().getUser(contact.user_id);
+                                User user = getMessagesController().getUser(contact.user_id);
                                 if (user != null) {
                                     serverContactsInPhonebook++;
                                     String firstName = user.first_name != null ? user.first_name : "";
@@ -635,7 +635,7 @@ public class ContactsController extends BaseController {
                                 }
 
                                 /*if (BuildVars.LOGS_ENABLED) {
-                                    for (TLRPC.User user : res.users) {
+                                    for (User user : res.users) {
                                         FileLog.e("received user " + user.first_name + " " + user.last_name + " " + user.phone);
                                     }
                                 }*/

@@ -20,6 +20,7 @@ import com.demo.chat.model.Message;
 import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.InputFile;
 import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
@@ -48,7 +49,7 @@ public class FileLoader extends BaseController {
 
     public interface FileLoaderDelegate {
         void fileUploadProgressChanged(String location, long uploadedSize, long totalSize, boolean isEncrypted);
-        void fileDidUploaded(String location, TLRPC.InputFile inputFile, TLRPC.InputEncryptedFile inputEncryptedFile, byte[] key, byte[] iv, long totalFileSize);
+        void fileDidUploaded(String location, InputFile inputFile, byte[] key, byte[] iv, long totalFileSize);
         void fileDidFailedUpload(String location, boolean isEncrypted);
         void fileDidLoaded(String location, File finalFile, int type);
         void fileDidFailedLoad(String location, int state);
@@ -288,7 +289,7 @@ public class FileLoader extends BaseController {
             }
             operation.setDelegate(new FileUploadOperation.FileUploadOperationDelegate() {
                 @Override
-                public void didFinishUploadingFile(final FileUploadOperation operation, final TLRPC.InputFile inputFile, final TLRPC.InputEncryptedFile inputEncryptedFile, final byte[] key, final byte[] iv) {
+                public void didFinishUploadingFile(final FileUploadOperation operation, final InputFile inputFile, final byte[] key, final byte[] iv) {
                     fileLoaderQueue.postRunnable(() -> {
                         if (encrypted) {
                             uploadOperationPathsEnc.remove(location);
@@ -315,7 +316,7 @@ public class FileLoader extends BaseController {
                             }
                         }
                         if (delegate != null) {
-                            delegate.fileDidUploaded(location, inputFile, inputEncryptedFile, key, iv, operation.getTotalFileSize());
+                            delegate.fileDidUploaded(location, inputFile, key, iv, operation.getTotalFileSize());
                         }
                     });
                 }
@@ -406,26 +407,22 @@ public class FileLoader extends BaseController {
     }
 
     public void cancelLoadFile(Document document) {
-        cancelLoadFile(document, null, null, null, null);
-    }
-
-    public void cancelLoadFile(SecureDocument document) {
-        cancelLoadFile(null, document, null, null, null);
+        cancelLoadFile(document, null, null, null);
     }
 
     public void cancelLoadFile(WebFile document) {
-        cancelLoadFile(null, null, document, null, null);
+        cancelLoadFile(null, document, null, null);
     }
 
     public void cancelLoadFile(PhotoSize photo) {
-        cancelLoadFile(null, null, null, photo.location, null);
+        cancelLoadFile(null, null, photo.location, null);
     }
 
     public void cancelLoadFile(FileLocation location, String ext) {
-        cancelLoadFile(null, null, null, location, ext);
+        cancelLoadFile(null, null, location, ext);
     }
 
-    private void cancelLoadFile(final Document document, final SecureDocument secureDocument, final WebFile webDocument, final FileLocation location, final String locationExt) {
+    private void cancelLoadFile(final Document document, final WebFile webDocument, final FileLocation location, final String locationExt) {
         if (location == null && document == null && webDocument == null && secureDocument == null) {
             return;
         }
@@ -494,14 +491,7 @@ public class FileLoader extends BaseController {
         if (cacheType == 0 && (imageLocation.isEncrypted() || imageLocation.photoSize != null && imageLocation.getSize() == 0)) {
             cacheType = 1;
         }
-        loadFile(imageLocation.document, imageLocation.secureDocument, imageLocation.webFile, imageLocation.location, imageLocation, parentObject, ext, imageLocation.getSize(), priority, cacheType);
-    }
-
-    public void loadFile(SecureDocument secureDocument, int priority) {
-        if (secureDocument == null) {
-            return;
-        }
-        loadFile(null, secureDocument, null, null, null, null, null, 0, priority, 1);
+        loadFile(imageLocation.document, imageLocation.webFile, imageLocation.location, imageLocation, parentObject, ext, imageLocation.getSize(), priority, cacheType);
     }
 
     public void loadFile(Document document, Object parentObject, int priority, int cacheType) {
@@ -511,11 +501,11 @@ public class FileLoader extends BaseController {
         if (cacheType == 0 && document.key != null) {
             cacheType = 1;
         }
-        loadFile(document, null, null, null, null, parentObject, null, 0, priority, cacheType);
+        loadFile(document, null, null, null, parentObject, null, 0, priority, cacheType);
     }
 
     public void loadFile(WebFile document, int priority, int cacheType) {
-        loadFile(null, null, document, null, null, null, null, 0, priority, cacheType);
+        loadFile(null, document, null, null, null, null, 0, priority, cacheType);
     }
 
     private void pauseCurrentFileLoadOperations(FileLoadOperation newOperation) {
@@ -536,12 +526,14 @@ public class FileLoader extends BaseController {
         }
     }
 
-    private FileLoadOperation loadFileInternal(final Document document, final SecureDocument secureDocument, final WebFile webDocument, TLRPC.TL_fileLocationToBeDeprecated location, final ImageLocation imageLocation, Object parentObject, final String locationExt, final int locationSize, final int priority, final FileLoadOperationStream stream, final int streamOffset, boolean streamPriority, final int cacheType) {
+    private FileLoadOperation loadFileInternal(final Document document, final WebFile webDocument,
+            FileLocation location, final ImageLocation imageLocation,
+            Object parentObject, final String locationExt, final int locationSize,
+            final int priority, final FileLoadOperationStream stream, final int streamOffset,
+            boolean streamPriority, final int cacheType) {
         String fileName = null;
         if (location != null) {
             fileName = getAttachFileName(location, locationExt);
-        } else if (secureDocument != null) {
-            fileName = getAttachFileName(secureDocument);
         } else if (document != null) {
             fileName = getAttachFileName(document);
         } else if (webDocument != null) {
@@ -571,8 +563,6 @@ public class FileLoader extends BaseController {
                 LinkedList<FileLoadOperation> downloadQueue;
                 if (MessageObject.isVoiceDocument(document) || MessageObject.isVoiceWebDocument(webDocument)) {
                     downloadQueue = audioLoadOperationQueue;
-                } else if (secureDocument != null || location != null || MessageObject.isImageWebDocument(webDocument)) {
-                    downloadQueue = photoLoadOperationQueue;
                 } else {
                     downloadQueue = loadOperationQueue;
                 }
@@ -757,7 +747,7 @@ public class FileLoader extends BaseController {
         }
     }
 
-    private void loadFile(final Document document, final SecureDocument secureDocument, final WebFile webDocument, TLRPC.TL_fileLocationToBeDeprecated location, final ImageLocation imageLocation, final Object parentObject, final String locationExt, final int locationSize, final int priority, final int cacheType) {
+    private void loadFile(final Document document, final WebFile webDocument, FileLocation location, final ImageLocation imageLocation, final Object parentObject, final String locationExt, final int locationSize, final int priority, final int cacheType) {
         String fileName;
         if (location != null) {
             fileName = getAttachFileName(location, locationExt);
@@ -771,7 +761,7 @@ public class FileLoader extends BaseController {
         if (cacheType != 10 && !TextUtils.isEmpty(fileName) && !fileName.contains("" + Integer.MIN_VALUE)) {
             loadOperationPathsUI.put(fileName, true);
         }
-        fileLoaderQueue.postRunnable(() -> loadFileInternal(document, secureDocument, webDocument, location, imageLocation, parentObject, locationExt, locationSize, priority, null, 0, false, cacheType));
+        fileLoaderQueue.postRunnable(() -> loadFileInternal(document, webDocument, location, imageLocation, parentObject, locationExt, locationSize, priority, null, 0, false, cacheType));
     }
 
     public FileLoadOperation loadStreamFile(final FileLoadOperationStream stream, final Document document, final Object parentObject, final int offset, final boolean priority) {

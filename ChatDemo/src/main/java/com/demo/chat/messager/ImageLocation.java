@@ -30,11 +30,9 @@ public class ImageLocation {
     public byte[] key;
     public byte[] iv;
     public long access_hash;
-    public TL_fileLocationToBeDeprecated location;
+    public FileLocation location;
 
     public String path;
-
-    public SecureDocument secureDocument;
 
     public Document document;
 
@@ -59,15 +57,6 @@ public class ImageLocation {
         }
         ImageLocation imageLocation = new ImageLocation();
         imageLocation.path = path;
-        return imageLocation;
-    }
-
-    public static ImageLocation getForSecureDocument(SecureDocument secureDocument) {
-        if (secureDocument == null) {
-            return null;
-        }
-        ImageLocation imageLocation = new ImageLocation();
-        imageLocation.secureDocument = secureDocument;
         return imageLocation;
     }
 
@@ -103,7 +92,7 @@ public class ImageLocation {
     }
 
     public static ImageLocation getForPhoto(PhotoSize photoSize, MessageMedia.Photo photo) {
-        if (photoSize instanceof TL_photoStrippedSize) {
+        if (photoSize !=null) {
             ImageLocation imageLocation = new ImageLocation();
             imageLocation.photoSize = photoSize;
             return imageLocation;
@@ -205,19 +194,6 @@ public class ImageLocation {
             return null;
         }
         return getForPhoto(photoSize.location, photoSize.size, null, document, null, false, document.dc_id, null, photoSize.type);
-    }
-
-    public static ImageLocation getForLocal(FileLocation location) {
-        if (location == null) {
-            return null;
-        }
-        ImageLocation imageLocation = new ImageLocation();
-        imageLocation.location = new TL_fileLocationToBeDeprecated();
-        imageLocation.location.local_id = location.local_id;
-        imageLocation.location.volume_id = location.volume_id;
-        imageLocation.location.secret = location.secret;
-        imageLocation.location.dc_id = location.dc_id;
-        return imageLocation;
     }
 
     private static ImageLocation getForPhoto(FileLocation location, int size, MessageMedia.Photo photo, Document document, InputPeer photoPeer, boolean photoPeerBig, int dc_id, InputStickerSet stickerSet, String thumbSize) {
