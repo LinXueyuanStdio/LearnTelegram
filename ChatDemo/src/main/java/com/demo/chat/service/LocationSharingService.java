@@ -17,7 +17,7 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.User;
-import com.demo.chat.model.UserObject;
+import com.demo.chat.model.action.UserObject;
 import com.demo.chat.receiver.StopLiveLocationReceiver;
 import com.demo.chat.ui.LaunchActivity;
 

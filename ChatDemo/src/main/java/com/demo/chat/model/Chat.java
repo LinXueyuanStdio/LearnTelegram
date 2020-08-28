@@ -42,7 +42,7 @@ public class Chat {
         return false;
     }
     public boolean isPublic() {
-        return (flags & Chat_FLAG_IS_PUBLIC) != 0;
+        return false;
     }
     public int type = 0;
     public int id = 0;

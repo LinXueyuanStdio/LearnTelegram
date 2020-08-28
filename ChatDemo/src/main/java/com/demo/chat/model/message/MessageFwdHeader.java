@@ -15,7 +15,7 @@ public class MessageFwdHeader {
     public int channel_id;
     public int channel_post;
     public String post_author;
-    public Peer saved_from_peer;
+    public int saved_from_chat_id;
     public int saved_from_msg_id;
     public String psa_type;
 }

@@ -15,10 +15,20 @@ public class KeyboardButton {
     public String query;
     public byte[] data;
     public int button_id;
-    public boolean request_write_access;
-    public InputUser bot;
     public String fwd_text;
     public boolean quiz;
+
+    public void setSwitchInline(boolean isSwitchInline) {}
+
+    public void setKeyboardButton(boolean isKeyboardButton) {}
+
+    public void setKeyboardButtonUrl(boolean isKeyboardButtonUrl) {}
+
+    public void setRequestGeoLocation(boolean isRequestGeoLocation) {}
+
+    public void setButtonUrlAuth(boolean isButtonUrlAuth) {}
+
+    public void setButtonCallback(boolean isButtonCallback) {}
 
     public boolean isSwitchInline() {
         return false;
@@ -35,9 +45,11 @@ public class KeyboardButton {
     public boolean isRequestGeoLocation() {
         return false;
     }
+
     public boolean isButtonUrlAuth() {
         return false;
     }
+
     public boolean isButtonCallback() {
         return false;
     }

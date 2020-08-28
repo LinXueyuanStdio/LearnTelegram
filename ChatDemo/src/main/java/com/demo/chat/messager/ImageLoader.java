@@ -28,7 +28,7 @@ import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.secretmedia.EncryptedFileInputStream;
 import com.demo.chat.messager.secretmedia.SecureDocumentKey;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.model.small.PhotoSize;
@@ -3302,7 +3302,7 @@ public class ImageLoader {
                         break;
                     }
                 }
-            } else if (message.media instanceof TLRPC.TL_messageMediaWebPage) {
+            } else if (message.media.isWebPage()) {
                 for (int a = 0, count = message.media.webpage.photo.sizes.size(); a < count; a++) {
                     PhotoSize size = message.media.webpage.photo.sizes.get(a);
                     if (size instanceof TLRPC.TL_photoCachedSize) {
@@ -3332,7 +3332,7 @@ public class ImageLoader {
                     break;
                 }
             }
-        } else if (message.media instanceof TLRPC.TL_messageMediaWebPage) {
+        } else if (message.media.isWebPage()) {
             if (message.media.webpage.photo != null) {
                 for (int a = 0, count = message.media.webpage.photo.sizes.size(); a < count; a++) {
                     PhotoSize size = message.media.webpage.photo.sizes.get(a);

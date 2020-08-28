@@ -14,7 +14,7 @@ import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.MessageMedia;

@@ -22,12 +22,13 @@ import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.support.SparseLongArray;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
-import com.demo.chat.model.UserObject;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.action.MessageObject;
+import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.bot.BotInfo;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.DraftMessage;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
@@ -4602,39 +4603,6 @@ public class MessagesStorage extends BaseController {
         });
     }
 
-    public void updateUserInfo(final UserFull info, final boolean ifExist) {
-        storageQueue.postRunnable(() -> {
-            try {
-                if (ifExist) {
-                    SQLiteCursor cursor = database.queryFinalized("SELECT uid FROM user_settings WHERE uid = " + info.user.id);
-                    boolean exist = cursor.next();
-                    cursor.dispose();
-                    if (!exist) {
-                        return;
-                    }
-                }
-                SQLitePreparedStatement state = database.executeFast("REPLACE INTO user_settings VALUES(?, ?, ?)");
-                NativeByteBuffer data = new NativeByteBuffer(info.getObjectSize());
-                info.serializeToStream(data);
-                state.bindInteger(1, info.user.id);
-                state.bindByteBuffer(2, data);
-                state.bindInteger(3, info.pinned_msg_id);
-                state.step();
-                state.dispose();
-                data.reuse();
-                if ((info.flags & 2048) != 0) {
-                    state = database.executeFast("UPDATE dialogs SET folder_id = ? WHERE did = ?");
-                    state.bindInteger(1, info.folder_id);
-                    state.bindLong(2, info.user.id);
-                    state.step();
-                    state.dispose();
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-        });
-    }
-
     public void updateChatInfo(final ChatFull info, final boolean ifExist) {
         storageQueue.postRunnable(() -> {
             try {
@@ -6962,7 +6930,7 @@ public class MessagesStorage extends BaseController {
                             Message message = Message.TLdeserialize(data, data.readInt32(false), false);
                             message.readAttachPath(data, getUserConfig().clientUserId);
                             data.reuse();
-                            if (message.media instanceof TL_messageMediaWebPage) {
+                            if (message.media.isWebPage()) {
                                 message.id = mid;
                                 message.media.webpage = webPages.valueAt(a);
                                 messages.add(message);
@@ -7463,7 +7431,7 @@ public class MessagesStorage extends BaseController {
                         state_polls.bindLong(1, messageId);
                         state_polls.bindLong(2, mediaPoll.poll.id);
                         state_polls.step();
-                    } else if (message.media instanceof TL_messageMediaWebPage) {
+                    } else if (message.media.isWebPage()) {
                         state_webpage.requery();
                         state_webpage.bindLong(1, message.media.webpage.id);
                         state_webpage.bindLong(2, messageId);
@@ -7473,7 +7441,7 @@ public class MessagesStorage extends BaseController {
                     data.reuse();
 
                     if (downloadMask != 0 && (message.to_id == 0 || message.post) && message.date >= getConnectionsManager().getCurrentTime() - 60 * 60 && getDownloadController().canDownloadMedia(message) == 1) {
-                        if (message.media instanceof TL_messageMediaPhoto || message.media instanceof TL_messageMediaDocument || message.media instanceof TL_messageMediaWebPage) {
+                        if (message.media instanceof TL_messageMediaPhoto || message.media instanceof TL_messageMediaDocument || message.media.isWebPage()) {
                             int type = 0;
                             long id = 0;
                             MessageMedia object = null;
@@ -7511,7 +7479,7 @@ public class MessagesStorage extends BaseController {
                                     object = new TL_messageMediaPhoto();
                                     object.photo = photo;
                                     object.flags |= 1;
-                                    if (message.media instanceof TL_messageMediaWebPage) {
+                                    if (message.media.isWebPage()) {
                                         object.flags |= 0x80000000;
                                     }
                                 }
@@ -7529,7 +7497,7 @@ public class MessagesStorage extends BaseController {
                                 state_download.bindInteger(2, type);
                                 state_download.bindInteger(3, message.date);
                                 state_download.bindByteBuffer(4, data);
-                                state_download.bindString(5, "sent_" + (message.to_id != null ? message.to_id : 0) + "_" + message.id);
+                                state_download.bindString(5, "sent_" + (message.to_id != 0 ? message.to_id : 0) + "_" + message.id);
                                 state_download.step();
                                 data.reuse();
                             }
@@ -9118,7 +9086,7 @@ public class MessagesStorage extends BaseController {
                             state_polls.bindLong(1, messageId);
                             state_polls.bindLong(2, mediaPoll.poll.id);
                             state_polls.step();
-                        } else if (message.media instanceof TL_messageMediaWebPage) {
+                        } else if (message.media.isWebPage()) {
                             if (state_webpage == null) {
                                 state_webpage = database.executeFast("REPLACE INTO webpage_pending VALUES(?, ?)");
                             }
@@ -9205,22 +9173,14 @@ public class MessagesStorage extends BaseController {
         if (!message.entities.isEmpty()) {
             for (int a = 0; a < message.entities.size(); a++) {
                 MessageEntity entity = message.entities.get(a);
-                if (entity instanceof TL_messageEntityMentionName) {
-                    usersToLoad.add(((TL_messageEntityMentionName) entity).user_id);
-                } else if (entity instanceof TL_inputMessageEntityMentionName) {
-                    usersToLoad.add(((TL_inputMessageEntityMentionName) entity).user_id.user_id);
+                if (entity.isMentionName()) {
+                    usersToLoad.add(entity.user_id);
                 }
             }
         }
         if (message.media != null) {
             if (message.media.user_id != 0 && !usersToLoad.contains(message.media.user_id)) {
                 usersToLoad.add(message.media.user_id);
-            }
-            if (message.media instanceof TL_messageMediaPoll) {
-                TL_messageMediaPoll messageMediaPoll = (TL_messageMediaPoll) message.media;
-                if (!messageMediaPoll.results.recent_voters.isEmpty()) {
-                    usersToLoad.addAll(messageMediaPoll.results.recent_voters);
-                }
             }
         }
         if (message.fwd_from != null) {
@@ -9234,18 +9194,10 @@ public class MessagesStorage extends BaseController {
                     chatsToLoad.add(message.fwd_from.channel_id);
                 }
             }
-            if (message.fwd_from.saved_from_peer != null) {
-                if (message.fwd_from.saved_from_peer.user_id != 0) {
-                    if (!chatsToLoad.contains(message.fwd_from.saved_from_peer.user_id)) {
-                        usersToLoad.add(message.fwd_from.saved_from_peer.user_id);
-                    }
-                } else if (message.fwd_from.saved_from_peer.channel_id != 0) {
-                    if (!chatsToLoad.contains(message.fwd_from.saved_from_peer.channel_id)) {
-                        chatsToLoad.add(message.fwd_from.saved_from_peer.channel_id);
-                    }
-                } else if (message.fwd_from.saved_from_peer.chat_id != 0) {
-                    if (!chatsToLoad.contains(message.fwd_from.saved_from_peer.chat_id)) {
-                        chatsToLoad.add(message.fwd_from.saved_from_peer.chat_id);
+            if (message.fwd_from.saved_from_chat_id != 0) {
+                if (message.fwd_from.saved_from_chat_id != 0) {
+                    if (!chatsToLoad.contains(message.fwd_from.saved_from_chat_id)) {
+                        usersToLoad.add(message.fwd_from.saved_from_chat_id);
                     }
                 }
             }

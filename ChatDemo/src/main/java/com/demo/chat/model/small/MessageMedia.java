@@ -135,6 +135,14 @@ public class MessageMedia {
     }
 
     public MessageMedia setDocument(boolean isDocument){return this;}
+    public MessageMedia setContact(boolean isContact){return this;}
+    public MessageMedia setPhoto(boolean isPhoto){return this;}
+    public MessageMedia setWebPage(boolean isWebPage){return this;}
+    public MessageMedia setInvoice(boolean isInvoice){return this;}
     public boolean isDocument(){return false;}
+    public boolean isPhoto(){return false;}
+    public boolean isWebPage(){return false;}
+    public boolean isContact(){return false;}
+    public boolean isInvoice(){return false;}
 //    public boolean is(){return false;}
 }

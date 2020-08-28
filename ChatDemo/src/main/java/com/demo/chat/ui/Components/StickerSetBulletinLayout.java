@@ -7,10 +7,12 @@ import com.demo.chat.R;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.messager.ImageLocation;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.sticker.MessagesStickerSet;
+import com.demo.chat.model.sticker.Sticker;
 import com.demo.chat.model.sticker.StickerSet;
 import com.demo.chat.model.sticker.StickerSetCovered;
 
@@ -36,7 +38,7 @@ public class StickerSetBulletinLayout extends Bulletin.TwoLineLayout {
     @IntDef(value = {TYPE_REMOVED, TYPE_ARCHIVED, TYPE_ADDED})
     public @interface Type {}
 
-    public StickerSetBulletinLayout(@NonNull Context context, TLObject setObject, @Type int type) {
+    public StickerSetBulletinLayout(@NonNull Context context, Sticker setObject, @Type int type) {
         super(context);
 
         final Document sticker;
@@ -66,8 +68,8 @@ public class StickerSetBulletinLayout extends Bulletin.TwoLineLayout {
         }
 
         if (sticker != null) {
-            TLObject object;
-            if (stickerSet.thumb instanceof PhotoSize) {
+            Media object;
+            if (stickerSet.thumb != null) {
                 object = stickerSet.thumb;
             } else {
                 object = sticker;

@@ -18,7 +18,7 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.service.LocationSharingService;
 import com.google.android.gms.common.ConnectionResult;

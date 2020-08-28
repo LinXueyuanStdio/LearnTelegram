@@ -35,9 +35,9 @@ import com.demo.chat.messager.Emoji;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.model.Chat;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
-import com.demo.chat.model.UserObject;
+import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.DraftMessage;
 import com.demo.chat.model.small.PhotoSize;
@@ -900,12 +900,6 @@ public class DialogCell extends BaseCell {
                                         } else {
                                             innerMessage = String.format("\uD83D\uDCCA %s", mediaPoll.poll.question);
                                         }
-                                    } else if (message.messageOwner.media instanceof TLRPC.TL_messageMediaGame) {
-                                        if (Build.VERSION.SDK_INT >= 18) {
-                                            innerMessage = String.format("\uD83C\uDFAE \u2068%s\u2069", message.messageOwner.media.game.title);
-                                        } else {
-                                            innerMessage = String.format("\uD83C\uDFAE %s", message.messageOwner.media.game.title);
-                                        }
                                     } else if (message.type == 14) {
                                         if (Build.VERSION.SDK_INT >= 18) {
                                             innerMessage = String.format("\uD83C\uDFA7 \u2068%s - %s\u2069", message.getMusicAuthor(), message.getMusicTitle());
@@ -972,12 +966,7 @@ public class DialogCell extends BaseCell {
                                     }
                                     messageString = emoji + message.caption;
                                 } else {
-                                    if (message.messageOwner.media instanceof TLRPC.TL_messageMediaPoll) {
-                                        TLRPC.TL_messageMediaPoll mediaPoll = (TLRPC.TL_messageMediaPoll) message.messageOwner.media;
-                                        messageString = "\uD83D\uDCCA " + mediaPoll.poll.question;
-                                    } else if (message.messageOwner.media instanceof TLRPC.TL_messageMediaGame) {
-                                        messageString = "\uD83C\uDFAE " + message.messageOwner.media.game.title;
-                                    } else if (message.type == 14) {
+                                    if (message.type == 14) {
                                         messageString = String.format("\uD83C\uDFA7 %s - %s", message.getMusicAuthor(), message.getMusicTitle());
                                     } else {
                                         messageString = message.messageText;

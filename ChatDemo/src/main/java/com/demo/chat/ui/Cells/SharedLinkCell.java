@@ -21,7 +21,7 @@ import com.demo.chat.controller.LocaleController;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLocation;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
@@ -46,7 +46,9 @@ public class SharedLinkCell extends FrameLayout {
 
     public interface SharedLinkCellDelegate {
         void needOpenWebView(MessageMedia.WebPage webPage);
+
         boolean canPerformActions();
+
         void onLinkPress(final String urlFinal, boolean longPress);
     }
 
@@ -181,7 +183,8 @@ public class SharedLinkCell extends FrameLayout {
         String webPageLink = null;
         boolean hasPhoto = false;
 
-        if (message.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && message.messageOwner.media.webpage instanceof TLRPC.TL_webPage) {
+        if (message.messageOwner.media.isWebPage()
+                && message.messageOwner.media.webpage != null) {
             MessageMedia.WebPage webPage = message.messageOwner.media.webpage;
             if (message.photoThumbs == null && webPage.photo != null) {
                 message.generateThumbs(true);
@@ -213,8 +216,8 @@ public class SharedLinkCell extends FrameLayout {
                 }
                 try {
                     String link = null;
-                    if (entity instanceof TLRPC.TL_messageEntityTextUrl || entity instanceof TLRPC.TL_messageEntityUrl) {
-                        if (entity instanceof TLRPC.TL_messageEntityUrl) {
+                    if (entity.isTextUrl() || entity.isUrl()) {
+                        if (entity.isUrl()) {
                             link = message.messageOwner.message.substring(entity.offset, entity.offset + entity.length);
                         } else {
                             link = entity.url;
@@ -238,7 +241,7 @@ public class SharedLinkCell extends FrameLayout {
                                 description = message.messageOwner.message;
                             }
                         }
-                    } else if (entity instanceof TLRPC.TL_messageEntityEmail) {
+                    } else if (entity.isEmail()) {
                         if (title == null || title.length() == 0) {
                             link = "mailto:" + message.messageOwner.message.substring(entity.offset, entity.offset + entity.length);
                             title = message.messageOwner.message.substring(entity.offset, entity.offset + entity.length);

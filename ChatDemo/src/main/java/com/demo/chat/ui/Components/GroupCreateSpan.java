@@ -23,7 +23,7 @@ import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.User;
-import com.demo.chat.model.UserObject;
+import com.demo.chat.model.action.UserObject;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;
 

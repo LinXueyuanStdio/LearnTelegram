@@ -21,7 +21,7 @@ import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.User;
-import com.demo.chat.model.UserObject;
+import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.theme.Theme;

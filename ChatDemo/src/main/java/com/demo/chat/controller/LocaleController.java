@@ -22,7 +22,7 @@ import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.time.FastDateFormat;
 import com.demo.chat.model.User;
-import com.demo.chat.model.UserObject;
+import com.demo.chat.model.action.UserObject;
 
 import org.xmlpull.v1.XmlPullParser;
 

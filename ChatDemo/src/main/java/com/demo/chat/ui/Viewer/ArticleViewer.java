@@ -112,7 +112,7 @@ import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageEntity;

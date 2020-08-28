@@ -3,7 +3,7 @@ package com.demo.chat.messager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.model.Chat;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.Document;

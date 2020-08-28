@@ -49,9 +49,9 @@ import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.support.SparseLongArray;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
-import com.demo.chat.model.UserObject;
+import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.bot.BotInfo;
 import com.demo.chat.model.small.Document;
@@ -60,11 +60,13 @@ import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.sticker.InputStickerSet;
 import com.demo.chat.model.sticker.MessagesStickerSet;
+import com.demo.chat.model.sticker.Sticker;
 import com.demo.chat.model.sticker.StickerSet;
 import com.demo.chat.model.sticker.StickerSetCovered;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.Components.AvatarDrawable;
 import com.demo.chat.ui.Components.Bulletin;
+import com.demo.chat.ui.Components.StickerSetBulletinLayout;
 import com.demo.chat.ui.Components.TextStyleSpan;
 import com.demo.chat.ui.Components.URLSpanReplacement;
 import com.demo.chat.ui.Components.URLSpanUserMention;
@@ -639,7 +641,7 @@ public class MediaDataController extends BaseController {
         for (int a = 0, N = arrayList.size(); a < N; a++) {
             MessagesStickerSet set = arrayList.get(a);
             for (int b = 0, N2 = set.packs.size(); b < N2; b++) {
-                TL_stickerPack pack = set.packs.get(b);
+                MessagesStickerSet.StickerPack pack = set.packs.get(b);
                 if (!pack.documents.isEmpty() && TextUtils.equals(pack.emoticon, emoji)) {
                     LongSparseArray<Document> stickerByIds = getStickerByIds(MediaDataController.TYPE_EMOJI);
                     return stickerByIds.get(pack.documents.get(0));
@@ -807,43 +809,44 @@ public class MediaDataController extends BaseController {
                 }
             }
             if (gif) {
-                TL_messages_getSavedGifs req = new TL_messages_getSavedGifs();
-                req.hash = calcDocumentsHash(recentGifs);
-                getConnectionsManager().sendRequest(req, (response, error) -> {
-                    ArrayList<Document> arrayList = null;
-                    if (response instanceof TL_messages_savedGifs) {
-                        TL_messages_savedGifs res = (TL_messages_savedGifs) response;
-                        arrayList = res.gifs;
-                    }
-                    processLoadedRecentDocuments(type, arrayList, gif, 0, true);
-                });
-            } else {
-                TLObject request;
-                if (type == TYPE_FAVE) {
-                    TL_messages_getFavedStickers req = new TL_messages_getFavedStickers();
-                    req.hash = calcDocumentsHash(recentStickers[type]);
-                    request = req;
-                } else {
-                    TL_messages_getRecentStickers req = new TL_messages_getRecentStickers();
-                    req.hash = calcDocumentsHash(recentStickers[type]);
-                    req.attached = type == TYPE_MASK;
-                    request = req;
-                }
-                getConnectionsManager().sendRequest(request, (response, error) -> {
-                    ArrayList<Document> arrayList = null;
-                    if (type == TYPE_FAVE) {
-                        if (response instanceof TL_messages_favedStickers) {
-                            TL_messages_favedStickers res = (TL_messages_favedStickers) response;
-                            arrayList = res.stickers;
-                        }
-                    } else {
-                        if (response instanceof TL_messages_recentStickers) {
-                            TL_messages_recentStickers res = (TL_messages_recentStickers) response;
-                            arrayList = res.stickers;
-                        }
-                    }
-                    processLoadedRecentDocuments(type, arrayList, gif, 0, true);
-                });
+                //TODO 发起请求
+//                TL_messages_getSavedGifs req = new TL_messages_getSavedGifs();
+//                req.hash = calcDocumentsHash(recentGifs);
+//                getConnectionsManager().sendRequest(req, (response, error) -> {
+//                    ArrayList<Document> arrayList = null;
+//                    if (response instanceof TL_messages_savedGifs) {
+//                        TL_messages_savedGifs res = (TL_messages_savedGifs) response;
+//                        arrayList = res.gifs;
+//                    }
+//                    processLoadedRecentDocuments(type, arrayList, gif, 0, true);
+//                });
+//            } else {
+//                TLObject request;
+//                if (type == TYPE_FAVE) {
+//                    TL_messages_getFavedStickers req = new TL_messages_getFavedStickers();
+//                    req.hash = calcDocumentsHash(recentStickers[type]);
+//                    request = req;
+//                } else {
+//                    TL_messages_getRecentStickers req = new TL_messages_getRecentStickers();
+//                    req.hash = calcDocumentsHash(recentStickers[type]);
+//                    req.attached = type == TYPE_MASK;
+//                    request = req;
+//                }
+//                getConnectionsManager().sendRequest(request, (response, error) -> {
+//                    ArrayList<Document> arrayList = null;
+//                    if (type == TYPE_FAVE) {
+//                        if (response instanceof TL_messages_favedStickers) {
+//                            TL_messages_favedStickers res = (TL_messages_favedStickers) response;
+//                            arrayList = res.stickers;
+//                        }
+//                    } else {
+//                        if (response instanceof TL_messages_recentStickers) {
+//                            TL_messages_recentStickers res = (TL_messages_recentStickers) response;
+//                            arrayList = res.stickers;
+//                        }
+//                    }
+//                    processLoadedRecentDocuments(type, arrayList, gif, 0, true);
+//                });
             }
         }
     }
@@ -989,7 +992,7 @@ public class MediaDataController extends BaseController {
             stickersById.put(document.id, document);
         }
         for (int a = 0; a < set.packs.size(); a++) {
-            TL_stickerPack stickerPack = set.packs.get(a);
+            MessagesStickerSet.StickerPack stickerPack = set.packs.get(a);
             stickerPack.emoticon = stickerPack.emoticon.replace("\uFE0F", "");
             ArrayList<Document> arrayList = allStickers.get(stickerPack.emoticon);
             if (arrayList == null) {
@@ -1218,11 +1221,12 @@ public class MediaDataController extends BaseController {
             return;
         }
         readingStickerSets.add(id);
-        TL_messages_readFeaturedStickers req = new TL_messages_readFeaturedStickers();
-        req.id.add(id);
-        getConnectionsManager().sendRequest(req, (response, error) -> {
-
-        });
+        //TODO 发起请求
+//        TL_messages_readFeaturedStickers req = new TL_messages_readFeaturedStickers();
+//        req.id.add(id);
+//        getConnectionsManager().sendRequest(req, (response, error) -> {
+//
+//        });
         AndroidUtilities.runOnUIThread(() -> {
             unreadStickerSets.remove(id);
             readingStickerSets.remove(id);
@@ -1411,17 +1415,18 @@ public class MediaDataController extends BaseController {
                 processLoadedDiceStickers(emoji, stickerSet, true, date);
             });
         } else {
-            TL_messages_getStickerSet req = new TL_messages_getStickerSet();
-            TL_inputStickerSetDice inputStickerSetDice = new TL_inputStickerSetDice();
-            inputStickerSetDice.emoticon = emoji;
-            req.stickerset = inputStickerSetDice;
-            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                if (response instanceof MessagesStickerSet) {
-                    processLoadedDiceStickers(emoji, (MessagesStickerSet) response, false, (int) (System.currentTimeMillis() / 1000));
-                } else {
-                    processLoadedDiceStickers(emoji, null, false, (int) (System.currentTimeMillis() / 1000));
-                }
-            }));
+            //TODO 发送请求
+//            TL_messages_getStickerSet req = new TL_messages_getStickerSet();
+//            TL_inputStickerSetDice inputStickerSetDice = new TL_inputStickerSetDice();
+//            inputStickerSetDice.emoticon = emoji;
+//            req.stickerset = inputStickerSetDice;
+//            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                if (response instanceof MessagesStickerSet) {
+//                    processLoadedDiceStickers(emoji, (MessagesStickerSet) response, false, (int) (System.currentTimeMillis() / 1000));
+//                } else {
+//                    processLoadedDiceStickers(emoji, null, false, (int) (System.currentTimeMillis() / 1000));
+//                }
+//            }));
         }
     }
 
@@ -1620,9 +1625,9 @@ public class MediaDataController extends BaseController {
 
     public static long getStickerSetId(Document document) {
         for (int a = 0; a < document.attributes.size(); a++) {
-            DocumentAttribute attribute = document.attributes.get(a);
-            if (attribute instanceof TL_documentAttributeSticker) {
-                if (attribute.stickerset instanceof TL_inputStickerSetID) {
+            Document.DocumentAttribute attribute = document.attributes.get(a);
+            if (attribute.isSticker()) {
+                if (attribute.stickerset!=null) {
                     return attribute.stickerset.id;
                 }
                 break;
@@ -1633,9 +1638,9 @@ public class MediaDataController extends BaseController {
 
     public static InputStickerSet getInputStickerSet(Document document) {
         for (int a = 0; a < document.attributes.size(); a++) {
-            DocumentAttribute attribute = document.attributes.get(a);
-            if (attribute instanceof TL_documentAttributeSticker) {
-                if (attribute.stickerset instanceof TL_inputStickerSetEmpty) {
+            Document.DocumentAttribute attribute = document.attributes.get(a);
+            if (attribute.isSticker()) {
+                if (attribute.stickerset==null) {
                     return null;
                 }
                 return attribute.stickerset;
@@ -1780,7 +1785,7 @@ public class MediaDataController extends BaseController {
     }
 
     public void preloadStickerSetThumb(MessagesStickerSet stickerSet) {
-        if (stickerSet.set.thumb instanceof TL_photoSize) {
+        if (stickerSet.set.thumb instanceof PhotoSize) {
             final ArrayList<Document> documents = stickerSet.documents;
             if (documents != null && !documents.isEmpty()) {
                 loadStickerSetThumbInternal(stickerSet.set.thumb, stickerSet, documents.get(0));
@@ -1789,7 +1794,7 @@ public class MediaDataController extends BaseController {
     }
 
     public void preloadStickerSetThumb(StickerSetCovered stickerSet) {
-        if (stickerSet.set.thumb instanceof TL_photoSize) {
+        if (stickerSet.set.thumb != null) {
             final Document sticker;
             if (stickerSet.cover != null) {
                 sticker = stickerSet.cover;
@@ -1811,7 +1816,7 @@ public class MediaDataController extends BaseController {
     }
 
     /** @param toggle 0 - remove, 1 - archive, 2 - add */
-    public void toggleStickerSet(final Context context, final TLObject stickerSetObject, final int toggle, final BaseFragment baseFragment, final boolean showSettings, boolean showTooltip) {
+    public void toggleStickerSet(final Context context, final Sticker stickerSetObject, final int toggle, final BaseFragment baseFragment, final boolean showSettings, boolean showTooltip) {
         final StickerSet stickerSet;
         final MessagesStickerSet messages_stickerSet;
 
@@ -1885,33 +1890,34 @@ public class MediaDataController extends BaseController {
         }
     }
 
-    private void toggleStickerSetInternal(Context context, int toggle, BaseFragment baseFragment, boolean showSettings, TLObject stickerSetObject, StickerSet stickerSet, int type, boolean showTooltip) {
+    private void toggleStickerSetInternal(Context context, int toggle, BaseFragment baseFragment, boolean showSettings, Sticker stickerSetObject, StickerSet stickerSet, int type, boolean showTooltip) {
         InputStickerSet stickerSetID = new InputStickerSet();
         stickerSetID.access_hash = stickerSet.access_hash;
         stickerSetID.id = stickerSet.id;
 
-        if (toggle != 0) {
-            TL_messages_installStickerSet req = new TL_messages_installStickerSet();
-            req.stickerset = stickerSetID;
-            req.archived = toggle == 1;
-            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                removingStickerSetsUndos.remove(stickerSet.id);
-                if (response instanceof TL_messages_stickerSetInstallResultArchive) {
-                    processStickerSetInstallResultArchive(baseFragment, showSettings, type, (TL_messages_stickerSetInstallResultArchive) response);
-                }
-                loadStickers(type, false, false, true);
-                if (error == null && showTooltip && baseFragment != null) {
-                    Bulletin.make(baseFragment, new StickerSetBulletinLayout(context, stickerSetObject, StickerSetBulletinLayout.TYPE_ADDED), Bulletin.DURATION_SHORT).show();
-                }
-            }));
-        } else {
-            TL_messages_uninstallStickerSet req = new TL_messages_uninstallStickerSet();
-            req.stickerset = stickerSetID;
-            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                removingStickerSetsUndos.remove(stickerSet.id);
-                loadStickers(type, false, true);
-            }));
-        }
+        //TODO 发起请求
+//        if (toggle != 0) {
+//            TL_messages_installStickerSet req = new TL_messages_installStickerSet();
+//            req.stickerset = stickerSetID;
+//            req.archived = toggle == 1;
+//            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                removingStickerSetsUndos.remove(stickerSet.id);
+//                if (response instanceof TL_messages_stickerSetInstallResultArchive) {
+//                    processStickerSetInstallResultArchive(baseFragment, showSettings, type, (TL_messages_stickerSetInstallResultArchive) response);
+//                }
+//                loadStickers(type, false, false, true);
+//                if (error == null && showTooltip && baseFragment != null) {
+//                    Bulletin.make(baseFragment, new StickerSetBulletinLayout(context, stickerSetObject, StickerSetBulletinLayout.TYPE_ADDED), Bulletin.DURATION_SHORT).show();
+//                }
+//            }));
+//        } else {
+//            TL_messages_uninstallStickerSet req = new TL_messages_uninstallStickerSet();
+//            req.stickerset = stickerSetID;
+//            getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                removingStickerSetsUndos.remove(stickerSet.id);
+//                loadStickers(type, false, true);
+//            }));
+//        }
     }
 
     /** @param toggle 0 - uninstall, 1 - archive, 2 - unarchive */

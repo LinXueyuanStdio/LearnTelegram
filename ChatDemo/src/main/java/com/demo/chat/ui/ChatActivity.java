@@ -107,15 +107,16 @@ import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.browser.Browser;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.MessageObject;
 import com.demo.chat.model.User;
-import com.demo.chat.model.UserObject;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.action.MessageObject;
+import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.bot.BotInfo;
 import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.bot.InlineBotSwitchPM;
 import com.demo.chat.model.bot.KeyboardButton;
+import com.demo.chat.model.bot.ReactionCount;
 import com.demo.chat.model.message.MessageAction;
 import com.demo.chat.model.message.MessageFwdHeader;
 import com.demo.chat.model.reply.ReplyMarkup;
@@ -1178,7 +1179,6 @@ public class ChatActivity extends BaseFragment
             if (currentChat.megagroup && !getMessagesController().isChannelAdminsLoaded(currentChat.id)) {
                 getMessagesController().loadChannelAdmins(currentChat.id, true);
             }
-            getMessagesStorage().loadChatInfo(currentChat.id, null, true, false);
             if (!inScheduleMode && ChatObject.isChannel(currentChat) && currentChat.migrated_from_chat_id != 0) {
                 mergeDialogId = -currentChat.migrated_from_chat_id;
                 maxMessageId[1] = currentChat.migrated_from_max_id;
@@ -9473,7 +9473,7 @@ public class ChatActivity extends BaseFragment
                         }
                     } else if (type == 3) {
                         MessageMedia media = selectedObject.messageOwner.media;
-                        if (media instanceof TLRPC.TL_messageMediaWebPage
+                        if (media.isWebPage()
                                 && MessageObject.isNewGifDocument(media.webpage.document)) {
                             items.add(LocaleController.getString("SaveToGIFs", R.string.SaveToGIFs));
                             options.add(11);
@@ -15767,10 +15767,10 @@ public class ChatActivity extends BaseFragment
                             chatActivityEnterView.closeKeyboard();
                         }
                         MessageObject messageObject = cell.getMessageObject();
-                        if (UserObject.isUserSelf(currentUser) && messageObject.messageOwner.fwd_from.saved_from_peer != null) {
+                        if (UserObject.isUserSelf(currentUser) && messageObject.messageOwner.fwd_from.saved_from_chat_id != 0) {
                             Bundle args = new Bundle();
-                            if (messageObject.messageOwner.fwd_from.saved_from_peer.channel_id != 0) {
-                                args.putInt("chat_id", messageObject.messageOwner.fwd_from.saved_from_peer.channel_id);
+                            if (messageObject.messageOwner.fwd_from.saved_from_chat_id != 0) {
+                                args.putInt("chat_id", messageObject.messageOwner.fwd_from.saved_from_chat_id);
                             }
                             args.putInt("message_id", messageObject.messageOwner.fwd_from.saved_from_msg_id);
                             if (getMessagesController().checkCanOpenChat(args, ChatActivity.this)) {
@@ -15873,7 +15873,7 @@ public class ChatActivity extends BaseFragment
                     }
 
                     @Override
-                    public void didPressReaction(ChatMessageCell cell, TLRPC.TL_reactionCount reaction) {
+                    public void didPressReaction(ChatMessageCell cell, ReactionCount reaction) {
                         getSendMessagesHelper().sendReaction(cell.getMessageObject(), reaction.reaction, ChatActivity.this);
                     }
 

@@ -51,7 +51,7 @@ import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.camera.CameraController;
 import com.demo.chat.messager.camera.CameraView;
 import com.demo.chat.model.Chat;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.FileLocation;

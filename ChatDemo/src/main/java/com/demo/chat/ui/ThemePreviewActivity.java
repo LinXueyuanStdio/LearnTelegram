@@ -59,7 +59,7 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageMedia;
@@ -3022,7 +3022,8 @@ public class ThemePreviewActivity extends BaseFragment implements DownloadContro
                 message.media.document = new TLRPC.TL_document();
                 message.media.document.mime_type = "audio/ogg";
                 message.media.document.file_reference = new byte[0];
-                TLRPC.TL_documentAttributeAudio audio = new TLRPC.TL_documentAttributeAudio();
+                Document.DocumentAttribute audio = new Document.DocumentAttribute();
+                audio.setAudio(true);
                 audio.flags = 1028;
                 audio.duration = 3;
                 audio.voice = true;

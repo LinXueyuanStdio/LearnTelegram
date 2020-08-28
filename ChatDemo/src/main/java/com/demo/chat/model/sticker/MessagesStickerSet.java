@@ -11,12 +11,13 @@ import java.util.ArrayList;
  * @description null
  * @usage null
  */
-public class MessagesStickerSet {
+public class MessagesStickerSet extends Sticker{
     public StickerSet set;
     public ArrayList<StickerPack> packs = new ArrayList<>();
     public ArrayList<Document> documents = new ArrayList<>();
 
     public static class StickerPack{
-
+        public String emoticon;
+        public ArrayList<Long> documents = new ArrayList<>();
     }
 }

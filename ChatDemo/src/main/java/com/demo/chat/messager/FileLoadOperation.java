@@ -7,7 +7,7 @@ import com.demo.chat.ApplicationLoader;
 import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.MessagesController;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 
 import java.io.File;
 import java.io.FileInputStream;

@@ -171,16 +171,9 @@ public class Message {
     }
 
     public void readAttachPath(AbstractSerializedData stream, int currentUserId) {
-        boolean hasMedia = media != null && !(media instanceof TL_messageMediaEmpty) && !(media instanceof TL_messageMediaWebPage);
-        boolean fixCaption = !TextUtils.isEmpty(message) &&
-                (media instanceof TL_messageMediaPhoto_old ||
-                        media instanceof TL_messageMediaPhoto_layer68 ||
-                        media instanceof TL_messageMediaPhoto_layer74 ||
-                        media instanceof TL_messageMediaDocument_old ||
-                        media instanceof TL_messageMediaDocument_layer68 ||
-                        media instanceof TL_messageMediaDocument_layer74)
-                && message.startsWith("-1");
-        if ((out || to_id != null && to_id.user_id != 0 && to_id.user_id == from_id && from_id == currentUserId) && (id < 0 || hasMedia || send_state == 3) || legacy) {
+        boolean hasMedia = media != null && !(media instanceof TL_messageMediaEmpty) && !(media.isWebPage());
+        boolean fixCaption = !TextUtils.isEmpty(message) && message.startsWith("-1");
+        if ((out || to_id != 0 && to_id == from_id && from_id == currentUserId) && (id < 0 || hasMedia || send_state == 3) || legacy) {
             if (hasMedia && fixCaption) {
                 if (message.length() > 6 && message.charAt(2) == '_') {
                     params = new HashMap<>();

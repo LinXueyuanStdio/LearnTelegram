@@ -81,5 +81,12 @@ public class Document extends Media {
         public boolean isAnimated() {
             return false;
         }
+        public boolean isFilename() {
+            return false;
+        }
+
+        public void setFilename(boolean b) {
+
+        }
     }
 }

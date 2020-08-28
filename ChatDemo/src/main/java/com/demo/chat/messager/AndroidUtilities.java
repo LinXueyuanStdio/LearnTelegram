@@ -85,7 +85,7 @@ import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MessagesController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.model.Chat;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.WallPaper;

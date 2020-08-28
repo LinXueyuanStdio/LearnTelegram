@@ -11,7 +11,7 @@ import android.view.ViewPropertyAnimator;
 
 import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.FileLog;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.ui.Cells.BotHelpCell;
 import com.demo.chat.ui.Cells.ChatMessageCell;

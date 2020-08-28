@@ -37,9 +37,10 @@ import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.DispatchQueue;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.Utilities;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.small.Document;
+import com.demo.chat.model.small.InputDocument;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
 import com.demo.chat.ui.ActionBar.ActionBarPopupWindow;
@@ -797,8 +798,8 @@ public class PhotoPaintView extends FrameLayout implements EntityView.EntityView
         }
     }
 
-    public ArrayList<TLRPC.InputDocument> getMasks() {
-        ArrayList<TLRPC.InputDocument> result = null;
+    public ArrayList<InputDocument> getMasks() {
+        ArrayList<InputDocument> result = null;
         int count = entitiesView.getChildCount();
         for (int a = 0; a < count; a++) {
             View child = entitiesView.getChildAt(a);
@@ -807,7 +808,7 @@ public class PhotoPaintView extends FrameLayout implements EntityView.EntityView
                 if (result == null) {
                     result = new ArrayList<>();
                 }
-                TLRPC.TL_inputDocument inputDocument = new TLRPC.TL_inputDocument();
+                InputDocument inputDocument = new InputDocument();
                 inputDocument.id = document.id;
                 inputDocument.access_hash = document.access_hash;
                 inputDocument.file_reference = document.file_reference;

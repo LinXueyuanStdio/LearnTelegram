@@ -50,8 +50,9 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.browser.Browser;
 import com.demo.chat.model.Chat;
-import com.demo.chat.model.MessageObject;
-import com.demo.chat.model.UserObject;
+import com.demo.chat.model.action.MessageObject;
+import com.demo.chat.model.User;
+import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
@@ -71,6 +72,7 @@ import com.demo.chat.ui.Cells.ChatActionCell;
 import com.demo.chat.ui.Cells.ContextLinkCell;
 import com.demo.chat.ui.Cells.GraySectionCell;
 import com.demo.chat.ui.Cells.LoadingCell;
+import com.demo.chat.ui.Cells.ManageChatUserCell;
 import com.demo.chat.ui.Cells.SharedAudioCell;
 import com.demo.chat.ui.Cells.SharedDocumentCell;
 import com.demo.chat.ui.Cells.SharedLinkCell;
@@ -4079,7 +4081,7 @@ public class SharedMediaLayout extends FrameLayout implements NotificationCenter
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
             TLObject object = getItem(position);
-            TLRPC.User user;
+            User user;
             if (object instanceof TLRPC.ChannelParticipant) {
                 user = profileActivity.getMessagesController().getUser(((TLRPC.ChannelParticipant) object).user_id);
             } else if (object instanceof TLRPC.ChatParticipant) {

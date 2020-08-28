@@ -37,7 +37,7 @@ import com.demo.chat.R;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Emoji;
 import com.demo.chat.messager.SharedConfig;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBarPopupWindow;
 import com.demo.chat.ui.ActionBar.FloatingActionMode;

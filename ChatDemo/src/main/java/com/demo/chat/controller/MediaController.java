@@ -54,7 +54,7 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.audioinfo.AudioInfo;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.bot.BotInlineResult;
@@ -480,7 +480,7 @@ public class MediaController
     };
 
     private AudioRecord audioRecorder;
-    private TLRPC.TL_document recordingAudio;
+    private Document recordingAudio;
     private int recordingGuid = -1;
     private int recordingCurrentAccount;
     private File recordingAudioFile;
@@ -2997,14 +2997,15 @@ public class MediaController
 
     private void stopRecordingInternal(final int send, boolean notify, int scheduleDate) {
         if (send != 0) {
-            final TLRPC.TL_document audioToSend = recordingAudio;
+            final Document audioToSend = recordingAudio;
             final File recordingAudioFileToSend = recordingAudioFile;
             fileEncodingQueue.postRunnable(() -> {
                 stopRecord();
                 AndroidUtilities.runOnUIThread(() -> {
                     audioToSend.date = ConnectionsManager.getInstance(recordingCurrentAccount).getCurrentTime();
                     audioToSend.size = (int) recordingAudioFileToSend.length();
-                    TLRPC.TL_documentAttributeAudio attributeAudio = new TLRPC.TL_documentAttributeAudio();
+                    Document.DocumentAttribute attributeAudio = new Document.DocumentAttribute();
+                    attributeAudio.setAudio(true);
                     attributeAudio.voice = true;
                     attributeAudio.waveform = getWaveform2(recordSamples, recordSamples.length);
                     if (attributeAudio.waveform != null) {

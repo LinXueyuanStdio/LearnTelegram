@@ -105,6 +105,7 @@ import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Bitmaps;
 import com.demo.chat.messager.BuildVars;
+import com.demo.chat.messager.Emoji;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLoader;
 import com.demo.chat.messager.ImageLocation;
@@ -112,18 +113,20 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Chat;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
-import com.demo.chat.model.UserObject;
+import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
+import com.demo.chat.model.small.InputDocument;
 import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.small.VideoSize;
 import com.demo.chat.model.small.WebDocument;
 import com.demo.chat.model.small.WebFile;
 import com.demo.chat.receiver.ImageReceiver;
@@ -139,6 +142,7 @@ import com.demo.chat.ui.ActionBar.BottomSheet;
 import com.demo.chat.ui.ActionBar.SimpleTextView;
 import com.demo.chat.ui.Adapters.MentionsAdapter;
 import com.demo.chat.ui.Cells.CheckBoxCell;
+import com.demo.chat.ui.Cells.PhotoPickerPhotoCell;
 import com.demo.chat.ui.ChatActivity;
 import com.demo.chat.ui.Components.AnimatedFileDrawable;
 import com.demo.chat.ui.Components.AnimationProperties;
@@ -152,6 +156,7 @@ import com.demo.chat.ui.Components.FilterShaders;
 import com.demo.chat.ui.Components.GestureDetector2;
 import com.demo.chat.ui.Components.GroupedPhotosListView;
 import com.demo.chat.ui.Components.LayoutHelper;
+import com.demo.chat.ui.Components.OtherDocumentPlaceholderDrawable;
 import com.demo.chat.ui.Components.PaintingOverlay;
 import com.demo.chat.ui.Components.PhotoCropView;
 import com.demo.chat.ui.Components.PhotoFilterView;
@@ -167,12 +172,14 @@ import com.demo.chat.ui.Components.StickersAlert;
 import com.demo.chat.ui.Components.TextViewSwitcher;
 import com.demo.chat.ui.Components.Tooltip;
 import com.demo.chat.ui.Components.URLSpanNoUnderline;
+import com.demo.chat.ui.Components.URLSpanUserMentionPhotoViewer;
 import com.demo.chat.ui.Components.VideoEditTextureView;
 import com.demo.chat.ui.Components.VideoForwardDrawable;
 import com.demo.chat.ui.Components.VideoPlayer;
 import com.demo.chat.ui.Components.VideoPlayerSeekBar;
 import com.demo.chat.ui.Components.VideoSeekPreviewImage;
 import com.demo.chat.ui.Components.VideoTimelinePlayView;
+import com.demo.chat.ui.DialogsActivity;
 import com.demo.chat.ui.LaunchActivity;
 import com.demo.chat.ui.MediaActivity;
 import com.google.android.exoplayer2.C;
@@ -2671,7 +2678,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
             if (currentMessageObject != null) {
                 isVideo = currentMessageObject.isVideo();
-                        /*if (currentMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage) {
+                        /*if (currentMessageObject.messageOwner.media.isWebPage()) {
                             AndroidUtilities.openUrl(parentActivity, currentMessageObject.messageOwner.media.webpage.url);
                             return;
                         }*/
@@ -3020,7 +3027,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
                     File f = null;
                     if (currentMessageObject != null) {
-                        if (currentMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && currentMessageObject.messageOwner.media.webpage != null && currentMessageObject.messageOwner.media.webpage.document == null) {
+                        if (currentMessageObject.messageOwner.media.isWebPage() && currentMessageObject.messageOwner.media.webpage != null && currentMessageObject.messageOwner.media.webpage.document == null) {
                             TLObject fileLocation = getFileLocation(currentIndex, null);
                             f = FileLoader.getPathToAttach(fileLocation, true);
                         } else {
@@ -4726,7 +4733,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
         if (Build.VERSION.SDK_INT >= 21) {
             pipAnimationInProgress = true;
-            org.telegram.ui.Components.Rect rect = PipVideoView.getPipRect(aspectRatioFrameLayout.getAspectRatio());
+            com.demo.chat.ui.Components.Rect rect = PipVideoView.getPipRect(aspectRatioFrameLayout.getAspectRatio());
 
             float scale = rect.width / textureImageView.getLayoutParams().width;
             rect.y += AndroidUtilities.statusBarHeight;
@@ -5818,7 +5825,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
     private void applyCurrentEditMode() {
         Bitmap bitmap = null;
         Bitmap[] paintThumbBitmap = new Bitmap[1];
-        ArrayList<TLRPC.InputDocument> stickers = null;
+        ArrayList<InputDocument> stickers = null;
         MediaController.SavedFilterState savedFilterState = null;
         ArrayList<VideoEditedInfo.MediaEntity> entities = null;
         MediaController.MediaEditState entry = (MediaController.MediaEditState) imagesArrLocals.get(currentIndex);
@@ -7006,7 +7013,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         size[0] = -1;
                     }
                 }
-            } else if (message.messageOwner.media instanceof TLRPC.TL_messageMediaPhoto && message.messageOwner.media.photo != null || message.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && message.messageOwner.media.webpage != null) {
+            } else if (message.messageOwner.media instanceof TLRPC.TL_messageMediaPhoto && message.messageOwner.media.photo != null || message.messageOwner.media.isWebPage() && message.messageOwner.media.webpage != null) {
                 if (message.isGif()) {
                     return ImageLocation.getForDocument(message.getDocument());
                 } else {
@@ -7024,7 +7031,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         size[0] = -1;
                     }
                 }
-            } else if (message.messageOwner.media instanceof TLRPC.TL_messageMediaInvoice) {
+            } else if (message.messageOwner.media.isInvoice()) {
                 return ImageLocation.getForWebFile(WebFile.createWithWebDocument(((TLRPC.TL_messageMediaInvoice) message.messageOwner.media).photo));
             } else if (message.getDocument() != null) {
                 Document document = message.getDocument();
@@ -7079,7 +7086,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         size[0] = -1;
                     }
                 }
-            } else if (message.messageOwner.media instanceof TLRPC.TL_messageMediaPhoto && message.messageOwner.media.photo != null || message.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && message.messageOwner.media.webpage != null) {
+            } else if (message.messageOwner.media instanceof TLRPC.TL_messageMediaPhoto && message.messageOwner.media.photo != null || message.messageOwner.media.isWebPage() && message.messageOwner.media.webpage != null) {
                 FileLocation location;
                 PhotoSize sizeFull = FileLoader.getClosestPhotoSizeWithSize(message.photoThumbs, AndroidUtilities.getPhotoSize());
                 if (sizeFull != null) {
@@ -7093,8 +7100,8 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 } else if (size != null) {
                     size[0] = -1;
                 }
-            } else if (message.messageOwner.media instanceof TLRPC.TL_messageMediaInvoice) {
-                return ((TLRPC.TL_messageMediaInvoice) message.messageOwner.media).photo;
+            } else if (message.messageOwner.media.isInvoice()) {
+                return (message.messageOwner.media).photo;
             } else if (message.getDocument() != null && MessageObject.isDocumentHasThumb(message.getDocument())) {
                 PhotoSize thumb = FileLoader.getClosestPhotoSizeWithSize(message.getDocument().thumbs, 90);
                 if (size != null) {
@@ -7276,7 +7283,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
         }
 
         if (messageObject != null && messages == null) {
-            if (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && messageObject.messageOwner.media.webpage != null) {
+            if (messageObject.messageOwner.media.isWebPage() && messageObject.messageOwner.media.webpage != null) {
                 TLRPC.WebPage webPage = messageObject.messageOwner.media.webpage;
                 String siteName = webPage.site_name;
                 if (siteName != null) {
@@ -7325,7 +7332,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     if (messageObject.canForwardMessage()) {
                         setItemVisible(sendItem, true, false);
                     }
-                } else if (!messageObject.scheduled && !(messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaInvoice) && !(messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage) && (messageObject.messageOwner.action == null || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionEmpty)) {
+                } else if (!messageObject.scheduled && !(messageObject.messageOwner.media.isInvoice()) && !(messageObject.messageOwner.media.isWebPage()) && (messageObject.messageOwner.action == null || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionEmpty)) {
                     needSearchImageInArr = true;
                     imagesByIds[0].put(messageObject.getId(), messageObject);
                     menuItem.showSubItem(gallery_menu_showinchat);
@@ -7653,7 +7660,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         }
                         actionBar.setTitle(LocaleController.formatString("Of", R.string.Of, (totalImagesCount + totalImagesCountMerge - imagesArr.size()) + switchingToIndex + 1, totalImagesCount + totalImagesCountMerge));
                     }
-                } else if (slideshowMessageId == 0 && newMessageObject.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage) {
+                } else if (slideshowMessageId == 0 && newMessageObject.messageOwner.media.isWebPage()) {
                     if (newMessageObject.canPreviewDocument()) {
                         actionBar.setTitle(LocaleController.getString("AttachDocument", R.string.AttachDocument));
                     } else if (newMessageObject.isVideo()) {
@@ -8390,7 +8397,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 if (!TextUtils.isEmpty(messageObject.messageOwner.attachPath)) {
                     f1 = new File(messageObject.messageOwner.attachPath);
                 }
-                if (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaWebPage && messageObject.messageOwner.media.webpage != null && messageObject.messageOwner.media.webpage.document == null) {
+                if (messageObject.messageOwner.media.isWebPage() && messageObject.messageOwner.media.webpage != null && messageObject.messageOwner.media.webpage.document == null) {
                     TLObject fileLocation = getFileLocation(index, null);
                     f2 = FileLoader.getPathToAttach(fileLocation, true);
                 } else {
@@ -8535,7 +8542,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                 WebFile webDocument = null;
                 ImageLocation videoThumb = null;
                 PhotoSize photo = null;
-                TLObject photoObject = null;
+                Media photoObject = null;
                 int imageSize = 0;
                 String filter = null;
                 boolean isVideo = false;
@@ -8567,7 +8574,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                         if (botInlineResult.document != null) {
                             photo = FileLoader.getClosestPhotoSizeWithSize(botInlineResult.document.thumbs, 90);
                             photoObject = botInlineResult.document;
-                        } else if (botInlineResult.thumb instanceof TLRPC.TL_webDocument) {
+                        } else if (botInlineResult.thumb instanceof WebDocument) {
                             webDocument = WebFile.createWithWebDocument(botInlineResult.thumb);
                         }
                     } else if (botInlineResult.type.equals("gif") && botInlineResult.document != null) {
@@ -8695,7 +8702,7 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
                     size[0] = -1;
                 }
                 PhotoSize thumbLocation;
-                TLObject photoObject;
+                Media photoObject;
                 if (messageObject != null) {
                     thumbLocation = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, 100);
                     photoObject = messageObject.photoThumbsObject;
@@ -8813,10 +8820,6 @@ public class PhotoViewer implements NotificationCenter.NotificationCenterDelegat
 
     public boolean openPhoto(final ArrayList<MessageObject> messages, final int index, long dialogId, long mergeDialogId, final PhotoViewerProvider provider) {
         return openPhoto(messages.get(index), null, null, messages, null, null, index, provider, null, dialogId, mergeDialogId, true);
-    }
-
-    public boolean openPhoto(final ArrayList<SecureDocument> documents, final int index, final PhotoViewerProvider provider) {
-        return openPhoto(null, null, null, null, documents, null, index, provider, null, 0, 0, true);
     }
 
     public boolean openPhotoForSelect(final ArrayList<Object> photos, final int index, int type, boolean documentsPicker, final PhotoViewerProvider provider, ChatActivity chatActivity) {

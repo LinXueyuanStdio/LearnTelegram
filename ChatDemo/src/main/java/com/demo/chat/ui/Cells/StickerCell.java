@@ -16,7 +16,7 @@ import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.ImageLocation;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.theme.Theme;

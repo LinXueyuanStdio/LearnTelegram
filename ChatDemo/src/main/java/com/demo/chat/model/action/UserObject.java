@@ -1,10 +1,11 @@
-package com.demo.chat.model;
+package com.demo.chat.model.action;
 
 import android.text.TextUtils;
 
 import com.demo.chat.PhoneFormat.PhoneFormat;
 import com.demo.chat.R;
 import com.demo.chat.controller.LocaleController;
+import com.demo.chat.model.User;
 
 /**
  * @author 林学渊

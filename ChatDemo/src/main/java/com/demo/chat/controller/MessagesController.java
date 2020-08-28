@@ -20,7 +20,7 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SerializedData;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Chat;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.Document;
@@ -712,7 +712,7 @@ public class MessagesController extends BaseController implements NotificationCe
                                 message.to_id.channel_id = -lower_part;
                             } else {
                                 message.to_id = new TLRPC.TL_peerChat();
-                                message.to_id.chat_id = -lower_part;
+                                message.to_id = -lower_part;
                             }
                         }
                         final MessageObject obj = new MessageObject(currentAccount, message, createdDialogIds.contains(message.dialog_id));

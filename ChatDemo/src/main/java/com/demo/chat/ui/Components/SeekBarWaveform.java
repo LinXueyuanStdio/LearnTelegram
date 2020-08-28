@@ -7,7 +7,7 @@ import android.view.MotionEvent;
 import android.view.View;
 
 import com.demo.chat.messager.AndroidUtilities;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 
 /**
  * @author 林学渊

@@ -61,4 +61,10 @@ public class MessageEntity {
     public boolean isTextUrl() {
         return false;
     }
+    public boolean isUrl() {
+        return false;
+    }
+    public boolean isEmail() {
+        return false;
+    }
 }

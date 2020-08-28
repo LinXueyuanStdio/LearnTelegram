@@ -33,7 +33,7 @@ import com.demo.chat.messager.ImageLoader;
 import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.small.Document;
@@ -431,13 +431,12 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
             Message message = new Message();
             message.out = true;
             message.id = -Utilities.random.nextInt();
-            message.to_id = new TLRPC.TL_peerUser();
-            message.to_id.user_id = message.from_id = UserConfig.getInstance(currentAccount).getClientUserId();
+            message.to_id = message.from_id = UserConfig.getInstance(currentAccount).getClientUserId();
             message.date = (int) (System.currentTimeMillis() / 1000);
             message.message = "";
-            message.media = new TLRPC.TL_messageMediaDocument();
+            message.media = new MessageMedia().setDocument(true);
             message.media.flags |= 3;
-            message.media.document = new TLRPC.TL_document();
+            message.media.document = new Document();
             message.media.document.file_reference = new byte[0];
             message.flags |= Message.MESSAGE_FLAG_HAS_MEDIA | Message.MESSAGE_FLAG_HAS_FROM_ID;
 
@@ -453,7 +452,8 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
                 message.media.document.size = 0;
                 message.media.document.dc_id = 0;
 
-                TLRPC.TL_documentAttributeAudio attributeAudio = new TLRPC.TL_documentAttributeAudio();
+                Document.DocumentAttribute attributeAudio = new Document.DocumentAttribute();
+                attributeAudio.setAudio(true);
                 attributeAudio.duration = MessageObject.getInlineResultDuration(inlineResult);
                 attributeAudio.title = inlineResult.title != null ? inlineResult.title : "";
                 attributeAudio.performer = inlineResult.description != null ? inlineResult.description : "";
@@ -463,7 +463,8 @@ public class ContextLinkCell extends FrameLayout implements DownloadController.F
                 }
                 message.media.document.attributes.add(attributeAudio);
 
-                TLRPC.TL_documentAttributeFilename fileName = new TLRPC.TL_documentAttributeFilename();
+                Document.DocumentAttribute fileName = new Document.DocumentAttribute();
+                fileName.setFilename(true);
                 fileName.file_name = Utilities.MD5(inlineResult.content.url) + "." + ImageLoader.getHttpUrlExtension(inlineResult.content.url, documentAttachType == DOCUMENT_ATTACH_TYPE_MUSIC ? "mp3" : "ogg");
                 message.media.document.attributes.add(fileName);
 

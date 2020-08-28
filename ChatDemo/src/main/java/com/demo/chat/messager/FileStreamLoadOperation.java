@@ -61,13 +61,19 @@ public class FileStreamLoadOperation extends BaseDataSource implements FileLoadO
         document.dc_id = Utilities.parseInt(uri.getQueryParameter("dc"));
         document.mime_type = uri.getQueryParameter("mime");
         document.file_reference = Utilities.hexToBytes(uri.getQueryParameter("reference"));
-        TLRPC.TL_documentAttributeFilename filename = new TLRPC.TL_documentAttributeFilename();
+
+        Document.DocumentAttribute filename = new Document.DocumentAttribute();
+        filename.setFilename(true);
         filename.file_name = uri.getQueryParameter("name");
         document.attributes.add(filename);
         if (document.mime_type.startsWith("video")) {
-            document.attributes.add(new TLRPC.TL_documentAttributeVideo());
+            Document.DocumentAttribute video = new Document.DocumentAttribute();
+            video.setVideo(true);
+            document.attributes.add(video);
         } else if (document.mime_type.startsWith("audio")) {
-            document.attributes.add(new TLRPC.TL_documentAttributeAudio());
+            Document.DocumentAttribute audio = new Document.DocumentAttribute();
+            audio.setAudio(true);
+            document.attributes.add(audio);
         }
         loadOperation = FileLoader.getInstance(currentAccount).loadStreamFile(this, document, parentObject, currentOffset = (int) dataSpec.position, false);
         bytesRemaining = dataSpec.length == C.LENGTH_UNSET ? document.size - dataSpec.position : dataSpec.length;

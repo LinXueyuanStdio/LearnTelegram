@@ -17,12 +17,13 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
+import com.demo.chat.model.small.WebDocument;
 import com.demo.chat.model.small.WebFile;
 
 import java.io.File;
@@ -901,7 +902,7 @@ public class FileLoader extends BaseController {
                         return getAttachFileName(sizeFull);
                     }
                 }
-            } else if (message.media instanceof TLRPC.TL_messageMediaWebPage) {
+            } else if (message.media.isWebPage()) {
                 if (message.media.webpage.document != null) {
                     return getAttachFileName(message.media.webpage.document);
                 } else if (message.media.webpage.photo != null) {
@@ -912,11 +913,11 @@ public class FileLoader extends BaseController {
                             return getAttachFileName(sizeFull);
                         }
                     }
-                } else if (message.media instanceof TLRPC.TL_messageMediaInvoice) {
-                    return getAttachFileName(((TLRPC.TL_messageMediaInvoice) message.media).photo);
+                } else if (message.media.isInvoice()) {
+                    return getAttachFileName((message.media).photo);
                 }
-            } else if (message.media instanceof TLRPC.TL_messageMediaInvoice) {
-                TLRPC.WebDocument document = ((TLRPC.TL_messageMediaInvoice) message.media).photo;
+            } else if (message.media.isInvoice()) {
+                WebDocument document = (message.media).photo;
                 if (document != null) {
                     return Utilities.MD5(document.url) + "." + ImageLoader.getHttpUrlExtension(document.url, getMimeTypePart(document.mime_type));
                 }
@@ -950,7 +951,7 @@ public class FileLoader extends BaseController {
                         return getPathToAttach(sizeFull, message.media.ttl_seconds != 0);
                     }
                 }
-            } else if (message.media instanceof TLRPC.TL_messageMediaWebPage) {
+            } else if (message.media.isWebPage()) {
                 if (message.media.webpage.document != null) {
                     return getPathToAttach(message.media.webpage.document);
                 } else if (message.media.webpage.photo != null) {
@@ -962,8 +963,8 @@ public class FileLoader extends BaseController {
                         }
                     }
                 }
-            } else if (message.media instanceof TLRPC.TL_messageMediaInvoice) {
-                return getPathToAttach(((TLRPC.TL_messageMediaInvoice) message.media).photo, true);
+            } else if (message.media.isInvoice()) {
+                return getPathToAttach((message.media).photo, true);
             }
         }
         return new File("");

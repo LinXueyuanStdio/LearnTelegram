@@ -17,7 +17,7 @@ import android.widget.TextView;
 import com.demo.chat.R;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.messager.AndroidUtilities;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
 import com.demo.chat.receiver.ImageReceiver;
 import com.demo.chat.theme.Theme;

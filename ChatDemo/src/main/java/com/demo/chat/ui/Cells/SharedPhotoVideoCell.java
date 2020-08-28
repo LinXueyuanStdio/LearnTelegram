@@ -26,7 +26,7 @@ import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.ImageLocation;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.theme.Theme;
@@ -185,7 +185,9 @@ public class SharedPhotoVideoCell extends FrameLayout {
                 } else {
                     imageView.setImageResource(R.drawable.photo_placeholder_in);
                 }
-            } else if (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaPhoto && messageObject.messageOwner.media.photo != null && !messageObject.photoThumbs.isEmpty()) {
+            } else if (messageObject.messageOwner.media.isPhoto()
+                    && messageObject.messageOwner.media.photo != null
+                    && !messageObject.photoThumbs.isEmpty()) {
                 videoInfoContainer.setVisibility(INVISIBLE);
                 PhotoSize currentPhotoObject = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, 320);
                 PhotoSize currentPhotoObjectThumb = FileLoader.getClosestPhotoSizeWithSize(messageObject.photoThumbs, 50);

@@ -49,9 +49,9 @@ import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.support.SparseLongArray;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
-import com.demo.chat.model.UserObject;
+import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.ui.LaunchActivity;
@@ -1445,8 +1445,6 @@ public class NotificationsController extends BaseController {
                                     } else {
                                         return LocaleController.formatString("NotificationActionPinnedPhotoChannel", R.string.NotificationActionPinnedPhotoChannel, chat.title);
                                     }
-                                } else if (object.messageOwner.media instanceof TLRPC.TL_messageMediaGame) {
-                                    return LocaleController.formatString("NotificationActionPinnedGameChannel", R.string.NotificationActionPinnedGameChannel, chat.title);
                                 } else if (object.messageText != null && object.messageText.length() > 0) {
                                     CharSequence message = object.messageText;
                                     if (message.length() > 20) {
@@ -1869,8 +1867,6 @@ public class NotificationsController extends BaseController {
                                         } else {
                                             msg = LocaleController.formatString("NotificationActionPinnedPhoto", R.string.NotificationActionPinnedPhoto, name, chat.title);
                                         }
-                                    } else if (object.messageOwner.media instanceof TLRPC.TL_messageMediaGame) {
-                                        msg = LocaleController.formatString("NotificationActionPinnedGame", R.string.NotificationActionPinnedGame, name, chat.title);
                                     } else if (object.messageText != null && object.messageText.length() > 0) {
                                         CharSequence message = object.messageText;
                                         if (message.length() > 20) {
@@ -1941,8 +1937,6 @@ public class NotificationsController extends BaseController {
                                         } else {
                                             msg = LocaleController.formatString("NotificationActionPinnedPhotoChannel", R.string.NotificationActionPinnedPhotoChannel, chat.title);
                                         }
-                                    } else if (object.messageOwner.media instanceof TLRPC.TL_messageMediaGame) {
-                                        msg = LocaleController.formatString("NotificationActionPinnedGameChannel", R.string.NotificationActionPinnedGameChannel, chat.title);
                                     } else if (object.messageText != null && object.messageText.length() > 0) {
                                         CharSequence message = object.messageText;
                                         if (message.length() > 20) {
@@ -2065,8 +2059,6 @@ public class NotificationsController extends BaseController {
                             } else {
                                 msg = LocaleController.formatString("NotificationMessageGroupPoll2", R.string.NotificationMessageGroupPoll2, name, chat.title, mediaPoll.poll.question);
                             }
-                        } else if (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGame) {
-                            msg = LocaleController.formatString("NotificationMessageGroupGame", R.string.NotificationMessageGroupGame, name, chat.title, messageObject.messageOwner.media.game.title);
                         } else if (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGeo || messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaVenue) {
                             msg = LocaleController.formatString("NotificationMessageGroupMap", R.string.NotificationMessageGroupMap, name, chat.title);
                         } else if (messageObject.messageOwner.media instanceof TLRPC.TL_messageMediaGeoLive) {
@@ -2133,7 +2125,7 @@ public class NotificationsController extends BaseController {
     }
 
     private boolean isPersonalMessage(MessageObject messageObject) {
-        return messageObject.messageOwner.to_id != null && messageObject.messageOwner.to_id.chat_id == 0 && messageObject.messageOwner.to_id == 0
+        return messageObject.messageOwner.to_id != 0 && messageObject.messageOwner.to_id == 0 && messageObject.messageOwner.to_id == 0
                 && (messageObject.messageOwner.action == null || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionEmpty);
     }
 
@@ -2498,7 +2490,7 @@ public class NotificationsController extends BaseController {
                 override_dialog_id = lastMessageObject.messageOwner.from_id;
             }
             int mid = lastMessageObject.getId();
-            int chat_id = lastMessageObject.messageOwner.to_id.chat_id != 0 ? lastMessageObject.messageOwner.to_id.chat_id : lastMessageObject.messageOwner.to_id;
+            int chat_id = lastMessageObject.messageOwner.to_id != 0 ? lastMessageObject.messageOwner.to_id : lastMessageObject.messageOwner.to_id;
             int user_id = lastMessageObject.messageOwner.to_id.user_id;
             if (user_id == 0) {
                 user_id = lastMessageObject.messageOwner.from_id;

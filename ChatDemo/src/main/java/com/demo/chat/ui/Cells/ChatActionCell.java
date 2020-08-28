@@ -23,7 +23,7 @@ import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.browser.Browser;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.bot.KeyboardButton;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.MessageMedia;

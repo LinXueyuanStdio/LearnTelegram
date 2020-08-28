@@ -11,7 +11,7 @@ import java.util.ArrayList;
  * @description null
  * @usage null
  */
-public class StickerSetCovered {
+public class StickerSetCovered extends Sticker{
     public StickerSet set;
     public ArrayList<Document> covers = new ArrayList<>();
     public Document cover;

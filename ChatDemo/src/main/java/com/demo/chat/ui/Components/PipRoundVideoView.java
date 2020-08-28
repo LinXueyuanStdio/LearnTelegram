@@ -36,7 +36,7 @@ import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.Bitmaps;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
 import com.google.android.exoplayer2.ui.AspectRatioFrameLayout;

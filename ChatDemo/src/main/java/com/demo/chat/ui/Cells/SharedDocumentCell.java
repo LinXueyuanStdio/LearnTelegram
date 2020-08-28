@@ -22,7 +22,7 @@ import com.demo.chat.controller.UserConfig;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.ImageLoader;
 import com.demo.chat.messager.ImageLocation;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.theme.Theme;
@@ -335,7 +335,7 @@ public class SharedDocumentCell extends FrameLayout implements DownloadControlle
             if (thumb == bigthumb) {
                 bigthumb = null;
             }
-            if (thumb instanceof TLRPC.TL_photoSizeEmpty || thumb == null) {
+            if (thumb == null) {
                 thumbImageView.setVisibility(INVISIBLE);
                 thumbImageView.setImageBitmap(null);
                 extTextView.setAlpha(1.0f);

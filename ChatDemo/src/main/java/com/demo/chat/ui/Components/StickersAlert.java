@@ -30,8 +30,6 @@ import android.widget.Toast;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
-import com.demo.chat.alerts.AlertsCreator;
-import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaDataController;
@@ -43,7 +41,6 @@ import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.Media;
-import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.sticker.InputStickerSet;
 import com.demo.chat.model.sticker.MessagesStickerSet;
@@ -188,64 +185,65 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
     public StickersAlert(Context context, Object parentObject, Media object) {
         super(context, false);
         parentActivity = (Activity) context;
-        final TLRPC.TL_messages_getAttachedStickers req = new TLRPC.TL_messages_getAttachedStickers();
-        if (object instanceof MessageMedia.Photo) {
-            MessageMedia.Photo photo = (MessageMedia.Photo) object;
-            TLRPC.TL_inputStickeredMediaPhoto inputStickeredMediaPhoto = new TLRPC.TL_inputStickeredMediaPhoto();
-            inputStickeredMediaPhoto.id = new TLRPC.TL_inputPhoto();
-            inputStickeredMediaPhoto.id.id = photo.id;
-            inputStickeredMediaPhoto.id.access_hash = photo.access_hash;
-            inputStickeredMediaPhoto.id.file_reference = photo.file_reference;
-            if (inputStickeredMediaPhoto.id.file_reference == null) {
-                inputStickeredMediaPhoto.id.file_reference = new byte[0];
-            }
-            req.media = inputStickeredMediaPhoto;
-        } else if (object instanceof Document) {
-            Document document = (Document) object;
-            TLRPC.TL_inputStickeredMediaDocument inputStickeredMediaDocument = new TLRPC.TL_inputStickeredMediaDocument();
-            inputStickeredMediaDocument.id = new TLRPC.TL_inputDocument();
-            inputStickeredMediaDocument.id.id = document.id;
-            inputStickeredMediaDocument.id.access_hash = document.access_hash;
-            inputStickeredMediaDocument.id.file_reference = document.file_reference;
-            if (inputStickeredMediaDocument.id.file_reference == null) {
-                inputStickeredMediaDocument.id.file_reference = new byte[0];
-            }
-            req.media = inputStickeredMediaDocument;
-        }
-        RequestDelegate requestDelegate = (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-            reqId = 0;
-            if (error == null) {
-                TLRPC.Vector vector = (TLRPC.Vector) response;
-                if (vector.objects.isEmpty()) {
-                    dismiss();
-                } else if (vector.objects.size() == 1) {
-                    StickerSetCovered set = (StickerSetCovered) vector.objects.get(0);
-                    inputStickerSet = new TLRPC.TL_inputStickerSetID();
-                    inputStickerSet.id = set.set.id;
-                    inputStickerSet.access_hash = set.set.access_hash;
-                    loadStickerSet();
-                } else {
-                    stickerSetCovereds = new ArrayList<>();
-                    for (int a = 0; a < vector.objects.size(); a++) {
-                        stickerSetCovereds.add((StickerSetCovered) vector.objects.get(a));
-                    }
-                    gridView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT, 0, 0, 0, 48));
-                    titleTextView.setVisibility(View.GONE);
-                    shadow[0].setVisibility(View.GONE);
-                    adapter.notifyDataSetChanged();
-                }
-            } else {
-                AlertsCreator.processError(currentAccount, error, parentFragment, req);
-                dismiss();
-            }
-        });
-        reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
-            if (error != null && FileRefController.isFileRefError(error.text) && parentObject != null) {
-                FileRefController.getInstance(currentAccount).requestReference(parentObject, req, requestDelegate);
-                return;
-            }
-            requestDelegate.run(response, error);
-        });
+        //TODO 发起请求
+//        final TLRPC.TL_messages_getAttachedStickers req = new TLRPC.TL_messages_getAttachedStickers();
+//        if (object instanceof MessageMedia.Photo) {
+//            MessageMedia.Photo photo = (MessageMedia.Photo) object;
+//            TLRPC.TL_inputStickeredMediaPhoto inputStickeredMediaPhoto = new TLRPC.TL_inputStickeredMediaPhoto();
+//            inputStickeredMediaPhoto.id = new TLRPC.TL_inputPhoto();
+//            inputStickeredMediaPhoto.id.id = photo.id;
+//            inputStickeredMediaPhoto.id.access_hash = photo.access_hash;
+//            inputStickeredMediaPhoto.id.file_reference = photo.file_reference;
+//            if (inputStickeredMediaPhoto.id.file_reference == null) {
+//                inputStickeredMediaPhoto.id.file_reference = new byte[0];
+//            }
+//            req.media = inputStickeredMediaPhoto;
+//        } else if (object instanceof Document) {
+//            Document document = (Document) object;
+//            TLRPC.TL_inputStickeredMediaDocument inputStickeredMediaDocument = new TLRPC.TL_inputStickeredMediaDocument();
+//            inputStickeredMediaDocument.id = new TLRPC.TL_inputDocument();
+//            inputStickeredMediaDocument.id.id = document.id;
+//            inputStickeredMediaDocument.id.access_hash = document.access_hash;
+//            inputStickeredMediaDocument.id.file_reference = document.file_reference;
+//            if (inputStickeredMediaDocument.id.file_reference == null) {
+//                inputStickeredMediaDocument.id.file_reference = new byte[0];
+//            }
+//            req.media = inputStickeredMediaDocument;
+//        }
+//        RequestDelegate requestDelegate = (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//            reqId = 0;
+//            if (error == null) {
+//                TLRPC.Vector vector = (TLRPC.Vector) response;
+//                if (vector.objects.isEmpty()) {
+//                    dismiss();
+//                } else if (vector.objects.size() == 1) {
+//                    StickerSetCovered set = (StickerSetCovered) vector.objects.get(0);
+//                    inputStickerSet = new TLRPC.TL_inputStickerSetID();
+//                    inputStickerSet.id = set.set.id;
+//                    inputStickerSet.access_hash = set.set.access_hash;
+//                    loadStickerSet();
+//                } else {
+//                    stickerSetCovereds = new ArrayList<>();
+//                    for (int a = 0; a < vector.objects.size(); a++) {
+//                        stickerSetCovereds.add((StickerSetCovered) vector.objects.get(a));
+//                    }
+//                    gridView.setLayoutParams(LayoutHelper.createFrame(LayoutHelper.MATCH_PARENT, LayoutHelper.MATCH_PARENT, Gravity.TOP | Gravity.LEFT, 0, 0, 0, 48));
+//                    titleTextView.setVisibility(View.GONE);
+//                    shadow[0].setVisibility(View.GONE);
+//                    adapter.notifyDataSetChanged();
+//                }
+//            } else {
+//                AlertsCreator.processError(currentAccount, error, parentFragment, req);
+//                dismiss();
+//            }
+//        });
+//        reqId = ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> {
+//            if (error != null && FileRefController.isFileRefError(error.text) && parentObject != null) {
+//                FileRefController.getInstance(currentAccount).requestReference(parentObject, req, requestDelegate);
+//                return;
+//            }
+//            requestDelegate.run(response, error);
+//        });
         init(context);
     }
 
@@ -277,23 +275,24 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                 stickerSet = mediaDataController.getStickerSetById(inputStickerSet.id);
             }
             if (stickerSet == null) {
-                TLRPC.TL_messages_getStickerSet req = new TLRPC.TL_messages_getStickerSet();
-                req.stickerset = inputStickerSet;
-                ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-                    reqId = 0;
-                    if (error == null) {
-                        optionsButton.setVisibility(View.VISIBLE);
-                        stickerSet = (MessagesStickerSet) response;
-                        showEmoji = !stickerSet.set.masks;
-                        mediaDataController.preloadStickerSetThumb(stickerSet);
-                        updateSendButton();
-                        updateFields();
-                        adapter.notifyDataSetChanged();
-                    } else {
-                        Toast.makeText(getContext(), LocaleController.getString("AddStickersNotFound", R.string.AddStickersNotFound), Toast.LENGTH_SHORT).show();
-                        dismiss();
-                    }
-                }));
+                //TODO 发起请求
+//                TLRPC.TL_messages_getStickerSet req = new TLRPC.TL_messages_getStickerSet();
+//                req.stickerset = inputStickerSet;
+//                ConnectionsManager.getInstance(currentAccount).sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+//                    reqId = 0;
+//                    if (error == null) {
+//                        optionsButton.setVisibility(View.VISIBLE);
+//                        stickerSet = (MessagesStickerSet) response;
+//                        showEmoji = !stickerSet.set.masks;
+//                        mediaDataController.preloadStickerSetThumb(stickerSet);
+//                        updateSendButton();
+//                        updateFields();
+//                        adapter.notifyDataSetChanged();
+//                    } else {
+//                        Toast.makeText(getContext(), LocaleController.getString("AddStickersNotFound", R.string.AddStickersNotFound), Toast.LENGTH_SHORT).show();
+//                        dismiss();
+//                    }
+//                }));
             } else {
                 if (adapter != null) {
                     updateSendButton();
@@ -501,7 +500,7 @@ public class StickersAlert extends BottomSheet implements NotificationCenter.Not
                 StickerSetCovered pack = adapter.positionsToSets.get(position);
                 if (pack != null) {
                     dismiss();
-                    TLRPC.TL_inputStickerSetID inputStickerSetID = new TLRPC.TL_inputStickerSetID();
+                    InputStickerSet inputStickerSetID = new InputStickerSet();
                     inputStickerSetID.access_hash = pack.set.access_hash;
                     inputStickerSetID.id = pack.set.id;
                     StickersAlert alert = new StickersAlert(parentActivity, parentFragment, inputStickerSetID, null, null);

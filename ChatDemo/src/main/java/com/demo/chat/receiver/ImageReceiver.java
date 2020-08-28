@@ -22,7 +22,7 @@ import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLoader;
 import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NotificationCenter;
-import com.demo.chat.model.MessageObject;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.ui.Components.AnimatedFileDrawable;
 import com.demo.chat.ui.Components.RLottieDrawable;
