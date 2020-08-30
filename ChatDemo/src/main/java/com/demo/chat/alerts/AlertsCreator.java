@@ -8,7 +8,9 @@ import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Vibrator;
 import android.text.Html;
+import android.text.InputType;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -66,6 +68,7 @@ import com.demo.chat.ui.Components.ShareLocationDrawable;
 import com.demo.chat.ui.Components.ThemeEditorView;
 import com.demo.chat.ui.Components.URLSpanNoUnderline;
 import com.demo.chat.ui.LaunchActivity;
+import com.demo.chat.ui.ThemePreviewActivity;
 
 import java.net.IDN;
 import java.util.ArrayList;

@@ -10093,7 +10093,7 @@ public class ChatActivity extends BaseFragment
         return topChatPanelView != null && topChatPanelView.getTag() == null && reportSpamButton.getVisibility() != View.GONE;
     }
 
-    protected void setIgnoreAttachOnPause(boolean value) {
+    public void setIgnoreAttachOnPause(boolean value) {
         ignoreAttachOnPause = value;
     }
 

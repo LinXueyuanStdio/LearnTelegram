@@ -5,7 +5,7 @@
 
 thread_local static char buf[PATH_MAX + 1];
 
-extern "C" JNIEXPORT jstring Java_org_telegram_messenger_Utilities_readlink(JNIEnv *env, jclass clazz, jstring path) {
+extern "C" JNIEXPORT jstring Java_com_demo_chat_messenger_Utilities_readlink(JNIEnv *env, jclass clazz, jstring path) {
     const char *fileName = env->GetStringUTFChars(path, NULL);
     ssize_t result = readlink(fileName, buf, PATH_MAX);
     jstring value = 0;
