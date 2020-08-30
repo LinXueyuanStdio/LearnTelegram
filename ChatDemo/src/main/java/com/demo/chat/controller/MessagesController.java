@@ -6,6 +6,7 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Base64;
 import android.util.LongSparseArray;
+import android.util.SparseArray;
 import android.util.SparseIntArray;
 
 import com.demo.chat.ApplicationLoader;
@@ -17,10 +18,12 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SerializedData;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Chat;
+import com.demo.chat.model.Message;
 import com.demo.chat.model.User;
 import com.demo.chat.model.UserChat;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.action.MessageObject;
+import com.demo.chat.model.message.messages_Messages;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.ActionBar.BaseFragment;
@@ -314,7 +317,10 @@ public class MessagesController extends BaseController implements NotificationCe
     private ConcurrentHashMap<String, UserChat> objectsByUsernames = new ConcurrentHashMap<>(100, 1.0f, 2);
 
     public Chat getChat(Integer id) {
-        return chats.get(id);
+        Chat c = new Chat();
+
+        return c;
+//        return chats.get(id);
     }
 
     public User getUser(Integer id) {
@@ -570,6 +576,186 @@ public class MessagesController extends BaseController implements NotificationCe
             getMessagesStorage().getMessages(dialogId, mergeDialogId, loadInfo, count, max_id, offset_date, minDate, classGuid, load_type, isChannel, scheduled, loadIndex);
         }
     }
+
+
+    public void processLoadedMessages(messages_Messages messagesRes, long dialogId, long mergeDialogId, int count, int max_id, int offset_date, boolean isCache, int classGuid,
+            int first_unread, int last_message_id, int unread_count, int last_date, int load_type, boolean isChannel, boolean isEnd, boolean scheduled, int loadIndex, boolean queryFromServer, int mentionsCount) {
+        if (BuildVars.LOGS_ENABLED) {
+            FileLog.d("processLoadedMessages size " + messagesRes.messages.size() + " in chat " + dialogId + " count " + count + " max_id " + max_id + " cache " + isCache + " guid " + classGuid + " load_type " + load_type + " last_message_id " + last_message_id + " isChannel " + isChannel + " index " + loadIndex + " firstUnread " + first_unread + " unread_count " + unread_count + " last_date " + last_date + " queryFromServer " + queryFromServer);
+        }
+        boolean createDialog = false;
+        boolean isMegagroup = false;
+//        if (messagesRes !=null) {
+//            int channelId = -(int) dialogId;
+//            if (!scheduled) {
+//                int channelPts = channelsPts.get(channelId);
+//                if (channelPts == 0) {
+//                    channelPts = getMessagesStorage().getChannelPtsSync(channelId);
+//                    if (channelPts == 0) {
+//                        channelsPts.put(channelId, messagesRes.pts);
+//                        createDialog = true;
+//                        if (needShortPollChannels.indexOfKey(channelId) >= 0 && shortPollChannels.indexOfKey(channelId) < 0) {
+//                            getChannelDifference(channelId, 2, 0, null);
+//                        } else {
+//                            getChannelDifference(channelId);
+//                        }
+//                    }
+//                }
+//            }
+//            for (int a = 0; a < messagesRes.chats.size(); a++) {
+//                Chat chat = messagesRes.chats.get(a);
+//                if (chat.id == channelId) {
+//                    isMegagroup = chat.megagroup;
+//                    break;
+//                }
+//            }
+//        }
+//        int lower_id = (int) dialogId;
+//        int high_id = (int) (dialogId >> 32);
+//        if (!isCache) {
+//            ImageLoader.saveMessagesThumbs(messagesRes.messages);
+//        }
+//        if (high_id != 1 && lower_id != 0 && isCache && (messagesRes.messages.size() == 0 || scheduled && (SystemClock.elapsedRealtime() - lastScheduledServerQueryTime.get(dialogId, 0L)) > 60 * 1000)) {
+//            int hash;
+//            if (scheduled) {
+//                lastScheduledServerQueryTime.put(dialogId, SystemClock.elapsedRealtime());
+//                long h = 0;
+//                for (int a = 0, N = messagesRes.messages.size(); a < N; a++) {
+//                    Message message = messagesRes.messages.get(a);
+//                    if (message.id < 0) {
+//                        continue;
+//                    }
+//                    h = ((h * 20261) + 0x80000000L + message.id) % 0x80000000L;
+//                    h = ((h * 20261) + 0x80000000L + message.edit_date) % 0x80000000L;
+//                    h = ((h * 20261) + 0x80000000L + message.date) % 0x80000000L;
+//                }
+//                hash = (int) h - 1;
+//            } else {
+//                hash = 0;
+//            }
+//            AndroidUtilities.runOnUIThread(() -> loadMessages(dialogId, mergeDialogId, false, count, load_type == 2 && queryFromServer ? first_unread : max_id, offset_date, false, hash, classGuid, load_type, last_message_id, isChannel, scheduled, loadIndex, first_unread, unread_count, last_date, queryFromServer, mentionsCount));
+//            if (messagesRes.messages.isEmpty()) {
+//                return;
+//            }
+//        }
+        final SparseArray<User> usersDict = new SparseArray<>();
+        final SparseArray<Chat> chatsDict = new SparseArray<>();
+        for (int a = 0; a < messagesRes.users.size(); a++) {
+            User u = messagesRes.users.get(a);
+            usersDict.put(u.id, u);
+        }
+        for (int a = 0; a < messagesRes.chats.size(); a++) {
+            Chat c = messagesRes.chats.get(a);
+            chatsDict.put(c.id, c);
+        }
+        int size = messagesRes.messages.size();
+//        if (!isCache) {
+//            Integer inboxValue = dialogs_read_inbox_max.get(dialogId);
+//            if (inboxValue == null) {
+//                inboxValue = getMessagesStorage().getDialogReadMax(false, dialogId);
+//                dialogs_read_inbox_max.put(dialogId, inboxValue);
+//            }
+//
+//            Integer outboxValue = dialogs_read_outbox_max.get(dialogId);
+//            if (outboxValue == null) {
+//                outboxValue = getMessagesStorage().getDialogReadMax(true, dialogId);
+//                dialogs_read_outbox_max.put(dialogId, outboxValue);
+//            }
+//
+//            for (int a = 0; a < size; a++) {
+//                Message message = messagesRes.messages.get(a);
+//                if (isMegagroup) {
+//                    message.flags |= TLRPC.MESSAGE_FLAG_MEGAGROUP;
+//                }
+//
+//                if (!scheduled) {
+//                    if (message.action instanceof TLRPC.TL_messageActionChatDeleteUser) {
+//                        User user = usersDict.get(message.action.user_id);
+//                        if (user != null && user.bot) {
+//                            message.reply_markup = new TLRPC.TL_replyKeyboardHide();
+//                            message.flags |= 64;
+//                        }
+//                    }
+//
+//                    message.unread = (message.out ? outboxValue : inboxValue) < message.id;
+//                }
+//            }
+//            getMessagesStorage().putMessages(messagesRes, dialogId, load_type, max_id, createDialog, scheduled);
+//        }
+//
+        final ArrayList<MessageObject> objects = new ArrayList<>();
+        final ArrayList<Integer> messagesToReload = new ArrayList<>();
+        final HashMap<String, ArrayList<MessageObject>> webpagesToReload = new HashMap<>();
+//        InputChannel inputChannel = null;
+        for (int a = 0; a < size; a++) {
+            Message message = messagesRes.messages.get(a);
+            message.dialog_id = dialogId;
+            MessageObject messageObject = new MessageObject(currentAccount, message, usersDict, chatsDict, true);
+            messageObject.scheduled = scheduled;
+            objects.add(messageObject);
+            if (isCache) {
+                if (message.legacy && message.layer <1) {
+                    messagesToReload.add(message.id);
+                } else if (message.media.isUnsupported()) {
+                    if (message.media.bytes != null && (message.media.bytes.length == 0 || message.media.bytes.length == 1 && message.media.bytes[0] < 1)) {
+                        messagesToReload.add(message.id);
+                    }
+                }
+                if (message.media.isWebPage()) {
+                    if (message.media.webpage !=null && message.media.webpage.date <= getConnectionsManager().getCurrentTime()) {
+                        messagesToReload.add(message.id);
+                    } else if (message.media.webpage!=null) {
+                        ArrayList<MessageObject> arrayList = webpagesToReload.get(message.media.webpage.url);
+                        if (arrayList == null) {
+                            arrayList = new ArrayList<>();
+                            webpagesToReload.put(message.media.webpage.url, arrayList);
+                        }
+                        arrayList.add(messageObject);
+                    }
+                }
+            }
+        }
+        AndroidUtilities.runOnUIThread(() -> {
+            putUsers(messagesRes.users, isCache);
+            putChats(messagesRes.chats, isCache);
+            int first_unread_final = 0;
+            getNotificationCenter().postNotificationName(NotificationCenter.messagesDidLoad, dialogId, count, objects, isCache, first_unread_final, last_message_id, unread_count, last_date, load_type, isEnd, classGuid, loadIndex, max_id, mentionsCount, scheduled);
+//            if (scheduled) {
+//                first_unread_final = 0;
+//            } else {
+//                first_unread_final = Integer.MAX_VALUE;
+//                if (queryFromServer && load_type == 2) {
+//                    for (int a = 0; a < messagesRes.messages.size(); a++) {
+//                        Message message = messagesRes.messages.get(a);
+//                        if ((!message.out || message.from_scheduled) && message.id > first_unread && message.id < first_unread_final) {
+//                            first_unread_final = message.id;
+//                        }
+//                    }
+//                }
+//                if (first_unread_final == Integer.MAX_VALUE) {
+//                    first_unread_final = first_unread;
+//                }
+//            }
+//            if (scheduled && count == 1) {
+//                getNotificationCenter().postNotificationName(NotificationCenter.scheduledMessagesUpdated, dialogId, objects.size());
+//            }
+//
+//            if ((int) dialogId != 0) {
+//                int finalFirst_unread_final = first_unread_final;
+//                getMediaDataController().loadReplyMessagesForMessages(objects, dialogId, scheduled, () -> getNotificationCenter().postNotificationName(NotificationCenter.messagesDidLoad, dialogId, count, objects, isCache, finalFirst_unread_final, last_message_id, unread_count, last_date, load_type, isEnd, classGuid, loadIndex, max_id, mentionsCount, scheduled));
+//            } else {
+//                getNotificationCenter().postNotificationName(NotificationCenter.messagesDidLoad, dialogId, count, objects, isCache, first_unread_final, last_message_id, unread_count, last_date, load_type, isEnd, classGuid, loadIndex, max_id, mentionsCount, scheduled);
+//            }
+//
+//            if (!messagesToReload.isEmpty()) {
+//                reloadMessages(messagesToReload, dialogId, scheduled);
+//            }
+//            if (!webpagesToReload.isEmpty()) {
+//                reloadWebPages(dialogId, webpagesToReload, scheduled);
+//            }
+        });
+    }
+
 
     //endregion
     public void markMessageAsRead(final int mid, final int channelId, int ttl, long taskId) {

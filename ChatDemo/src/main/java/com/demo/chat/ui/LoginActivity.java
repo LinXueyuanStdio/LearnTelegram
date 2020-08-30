@@ -7,7 +7,6 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import com.demo.chat.controller.UserConfig;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 
 /**
@@ -31,13 +30,22 @@ public class LoginActivity extends BaseFragment {
             @Override
             public void onClick(View v) {
                 Bundle args = new Bundle();
-                args.putInt("user_id", UserConfig.getInstance(currentAccount).getClientUserId());
+                args.putInt("chat_id", 1);
                 presentFragment(new ChatActivity(args));
+            }
+        });
+        Button button2 = new Button(context);
+        button2.setText("Theme");
+        button2.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                presentFragment(new ThemeActivity(ThemeActivity.THEME_TYPE_BASIC));
             }
         });
 
         con.addView(textView);
         con.addView(button);
+        con.addView(button2);
 
         return con;
     }

@@ -267,6 +267,9 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
             AndroidUtilities.isInMultiwindow = isInMultiWindowMode();
         }
         Theme.createChatResources(this, false);
+        Theme.createDialogsResources(this);
+        Theme.createCommonResources(this);
+        Theme.createProfileResources(this);
         if (SharedConfig.passcodeHash.length() != 0 && SharedConfig.appLocked) {
             SharedConfig.lastPauseTime = (int) (SystemClock.elapsedRealtime() / 1000);
         }
@@ -2929,7 +2932,7 @@ public class LaunchActivity extends Activity implements ActionBarLayout.ActionBa
                     sideMenu.setBackgroundColor(Theme.getColor(Theme.key_chats_menuBackground));
                     sideMenu.setGlowColor(Theme.getColor(Theme.key_chats_menuBackground));
                     sideMenu.setListSelectorColor(Theme.getColor(Theme.key_listSelector));
-                    sideMenu.getAdapter().notifyDataSetChanged();
+//                    sideMenu.getAdapter().notifyDataSetChanged();
                 }
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
                     try {

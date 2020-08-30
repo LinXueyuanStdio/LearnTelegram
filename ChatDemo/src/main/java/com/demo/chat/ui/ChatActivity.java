@@ -1056,8 +1056,6 @@ public class ChatActivity extends BaseFragment
     public boolean onFragmentCreate() {
         //region 1.加载参数
         final int chatId = arguments.getInt("chat_id", 0);
-        final int userId = arguments.getInt("user_id", 0);
-        final int encId = arguments.getInt("enc_id", 0);
         inScheduleMode = arguments.getBoolean("scheduled", false);
         inlineReturn = arguments.getLong("inline_return", 0);
         String inlineQuery = arguments.getString("inline_query");
@@ -1070,7 +1068,7 @@ public class ChatActivity extends BaseFragment
         //region 2.加载聊天对象，有3种可能，chat、user、encryptChat
         if (chatId != 0) {
             currentChat = getMessagesController().getChat(chatId);
-            dialog_id = -chatId;
+            dialog_id = chatId;
             //            if (ChatObject.isChannel(currentChat)) {
             //                getMessagesController().startShortPoll(currentChat, false);TODO
             //            }

@@ -436,7 +436,7 @@ static void fastBlur565(int32_t w, int32_t h, int32_t stride, uint8_t *pix, int3
     delete[] rgb;
 }
 
-int Java_com_demo_chat_messenger_Utilities_needInvert(JNIEnv *env, jclass clazz, jobject bitmap, jint unpin, jint width, jint height, jint stride) {
+int Java_com_demo_chat_messager_Utilities_needInvert(JNIEnv *env, jclass clazz, jobject bitmap, jint unpin, jint width, jint height, jint stride) {
     if (!bitmap) {
         return 0;
     }
@@ -502,7 +502,7 @@ int Java_com_demo_chat_messenger_Utilities_needInvert(JNIEnv *env, jclass clazz,
     return hasAlpha && matching / total > 0.85;
 }
 
-void Java_com_demo_chat_messenger_Utilities_blurBitmap(JNIEnv *env, jclass clazz, jobject bitmap, jint radius, jint unpin, jint width, jint height, jint stride) {
+void Java_com_demo_chat_messager_Utilities_blurBitmap(JNIEnv *env, jclass clazz, jobject bitmap, jint radius, jint unpin, jint width, jint height, jint stride) {
     if (!bitmap) {
         return;
     }
@@ -536,7 +536,7 @@ void Java_com_demo_chat_messenger_Utilities_blurBitmap(JNIEnv *env, jclass clazz
 const uint32_t PGPhotoEnhanceHistogramBins = 256;
 const uint32_t PGPhotoEnhanceSegments = 4;
 
-void Java_com_demo_chat_messenger_Utilities_calcCDT(JNIEnv *env, jclass clazz, jobject hsvBuffer, jint width, jint height, jobject buffer, jobject calcBuffer) {
+void Java_com_demo_chat_messager_Utilities_calcCDT(JNIEnv *env, jclass clazz, jobject hsvBuffer, jint width, jint height, jobject buffer, jobject calcBuffer) {
     float imageWidth = width;
     float imageHeight = height;
     float _clipLimit = 1.25f;
@@ -628,7 +628,7 @@ void Java_com_demo_chat_messenger_Utilities_calcCDT(JNIEnv *env, jclass clazz, j
     }
 }
 
-jint Java_com_demo_chat_messenger_Utilities_pinBitmap(JNIEnv *env, jclass clazz, jobject bitmap) {
+jint Java_com_demo_chat_messager_Utilities_pinBitmap(JNIEnv *env, jclass clazz, jobject bitmap) {
     if (bitmap == nullptr) {
         return 0;
     }
@@ -636,14 +636,14 @@ jint Java_com_demo_chat_messenger_Utilities_pinBitmap(JNIEnv *env, jclass clazz,
     return AndroidBitmap_lockPixels(env, bitmap, &pixels) >= 0 ? 1 : 0;
 }
 
-void Java_com_demo_chat_messenger_Utilities_unpinBitmap(JNIEnv *env, jclass clazz, jobject bitmap) {
+void Java_com_demo_chat_messager_Utilities_unpinBitmap(JNIEnv *env, jclass clazz, jobject bitmap) {
     if (bitmap == NULL) {
         return;
     }
     AndroidBitmap_unlockPixels(env, bitmap);
 }
 
-jboolean Java_com_demo_chat_messenger_Utilities_loadWebpImage(JNIEnv *env, jclass clazz, jobject outputBitmap, jobject buffer, jint len, jobject options, jboolean unpin) {
+jboolean Java_com_demo_chat_messager_Utilities_loadWebpImage(JNIEnv *env, jclass clazz, jobject outputBitmap, jobject buffer, jint len, jobject options, jboolean unpin) {
     if (!buffer) {
         env->ThrowNew(jclass_NullPointerException, "Input buffer can not be null");
         return 0;
@@ -701,7 +701,7 @@ inline static void zeroClearInt(int *p, size_t count) {
     memset(p, 0, sizeof(int) * count);
 }
 
-void Java_com_demo_chat_messenger_Utilities_stackBlurBitmap(JNIEnv *env, jclass clazz, jobject bitmap, jint radius) {
+void Java_com_demo_chat_messager_Utilities_stackBlurBitmap(JNIEnv *env, jclass clazz, jobject bitmap, jint radius) {
     if (radius < 1) {
         return;
     }
@@ -954,7 +954,7 @@ void Java_com_demo_chat_messenger_Utilities_stackBlurBitmap(JNIEnv *env, jclass 
     AndroidBitmap_unlockPixels(env, bitmap);
 }
 
-void Java_com_demo_chat_messenger_Utilities_drawDitheredGradient(JNIEnv *env, jclass clazz, jobject bitmap, jintArray colors, jint startX, jint startY, jint endX, jint endY) {
+void Java_com_demo_chat_messager_Utilities_drawDitheredGradient(JNIEnv *env, jclass clazz, jobject bitmap, jintArray colors, jint startX, jint startY, jint endX, jint endY) {
     AndroidBitmapInfo info;
     void *pixelsBuffer;
     int reason;
