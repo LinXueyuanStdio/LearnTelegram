@@ -2212,7 +2212,14 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         sendMessage(null, caption, null, photo, null, null, null, peer, path, reply_to_msg, null, true, null, entities, replyMarkup, params, notify, scheduleDate, ttl, parentObject);
     }
 
-    private void sendMessage(String message, String caption, MessageMedia location, MessageMedia.Photo photo, VideoEditedInfo videoEditedInfo, User user, Document document, long peer, String path, MessageObject reply_to_msg, MessageMedia.WebPage webPage, boolean searchLinks, MessageObject retryMessageObject, ArrayList<MessageEntity> entities, ReplyMarkup replyMarkup, HashMap<String, String> params, boolean notify, int scheduleDate, int ttl, Object parentObject) {
+    private void sendMessage(String message, String caption, MessageMedia location,
+            MessageMedia.Photo photo, VideoEditedInfo videoEditedInfo,
+            User user, Document document, long peer,
+            String path, MessageObject reply_to_msg,
+            MessageMedia.WebPage webPage, boolean searchLinks,
+            MessageObject retryMessageObject, ArrayList<MessageEntity> entities,
+            ReplyMarkup replyMarkup, HashMap<String, String> params, boolean notify,
+            int scheduleDate, int ttl, Object parentObject) {
         if (user != null && user.phone == null) {
             return;
         }
@@ -2537,7 +2544,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 
             boolean performMediaUpload = false;
 
-//            if (type == 0 || type == 9 && message != null && encryptedChat != null) {
+//            if (type == 0 || type == 9 && message != null) {
 //                if (encryptedChat == null) {
 //                    TL_messages_sendMessage reqSend = new TL_messages_sendMessage();
 //                    reqSend.message = message;

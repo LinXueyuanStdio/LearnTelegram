@@ -12737,7 +12737,7 @@ public class ChatActivity extends BaseFragment
     @Override
     public void didReceivedNotification(int id, int account, final Object... args) {
         if (id == NotificationCenter.messagesDidLoad) {
-            onMmessagesDidLoad(id, account, args);
+            onMessagesDidLoad(id, account, args);
         } else if (id == NotificationCenter.emojiDidLoad) {
             onEmojiDidLoad(id, account, args);
         } else if (id == NotificationCenter.didUpdateConnectionState) {
@@ -12883,7 +12883,7 @@ public class ChatActivity extends BaseFragment
         }
     }
 
-    public void onMmessagesDidLoad(int id, int account, final Object... args) {
+    public void onMessagesDidLoad(int id, int account, final Object... args) {
         int guid = (Integer) args[10];
         if (guid == classGuid) {
             int queryLoadIndex = (Integer) args[11];

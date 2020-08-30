@@ -324,7 +324,11 @@ public class MessagesController extends BaseController implements NotificationCe
     }
 
     public User getUser(Integer id) {
-        return users.get(id);
+        User u = new User();
+        u.id = id;
+        u.username = "user_id="+id;
+        return u;
+//        return users.get(id);
     }
 
     public boolean putUser(User user, boolean fromCache) {

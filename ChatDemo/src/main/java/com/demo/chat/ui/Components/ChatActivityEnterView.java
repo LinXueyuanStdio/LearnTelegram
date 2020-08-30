@@ -8,7 +8,6 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import com.demo.chat.ui.ActionBar.AlertDialog;
 import android.content.ClipDescription;
 import android.content.Context;
 import android.content.SharedPreferences;
@@ -87,11 +86,11 @@ import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.camera.CameraController;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
-import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.VideoEditedInfo;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.action.MessageObject;
+import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.bot.BotInlineResult;
 import com.demo.chat.model.bot.KeyboardButton;
 import com.demo.chat.model.reply.ReplyMarkup;
@@ -105,10 +104,12 @@ import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
 import com.demo.chat.ui.ActionBar.ActionBarMenuSubItem;
 import com.demo.chat.ui.ActionBar.ActionBarPopupWindow;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.ActionBar.SimpleTextView;
 import com.demo.chat.ui.ChatActivity;
 import com.demo.chat.ui.DialogsActivity;
 import com.demo.chat.ui.LaunchActivity;
+import com.demo.chat.ui.StickersActivity;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -5932,6 +5933,9 @@ public class ChatActivityEnterView extends FrameLayout implements NotificationCe
 
             @Override
             public void onStickersSettingsClick() {
+                if (parentFragment != null) {
+                    parentFragment.presentFragment(new StickersActivity(MediaDataController.TYPE_IMAGE));
+                }
             }
 
             @Override
