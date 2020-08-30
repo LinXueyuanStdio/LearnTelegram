@@ -2238,7 +2238,7 @@ public class ChatAttachAlert extends BottomSheet implements NotificationCenter.N
         public int getItemCount() {
             int count = buttonsCount;
             if (editingMessageObject == null && baseFragment instanceof ChatActivity) {
-                count += MediaDataController.getInstance(currentAccount).inlineBots.size();
+//                count += MediaDataController.getInstance(currentAccount).inlineBots.size();
             }
             return count;
         }

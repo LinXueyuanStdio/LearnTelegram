@@ -5,9 +5,8 @@ import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.TargetApi;
-
 import android.app.Activity;
-import android.app.AlertDialog;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Canvas;
@@ -32,10 +31,12 @@ import android.view.animation.DecelerateInterpolator;
 import android.widget.FrameLayout;
 
 import com.demo.chat.R;
+import com.demo.chat.controller.MessagesController;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.theme.ThemeDescription;
+import com.demo.chat.ui.Components.Bulletin;
 import com.demo.chat.ui.Components.CubicBezierInterpolator;
 import com.demo.chat.ui.Components.LayoutHelper;
 

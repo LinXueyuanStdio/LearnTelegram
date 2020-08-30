@@ -1,7 +1,6 @@
 package com.demo.chat.ui.Components;
 
 import android.annotation.SuppressLint;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Paint;
@@ -31,6 +30,7 @@ import com.demo.chat.controller.MediaDataController;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.FileLog;
 import com.demo.chat.theme.Theme;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 
 /**
  * @author 林学渊

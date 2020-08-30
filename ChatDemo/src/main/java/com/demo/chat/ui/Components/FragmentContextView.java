@@ -4,7 +4,7 @@ import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
-import android.app.AlertDialog;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.graphics.PorterDuff;

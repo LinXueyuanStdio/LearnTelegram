@@ -1,8 +1,15 @@
 package com.demo.chat.ui.Components;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.animation.AnimatorSet;
+import android.animation.ObjectAnimator;
+import android.content.ContentValues;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
@@ -19,21 +26,30 @@ import android.view.View;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.Switch;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
+import com.demo.chat.alerts.AlertsCreator;
 import com.demo.chat.controller.ContactsController;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.ImageLocation;
+import com.demo.chat.messager.browser.Browser;
+import com.demo.chat.model.User;
+import com.demo.chat.model.action.UserObject;
 import com.demo.chat.theme.Theme;
 import com.demo.chat.ui.ActionBar.ActionBar;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.ActionBar.BottomSheet;
+import com.demo.chat.ui.ChatActivity;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Locale;
 
 import androidx.core.widget.NestedScrollView;
 
@@ -111,7 +127,7 @@ public class PhonebookShareAlert extends BottomSheet {
             textView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
             textView.setSingleLine(true);
             textView.setEllipsize(TextUtils.TruncateAt.END);
-            textView.setText(ContactsController.formatName(currentUser.first_name, currentUser.last_name));
+            textView.setText(UserObject.formatName(currentUser.first_name, currentUser.last_name));
             addView(textView, LayoutHelper.createLinear(LayoutHelper.WRAP_CONTENT, LayoutHelper.WRAP_CONTENT, Gravity.TOP | Gravity.CENTER_HORIZONTAL, 10, 10, 10, status != null ? 0 : 27));
 
             if (status != null) {
@@ -228,10 +244,10 @@ public class PhonebookShareAlert extends BottomSheet {
     public PhonebookShareAlert(BaseFragment parent, ContactsController.Contact contact, User user, Uri uri, File file, String firstName, String lastName) {
         super(parent.getParentActivity(), false);
 
-        String name = ContactsController.formatName(firstName, lastName);
+        String name = UserObject.formatName(firstName, lastName);
         ArrayList<User> result = null;
         ArrayList<AndroidUtilities.VcardItem> items = new ArrayList<>();
-        ArrayList<TLRPC.TL_restrictionReason> vcard = null;
+//        ArrayList<TLRPC.TL_restrictionReason> vcard = null;
         if (uri != null) {
             result = AndroidUtilities.loadVCardFromStream(uri, currentAccount, false, items, name);
         } else if (file != null) {
@@ -271,10 +287,10 @@ public class PhonebookShareAlert extends BottomSheet {
                 }
             }
             if (!result.isEmpty()) {
-                vcard = result.get(0).restriction_reason;
+//                vcard = result.get(0).restriction_reason;
             }
         }
-        currentUser = new TLRPC.TL_userContact_old2();
+        currentUser = new User();
         if (user != null) {
             currentUser.id = user.id;
             currentUser.access_hash = user.access_hash;
@@ -283,9 +299,9 @@ public class PhonebookShareAlert extends BottomSheet {
             currentUser.first_name = user.first_name;
             currentUser.last_name = user.last_name;
             currentUser.phone = user.phone;
-            if (vcard != null) {
-                currentUser.restriction_reason = vcard;
-            }
+//            if (vcard != null) {
+//                currentUser.restriction_reason = vcard;
+//            }
         } else {
             currentUser.first_name = firstName;
             currentUser.last_name = lastName;
@@ -669,7 +685,7 @@ public class PhonebookShareAlert extends BottomSheet {
                             intent.setType(ContactsContract.Contacts.CONTENT_ITEM_TYPE);
                         }
 
-                        intent.putExtra(ContactsContract.Intents.Insert.NAME, ContactsController.formatName(currentUser.first_name, currentUser.last_name));
+                        intent.putExtra(ContactsContract.Intents.Insert.NAME, UserObject.formatName(currentUser.first_name, currentUser.last_name));
 
                         ArrayList<ContentValues> data = new ArrayList<>();
 
@@ -840,11 +856,7 @@ public class PhonebookShareAlert extends BottomSheet {
                 builder.show();
             } else {
                 StringBuilder builder;
-                if (!currentUser.restriction_reason.isEmpty()) {
-                    builder = new StringBuilder(currentUser.restriction_reason.get(0).text);
-                } else {
-                    builder = new StringBuilder(String.format(Locale.US, "BEGIN:VCARD\nVERSION:3.0\nFN:%1$s\nEND:VCARD", ContactsController.formatName(currentUser.first_name, currentUser.last_name)));
-                }
+                builder = new StringBuilder(String.format(Locale.US, "BEGIN:VCARD\nVERSION:3.0\nFN:%1$s\nEND:VCARD", UserObject.formatName(currentUser.first_name, currentUser.last_name)));
                 int idx = builder.lastIndexOf("END:VCARD");
                 if (idx >= 0) {
                     currentUser.phone = null;
@@ -869,12 +881,12 @@ public class PhonebookShareAlert extends BottomSheet {
                             builder.insert(idx, item.vcardData.get(b) + "\n");
                         }
                     }
-                    currentUser.restriction_reason.clear();
-                    TLRPC.TL_restrictionReason reason = new TLRPC.TL_restrictionReason();
-                    reason.text = builder.toString();
-                    reason.reason = "";
-                    reason.platform = "";
-                    currentUser.restriction_reason.add(reason);
+//                    currentUser.restriction_reason.clear();
+//                    RestrictionReason reason = new RestrictionReason();
+//                    reason.text = builder.toString();
+//                    reason.reason = "";
+//                    reason.platform = "";
+//                    currentUser.restriction_reason.add(reason);
                 }
                 if (parentFragment instanceof ChatActivity && ((ChatActivity) parentFragment).isInScheduleMode()) {
                     ChatActivity chatActivity = (ChatActivity) parentFragment;

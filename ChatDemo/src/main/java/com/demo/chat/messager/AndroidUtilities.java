@@ -6,7 +6,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlertDialog;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import android.content.ContentResolver;
 import android.content.ContentUris;
 import android.content.Context;

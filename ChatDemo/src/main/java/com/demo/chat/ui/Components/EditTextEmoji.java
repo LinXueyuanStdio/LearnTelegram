@@ -1,6 +1,6 @@
 package com.demo.chat.ui.Components;
 
-import android.app.AlertDialog;
+
 import android.content.Context;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
@@ -27,6 +27,7 @@ import com.demo.chat.messager.FileLog;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.theme.Theme;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 
 /**

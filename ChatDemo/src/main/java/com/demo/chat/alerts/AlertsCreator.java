@@ -19,6 +19,7 @@ import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -3107,87 +3108,87 @@ public class AlertsCreator {
         }
     }
 
-//    public static void createThemeCreateDialog(BaseFragment fragment, int type, Theme.ThemeInfo switchToTheme, Theme.ThemeAccent switchToAccent) {
-//        if (fragment == null || fragment.getParentActivity() == null) {
-//            return;
-//        }
-//        Context context = fragment.getParentActivity();
-//        final EditTextBoldCursor editText = new EditTextBoldCursor(context);
-//        editText.setBackgroundDrawable(Theme.createEditTextDrawable(context, true));
-//
-//        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-//        builder.setTitle(LocaleController.getString("NewTheme", R.string.NewTheme));
-//        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
-//        builder.setPositiveButton(LocaleController.getString("Create", R.string.Create), (dialog, which) -> {
-//
-//        });
-//
-//        LinearLayout linearLayout = new LinearLayout(context);
-//        linearLayout.setOrientation(LinearLayout.VERTICAL);
-//        builder.setView(linearLayout);
-//
-//        final TextView message = new TextView(context);
-//        if (type != 0) {
-//            message.setText(AndroidUtilities.replaceTags(LocaleController.getString("EnterThemeNameEdit", R.string.EnterThemeNameEdit)));
-//        } else {
-//            message.setText(LocaleController.getString("EnterThemeName", R.string.EnterThemeName));
-//        }
-//        message.setTextSize(16);
-//        message.setPadding(AndroidUtilities.dp(23), AndroidUtilities.dp(12), AndroidUtilities.dp(23), AndroidUtilities.dp(6));
-//        message.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
-//        linearLayout.addView(message, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-//
-//        editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-//        editText.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
-//        editText.setMaxLines(1);
-//        editText.setLines(1);
-//        editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
-//        editText.setGravity(Gravity.LEFT | Gravity.TOP);
-//        editText.setSingleLine(true);
-//        editText.setImeOptions(EditorInfo.IME_ACTION_DONE);
-//        editText.setCursorColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
-//        editText.setCursorSize(AndroidUtilities.dp(20));
-//        editText.setCursorWidth(1.5f);
-//        editText.setPadding(0, AndroidUtilities.dp(4), 0, 0);
-//        linearLayout.addView(editText, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 36, Gravity.TOP | Gravity.LEFT, 24, 6, 24, 0));
-//        editText.setOnEditorActionListener((textView, i, keyEvent) -> {
-//            AndroidUtilities.hideKeyboard(textView);
-//            return false;
-//        });
-//        editText.setText(generateThemeName(switchToAccent));
-//        editText.setSelection(editText.length());
-//
-//        final AlertDialog alertDialog = builder.create();
-//        alertDialog.setOnShowListener(dialog -> AndroidUtilities.runOnUIThread(() -> {
-//            editText.requestFocus();
-//            AndroidUtilities.showKeyboard(editText);
-//        }));
-//        fragment.showDialog(alertDialog);
-//        editText.requestFocus();
-//        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-//            if (fragment.getParentActivity() == null) {
-//                return;
-//            }
-//            if (editText.length() == 0) {
-//                Vibrator vibrator = (Vibrator) ApplicationLoader.applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
-//                if (vibrator != null) {
-//                    vibrator.vibrate(200);
-//                }
-//                AndroidUtilities.shakeView(editText, 2, 0);
-//                return;
-//            }
-//            if (fragment instanceof ThemePreviewActivity) {
-//                Theme.applyPreviousTheme();
-//                fragment.finishFragment();
-//            }
-//            if (switchToAccent != null) {
-//                switchToTheme.setCurrentAccentId(switchToAccent.id);
-//                Theme.refreshThemeColors();
-//                Utilities.searchQueue.postRunnable(() -> AndroidUtilities.runOnUIThread(() -> processCreate(editText, alertDialog, fragment)));
-//                return;
-//            }
-//            processCreate(editText, alertDialog, fragment);
-//        });
-//    }
+    public static void createThemeCreateDialog(BaseFragment fragment, int type, Theme.ThemeInfo switchToTheme, Theme.ThemeAccent switchToAccent) {
+        if (fragment == null || fragment.getParentActivity() == null) {
+            return;
+        }
+        Context context = fragment.getParentActivity();
+        final EditTextBoldCursor editText = new EditTextBoldCursor(context);
+        editText.setBackgroundDrawable(Theme.createEditTextDrawable(context, true));
+
+        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+        builder.setTitle(LocaleController.getString("NewTheme", R.string.NewTheme));
+        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+        builder.setPositiveButton(LocaleController.getString("Create", R.string.Create), (dialog, which) -> {
+
+        });
+
+        LinearLayout linearLayout = new LinearLayout(context);
+        linearLayout.setOrientation(LinearLayout.VERTICAL);
+        builder.setView(linearLayout);
+
+        final TextView message = new TextView(context);
+        if (type != 0) {
+            message.setText(AndroidUtilities.replaceTags(LocaleController.getString("EnterThemeNameEdit", R.string.EnterThemeNameEdit)));
+        } else {
+            message.setText(LocaleController.getString("EnterThemeName", R.string.EnterThemeName));
+        }
+        message.setTextSize(16);
+        message.setPadding(AndroidUtilities.dp(23), AndroidUtilities.dp(12), AndroidUtilities.dp(23), AndroidUtilities.dp(6));
+        message.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
+        linearLayout.addView(message, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+
+        editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+        editText.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
+        editText.setMaxLines(1);
+        editText.setLines(1);
+        editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+        editText.setGravity(Gravity.LEFT | Gravity.TOP);
+        editText.setSingleLine(true);
+        editText.setImeOptions(EditorInfo.IME_ACTION_DONE);
+        editText.setCursorColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+        editText.setCursorSize(AndroidUtilities.dp(20));
+        editText.setCursorWidth(1.5f);
+        editText.setPadding(0, AndroidUtilities.dp(4), 0, 0);
+        linearLayout.addView(editText, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 36, Gravity.TOP | Gravity.LEFT, 24, 6, 24, 0));
+        editText.setOnEditorActionListener((textView, i, keyEvent) -> {
+            AndroidUtilities.hideKeyboard(textView);
+            return false;
+        });
+        editText.setText(generateThemeName(switchToAccent));
+        editText.setSelection(editText.length());
+
+        final AlertDialog alertDialog = builder.create();
+        alertDialog.setOnShowListener(dialog -> AndroidUtilities.runOnUIThread(() -> {
+            editText.requestFocus();
+            AndroidUtilities.showKeyboard(editText);
+        }));
+        fragment.showDialog(alertDialog);
+        editText.requestFocus();
+        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            if (fragment.getParentActivity() == null) {
+                return;
+            }
+            if (editText.length() == 0) {
+                Vibrator vibrator = (Vibrator) ApplicationLoader.applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
+                if (vibrator != null) {
+                    vibrator.vibrate(200);
+                }
+                AndroidUtilities.shakeView(editText, 2, 0);
+                return;
+            }
+            if (fragment instanceof ThemePreviewActivity) {
+                Theme.applyPreviousTheme();
+                fragment.finishFragment();
+            }
+            if (switchToAccent != null) {
+                switchToTheme.setCurrentAccentId(switchToAccent.id);
+                Theme.refreshThemeColors();
+                Utilities.searchQueue.postRunnable(() -> AndroidUtilities.runOnUIThread(() -> processCreate(editText, alertDialog, fragment)));
+                return;
+            }
+            processCreate(editText, alertDialog, fragment);
+        });
+    }
 
 }

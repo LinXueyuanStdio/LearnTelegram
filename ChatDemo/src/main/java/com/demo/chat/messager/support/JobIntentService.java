@@ -31,7 +31,7 @@ import android.os.IBinder;
 import android.os.PowerManager;
 import android.util.Log;
 
-import org.telegram.messenger.FileLog;
+import com.demo.chat.messager.FileLog;
 
 import java.util.ArrayList;
 import java.util.HashMap;

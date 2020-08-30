@@ -51,7 +51,6 @@ import android.view.View;
 
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
-import com.demo.chat.controller.ConnectionsManager;
 import com.demo.chat.controller.FileLoader;
 import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
@@ -70,6 +69,7 @@ import com.demo.chat.messager.time.SunDate;
 import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.small.WallPaper;
 import com.demo.chat.model.theme.Skin;
+import com.demo.chat.ui.Cells.ThemesHorizontalListCell;
 import com.demo.chat.ui.Components.AudioVisualizerDrawable;
 import com.demo.chat.ui.Components.BackgroundGradientDrawable;
 import com.demo.chat.ui.Components.CombinedDrawable;
@@ -808,11 +808,11 @@ public class Theme {
                 }
 
                 if (patternBitmap == null) {
-                    if (svg) {
-                        patternBitmap = SvgHelper.getBitmap(patternPath, AndroidUtilities.dp(360), AndroidUtilities.dp(640), false);
-                    } else {
-                        patternBitmap = loadScreenSizedBitmap(new FileInputStream(patternPath), 0);
-                    }
+//                    if (svg) {
+//                        patternBitmap = SvgHelper.getBitmap(patternPath, AndroidUtilities.dp(360), AndroidUtilities.dp(640), false);
+//                    } else {
+//                    }
+                    patternBitmap = loadScreenSizedBitmap(new FileInputStream(patternPath), 0);
                 }
 
                 Bitmap dst = Bitmap.createBitmap(patternBitmap.getWidth(), patternBitmap.getHeight(), Bitmap.Config.ARGB_8888);
@@ -895,8 +895,8 @@ public class Theme {
         public String pathToFile;
         public String uploadingThumb;
         public String uploadingFile;
-        public TLRPC.InputFile uploadedThumb;
-        public TLRPC.InputFile uploadedFile;
+//        public TLRPC.InputFile uploadedThumb;
+//        public TLRPC.InputFile uploadedFile;
 
         public OverrideWallpaperInfo overrideWallpaper;
 
@@ -1298,8 +1298,8 @@ public class Theme {
 
         public String uploadingThumb;
         public String uploadingFile;
-        public TLRPC.InputFile uploadedThumb;
-        public TLRPC.InputFile uploadedFile;
+//        public TLRPC.InputFile uploadedThumb;
+//        public TLRPC.InputFile uploadedFile;
 
         private int previewBackgroundColor;
         public int previewBackgroundGradientColor;
@@ -1543,7 +1543,7 @@ public class Theme {
                 if (object.has("info")) {
                     try {
                         SerializedData serializedData = new SerializedData(Utilities.hexToBytes(object.getString("info")));
-                        themeInfo.info = (Skin) TLRPC.Theme.TLdeserialize(serializedData, serializedData.readInt32(true), true);
+                        themeInfo.info = (Skin) Skin.TLdeserialize(serializedData, serializedData.readInt32(true), true);
                     } catch (Throwable e) {
                         FileLog.e(e);
                     }
@@ -1648,7 +1648,7 @@ public class Theme {
             }
         }
 
-        public static boolean accentEquals(ThemeAccent accent, SkinSettings settings) {
+        public static boolean accentEquals(ThemeAccent accent, Skin.SkinSettings settings) {
             int myMessagesGradientAccentColor = settings.message_top_color;
             if (settings.message_bottom_color == myMessagesGradientAccentColor) {
                 myMessagesGradientAccentColor = 0;
@@ -1666,7 +1666,7 @@ public class Theme {
                     backgroundGradientOverrideColor = settings.wallpaper.settings.second_background_color;
                 }
                 backgroundRotation = AndroidUtilities.getWallpaperRotation(settings.wallpaper.settings.rotation, false);
-                if (!(settings.wallpaper instanceof WallPaperNoFile) && settings.wallpaper.pattern) {
+                if (settings.wallpaper.pattern) {
                     patternSlug = settings.wallpaper.slug;
                     patternIntensity = settings.wallpaper.settings.intensity / 100.0f;
                 }
@@ -1681,7 +1681,7 @@ public class Theme {
                     Math.abs(patternIntensity - accent.patternIntensity) < 0.001;
         }
 
-        public static void fillAccentValues(ThemeAccent themeAccent, SkinSettings settings) {
+        public static void fillAccentValues(ThemeAccent themeAccent, Skin.SkinSettings settings) {
             themeAccent.accentColor = settings.accent_color;
             themeAccent.myMessagesAccentColor = settings.message_bottom_color;
             themeAccent.myMessagesGradientAccentColor = settings.message_top_color;
@@ -1696,7 +1696,7 @@ public class Theme {
                     themeAccent.backgroundGradientOverrideColor = settings.wallpaper.settings.second_background_color;
                 }
                 themeAccent.backgroundRotation = AndroidUtilities.getWallpaperRotation(settings.wallpaper.settings.rotation, false);
-                if (!(settings.wallpaper instanceof WallPaperNoFile) && settings.wallpaper.pattern) {
+                if (settings.wallpaper.pattern) {
                     themeAccent.patternSlug = settings.wallpaper.slug;
                     themeAccent.patternIntensity = settings.wallpaper.settings.intensity / 100.0f;
                     themeAccent.patternMotion = settings.wallpaper.settings.motion;
@@ -4058,7 +4058,7 @@ public class Theme {
                                 if (version >= 5) {
                                     if (data.readBool(true)) {
                                         accent.account = data.readInt32(true);
-                                        accent.info = (Skin) TLRPC.Theme.TLdeserialize(data, data.readInt32(true), true);
+                                        accent.info = (Skin) Skin.TLdeserialize(data, data.readInt32(true), true);
                                     }
                                 }
                                 info.themeAccentsMap.put(accent.id, accent);
@@ -5000,7 +5000,7 @@ public class Theme {
             FileLog.e(e);
         }
         if (previousTheme == null && save && !switchingNightTheme) {
-            MessagesController.getInstance(themeInfo.account).saveTheme(themeInfo, themeInfo.getAccent(false), nightTheme, false);
+//            MessagesController.getInstance(themeInfo.account).saveTheme(themeInfo, themeInfo.getAccent(false), nightTheme, false);
         }
     }
 
@@ -5169,7 +5169,7 @@ public class Theme {
         if (save) {
             saveThemeAccents(theme, true, false, false, false);
             if (accent.info != null) {
-                MessagesController.getInstance(accent.account).saveTheme(theme, accent, current && theme == currentNightTheme, true);
+//                MessagesController.getInstance(accent.account).saveTheme(theme, accent, current && theme == currentNightTheme, true);
             }
         }
         return current;
@@ -5216,7 +5216,7 @@ public class Theme {
                     NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.themeAccentListUpdated);
                 }
                 if (upload) {
-                    MessagesController.getInstance(UserConfig.selectedAccount).saveThemeToServer(theme, theme.getAccent(false));
+//                    MessagesController.getInstance(UserConfig.selectedAccount).saveThemeToServer(theme, theme.getAccent(false));
                 }
             }
             editor.putInt("accent_current_" + theme.assetName, theme.currentAccentId);
@@ -5725,7 +5725,7 @@ public class Theme {
             }
         }
         if (finalSave) {
-            MessagesController.getInstance(themeInfo.account).saveThemeToServer(themeInfo, themeInfo.getAccent(false));
+//            MessagesController.getInstance(themeInfo.account).saveThemeToServer(themeInfo, themeInfo.getAccent(false));
         }
     }
 
@@ -5932,31 +5932,31 @@ public class Theme {
     }
 
     public static String getBaseThemeKey(Skin.SkinSettings settings) {
-        if (settings.base_theme instanceof TLRPC.TL_baseThemeClassic) {
+        if (settings.base_theme instanceof Skin.TL_baseThemeClassic) {
             return "Blue";
-        } else if (settings.base_theme instanceof TLRPC.TL_baseThemeDay) {
+        } else if (settings.base_theme instanceof Skin.TL_baseThemeDay) {
             return "Day";
-        } else if (settings.base_theme instanceof TLRPC.TL_baseThemeTinted) {
+        } else if (settings.base_theme instanceof Skin.TL_baseThemeTinted) {
             return "Dark Blue";
-        } else if (settings.base_theme instanceof TLRPC.TL_baseThemeArctic) {
+        } else if (settings.base_theme instanceof Skin.TL_baseThemeArctic) {
             return "Arctic Blue";
-        } else if (settings.base_theme instanceof TLRPC.TL_baseThemeNight) {
+        } else if (settings.base_theme instanceof Skin.TL_baseThemeNight) {
             return "Night";
         }
         return null;
     }
 
-    public static TLRPC.BaseTheme getBaseThemeByKey(String key) {
+    public static Skin.BaseTheme getBaseThemeByKey(String key) {
         if ("Blue".equals(key)) {
-            return new TLRPC.TL_baseThemeClassic();
+            return new Skin.TL_baseThemeClassic();
         } else if ("Day".equals(key)) {
-            return new TLRPC.TL_baseThemeDay();
+            return new Skin.TL_baseThemeDay();
         } else if ("Dark Blue".equals(key)) {
-            return new TLRPC.TL_baseThemeTinted();
+            return new Skin.TL_baseThemeTinted();
         } else if ("Arctic Blue".equals(key)) {
-            return new TLRPC.TL_baseThemeArctic();
+            return new Skin.TL_baseThemeArctic();
         } else if ("Night".equals(key)) {
-            return new TLRPC.TL_baseThemeNight();
+            return new Skin.TL_baseThemeNight();
         }
         return null;
     }

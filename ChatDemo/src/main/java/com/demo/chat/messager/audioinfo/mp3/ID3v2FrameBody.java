@@ -15,7 +15,7 @@
  */
 package com.demo.chat.messager.audioinfo.mp3;
 
-import org.telegram.messenger.audioinfo.util.RangeInputStream;
+import com.demo.chat.messager.audioinfo.util.RangeInputStream;
 
 import java.io.IOException;
 import java.io.InputStream;

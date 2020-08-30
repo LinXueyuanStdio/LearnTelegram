@@ -35,8 +35,55 @@ public class Skin {
 
     public static abstract class BaseTheme{}
 
-    public int networkType;
+    public static class TL_baseThemeArctic extends BaseTheme {
+        public static int constructor = 0x5b11125a;
 
+
+        public void serializeToStream(AbstractSerializedData stream) {
+            stream.writeInt32(constructor);
+        }
+    }
+
+    public static class TL_baseThemeNight extends BaseTheme {
+        public static int constructor = 0xb7b31ea8;
+
+
+        public void serializeToStream(AbstractSerializedData stream) {
+            stream.writeInt32(constructor);
+        }
+    }
+
+    public static class TL_baseThemeClassic extends BaseTheme {
+        public static int constructor = 0xc3a12462;
+
+
+        public void serializeToStream(AbstractSerializedData stream) {
+            stream.writeInt32(constructor);
+        }
+    }
+
+    public static class TL_baseThemeTinted extends BaseTheme {
+        public static int constructor = 0x6d5f77ee;
+
+
+        public void serializeToStream(AbstractSerializedData stream) {
+            stream.writeInt32(constructor);
+        }
+    }
+
+    public static class TL_baseThemeDay extends BaseTheme {
+        public static int constructor = 0xfbd81688;
+
+
+        public void serializeToStream(AbstractSerializedData stream) {
+            stream.writeInt32(constructor);
+        }
+    }
+    public int networkType;
+    public static Skin TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
+        Skin result = new Skin();
+        return result;
+    }
     public boolean disableFree = false;
     private static final ThreadLocal<NativeByteBuffer> sizeCalculator = new ThreadLocal<NativeByteBuffer>() {
         @Override

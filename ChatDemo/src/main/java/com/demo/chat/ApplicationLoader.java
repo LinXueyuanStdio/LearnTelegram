@@ -1,13 +1,5 @@
 package com.demo.chat;
 
-/**
- * @author 林学渊
- * @email linxy59@mail2.sysu.edu.cn
- * @date 2020/8/25
- * @description null
- * @usage null
- */
-
 import android.annotation.SuppressLint;
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -52,7 +44,11 @@ import java.io.File;
 import androidx.multidex.MultiDex;
 
 /**
- * Application
+ * @author 林学渊
+ * @email linxy59@mail2.sysu.edu.cn
+ * @date 2020/8/25
+ * @description null
+ * @usage null
  */
 public class ApplicationLoader extends Application {
 
@@ -93,7 +89,7 @@ public class ApplicationLoader extends Application {
         } catch (Exception e) {
             FileLog.e(e);
         }
-        return new File("/data/data/org.telegram.messenger/files");
+        return new File("/data/data/com.demo.chat.messager/files");
     }
 
     /**

@@ -31,7 +31,7 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import com.google.zxing.qrcode.encoder.Encoder;
 import com.google.zxing.qrcode.encoder.QRCode;
 
-import org.telegram.messenger.R;
+import com.demo.chat.R;
 
 import java.util.Arrays;
 import java.util.Map;

@@ -4,6 +4,7 @@ import android.os.Build;
 import android.view.View;
 
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.SharedConfig;
 
 /**
  * @author 林学渊

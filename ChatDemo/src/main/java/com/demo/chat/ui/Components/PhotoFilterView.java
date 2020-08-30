@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffColorFilter;
 import android.graphics.SurfaceTexture;
@@ -26,6 +25,7 @@ import com.demo.chat.controller.LocaleController;
 import com.demo.chat.controller.MediaController;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.theme.Theme;
+import com.demo.chat.ui.Cells.PhotoEditRadioCell;
 import com.demo.chat.ui.Cells.PhotoEditToolCell;
 
 import java.nio.ByteBuffer;

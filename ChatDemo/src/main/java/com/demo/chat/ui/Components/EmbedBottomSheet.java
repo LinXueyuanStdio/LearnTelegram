@@ -6,7 +6,6 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -51,6 +50,7 @@ import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.browser.Browser;
 import com.demo.chat.service.BringAppForegroundService;
 import com.demo.chat.theme.Theme;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import com.demo.chat.ui.ActionBar.BottomSheet;
 
 import java.util.HashMap;

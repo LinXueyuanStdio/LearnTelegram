@@ -8,7 +8,7 @@ import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.annotation.SuppressLint;
 import android.app.Activity;
-import android.app.AlertDialog;
+import com.demo.chat.ui.ActionBar.AlertDialog;
 import android.content.ClipDescription;
 import android.content.Context;
 import android.content.SharedPreferences;
