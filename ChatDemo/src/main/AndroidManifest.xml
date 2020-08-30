@@ -72,11 +72,10 @@
         android:name="com.demo.chat.ApplicationLoader"
         android:allowBackup="false"
         android:hardwareAccelerated="@bool/useHardwareAcceleration"
-        android:icon="@mipmap/ic_launcher"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:icon="@drawable/notification"
+        android:roundIcon="@drawable/notification"
         android:largeHeap="true"
         android:theme="@style/Theme.TMessages.Start"
-        android:manageSpaceActivity="org.telegram.ui.ExternalActionActivity"
         android:supportsRtl="false"
         tools:replace="android:supportsRtl">
 
@@ -260,32 +259,13 @@
             </intent-filter>
         </receiver>
 
-        <service android:name=".AuthenticatorService" android:exported="true">
-            <intent-filter>
-                <action android:name="android.accounts.AccountAuthenticator"/>
-            </intent-filter>
-            <meta-data android:name="android.accounts.AccountAuthenticator"
-                android:resource="@xml/auth"/>
-        </service>
-
-        <service android:name=".ContactsSyncAdapterService" android:exported="true">
-            <intent-filter>
-                <action android:name="android.content.SyncAdapter" />
-            </intent-filter>
-            <meta-data android:name="android.content.SyncAdapter"
-                android:resource="@xml/sync_contacts" />
-            <meta-data android:name="android.provider.CONTACTS_STRUCTURE"
-                android:resource="@xml/contacts" />
-        </service>
-
-        <service
-            android:name="org.telegram.messenger.TgChooserTargetService"
-            android:label="@string/AppName"
-            android:permission="android.permission.BIND_CHOOSER_TARGET_SERVICE">
-            <intent-filter>
-                <action android:name="android.service.chooser.ChooserTargetService" />
-            </intent-filter>
-        </service>
+<!--        <service android:name=".AuthenticatorService" android:exported="true">-->
+<!--            <intent-filter>-->
+<!--                <action android:name="android.accounts.AccountAuthenticator"/>-->
+<!--            </intent-filter>-->
+<!--            <meta-data android:name="android.accounts.AccountAuthenticator"-->
+<!--                android:resource="@xml/auth"/>-->
+<!--        </service>-->
 
         <service android:name=".KeepAliveJob"
             android:exported="false"
@@ -365,15 +345,15 @@
 
         <receiver android:name=".voip.VoIPActionsReceiver" android:exported="false"/>
 
-        <provider
-            android:name="androidx.core.content.FileProvider"
-            android:authorities="${applicationId}.provider"
-            android:exported="false"
-            android:grantUriPermissions="true">
-            <meta-data
-                android:name="android.support.FILE_PROVIDER_PATHS"
-                android:resource="@xml/provider_paths"/>
-        </provider>
+<!--        <provider-->
+<!--            android:name="androidx.core.content.FileProvider"-->
+<!--            android:authorities="${applicationId}.provider"-->
+<!--            android:exported="false"-->
+<!--            android:grantUriPermissions="true">-->
+<!--            <meta-data-->
+<!--                android:name="android.support.FILE_PROVIDER_PATHS"-->
+<!--                android:resource="@xml/provider_paths"/>-->
+<!--        </provider>-->
 
         <provider
             android:authorities="${applicationId}.notification_image_provider"
@@ -396,7 +376,7 @@
         <!--<meta-data android:name="com.google.android.gms.wallet.api.enabled" android:value="true" />-->
 
         <meta-data android:name="com.google.android.gms.car.notification.SmallIcon" android:resource="@drawable/ic_player" />
-        <meta-data android:name="com.google.android.gms.car.application" android:resource="@xml/automotive_app_desc" />
+<!--        <meta-data android:name="com.google.android.gms.car.application" android:resource="@xml/automotive_app_desc" />-->
 
         <meta-data android:name="com.google.android.gms.vision.DEPENDENCIES" android:value="face,barcode" />
 
