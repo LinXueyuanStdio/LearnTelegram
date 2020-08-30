@@ -1,5 +1,6 @@
 package com.demo.chat.model.small;
 
+import com.demo.chat.messager.AbstractSerializedData;
 import com.demo.chat.model.sticker.InputStickerSet;
 
 import java.util.ArrayList;
@@ -88,5 +89,10 @@ public class Document extends Media {
         public void setFilename(boolean b) {
 
         }
+    }
+
+    public static Document TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
+        Document result = new Document();
+        return result;
     }
 }

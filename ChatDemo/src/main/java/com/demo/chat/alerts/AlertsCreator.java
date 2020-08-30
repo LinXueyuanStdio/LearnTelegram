@@ -6,14 +6,9 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Vibrator;
 import android.text.Html;
-import android.text.InputType;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.SpannableStringBuilder;
@@ -24,7 +19,6 @@ import android.util.SparseArray;
 import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.View;
-import android.view.inputmethod.EditorInfo;
 import android.widget.FrameLayout;
 import android.widget.LinearLayout;
 import android.widget.TextView;
@@ -67,9 +61,9 @@ import com.demo.chat.ui.Components.BackupImageView;
 import com.demo.chat.ui.Components.EditTextBoldCursor;
 import com.demo.chat.ui.Components.LayoutHelper;
 import com.demo.chat.ui.Components.NumberPicker;
+import com.demo.chat.ui.Components.ShareLocationDrawable;
 import com.demo.chat.ui.Components.ThemeEditorView;
 import com.demo.chat.ui.Components.URLSpanNoUnderline;
-import com.demo.chat.ui.LanguageSelectActivity;
 import com.demo.chat.ui.LaunchActivity;
 
 import java.net.IDN;
@@ -1130,161 +1124,161 @@ public class AlertsCreator {
         }
     }
 
-    public static void showCustomNotificationsDialog(BaseFragment parentFragment, long did, int globalType, ArrayList<NotificationsSettingsActivity.NotificationException> exceptions, int currentAccount, MessagesStorage.IntCallback callback) {
-        showCustomNotificationsDialog(parentFragment, did, globalType, exceptions, currentAccount, callback, null);
-    }
+//    public static void showCustomNotificationsDialog(BaseFragment parentFragment, long did, int globalType, ArrayList<NotificationsSettingsActivity.NotificationException> exceptions, int currentAccount, MessagesStorage.IntCallback callback) {
+//        showCustomNotificationsDialog(parentFragment, did, globalType, exceptions, currentAccount, callback, null);
+//    }
 
-    public static void showCustomNotificationsDialog(BaseFragment parentFragment, long did, int globalType, ArrayList<NotificationsSettingsActivity.NotificationException> exceptions, int currentAccount, MessagesStorage.IntCallback callback, MessagesStorage.IntCallback resultCallback) {
-        if (parentFragment == null || parentFragment.getParentActivity() == null) {
-            return;
-        }
-        boolean enabled;
-        boolean defaultEnabled = NotificationsController.getInstance(currentAccount).isGlobalNotificationsEnabled(did);
-
-        String[] descriptions = new String[]{
-                LocaleController.getString("NotificationsTurnOn", R.string.NotificationsTurnOn),
-                LocaleController.formatString("MuteFor", R.string.MuteFor, LocaleController.formatPluralString("Hours", 1)),
-                LocaleController.formatString("MuteFor", R.string.MuteFor, LocaleController.formatPluralString("Days", 2)),
-                did == 0 && parentFragment instanceof NotificationsCustomSettingsActivity ? null : LocaleController.getString("NotificationsCustomize", R.string.NotificationsCustomize),
-                LocaleController.getString("NotificationsTurnOff", R.string.NotificationsTurnOff)
-        };
-
-        int[] icons = new int[]{
-                R.drawable.notifications_on,
-                R.drawable.notifications_mute1h,
-                R.drawable.notifications_mute2d,
-                R.drawable.notifications_settings,
-                R.drawable.notifications_off
-        };
-
-        final LinearLayout linearLayout = new LinearLayout(parentFragment.getParentActivity());
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
-        AlertDialog.Builder builder = new AlertDialog.Builder(parentFragment.getParentActivity());
-
-        for (int a = 0; a < descriptions.length; a++) {
-            if (descriptions[a] == null) {
-                continue;
-            }
-            TextView textView = new TextView(parentFragment.getParentActivity());
-            Drawable drawable = parentFragment.getParentActivity().getResources().getDrawable(icons[a]);
-            if (a == descriptions.length - 1) {
-                textView.setTextColor(Theme.getColor(Theme.key_dialogTextRed));
-                drawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_dialogRedIcon), PorterDuff.Mode.MULTIPLY));
-            } else {
-                textView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
-                drawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_dialogIcon), PorterDuff.Mode.MULTIPLY));
-            }
-            textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-            textView.setLines(1);
-            textView.setMaxLines(1);
-            textView.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
-            textView.setTag(a);
-            textView.setBackgroundDrawable(Theme.getSelectorDrawable(false));
-            textView.setPadding(AndroidUtilities.dp(24), 0, AndroidUtilities.dp(24), 0);
-            textView.setSingleLine(true);
-            textView.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
-            textView.setCompoundDrawablePadding(AndroidUtilities.dp(26));
-            textView.setText(descriptions[a]);
-            linearLayout.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, Gravity.LEFT | Gravity.TOP));
-            textView.setOnClickListener(v -> {
-                int i = (Integer) v.getTag();
-                if (i == 0) {
-                    if (did != 0) {
-                        SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
-                        SharedPreferences.Editor editor = preferences.edit();
-                        if (defaultEnabled) {
-                            editor.remove("notify2_" + did);
-                        } else {
-                            editor.putInt("notify2_" + did, 0);
-                        }
-                        MessagesStorage.getInstance(currentAccount).setDialogFlags(did, 0);
-                        editor.commit();
-                        TLRPC.Dialog dialog = MessagesController.getInstance(currentAccount).dialogs_dict.get(did);
-                        if (dialog != null) {
-                            dialog.notify_settings = new TLRPC.TL_peerNotifySettings();
-                        }
-                        NotificationsController.getInstance(currentAccount).updateServerNotificationsSettings(did);
-                        if (resultCallback != null) {
-                            if (defaultEnabled) {
-                                resultCallback.run(0);
-                            } else {
-                                resultCallback.run(1);
-                            }
-                        }
-                    } else {
-                        NotificationsController.getInstance(currentAccount).setGlobalNotificationsEnabled(globalType, 0);
-                    }
-                } else if (i == 3) {
-                    if (did != 0) {
-                        Bundle args = new Bundle();
-                        args.putLong("dialog_id", did);
-                        parentFragment.presentFragment(new ProfileNotificationsActivity(args));
-                    } else {
-                        parentFragment.presentFragment(new NotificationsCustomSettingsActivity(globalType, exceptions));
-                    }
-                } else {
-                    int untilTime = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
-                    if (i == 1) {
-                        untilTime += 60 * 60;
-                    } else if (i == 2) {
-                        untilTime += 60 * 60 * 48;
-                    } else if (i == 4) {
-                        untilTime = Integer.MAX_VALUE;
-                    }
-
-                    if (did != 0) {
-                        SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
-                        SharedPreferences.Editor editor = preferences.edit();
-                        long flags;
-                        if (i == 4) {
-                            if (!defaultEnabled) {
-                                editor.remove("notify2_" + did);
-                                flags = 0;
-                            } else {
-                                editor.putInt("notify2_" + did, 2);
-                                flags = 1;
-                            }
-                        } else {
-                            editor.putInt("notify2_" + did, 3);
-                            editor.putInt("notifyuntil_" + did, untilTime);
-                            flags = ((long) untilTime << 32) | 1;
-                        }
-                        NotificationsController.getInstance(currentAccount).removeNotificationsForDialog(did);
-                        MessagesStorage.getInstance(currentAccount).setDialogFlags(did, flags);
-                        editor.commit();
-                        TLRPC.Dialog dialog = MessagesController.getInstance(currentAccount).dialogs_dict.get(did);
-                        if (dialog != null) {
-                            dialog.notify_settings = new TLRPC.TL_peerNotifySettings();
-                            if (i != 4 || defaultEnabled) {
-                                dialog.notify_settings.mute_until = untilTime;
-                            }
-                        }
-                        NotificationsController.getInstance(currentAccount).updateServerNotificationsSettings(did);
-                        if (resultCallback != null) {
-                            if (i == 4 && !defaultEnabled) {
-                                resultCallback.run(0);
-                            } else {
-                                resultCallback.run(1);
-                            }
-                        }
-                    } else {
-                        if (i == 4) {
-                            NotificationsController.getInstance(currentAccount).setGlobalNotificationsEnabled(globalType, Integer.MAX_VALUE);
-                        } else {
-                            NotificationsController.getInstance(currentAccount).setGlobalNotificationsEnabled(globalType, untilTime);
-                        }
-                    }
-                }
-                if (callback != null) {
-                    callback.run(i);
-                }
-                builder.getDismissRunnable().run();
-            });
-        }
-        builder.setTitle(LocaleController.getString("Notifications", R.string.Notifications));
-        builder.setView(linearLayout);
-        parentFragment.showDialog(builder.create());
-    }
+//    public static void showCustomNotificationsDialog(BaseFragment parentFragment, long did, int globalType, ArrayList<NotificationsSettingsActivity.NotificationException> exceptions, int currentAccount, MessagesStorage.IntCallback callback, MessagesStorage.IntCallback resultCallback) {
+//        if (parentFragment == null || parentFragment.getParentActivity() == null) {
+//            return;
+//        }
+//        boolean enabled;
+//        boolean defaultEnabled = NotificationsController.getInstance(currentAccount).isGlobalNotificationsEnabled(did);
+//
+//        String[] descriptions = new String[]{
+//                LocaleController.getString("NotificationsTurnOn", R.string.NotificationsTurnOn),
+//                LocaleController.formatString("MuteFor", R.string.MuteFor, LocaleController.formatPluralString("Hours", 1)),
+//                LocaleController.formatString("MuteFor", R.string.MuteFor, LocaleController.formatPluralString("Days", 2)),
+//                did == 0 && parentFragment instanceof NotificationsCustomSettingsActivity ? null : LocaleController.getString("NotificationsCustomize", R.string.NotificationsCustomize),
+//                LocaleController.getString("NotificationsTurnOff", R.string.NotificationsTurnOff)
+//        };
+//
+//        int[] icons = new int[]{
+//                R.drawable.notifications_on,
+//                R.drawable.notifications_mute1h,
+//                R.drawable.notifications_mute2d,
+//                R.drawable.notifications_settings,
+//                R.drawable.notifications_off
+//        };
+//
+//        final LinearLayout linearLayout = new LinearLayout(parentFragment.getParentActivity());
+//        linearLayout.setOrientation(LinearLayout.VERTICAL);
+//        AlertDialog.Builder builder = new AlertDialog.Builder(parentFragment.getParentActivity());
+//
+//        for (int a = 0; a < descriptions.length; a++) {
+//            if (descriptions[a] == null) {
+//                continue;
+//            }
+//            TextView textView = new TextView(parentFragment.getParentActivity());
+//            Drawable drawable = parentFragment.getParentActivity().getResources().getDrawable(icons[a]);
+//            if (a == descriptions.length - 1) {
+//                textView.setTextColor(Theme.getColor(Theme.key_dialogTextRed));
+//                drawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_dialogRedIcon), PorterDuff.Mode.MULTIPLY));
+//            } else {
+//                textView.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
+//                drawable.setColorFilter(new PorterDuffColorFilter(Theme.getColor(Theme.key_dialogIcon), PorterDuff.Mode.MULTIPLY));
+//            }
+//            textView.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+//            textView.setLines(1);
+//            textView.setMaxLines(1);
+//            textView.setCompoundDrawablesWithIntrinsicBounds(drawable, null, null, null);
+//            textView.setTag(a);
+//            textView.setBackgroundDrawable(Theme.getSelectorDrawable(false));
+//            textView.setPadding(AndroidUtilities.dp(24), 0, AndroidUtilities.dp(24), 0);
+//            textView.setSingleLine(true);
+//            textView.setGravity(Gravity.LEFT | Gravity.CENTER_VERTICAL);
+//            textView.setCompoundDrawablePadding(AndroidUtilities.dp(26));
+//            textView.setText(descriptions[a]);
+//            linearLayout.addView(textView, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 48, Gravity.LEFT | Gravity.TOP));
+//            textView.setOnClickListener(v -> {
+//                int i = (Integer) v.getTag();
+//                if (i == 0) {
+//                    if (did != 0) {
+//                        SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
+//                        SharedPreferences.Editor editor = preferences.edit();
+//                        if (defaultEnabled) {
+//                            editor.remove("notify2_" + did);
+//                        } else {
+//                            editor.putInt("notify2_" + did, 0);
+//                        }
+//                        MessagesStorage.getInstance(currentAccount).setDialogFlags(did, 0);
+//                        editor.commit();
+//                        TLRPC.Dialog dialog = MessagesController.getInstance(currentAccount).dialogs_dict.get(did);
+//                        if (dialog != null) {
+//                            dialog.notify_settings = new TLRPC.TL_peerNotifySettings();
+//                        }
+//                        NotificationsController.getInstance(currentAccount).updateServerNotificationsSettings(did);
+//                        if (resultCallback != null) {
+//                            if (defaultEnabled) {
+//                                resultCallback.run(0);
+//                            } else {
+//                                resultCallback.run(1);
+//                            }
+//                        }
+//                    } else {
+//                        NotificationsController.getInstance(currentAccount).setGlobalNotificationsEnabled(globalType, 0);
+//                    }
+//                } else if (i == 3) {
+//                    if (did != 0) {
+//                        Bundle args = new Bundle();
+//                        args.putLong("dialog_id", did);
+//                        parentFragment.presentFragment(new ProfileNotificationsActivity(args));
+//                    } else {
+//                        parentFragment.presentFragment(new NotificationsCustomSettingsActivity(globalType, exceptions));
+//                    }
+//                } else {
+//                    int untilTime = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
+//                    if (i == 1) {
+//                        untilTime += 60 * 60;
+//                    } else if (i == 2) {
+//                        untilTime += 60 * 60 * 48;
+//                    } else if (i == 4) {
+//                        untilTime = Integer.MAX_VALUE;
+//                    }
+//
+//                    if (did != 0) {
+//                        SharedPreferences preferences = MessagesController.getNotificationsSettings(currentAccount);
+//                        SharedPreferences.Editor editor = preferences.edit();
+//                        long flags;
+//                        if (i == 4) {
+//                            if (!defaultEnabled) {
+//                                editor.remove("notify2_" + did);
+//                                flags = 0;
+//                            } else {
+//                                editor.putInt("notify2_" + did, 2);
+//                                flags = 1;
+//                            }
+//                        } else {
+//                            editor.putInt("notify2_" + did, 3);
+//                            editor.putInt("notifyuntil_" + did, untilTime);
+//                            flags = ((long) untilTime << 32) | 1;
+//                        }
+//                        NotificationsController.getInstance(currentAccount).removeNotificationsForDialog(did);
+//                        MessagesStorage.getInstance(currentAccount).setDialogFlags(did, flags);
+//                        editor.commit();
+//                        TLRPC.Dialog dialog = MessagesController.getInstance(currentAccount).dialogs_dict.get(did);
+//                        if (dialog != null) {
+//                            dialog.notify_settings = new TLRPC.TL_peerNotifySettings();
+//                            if (i != 4 || defaultEnabled) {
+//                                dialog.notify_settings.mute_until = untilTime;
+//                            }
+//                        }
+//                        NotificationsController.getInstance(currentAccount).updateServerNotificationsSettings(did);
+//                        if (resultCallback != null) {
+//                            if (i == 4 && !defaultEnabled) {
+//                                resultCallback.run(0);
+//                            } else {
+//                                resultCallback.run(1);
+//                            }
+//                        }
+//                    } else {
+//                        if (i == 4) {
+//                            NotificationsController.getInstance(currentAccount).setGlobalNotificationsEnabled(globalType, Integer.MAX_VALUE);
+//                        } else {
+//                            NotificationsController.getInstance(currentAccount).setGlobalNotificationsEnabled(globalType, untilTime);
+//                        }
+//                    }
+//                }
+//                if (callback != null) {
+//                    callback.run(i);
+//                }
+//                builder.getDismissRunnable().run();
+//            });
+//        }
+//        builder.setTitle(LocaleController.getString("Notifications", R.string.Notifications));
+//        builder.setView(linearLayout);
+//        parentFragment.showDialog(builder.create());
+//    }
 
     private static void performAskAQuestion(BaseFragment fragment) {
         int currentAccount = fragment.getCurrentAccount();
@@ -2058,7 +2052,7 @@ public class AlertsCreator {
                         Bundle args = new Bundle();
                         args.putLong("dialog_id", dialog_id);
                         args.putLong("message_id", messageId);
-                        parentFragment.presentFragment(new ReportOtherActivity(args));
+//                        parentFragment.presentFragment(new ReportOtherActivity(args));
                         return;
                     }
                     //TODO 发起请求
@@ -2102,209 +2096,209 @@ public class AlertsCreator {
         parentFragment.showDialog(sheet);
     }
 
-    public static void showAddUserAlert(String error, final BaseFragment fragment, boolean isChannel, TLObject request) {
-        if (error == null || fragment == null || fragment.getParentActivity() == null) {
-            return;
-        }
-        AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity());
-        builder.setTitle(LocaleController.getString("AppName", R.string.AppName));
-        switch (error) {
-            case "PEER_FLOOD":
-                builder.setMessage(LocaleController.getString("NobodyLikesSpam2", R.string.NobodyLikesSpam2));
-                builder.setNegativeButton(LocaleController.getString("MoreInfo", R.string.MoreInfo), (dialogInterface, i) -> MessagesController.getInstance(fragment.getCurrentAccount()).openByUserName("spambot", fragment, 1));
-                break;
-            case "USER_BLOCKED":
-            case "USER_BOT":
-            case "USER_ID_INVALID":
-                if (isChannel) {
-                    builder.setMessage(LocaleController.getString("ChannelUserCantAdd", R.string.ChannelUserCantAdd));
-                } else {
-                    builder.setMessage(LocaleController.getString("GroupUserCantAdd", R.string.GroupUserCantAdd));
-                }
-                break;
-            case "USERS_TOO_MUCH":
-                if (isChannel) {
-                    builder.setMessage(LocaleController.getString("ChannelUserAddLimit", R.string.ChannelUserAddLimit));
-                } else {
-                    builder.setMessage(LocaleController.getString("GroupUserAddLimit", R.string.GroupUserAddLimit));
-                }
-                break;
-            case "USER_NOT_MUTUAL_CONTACT":
-                if (isChannel) {
-                    builder.setMessage(LocaleController.getString("ChannelUserLeftError", R.string.ChannelUserLeftError));
-                } else {
-                    builder.setMessage(LocaleController.getString("GroupUserLeftError", R.string.GroupUserLeftError));
-                }
-                break;
-            case "ADMINS_TOO_MUCH":
-                if (isChannel) {
-                    builder.setMessage(LocaleController.getString("ChannelUserCantAdmin", R.string.ChannelUserCantAdmin));
-                } else {
-                    builder.setMessage(LocaleController.getString("GroupUserCantAdmin", R.string.GroupUserCantAdmin));
-                }
-                break;
-            case "BOTS_TOO_MUCH":
-                if (isChannel) {
-                    builder.setMessage(LocaleController.getString("ChannelUserCantBot", R.string.ChannelUserCantBot));
-                } else {
-                    builder.setMessage(LocaleController.getString("GroupUserCantBot", R.string.GroupUserCantBot));
-                }
-                break;
-            case "USER_PRIVACY_RESTRICTED":
-                if (isChannel) {
-                    builder.setMessage(LocaleController.getString("InviteToChannelError", R.string.InviteToChannelError));
-                } else {
-                    builder.setMessage(LocaleController.getString("InviteToGroupError", R.string.InviteToGroupError));
-                }
-                break;
-            case "USERS_TOO_FEW":
-                builder.setMessage(LocaleController.getString("CreateGroupError", R.string.CreateGroupError));
-                break;
-            case "USER_RESTRICTED":
-                builder.setMessage(LocaleController.getString("UserRestricted", R.string.UserRestricted));
-                break;
-            case "YOU_BLOCKED_USER":
-                builder.setMessage(LocaleController.getString("YouBlockedUser", R.string.YouBlockedUser));
-                break;
-            case "CHAT_ADMIN_BAN_REQUIRED":
-            case "USER_KICKED":
-                if (request instanceof TLRPC.TL_channels_inviteToChannel) {
-                    builder.setMessage(LocaleController.getString("AddUserErrorBlacklisted", R.string.AddUserErrorBlacklisted));
-                } else {
-                    builder.setMessage(LocaleController.getString("AddAdminErrorBlacklisted", R.string.AddAdminErrorBlacklisted));
-                }
-                break;
-            case "CHAT_ADMIN_INVITE_REQUIRED":
-                builder.setMessage(LocaleController.getString("AddAdminErrorNotAMember", R.string.AddAdminErrorNotAMember));
-                break;
-            case "USER_ADMIN_INVALID":
-                builder.setMessage(LocaleController.getString("AddBannedErrorAdmin", R.string.AddBannedErrorAdmin));
-                break;
-            case "CHANNELS_ADMIN_PUBLIC_TOO_MUCH":
-                builder.setMessage(LocaleController.getString("PublicChannelsTooMuch", R.string.PublicChannelsTooMuch));
-                break;
-            case "CHANNELS_ADMIN_LOCATED_TOO_MUCH":
-                builder.setMessage(LocaleController.getString("LocatedChannelsTooMuch", R.string.LocatedChannelsTooMuch));
-                break;
-            case "CHANNELS_TOO_MUCH":
-                builder.setTitle(LocaleController.getString("ChannelTooMuchTitle", R.string.ChannelTooMuchTitle));
-                if (request instanceof TLRPC.TL_channels_createChannel) {
-                    builder.setMessage(LocaleController.getString("ChannelTooMuch", R.string.ChannelTooMuch));
-                } else {
-                    builder.setMessage(LocaleController.getString("ChannelTooMuchJoin", R.string.ChannelTooMuchJoin));
-                }
-                break;
-            case "USER_CHANNELS_TOO_MUCH":
-                builder.setTitle(LocaleController.getString("ChannelTooMuchTitle", R.string.ChannelTooMuchTitle));
-                builder.setMessage(LocaleController.getString("UserChannelTooMuchJoin", R.string.UserChannelTooMuchJoin));
-                break;
-            default:
-                builder.setMessage(LocaleController.getString("ErrorOccurred", R.string.ErrorOccurred) + "\n" + error);
-                break;
-        }
-        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), null);
-        fragment.showDialog(builder.create(), true, null);
-    }
+//    public static void showAddUserAlert(String error, final BaseFragment fragment, boolean isChannel, TLObject request) {
+//        if (error == null || fragment == null || fragment.getParentActivity() == null) {
+//            return;
+//        }
+//        AlertDialog.Builder builder = new AlertDialog.Builder(fragment.getParentActivity());
+//        builder.setTitle(LocaleController.getString("AppName", R.string.AppName));
+//        switch (error) {
+//            case "PEER_FLOOD":
+//                builder.setMessage(LocaleController.getString("NobodyLikesSpam2", R.string.NobodyLikesSpam2));
+//                builder.setNegativeButton(LocaleController.getString("MoreInfo", R.string.MoreInfo), (dialogInterface, i) -> MessagesController.getInstance(fragment.getCurrentAccount()).openByUserName("spambot", fragment, 1));
+//                break;
+//            case "USER_BLOCKED":
+//            case "USER_BOT":
+//            case "USER_ID_INVALID":
+//                if (isChannel) {
+//                    builder.setMessage(LocaleController.getString("ChannelUserCantAdd", R.string.ChannelUserCantAdd));
+//                } else {
+//                    builder.setMessage(LocaleController.getString("GroupUserCantAdd", R.string.GroupUserCantAdd));
+//                }
+//                break;
+//            case "USERS_TOO_MUCH":
+//                if (isChannel) {
+//                    builder.setMessage(LocaleController.getString("ChannelUserAddLimit", R.string.ChannelUserAddLimit));
+//                } else {
+//                    builder.setMessage(LocaleController.getString("GroupUserAddLimit", R.string.GroupUserAddLimit));
+//                }
+//                break;
+//            case "USER_NOT_MUTUAL_CONTACT":
+//                if (isChannel) {
+//                    builder.setMessage(LocaleController.getString("ChannelUserLeftError", R.string.ChannelUserLeftError));
+//                } else {
+//                    builder.setMessage(LocaleController.getString("GroupUserLeftError", R.string.GroupUserLeftError));
+//                }
+//                break;
+//            case "ADMINS_TOO_MUCH":
+//                if (isChannel) {
+//                    builder.setMessage(LocaleController.getString("ChannelUserCantAdmin", R.string.ChannelUserCantAdmin));
+//                } else {
+//                    builder.setMessage(LocaleController.getString("GroupUserCantAdmin", R.string.GroupUserCantAdmin));
+//                }
+//                break;
+//            case "BOTS_TOO_MUCH":
+//                if (isChannel) {
+//                    builder.setMessage(LocaleController.getString("ChannelUserCantBot", R.string.ChannelUserCantBot));
+//                } else {
+//                    builder.setMessage(LocaleController.getString("GroupUserCantBot", R.string.GroupUserCantBot));
+//                }
+//                break;
+//            case "USER_PRIVACY_RESTRICTED":
+//                if (isChannel) {
+//                    builder.setMessage(LocaleController.getString("InviteToChannelError", R.string.InviteToChannelError));
+//                } else {
+//                    builder.setMessage(LocaleController.getString("InviteToGroupError", R.string.InviteToGroupError));
+//                }
+//                break;
+//            case "USERS_TOO_FEW":
+//                builder.setMessage(LocaleController.getString("CreateGroupError", R.string.CreateGroupError));
+//                break;
+//            case "USER_RESTRICTED":
+//                builder.setMessage(LocaleController.getString("UserRestricted", R.string.UserRestricted));
+//                break;
+//            case "YOU_BLOCKED_USER":
+//                builder.setMessage(LocaleController.getString("YouBlockedUser", R.string.YouBlockedUser));
+//                break;
+//            case "CHAT_ADMIN_BAN_REQUIRED":
+//            case "USER_KICKED":
+//                if (request instanceof TLRPC.TL_channels_inviteToChannel) {
+//                    builder.setMessage(LocaleController.getString("AddUserErrorBlacklisted", R.string.AddUserErrorBlacklisted));
+//                } else {
+//                    builder.setMessage(LocaleController.getString("AddAdminErrorBlacklisted", R.string.AddAdminErrorBlacklisted));
+//                }
+//                break;
+//            case "CHAT_ADMIN_INVITE_REQUIRED":
+//                builder.setMessage(LocaleController.getString("AddAdminErrorNotAMember", R.string.AddAdminErrorNotAMember));
+//                break;
+//            case "USER_ADMIN_INVALID":
+//                builder.setMessage(LocaleController.getString("AddBannedErrorAdmin", R.string.AddBannedErrorAdmin));
+//                break;
+//            case "CHANNELS_ADMIN_PUBLIC_TOO_MUCH":
+//                builder.setMessage(LocaleController.getString("PublicChannelsTooMuch", R.string.PublicChannelsTooMuch));
+//                break;
+//            case "CHANNELS_ADMIN_LOCATED_TOO_MUCH":
+//                builder.setMessage(LocaleController.getString("LocatedChannelsTooMuch", R.string.LocatedChannelsTooMuch));
+//                break;
+//            case "CHANNELS_TOO_MUCH":
+//                builder.setTitle(LocaleController.getString("ChannelTooMuchTitle", R.string.ChannelTooMuchTitle));
+//                if (request instanceof TLRPC.TL_channels_createChannel) {
+//                    builder.setMessage(LocaleController.getString("ChannelTooMuch", R.string.ChannelTooMuch));
+//                } else {
+//                    builder.setMessage(LocaleController.getString("ChannelTooMuchJoin", R.string.ChannelTooMuchJoin));
+//                }
+//                break;
+//            case "USER_CHANNELS_TOO_MUCH":
+//                builder.setTitle(LocaleController.getString("ChannelTooMuchTitle", R.string.ChannelTooMuchTitle));
+//                builder.setMessage(LocaleController.getString("UserChannelTooMuchJoin", R.string.UserChannelTooMuchJoin));
+//                break;
+//            default:
+//                builder.setMessage(LocaleController.getString("ErrorOccurred", R.string.ErrorOccurred) + "\n" + error);
+//                break;
+//        }
+//        builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), null);
+//        fragment.showDialog(builder.create(), true, null);
+//    }
 
     //region select
-    public static Dialog createColorSelectDialog(Activity parentActivity, final long dialog_id, final int globalType, final Runnable onSelect) {
-        int currentColor;
-        SharedPreferences preferences = MessagesController.getNotificationsSettings(UserConfig.selectedAccount);
-        if (dialog_id != 0) {
-            if (preferences.contains("color_" + dialog_id)) {
-                currentColor = preferences.getInt("color_" + dialog_id, 0xff0000ff);
-            } else {
-                if ((int) dialog_id < 0) {
-                    currentColor = preferences.getInt("GroupLed", 0xff0000ff);
-                } else {
-                    currentColor = preferences.getInt("MessagesLed", 0xff0000ff);
-                }
-            }
-        } else if (globalType == NotificationsController.TYPE_PRIVATE) {
-            currentColor = preferences.getInt("MessagesLed", 0xff0000ff);
-        } else if (globalType == NotificationsController.TYPE_GROUP) {
-            currentColor = preferences.getInt("GroupLed", 0xff0000ff);
-        } else {
-            currentColor = preferences.getInt("ChannelLed", 0xff0000ff);
-        }
-        final LinearLayout linearLayout = new LinearLayout(parentActivity);
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
-        String[] descriptions = new String[]{LocaleController.getString("ColorRed", R.string.ColorRed),
-                                             LocaleController.getString("ColorOrange", R.string.ColorOrange),
-                                             LocaleController.getString("ColorYellow", R.string.ColorYellow),
-                                             LocaleController.getString("ColorGreen", R.string.ColorGreen),
-                                             LocaleController.getString("ColorCyan", R.string.ColorCyan),
-                                             LocaleController.getString("ColorBlue", R.string.ColorBlue),
-                                             LocaleController.getString("ColorViolet", R.string.ColorViolet),
-                                             LocaleController.getString("ColorPink", R.string.ColorPink),
-                                             LocaleController.getString("ColorWhite", R.string.ColorWhite)};
-        final int[] selectedColor = new int[]{currentColor};
-        for (int a = 0; a < 9; a++) {
-            RadioColorCell cell = new RadioColorCell(parentActivity);
-            cell.setPadding(AndroidUtilities.dp(4), 0, AndroidUtilities.dp(4), 0);
-            cell.setTag(a);
-            cell.setCheckColor(TextColorCell.colors[a], TextColorCell.colors[a]);
-            cell.setTextAndValue(descriptions[a], currentColor == TextColorCell.colorsToSave[a]);
-            linearLayout.addView(cell);
-            cell.setOnClickListener(v -> {
-                int count = linearLayout.getChildCount();
-                for (int a1 = 0; a1 < count; a1++) {
-                    RadioColorCell cell1 = (RadioColorCell) linearLayout.getChildAt(a1);
-                    cell1.setChecked(cell1 == v, true);
-                }
-                selectedColor[0] = TextColorCell.colorsToSave[(Integer) v.getTag()];
-            });
-        }
-        AlertDialog.Builder builder = new AlertDialog.Builder(parentActivity);
-        builder.setTitle(LocaleController.getString("LedColor", R.string.LedColor));
-        builder.setView(linearLayout);
-        builder.setPositiveButton(LocaleController.getString("Set", R.string.Set), (dialogInterface, which) -> {
-            final SharedPreferences preferences1 = MessagesController.getNotificationsSettings(UserConfig.selectedAccount);
-            SharedPreferences.Editor editor = preferences1.edit();
-            if (dialog_id != 0) {
-                editor.putInt("color_" + dialog_id, selectedColor[0]);
-            } else if (globalType == NotificationsController.TYPE_PRIVATE) {
-                editor.putInt("MessagesLed", selectedColor[0]);
-            } else if (globalType == NotificationsController.TYPE_GROUP) {
-                editor.putInt("GroupLed", selectedColor[0]);
-            } else {
-                editor.putInt("ChannelLed", selectedColor[0]);
-            }
-            editor.commit();
-            if (onSelect != null) {
-                onSelect.run();
-            }
-        });
-        builder.setNeutralButton(LocaleController.getString("LedDisabled", R.string.LedDisabled), (dialog, which) -> {
-            final SharedPreferences preferences12 = MessagesController.getNotificationsSettings(UserConfig.selectedAccount);
-            SharedPreferences.Editor editor = preferences12.edit();
-            if (dialog_id != 0) {
-                editor.putInt("color_" + dialog_id, 0);
-            } else if (globalType == NotificationsController.TYPE_PRIVATE) {
-                editor.putInt("MessagesLed", 0);
-            } else if (globalType == NotificationsController.TYPE_GROUP) {
-                editor.putInt("GroupLed", 0);
-            } else {
-                editor.putInt("ChannelLed", 0);
-            }
-            editor.commit();
-            if (onSelect != null) {
-                onSelect.run();
-            }
-        });
-        if (dialog_id != 0) {
-            builder.setNegativeButton(LocaleController.getString("Default", R.string.Default), (dialog, which) -> {
-                final SharedPreferences preferences13 = MessagesController.getNotificationsSettings(UserConfig.selectedAccount);
-                SharedPreferences.Editor editor = preferences13.edit();
-                editor.remove("color_" + dialog_id);
-                editor.commit();
-                if (onSelect != null) {
-                    onSelect.run();
-                }
-            });
-        }
-        return builder.create();
-    }
+//    public static Dialog createColorSelectDialog(Activity parentActivity, final long dialog_id, final int globalType, final Runnable onSelect) {
+//        int currentColor;
+//        SharedPreferences preferences = MessagesController.getNotificationsSettings(UserConfig.selectedAccount);
+//        if (dialog_id != 0) {
+//            if (preferences.contains("color_" + dialog_id)) {
+//                currentColor = preferences.getInt("color_" + dialog_id, 0xff0000ff);
+//            } else {
+//                if ((int) dialog_id < 0) {
+//                    currentColor = preferences.getInt("GroupLed", 0xff0000ff);
+//                } else {
+//                    currentColor = preferences.getInt("MessagesLed", 0xff0000ff);
+//                }
+//            }
+//        } else if (globalType == NotificationsController.TYPE_PRIVATE) {
+//            currentColor = preferences.getInt("MessagesLed", 0xff0000ff);
+//        } else if (globalType == NotificationsController.TYPE_GROUP) {
+//            currentColor = preferences.getInt("GroupLed", 0xff0000ff);
+//        } else {
+//            currentColor = preferences.getInt("ChannelLed", 0xff0000ff);
+//        }
+//        final LinearLayout linearLayout = new LinearLayout(parentActivity);
+//        linearLayout.setOrientation(LinearLayout.VERTICAL);
+//        String[] descriptions = new String[]{LocaleController.getString("ColorRed", R.string.ColorRed),
+//                                             LocaleController.getString("ColorOrange", R.string.ColorOrange),
+//                                             LocaleController.getString("ColorYellow", R.string.ColorYellow),
+//                                             LocaleController.getString("ColorGreen", R.string.ColorGreen),
+//                                             LocaleController.getString("ColorCyan", R.string.ColorCyan),
+//                                             LocaleController.getString("ColorBlue", R.string.ColorBlue),
+//                                             LocaleController.getString("ColorViolet", R.string.ColorViolet),
+//                                             LocaleController.getString("ColorPink", R.string.ColorPink),
+//                                             LocaleController.getString("ColorWhite", R.string.ColorWhite)};
+//        final int[] selectedColor = new int[]{currentColor};
+//        for (int a = 0; a < 9; a++) {
+//            RadioColorCell cell = new RadioColorCell(parentActivity);
+//            cell.setPadding(AndroidUtilities.dp(4), 0, AndroidUtilities.dp(4), 0);
+//            cell.setTag(a);
+//            cell.setCheckColor(TextColorCell.colors[a], TextColorCell.colors[a]);
+//            cell.setTextAndValue(descriptions[a], currentColor == TextColorCell.colorsToSave[a]);
+//            linearLayout.addView(cell);
+//            cell.setOnClickListener(v -> {
+//                int count = linearLayout.getChildCount();
+//                for (int a1 = 0; a1 < count; a1++) {
+//                    RadioColorCell cell1 = (RadioColorCell) linearLayout.getChildAt(a1);
+//                    cell1.setChecked(cell1 == v, true);
+//                }
+//                selectedColor[0] = TextColorCell.colorsToSave[(Integer) v.getTag()];
+//            });
+//        }
+//        AlertDialog.Builder builder = new AlertDialog.Builder(parentActivity);
+//        builder.setTitle(LocaleController.getString("LedColor", R.string.LedColor));
+//        builder.setView(linearLayout);
+//        builder.setPositiveButton(LocaleController.getString("Set", R.string.Set), (dialogInterface, which) -> {
+//            final SharedPreferences preferences1 = MessagesController.getNotificationsSettings(UserConfig.selectedAccount);
+//            SharedPreferences.Editor editor = preferences1.edit();
+//            if (dialog_id != 0) {
+//                editor.putInt("color_" + dialog_id, selectedColor[0]);
+//            } else if (globalType == NotificationsController.TYPE_PRIVATE) {
+//                editor.putInt("MessagesLed", selectedColor[0]);
+//            } else if (globalType == NotificationsController.TYPE_GROUP) {
+//                editor.putInt("GroupLed", selectedColor[0]);
+//            } else {
+//                editor.putInt("ChannelLed", selectedColor[0]);
+//            }
+//            editor.commit();
+//            if (onSelect != null) {
+//                onSelect.run();
+//            }
+//        });
+//        builder.setNeutralButton(LocaleController.getString("LedDisabled", R.string.LedDisabled), (dialog, which) -> {
+//            final SharedPreferences preferences12 = MessagesController.getNotificationsSettings(UserConfig.selectedAccount);
+//            SharedPreferences.Editor editor = preferences12.edit();
+//            if (dialog_id != 0) {
+//                editor.putInt("color_" + dialog_id, 0);
+//            } else if (globalType == NotificationsController.TYPE_PRIVATE) {
+//                editor.putInt("MessagesLed", 0);
+//            } else if (globalType == NotificationsController.TYPE_GROUP) {
+//                editor.putInt("GroupLed", 0);
+//            } else {
+//                editor.putInt("ChannelLed", 0);
+//            }
+//            editor.commit();
+//            if (onSelect != null) {
+//                onSelect.run();
+//            }
+//        });
+//        if (dialog_id != 0) {
+//            builder.setNegativeButton(LocaleController.getString("Default", R.string.Default), (dialog, which) -> {
+//                final SharedPreferences preferences13 = MessagesController.getNotificationsSettings(UserConfig.selectedAccount);
+//                SharedPreferences.Editor editor = preferences13.edit();
+//                editor.remove("color_" + dialog_id);
+//                editor.commit();
+//                if (onSelect != null) {
+//                    onSelect.run();
+//                }
+//            });
+//        }
+//        return builder.create();
+//    }
 
     public static Dialog createVibrationSelectDialog(Activity parentActivity, final long dialog_id, final boolean globalGroup, final boolean globalAll, final Runnable onSelect) {
         String prefix;
@@ -2737,41 +2731,41 @@ public class AlertsCreator {
         void didSelectAccount(int account);
     }
 
-    public static AlertDialog createAccountSelectDialog(Activity parentActivity, final AccountSelectDelegate delegate) {
-        if (UserConfig.getActivatedAccountsCount() < 2) {
-            return null;
-        }
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(parentActivity);
-        final Runnable dismissRunnable = builder.getDismissRunnable();
-        final AlertDialog[] alertDialog = new AlertDialog[1];
-
-        final LinearLayout linearLayout = new LinearLayout(parentActivity);
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
-        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
-            User u = UserConfig.getInstance(a).getCurrentUser();
-            if (u != null) {
-                AccountSelectCell cell = new AccountSelectCell(parentActivity);
-                cell.setAccount(a, false);
-                cell.setPadding(AndroidUtilities.dp(14), 0, AndroidUtilities.dp(14), 0);
-                cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
-                linearLayout.addView(cell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 50));
-                cell.setOnClickListener(v -> {
-                    if (alertDialog[0] != null) {
-                        alertDialog[0].setOnDismissListener(null);
-                    }
-                    dismissRunnable.run();
-                    AccountSelectCell cell1 = (AccountSelectCell) v;
-                    delegate.didSelectAccount(cell1.getAccountNumber());
-                });
-            }
-        }
-
-        builder.setTitle(LocaleController.getString("SelectAccount", R.string.SelectAccount));
-        builder.setView(linearLayout);
-        builder.setPositiveButton(LocaleController.getString("Cancel", R.string.Cancel), null);
-        return alertDialog[0] = builder.create();
-    }
+//    public static AlertDialog createAccountSelectDialog(Activity parentActivity, final AccountSelectDelegate delegate) {
+//        if (UserConfig.getActivatedAccountsCount() < 2) {
+//            return null;
+//        }
+//
+//        AlertDialog.Builder builder = new AlertDialog.Builder(parentActivity);
+//        final Runnable dismissRunnable = builder.getDismissRunnable();
+//        final AlertDialog[] alertDialog = new AlertDialog[1];
+//
+//        final LinearLayout linearLayout = new LinearLayout(parentActivity);
+//        linearLayout.setOrientation(LinearLayout.VERTICAL);
+//        for (int a = 0; a < UserConfig.MAX_ACCOUNT_COUNT; a++) {
+//            User u = UserConfig.getInstance(a).getCurrentUser();
+//            if (u != null) {
+//                AccountSelectCell cell = new AccountSelectCell(parentActivity);
+//                cell.setAccount(a, false);
+//                cell.setPadding(AndroidUtilities.dp(14), 0, AndroidUtilities.dp(14), 0);
+//                cell.setBackgroundDrawable(Theme.getSelectorDrawable(false));
+//                linearLayout.addView(cell, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 50));
+//                cell.setOnClickListener(v -> {
+//                    if (alertDialog[0] != null) {
+//                        alertDialog[0].setOnDismissListener(null);
+//                    }
+//                    dismissRunnable.run();
+//                    AccountSelectCell cell1 = (AccountSelectCell) v;
+//                    delegate.didSelectAccount(cell1.getAccountNumber());
+//                });
+//            }
+//        }
+//
+//        builder.setTitle(LocaleController.getString("SelectAccount", R.string.SelectAccount));
+//        builder.setView(linearLayout);
+//        builder.setPositiveButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+//        return alertDialog[0] = builder.create();
+//    }
 
     public interface PaymentAlertDelegate {
         void didPressedNewCard();
@@ -2817,18 +2811,21 @@ public class AlertsCreator {
         boolean hasDeleteForAllCheck = false;
         boolean hasNotOut = false;
         int myMessagesCount = 0;
-        boolean canDeleteInbox = encryptedChat == null && user != null && canRevokeInbox && revokeTimeLimit == 0x7fffffff;
+        boolean canDeleteInbox = user != null && canRevokeInbox && revokeTimeLimit == 0x7fffffff;
         if (chat != null && chat.megagroup && !scheduled) {
             boolean canBan = ChatObject.canBlockUsers(chat);
             int currentDate = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
             if (selectedMessage != null) {
-                if (selectedMessage.messageOwner.action == null || selectedMessage.messageOwner.action instanceof TLRPC.TL_messageActionEmpty ||
-                        selectedMessage.messageOwner.action instanceof TLRPC.TL_messageActionChatDeleteUser ||
-                        selectedMessage.messageOwner.action instanceof TLRPC.TL_messageActionChatJoinedByLink ||
-                        selectedMessage.messageOwner.action instanceof TLRPC.TL_messageActionChatAddUser) {
+                if (selectedMessage.messageOwner.action == null || selectedMessage.messageOwner.action.isEmpty() ||
+                        selectedMessage.messageOwner.action.isChatDeleteUser() ||
+                        selectedMessage.messageOwner.action.isChatJoinedByLink() ||
+                        selectedMessage.messageOwner.action.isChatAddUser()) {
                     actionUser = MessagesController.getInstance(currentAccount).getUser(selectedMessage.messageOwner.from_id);
                 }
-                boolean hasOutgoing = !selectedMessage.isSendError() && selectedMessage.getDialogId() == mergeDialogId && (selectedMessage.messageOwner.action == null || selectedMessage.messageOwner.action instanceof TLRPC.TL_messageActionEmpty) && selectedMessage.isOut() && (currentDate - selectedMessage.messageOwner.date) <= revokeTimeLimit;
+                boolean hasOutgoing = !selectedMessage.isSendError() && selectedMessage.getDialogId() == mergeDialogId && (selectedMessage.messageOwner.action == null
+                        || selectedMessage.messageOwner.action.isEmpty())
+                        && selectedMessage.isOut()
+                        && (currentDate - selectedMessage.messageOwner.date) <= revokeTimeLimit;
                 if (hasOutgoing) {
                     myMessagesCount++;
                 }
@@ -2951,11 +2948,18 @@ public class AlertsCreator {
             } else {
                 actionUser = null;
             }
-        } else if (!scheduled && !ChatObject.isChannel(chat) && encryptedChat == null) {
+        } else if (!scheduled && !ChatObject.isChannel(chat)) {
             int currentDate = ConnectionsManager.getInstance(currentAccount).getCurrentTime();
             if (user != null && user.id != UserConfig.getInstance(currentAccount).getClientUserId() && !user.bot || chat != null) {
                 if (selectedMessage != null) {
-                    boolean hasOutgoing = !selectedMessage.isSendError() && (selectedMessage.messageOwner.action == null || selectedMessage.messageOwner.action instanceof TLRPC.TL_messageActionEmpty || selectedMessage.messageOwner.action instanceof TLRPC.TL_messageActionPhoneCall) && (selectedMessage.isOut() || canRevokeInbox || ChatObject.hasAdminRights(chat)) && (currentDate - selectedMessage.messageOwner.date) <= revokeTimeLimit;
+                    boolean hasOutgoing = !selectedMessage.isSendError()
+                            && (selectedMessage.messageOwner.action == null
+                            || selectedMessage.messageOwner.action .isEmpty()
+                            || selectedMessage.messageOwner.action.isPhoneCall())
+                            && (selectedMessage.isOut()
+                            || canRevokeInbox
+                            || ChatObject.hasAdminRights(chat))
+                            && (currentDate - selectedMessage.messageOwner.date) <= revokeTimeLimit;
                     if (hasOutgoing) {
                         myMessagesCount++;
                     }
@@ -2964,7 +2968,7 @@ public class AlertsCreator {
                     for (int a = 1; a >= 0; a--) {
                         for (int b = 0; b < selectedMessages[a].size(); b++) {
                             MessageObject msg = selectedMessages[a].valueAt(b);
-                            if (!(msg.messageOwner.action == null || msg.messageOwner.action instanceof TLRPC.TL_messageActionEmpty || msg.messageOwner.action instanceof TLRPC.TL_messageActionPhoneCall)) {
+                            if (!(msg.messageOwner.action == null || msg.messageOwner.action.isEmpty() || msg.messageOwner.action.isPhoneCall())) {
                                 continue;
                             }
                             if ((msg.isOut() || canRevokeInbox) || chat != null && ChatObject.canBlockUsers(chat)) {
@@ -3012,21 +3016,11 @@ public class AlertsCreator {
                     for (int a = 0; a < selectedGroup.messages.size(); a++) {
                         MessageObject messageObject = selectedGroup.messages.get(a);
                         ids.add(messageObject.getId());
-                        if (encryptedChat != null && messageObject.messageOwner.random_id != 0 && messageObject.type != 10) {
-                            if (random_ids == null) {
-                                random_ids = new ArrayList<>();
-                            }
-                            random_ids.add(messageObject.messageOwner.random_id);
-                        }
                     }
                 } else {
                     ids.add(selectedMessage.getId());
-                    if (encryptedChat != null && selectedMessage.messageOwner.random_id != 0 && selectedMessage.type != 10) {
-                        random_ids = new ArrayList<>();
-                        random_ids.add(selectedMessage.messageOwner.random_id);
-                    }
                 }
-                MessagesController.getInstance(currentAccount).deleteMessages(ids, random_ids, encryptedChat, dialogId, selectedMessage.messageOwner.to_id, deleteForAll[0], scheduled);
+//                MessagesController.getInstance(currentAccount).deleteMessages(ids, random_ids, encryptedChat, dialogId, selectedMessage.messageOwner.to_id, deleteForAll[0], scheduled);
             } else {
                 for (int a = 1; a >= 0; a--) {
                     ids = new ArrayList<>();
@@ -3041,22 +3035,13 @@ public class AlertsCreator {
                             channelId = msg.messageOwner.to_id;
                         }
                     }
-                    if (encryptedChat != null) {
-                        random_ids = new ArrayList<>();
-                        for (int b = 0; b < selectedMessages[a].size(); b++) {
-                            MessageObject msg = selectedMessages[a].valueAt(b);
-                            if (msg.messageOwner.random_id != 0 && msg.type != 10) {
-                                random_ids.add(msg.messageOwner.random_id);
-                            }
-                        }
-                    }
-                    MessagesController.getInstance(currentAccount).deleteMessages(ids, random_ids, encryptedChat, dialogId, channelId, deleteForAll[0], scheduled);
+//                    MessagesController.getInstance(currentAccount).deleteMessages(ids, random_ids, encryptedChat, dialogId, channelId, deleteForAll[0], scheduled);
                     selectedMessages[a].clear();
                 }
             }
             if (userFinal != null) {
                 if (checks[0]) {
-                    MessagesController.getInstance(currentAccount).deleteUserFromChat(chat.id, userFinal, chatInfo);
+//                    MessagesController.getInstance(currentAccount).deleteUserFromChat(chat.id, userFinal, chatInfo);
                 }
                 if (checks[1]) {
                     //TODO 发起请求
@@ -3069,7 +3054,7 @@ public class AlertsCreator {
 //                    });
                 }
                 if (checks[2]) {
-                    MessagesController.getInstance(currentAccount).deleteUserChannelHistory(chat, userFinal, 0);
+//                    MessagesController.getInstance(currentAccount).deleteUserChannelHistory(chat, userFinal, 0);
                 }
             }
             if (onDelete != null) {
@@ -3122,87 +3107,87 @@ public class AlertsCreator {
         }
     }
 
-    public static void createThemeCreateDialog(BaseFragment fragment, int type, Theme.ThemeInfo switchToTheme, Theme.ThemeAccent switchToAccent) {
-        if (fragment == null || fragment.getParentActivity() == null) {
-            return;
-        }
-        Context context = fragment.getParentActivity();
-        final EditTextBoldCursor editText = new EditTextBoldCursor(context);
-        editText.setBackgroundDrawable(Theme.createEditTextDrawable(context, true));
-
-        AlertDialog.Builder builder = new AlertDialog.Builder(context);
-        builder.setTitle(LocaleController.getString("NewTheme", R.string.NewTheme));
-        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
-        builder.setPositiveButton(LocaleController.getString("Create", R.string.Create), (dialog, which) -> {
-
-        });
-
-        LinearLayout linearLayout = new LinearLayout(context);
-        linearLayout.setOrientation(LinearLayout.VERTICAL);
-        builder.setView(linearLayout);
-
-        final TextView message = new TextView(context);
-        if (type != 0) {
-            message.setText(AndroidUtilities.replaceTags(LocaleController.getString("EnterThemeNameEdit", R.string.EnterThemeNameEdit)));
-        } else {
-            message.setText(LocaleController.getString("EnterThemeName", R.string.EnterThemeName));
-        }
-        message.setTextSize(16);
-        message.setPadding(AndroidUtilities.dp(23), AndroidUtilities.dp(12), AndroidUtilities.dp(23), AndroidUtilities.dp(6));
-        message.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
-        linearLayout.addView(message, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
-
-        editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
-        editText.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
-        editText.setMaxLines(1);
-        editText.setLines(1);
-        editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
-        editText.setGravity(Gravity.LEFT | Gravity.TOP);
-        editText.setSingleLine(true);
-        editText.setImeOptions(EditorInfo.IME_ACTION_DONE);
-        editText.setCursorColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
-        editText.setCursorSize(AndroidUtilities.dp(20));
-        editText.setCursorWidth(1.5f);
-        editText.setPadding(0, AndroidUtilities.dp(4), 0, 0);
-        linearLayout.addView(editText, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 36, Gravity.TOP | Gravity.LEFT, 24, 6, 24, 0));
-        editText.setOnEditorActionListener((textView, i, keyEvent) -> {
-            AndroidUtilities.hideKeyboard(textView);
-            return false;
-        });
-        editText.setText(generateThemeName(switchToAccent));
-        editText.setSelection(editText.length());
-
-        final AlertDialog alertDialog = builder.create();
-        alertDialog.setOnShowListener(dialog -> AndroidUtilities.runOnUIThread(() -> {
-            editText.requestFocus();
-            AndroidUtilities.showKeyboard(editText);
-        }));
-        fragment.showDialog(alertDialog);
-        editText.requestFocus();
-        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
-            if (fragment.getParentActivity() == null) {
-                return;
-            }
-            if (editText.length() == 0) {
-                Vibrator vibrator = (Vibrator) ApplicationLoader.applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
-                if (vibrator != null) {
-                    vibrator.vibrate(200);
-                }
-                AndroidUtilities.shakeView(editText, 2, 0);
-                return;
-            }
-            if (fragment instanceof ThemePreviewActivity) {
-                Theme.applyPreviousTheme();
-                fragment.finishFragment();
-            }
-            if (switchToAccent != null) {
-                switchToTheme.setCurrentAccentId(switchToAccent.id);
-                Theme.refreshThemeColors();
-                Utilities.searchQueue.postRunnable(() -> AndroidUtilities.runOnUIThread(() -> processCreate(editText, alertDialog, fragment)));
-                return;
-            }
-            processCreate(editText, alertDialog, fragment);
-        });
-    }
+//    public static void createThemeCreateDialog(BaseFragment fragment, int type, Theme.ThemeInfo switchToTheme, Theme.ThemeAccent switchToAccent) {
+//        if (fragment == null || fragment.getParentActivity() == null) {
+//            return;
+//        }
+//        Context context = fragment.getParentActivity();
+//        final EditTextBoldCursor editText = new EditTextBoldCursor(context);
+//        editText.setBackgroundDrawable(Theme.createEditTextDrawable(context, true));
+//
+//        AlertDialog.Builder builder = new AlertDialog.Builder(context);
+//        builder.setTitle(LocaleController.getString("NewTheme", R.string.NewTheme));
+//        builder.setNegativeButton(LocaleController.getString("Cancel", R.string.Cancel), null);
+//        builder.setPositiveButton(LocaleController.getString("Create", R.string.Create), (dialog, which) -> {
+//
+//        });
+//
+//        LinearLayout linearLayout = new LinearLayout(context);
+//        linearLayout.setOrientation(LinearLayout.VERTICAL);
+//        builder.setView(linearLayout);
+//
+//        final TextView message = new TextView(context);
+//        if (type != 0) {
+//            message.setText(AndroidUtilities.replaceTags(LocaleController.getString("EnterThemeNameEdit", R.string.EnterThemeNameEdit)));
+//        } else {
+//            message.setText(LocaleController.getString("EnterThemeName", R.string.EnterThemeName));
+//        }
+//        message.setTextSize(16);
+//        message.setPadding(AndroidUtilities.dp(23), AndroidUtilities.dp(12), AndroidUtilities.dp(23), AndroidUtilities.dp(6));
+//        message.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
+//        linearLayout.addView(message, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, LayoutHelper.WRAP_CONTENT));
+//
+//        editText.setTextSize(TypedValue.COMPLEX_UNIT_DIP, 16);
+//        editText.setTextColor(Theme.getColor(Theme.key_dialogTextBlack));
+//        editText.setMaxLines(1);
+//        editText.setLines(1);
+//        editText.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_FLAG_CAP_SENTENCES);
+//        editText.setGravity(Gravity.LEFT | Gravity.TOP);
+//        editText.setSingleLine(true);
+//        editText.setImeOptions(EditorInfo.IME_ACTION_DONE);
+//        editText.setCursorColor(Theme.getColor(Theme.key_windowBackgroundWhiteBlackText));
+//        editText.setCursorSize(AndroidUtilities.dp(20));
+//        editText.setCursorWidth(1.5f);
+//        editText.setPadding(0, AndroidUtilities.dp(4), 0, 0);
+//        linearLayout.addView(editText, LayoutHelper.createLinear(LayoutHelper.MATCH_PARENT, 36, Gravity.TOP | Gravity.LEFT, 24, 6, 24, 0));
+//        editText.setOnEditorActionListener((textView, i, keyEvent) -> {
+//            AndroidUtilities.hideKeyboard(textView);
+//            return false;
+//        });
+//        editText.setText(generateThemeName(switchToAccent));
+//        editText.setSelection(editText.length());
+//
+//        final AlertDialog alertDialog = builder.create();
+//        alertDialog.setOnShowListener(dialog -> AndroidUtilities.runOnUIThread(() -> {
+//            editText.requestFocus();
+//            AndroidUtilities.showKeyboard(editText);
+//        }));
+//        fragment.showDialog(alertDialog);
+//        editText.requestFocus();
+//        alertDialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+//            if (fragment.getParentActivity() == null) {
+//                return;
+//            }
+//            if (editText.length() == 0) {
+//                Vibrator vibrator = (Vibrator) ApplicationLoader.applicationContext.getSystemService(Context.VIBRATOR_SERVICE);
+//                if (vibrator != null) {
+//                    vibrator.vibrate(200);
+//                }
+//                AndroidUtilities.shakeView(editText, 2, 0);
+//                return;
+//            }
+//            if (fragment instanceof ThemePreviewActivity) {
+//                Theme.applyPreviousTheme();
+//                fragment.finishFragment();
+//            }
+//            if (switchToAccent != null) {
+//                switchToTheme.setCurrentAccentId(switchToAccent.id);
+//                Theme.refreshThemeColors();
+//                Utilities.searchQueue.postRunnable(() -> AndroidUtilities.runOnUIThread(() -> processCreate(editText, alertDialog, fragment)));
+//                return;
+//            }
+//            processCreate(editText, alertDialog, fragment);
+//        });
+//    }
 
 }

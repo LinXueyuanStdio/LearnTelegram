@@ -31,6 +31,7 @@ public class MessageEntity {
     public void setUnderline(boolean isUnderline) {}
 
     public void setTextUrl(boolean isTextUrl) {}
+    public void setBlockquote(boolean isTextUrl) {}
 
     public boolean isMentionName() {
         return false;

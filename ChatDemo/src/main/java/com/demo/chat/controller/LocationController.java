@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.location.LocationManager;
 import android.os.Bundle;
-import android.os.SystemClock;
 import android.text.TextUtils;
 import android.util.LongSparseArray;
 
@@ -18,8 +17,8 @@ import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
+import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.service.LocationSharingService;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -227,7 +226,7 @@ public class LocationController extends BaseController
             AndroidUtilities.runOnUIThread(() -> {
                 sharingLocationsUI.clear();
                 sharingLocationsMapUI.clear();
-                stopService();
+//                stopService();
                 NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.liveLocationsChanged);
             });
         });
@@ -250,18 +249,18 @@ public class LocationController extends BaseController
                     SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO sharing_locations VALUES(?, ?, ?, ?, ?)");
                     state.requery();
 
-                    NativeByteBuffer data = new NativeByteBuffer(info.messageObject.messageOwner.getObjectSize());
-                    info.messageObject.messageOwner.serializeToStream(data);
+//                    NativeByteBuffer data = new NativeByteBuffer(info.messageObject.messageOwner.getObjectSize());
+//                    info.messageObject.messageOwner.serializeToStream(data);
 
                     state.bindLong(1, info.did);
                     state.bindInteger(2, info.mid);
                     state.bindInteger(3, info.stopTime);
                     state.bindInteger(4, info.period);
-                    state.bindByteBuffer(5, data);
+//                    state.bindByteBuffer(5, data);
 
                     state.step();
                     state.dispose();
-                    data.reuse();
+//                    data.reuse();
                 }
             } catch (Exception e) {
                 FileLog.e(e);
@@ -271,66 +270,66 @@ public class LocationController extends BaseController
 
 
     private void stop(boolean empty) {
-        if (lookingForPeopleNearby || shareMyCurrentLocation) {
-            return;
-        }
-        started = false;
-        if (checkPlayServices()) {
-            try {
-                LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, fusedLocationListener);
-                googleApiClient.disconnect();
-            } catch (Throwable e) {
-                FileLog.e(e);
-            }
-        }
-        locationManager.removeUpdates(gpsLocationListener);
-        if (empty) {
-            locationManager.removeUpdates(networkLocationListener);
-            locationManager.removeUpdates(passiveLocationListener);
-        }
+//        if (lookingForPeopleNearby || shareMyCurrentLocation) {
+//            return;
+//        }
+//        started = false;
+//        if (checkPlayServices()) {
+//            try {
+//                LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, fusedLocationListener);
+//                googleApiClient.disconnect();
+//            } catch (Throwable e) {
+//                FileLog.e(e);
+//            }
+//        }
+//        locationManager.removeUpdates(gpsLocationListener);
+//        if (empty) {
+//            locationManager.removeUpdates(networkLocationListener);
+//            locationManager.removeUpdates(passiveLocationListener);
+//        }
     }
     public void update() {
-        UserConfig userConfig = getUserConfig();
-        if (ApplicationLoader.isScreenOn && !ApplicationLoader.mainInterfacePaused && !shareMyCurrentLocation &&
-                userConfig.isClientActivated() && userConfig.isConfigLoaded() && userConfig.sharingMyLocationUntil != 0 && Math.abs(System.currentTimeMillis() / 1000 - userConfig.lastMyLocationShareTime) >= 60 * 60) {
-            shareMyCurrentLocation = true;
-        }
-        if (!sharingLocations.isEmpty()) {
-            for (int a = 0; a < sharingLocations.size(); a++) {
-                final SharingLocationInfo info = sharingLocations.get(a);
-                int currentTime = getConnectionsManager().getCurrentTime();
-                if (info.stopTime <= currentTime) {
-                    sharingLocations.remove(a);
-                    sharingLocationsMap.remove(info.did);
-                    saveSharingLocation(info, 1);
-                    AndroidUtilities.runOnUIThread(() -> {
-                        sharingLocationsUI.remove(info);
-                        sharingLocationsMapUI.remove(info.did);
-                        if (sharingLocationsUI.isEmpty()) {
-                            stopService();
-                        }
-                        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.liveLocationsChanged);
-                    });
-                    a--;
-                }
-            }
-        }
-        if (started) {
-            long newTime = SystemClock.elapsedRealtime();
-            if (lastLocationByGoogleMaps || Math.abs(lastLocationStartTime - newTime) > LOCATION_ACQUIRE_TIME || shouldSendLocationNow()) {
-                lastLocationByGoogleMaps = false;
-                locationSentSinceLastGoogleMapUpdate = true;
-                boolean cancelAll = (SystemClock.elapsedRealtime() - lastLocationSendTime) > 2 * 1000;
-                lastLocationStartTime = newTime;
-                lastLocationSendTime = SystemClock.elapsedRealtime();
-                broadcastLastKnownLocation(cancelAll);
-            }
-        } else if (!sharingLocations.isEmpty() || shareMyCurrentLocation) {
-            if (shareMyCurrentLocation || Math.abs(lastLocationSendTime - SystemClock.elapsedRealtime()) > BACKGROUD_UPDATE_TIME) {
-                lastLocationStartTime = SystemClock.elapsedRealtime();
-                start();
-            }
-        }
+//        UserConfig userConfig = getUserConfig();
+//        if (ApplicationLoader.isScreenOn && !ApplicationLoader.mainInterfacePaused && !shareMyCurrentLocation &&
+//                userConfig.isClientActivated() && userConfig.isConfigLoaded() && userConfig.sharingMyLocationUntil != 0 && Math.abs(System.currentTimeMillis() / 1000 - userConfig.lastMyLocationShareTime) >= 60 * 60) {
+//            shareMyCurrentLocation = true;
+//        }
+//        if (!sharingLocations.isEmpty()) {
+//            for (int a = 0; a < sharingLocations.size(); a++) {
+//                final SharingLocationInfo info = sharingLocations.get(a);
+//                int currentTime = getConnectionsManager().getCurrentTime();
+//                if (info.stopTime <= currentTime) {
+//                    sharingLocations.remove(a);
+//                    sharingLocationsMap.remove(info.did);
+//                    saveSharingLocation(info, 1);
+//                    AndroidUtilities.runOnUIThread(() -> {
+//                        sharingLocationsUI.remove(info);
+//                        sharingLocationsMapUI.remove(info.did);
+//                        if (sharingLocationsUI.isEmpty()) {
+//                            stopService();
+//                        }
+//                        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.liveLocationsChanged);
+//                    });
+//                    a--;
+//                }
+//            }
+//        }
+//        if (started) {
+//            long newTime = SystemClock.elapsedRealtime();
+//            if (lastLocationByGoogleMaps || Math.abs(lastLocationStartTime - newTime) > LOCATION_ACQUIRE_TIME || shouldSendLocationNow()) {
+//                lastLocationByGoogleMaps = false;
+//                locationSentSinceLastGoogleMapUpdate = true;
+//                boolean cancelAll = (SystemClock.elapsedRealtime() - lastLocationSendTime) > 2 * 1000;
+//                lastLocationStartTime = newTime;
+//                lastLocationSendTime = SystemClock.elapsedRealtime();
+//                broadcastLastKnownLocation(cancelAll);
+//            }
+//        } else if (!sharingLocations.isEmpty() || shareMyCurrentLocation) {
+//            if (shareMyCurrentLocation || Math.abs(lastLocationSendTime - SystemClock.elapsedRealtime()) > BACKGROUD_UPDATE_TIME) {
+//                lastLocationStartTime = SystemClock.elapsedRealtime();
+//                start();
+//            }
+//        }
     }
 
     @Override

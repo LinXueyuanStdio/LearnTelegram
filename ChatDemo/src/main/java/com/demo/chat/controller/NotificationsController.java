@@ -1,11 +1,8 @@
 package com.demo.chat.controller;
 
-import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
-import android.app.ActivityManager;
 import android.app.AlarmManager;
-import android.app.Notification;
 import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
@@ -39,6 +36,7 @@ import android.util.SparseIntArray;
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.R;
 import com.demo.chat.messager.AndroidUtilities;
+import com.demo.chat.messager.BuildConfig;
 import com.demo.chat.messager.BuildVars;
 import com.demo.chat.messager.DispatchQueue;
 import com.demo.chat.messager.FileLog;
@@ -53,13 +51,15 @@ import com.demo.chat.model.User;
 import com.demo.chat.model.action.ChatObject;
 import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.action.UserObject;
+import com.demo.chat.model.bot.KeyboardButton;
+import com.demo.chat.model.reply.ReplyMarkup;
 import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.model.small.MessageMedia;
+import com.demo.chat.receiver.NotificationCallbackReceiver;
+import com.demo.chat.receiver.NotificationDismissReceiver;
+import com.demo.chat.receiver.PopupReplyReceiver;
+import com.demo.chat.service.NotificationRepeat;
 import com.demo.chat.ui.LaunchActivity;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -71,7 +71,6 @@ import java.util.concurrent.CountDownLatch;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
 import androidx.core.app.Person;
-import androidx.core.app.RemoteInput;
 import androidx.core.content.FileProvider;
 import androidx.core.graphics.drawable.IconCompat;
 
@@ -327,7 +326,7 @@ public class NotificationsController extends BaseController {
         return false;
     }
 
-    protected void forceShowPopupForReply() {
+    public void forceShowPopupForReply() {
         notificationsQueue.postRunnable(() -> {
             final ArrayList<MessageObject> popupArray = new ArrayList<>();
             for (int a = 0; a < pushMessages.size(); a++) {
@@ -2048,7 +2047,7 @@ public class NotificationsController extends BaseController {
 
     private boolean isPersonalMessage(MessageObject messageObject) {
         return messageObject.messageOwner.to_id != 0 && messageObject.messageOwner.to_id == 0 && messageObject.messageOwner.to_id == 0
-                && (messageObject.messageOwner.action == null || messageObject.messageOwner.action instanceof TLRPC.TL_messageActionEmpty);
+                && (messageObject.messageOwner.action == null || messageObject.messageOwner.action.isEmpty());
     }
 
     private int getNotifyOverride(SharedPreferences preferences, long dialog_id) {
@@ -2174,7 +2173,7 @@ public class NotificationsController extends BaseController {
         }
     }
 
-    protected void repeatNotificationMaybe() {
+    public void repeatNotificationMaybe() {
         notificationsQueue.postRunnable(() -> {
             int hour = Calendar.getInstance().get(Calendar.HOUR_OF_DAY);
             if (hour >= 11 && hour <= 22) {
@@ -2395,7 +2394,7 @@ public class NotificationsController extends BaseController {
             return;
         }
         try {
-            getConnectionsManager().resumeNetworkMaybe();
+//            getConnectionsManager().resumeNetworkMaybe();
 
             MessageObject lastMessageObject = pushMessages.get(0);
             SharedPreferences preferences = getAccountInstance().getNotificationsSettings();
@@ -2877,12 +2876,12 @@ public class NotificationsController extends BaseController {
             boolean hasCallback = false;
             if (!AndroidUtilities.needShowPasscode() && !SharedConfig.isWaitingForPasscodeEnter && lastMessageObject.getDialogId() == 777000) {
                 if (lastMessageObject.messageOwner.reply_markup != null) {
-                    ArrayList<TLRPC.TL_keyboardButtonRow> rows = lastMessageObject.messageOwner.reply_markup.rows;
+                    ArrayList<ReplyMarkup.KeyboardButtonRow> rows = lastMessageObject.messageOwner.reply_markup.rows;
                     for (int a = 0, size = rows.size(); a < size; a++) {
-                        TLRPC.TL_keyboardButtonRow row = rows.get(a);
+                        ReplyMarkup.KeyboardButtonRow row = rows.get(a);
                         for (int b = 0, size2 = row.buttons.size(); b < size2; b++) {
-                            TLRPC.KeyboardButton button = row.buttons.get(b);
-                            if (button instanceof TLRPC.TL_keyboardButtonCallback) {
+                            KeyboardButton button = row.buttons.get(b);
+                            if (button.isButtonCallback()) {
                                 Intent callbackIntent = new Intent(ApplicationLoader.applicationContext, NotificationCallbackReceiver.class);
                                 callbackIntent.putExtra("currentAccount", currentAccount);
                                 callbackIntent.putExtra("did", dialog_id);
@@ -2910,647 +2909,9 @@ public class NotificationsController extends BaseController {
             if (Build.VERSION.SDK_INT >= 26) {
                 mBuilder.setChannelId(validateChannelId(dialog_id, chatName, vibrationPattern, ledColor, sound, importance, configVibrationPattern, configSound, configImportance));
             }
-            showExtraNotifications(mBuilder, notifyAboutLast, detailText);
             scheduleNotificationRepeat();
         } catch (Exception e) {
             FileLog.e(e);
-        }
-    }
-
-    @SuppressLint("InlinedApi")
-    private void showExtraNotifications(NotificationCompat.Builder notificationBuilder, boolean notifyAboutLast, String summary) {
-        Notification mainNotification = notificationBuilder.build();
-        if (Build.VERSION.SDK_INT < 18) {
-            notificationManager.notify(notificationId, mainNotification);
-            if (BuildVars.LOGS_ENABLED) {
-                FileLog.d("show summary notification by SDK check");
-            }
-            return;
-        }
-
-        SharedPreferences preferences = getAccountInstance().getNotificationsSettings();
-
-        ArrayList<Long> sortedDialogs = new ArrayList<>();
-        LongSparseArray<ArrayList<MessageObject>> messagesByDialogs = new LongSparseArray<>();
-        for (int a = 0; a < pushMessages.size(); a++) {
-            MessageObject messageObject = pushMessages.get(a);
-            long dialog_id = messageObject.getDialogId();
-            int dismissDate = preferences.getInt("dismissDate" + dialog_id, 0);
-            if (messageObject.messageOwner.date <= dismissDate) {
-                continue;
-            }
-
-            ArrayList<MessageObject> arrayList = messagesByDialogs.get(dialog_id);
-            if (arrayList == null) {
-                arrayList = new ArrayList<>();
-                messagesByDialogs.put(dialog_id, arrayList);
-                sortedDialogs.add(0, dialog_id);
-            }
-            arrayList.add(messageObject);
-        }
-
-        LongSparseArray<Integer> oldIdsWear = wearNotificationsIds.clone();
-        wearNotificationsIds.clear();
-
-        class NotificationHolder {
-            int id;
-            Notification notification;
-
-            NotificationHolder(int i, Notification n) {
-                id = i;
-                notification = n;
-            }
-
-            void call() {
-                if (BuildVars.LOGS_ENABLED) {
-                    FileLog.w("show dialog notification with id " + id);
-                }
-                notificationManager.notify(id, notification);
-            }
-        }
-
-        ArrayList<NotificationHolder> holders = new ArrayList<>();
-        JSONArray serializedNotifications = null;
-        if (WearDataLayerListenerService.isWatchConnected()) {
-            serializedNotifications = new JSONArray();
-        }
-
-        boolean useSummaryNotification = Build.VERSION.SDK_INT <= Build.VERSION_CODES.O_MR1 || Build.VERSION.SDK_INT > Build.VERSION_CODES.O_MR1 && sortedDialogs.size() > 1;
-        if (useSummaryNotification && Build.VERSION.SDK_INT >= 26) {
-            checkOtherNotificationsChannel();
-        }
-
-        int selfUserId = getUserConfig().getClientUserId();
-        boolean waitingForPasscode = AndroidUtilities.needShowPasscode() || SharedConfig.isWaitingForPasscodeEnter;
-
-        for (int b = 0, size = sortedDialogs.size(); b < size; b++) {
-            long dialog_id = sortedDialogs.get(b);
-            ArrayList<MessageObject> messageObjects = messagesByDialogs.get(dialog_id);
-            int max_id = messageObjects.get(0).getId();
-            int lowerId = (int) dialog_id;
-            int highId = (int) (dialog_id >> 32);
-
-            Integer internalId = oldIdsWear.get(dialog_id);
-            if (internalId == null) {
-                if (lowerId != 0) {
-                    internalId = lowerId;
-                } else {
-                    internalId = highId;
-                }
-            } else {
-                oldIdsWear.remove(dialog_id);
-            }
-
-            JSONObject serializedChat = null;
-            if (serializedNotifications != null) {
-                serializedChat = new JSONObject();
-            }
-
-            /*if (lastWearNotifiedMessageId.get(dialog_id, 0) == max_id) {
-                continue;
-            }
-            lastWearNotifiedMessageId.put(dialog_id, max_id);*/
-            MessageObject lastMessageObject = messageObjects.get(0);
-            int max_date = lastMessageObject.messageOwner.date;
-            Chat chat = null;
-            User user = null;
-            boolean isChannel = false;
-            boolean isSupergroup = false;
-            String name;
-            FileLocation photoPath = null;
-            Bitmap avatarBitmap = null;
-            File avatalFile = null;
-            boolean canReply;
-            LongSparseArray<Person> personCache = new LongSparseArray<>();
-
-            if (lowerId != 0) {
-                canReply = lowerId != 777000;
-                if (lowerId > 0) {
-                    user = getMessagesController().getUser(lowerId);
-                    if (user == null) {
-                        if (lastMessageObject.isFcmMessage()) {
-                            name = lastMessageObject.localName;
-                        } else {
-                            if (BuildVars.LOGS_ENABLED) {
-                                FileLog.w("not found user to show dialog notification " + lowerId);
-                            }
-                            continue;
-                        }
-                    } else {
-                        name = UserObject.getUserName(user);
-                        if (user.photo != null && user.photo.photo_small != null && user.photo.photo_small.volume_id != 0 && user.photo.photo_small.local_id != 0) {
-                            photoPath = user.photo.photo_small;
-                        }
-                    }
-                    if (lowerId == selfUserId) {
-                        name = LocaleController.getString("MessageScheduledReminderNotification", R.string.MessageScheduledReminderNotification);
-                    }
-                } else {
-                    chat = getMessagesController().getChat(-lowerId);
-                    if (chat == null) {
-                        if (lastMessageObject.isFcmMessage()) {
-                            isSupergroup = lastMessageObject.isMegagroup();
-                            name = lastMessageObject.localName;
-                            isChannel = lastMessageObject.localChannel;
-                        } else {
-                            if (BuildVars.LOGS_ENABLED) {
-                                FileLog.w("not found chat to show dialog notification " + lowerId);
-                            }
-                            continue;
-                        }
-                    } else {
-                        isSupergroup = chat.megagroup;
-                        isChannel = ChatObject.isChannel(chat) && !chat.megagroup;
-                        name = chat.title;
-                        if (chat.photo != null && chat.photo.photo_small != null && chat.photo.photo_small.volume_id != 0 && chat.photo.photo_small.local_id != 0) {
-                            photoPath = chat.photo.photo_small;
-                        }
-                    }
-                }
-            } else {
-                canReply = false;
-                if (dialog_id != globalSecretChatId) {
-                    TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(highId);
-                    if (encryptedChat == null) {
-                        if (BuildVars.LOGS_ENABLED) {
-                            FileLog.w("not found secret chat to show dialog notification " + highId);
-                        }
-                        continue;
-                    }
-                    user = getMessagesController().getUser(encryptedChat.user_id);
-                    if (user == null) {
-                        if (BuildVars.LOGS_ENABLED) {
-                            FileLog.w("not found secret chat user to show dialog notification " + encryptedChat.user_id);
-                        }
-                        continue;
-                    }
-                }
-                name = LocaleController.getString("SecretChatName", R.string.SecretChatName);
-                photoPath = null;
-                serializedChat = null;
-            }
-
-            if (waitingForPasscode) {
-                if (lowerId < 0) {
-                    name = LocaleController.getString("NotificationHiddenChatName", R.string.NotificationHiddenChatName);
-                } else {
-                    name = LocaleController.getString("NotificationHiddenName", R.string.NotificationHiddenName);
-                }
-                photoPath = null;
-                canReply = false;
-            }
-
-            if (photoPath != null) {
-                avatalFile = FileLoader.getPathToAttach(photoPath, true);
-                if (Build.VERSION.SDK_INT < 28) {
-                    BitmapDrawable img = ImageLoader.getInstance().getImageFromMemory(photoPath, null, "50_50");
-                    if (img != null) {
-                        avatarBitmap = img.getBitmap();
-                    } else {
-                        try {
-                            if (avatalFile.exists()) {
-                                float scaleFactor = 160.0f / AndroidUtilities.dp(50);
-                                BitmapFactory.Options options = new BitmapFactory.Options();
-                                options.inSampleSize = scaleFactor < 1 ? 1 : (int) scaleFactor;
-                                avatarBitmap = BitmapFactory.decodeFile(avatalFile.getAbsolutePath(), options);
-                            }
-                        } catch (Throwable ignore) {
-
-                        }
-                    }
-                }
-            }
-
-            NotificationCompat.Action wearReplyAction = null;
-
-            if ((!isChannel || isSupergroup) && canReply && !SharedConfig.isWaitingForPasscodeEnter && selfUserId != lowerId) {
-                Intent replyIntent = new Intent(ApplicationLoader.applicationContext, WearReplyReceiver.class);
-                replyIntent.putExtra("dialog_id", dialog_id);
-                replyIntent.putExtra("max_id", max_id);
-                replyIntent.putExtra("currentAccount", currentAccount);
-                PendingIntent replyPendingIntent = PendingIntent.getBroadcast(ApplicationLoader.applicationContext, internalId, replyIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-                RemoteInput remoteInputWear = new RemoteInput.Builder(EXTRA_VOICE_REPLY).setLabel(LocaleController.getString("Reply", R.string.Reply)).build();
-                String replyToString;
-                if (lowerId < 0) {
-                    replyToString = LocaleController.formatString("ReplyToGroup", R.string.ReplyToGroup, name);
-                } else {
-                    replyToString = LocaleController.formatString("ReplyToUser", R.string.ReplyToUser, name);
-                }
-                wearReplyAction = new NotificationCompat.Action.Builder(R.drawable.ic_reply_icon, replyToString, replyPendingIntent)
-                        .setAllowGeneratedReplies(true)
-                        .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_REPLY)
-                        .addRemoteInput(remoteInputWear)
-                        .setShowsUserInterface(false)
-                        .build();
-            }
-
-            Integer count = pushDialogs.get(dialog_id);
-            if (count == null) {
-                count = 0;
-            }
-            int n = Math.max(count, messageObjects.size());
-            String conversationName;
-            if (n <= 1 || Build.VERSION.SDK_INT >= 28) {
-                conversationName = name;
-            } else {
-                conversationName = String.format("%1$s (%2$d)", name, n);
-            }
-
-            Person selfPerson = personCache.get(selfUserId);
-            if (Build.VERSION.SDK_INT >= 28 && selfPerson == null) {
-                User sender = getMessagesController().getUser(selfUserId);
-                if (sender == null) {
-                    sender = getUserConfig().getCurrentUser();
-                }
-                try {
-                    if (sender != null && sender.photo != null && sender.photo.photo_small != null && sender.photo.photo_small.volume_id != 0 && sender.photo.photo_small.local_id != 0) {
-                        Person.Builder personBuilder = new Person.Builder().setName(LocaleController.getString("FromYou", R.string.FromYou));
-                        File avatar = FileLoader.getPathToAttach(sender.photo.photo_small, true);
-                        loadRoundAvatar(avatar, personBuilder);
-                        selfPerson = personBuilder.build();
-                        personCache.put(selfUserId, selfPerson);
-                    }
-                } catch (Throwable e) {
-                    FileLog.e(e);
-                }
-            }
-
-            NotificationCompat.MessagingStyle messagingStyle;
-            if (selfPerson != null) {
-                messagingStyle = new NotificationCompat.MessagingStyle(selfPerson);
-            } else {
-                messagingStyle = new NotificationCompat.MessagingStyle("");
-            }
-            if (Build.VERSION.SDK_INT < 28 || lowerId < 0 && !isChannel) {
-                messagingStyle.setConversationTitle(conversationName);
-            }
-            messagingStyle.setGroupConversation(Build.VERSION.SDK_INT < 28 || !isChannel && lowerId < 0);
-
-            StringBuilder text = new StringBuilder();
-            String[] senderName = new String[1];
-            boolean[] preview = new boolean[1];
-            ArrayList<TLRPC.TL_keyboardButtonRow> rows = null;
-            int rowsMid = 0;
-            JSONArray serializedMsgs = null;
-            if (serializedChat != null) {
-                serializedMsgs = new JSONArray();
-            }
-            for (int a = messageObjects.size() - 1; a >= 0; a--) {
-                MessageObject messageObject = messageObjects.get(a);
-                String message = getShortStringForMessage(messageObject, senderName, preview);
-                if (dialog_id == selfUserId) {
-                    senderName[0] = name;
-                } else if (lowerId < 0 && messageObject.messageOwner.from_scheduled) {
-                    senderName[0] = LocaleController.getString("NotificationMessageScheduledName", R.string.NotificationMessageScheduledName);
-                }
-                if (message == null) {
-                    if (BuildVars.LOGS_ENABLED) {
-                        FileLog.w("message text is null for " + messageObject.getId() + " did = " + messageObject.getDialogId());
-                    }
-                    continue;
-                }
-                if (text.length() > 0) {
-                    text.append("\n\n");
-                }
-                if (dialog_id != selfUserId && messageObject.messageOwner.from_scheduled && lowerId > 0) {
-                    message = String.format("%1$s: %2$s", LocaleController.getString("NotificationMessageScheduledName", R.string.NotificationMessageScheduledName), message);
-                    text.append(message);
-                } else {
-                    if (senderName[0] != null) {
-                        text.append(String.format("%1$s: %2$s", senderName[0], message));
-                    } else {
-                        text.append(message);
-                    }
-                }
-
-                long uid;
-                if (lowerId > 0) {
-                    uid = lowerId;
-                } else if (isChannel) {
-                    uid = -lowerId;
-                } else if (lowerId < 0) {
-                    uid = messageObject.getFromId();
-                } else {
-                    uid = dialog_id;
-                }
-                Person person = personCache.get(uid);
-                String personName = "";
-                if (senderName[0] == null) {
-                    if (waitingForPasscode) {
-                        if (lowerId < 0) {
-                            if (isChannel) {
-                                if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O_MR1) {
-                                    personName = LocaleController.getString("NotificationHiddenChatName", R.string.NotificationHiddenChatName);
-                                }
-                            } else {
-                                personName = LocaleController.getString("NotificationHiddenChatUserName", R.string.NotificationHiddenChatUserName);
-                            }
-                        } else if (Build.VERSION.SDK_INT > Build.VERSION_CODES.O_MR1) {
-                            personName = LocaleController.getString("NotificationHiddenName", R.string.NotificationHiddenName);
-                        }
-                    }
-                } else {
-                    personName = senderName[0];
-                }
-                if (person == null || !TextUtils.equals(person.getName(), personName)) {
-                    Person.Builder personBuilder = new Person.Builder().setName(personName);
-                    if (preview[0] && lowerId != 0 && Build.VERSION.SDK_INT >= 28) {
-                        File avatar = null;
-                        if (lowerId > 0 || isChannel) {
-                            avatar = avatalFile;
-                        } else if (lowerId < 0) {
-                            int fromId = messageObject.getFromId();
-                            User sender = getMessagesController().getUser(fromId);
-                            if (sender == null) {
-                                sender = getMessagesStorage().getUserSync(fromId);
-                                if (sender != null) {
-                                    getMessagesController().putUser(sender, true);
-                                }
-                            }
-                            if (sender != null && sender.photo != null && sender.photo.photo_small != null && sender.photo.photo_small.volume_id != 0 && sender.photo.photo_small.local_id != 0) {
-                                avatar = FileLoader.getPathToAttach(sender.photo.photo_small, true);
-                            }
-                        }
-                        loadRoundAvatar(avatar, personBuilder);
-                    }
-                    person = personBuilder.build();
-                    personCache.put(uid, person);
-                }
-
-                if (lowerId != 0) {
-                    boolean setPhoto = false;
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && !((ActivityManager) ApplicationLoader.applicationContext.getSystemService(Context.ACTIVITY_SERVICE)).isLowRamDevice()) {
-                        if (!waitingForPasscode && !messageObject.isSecretMedia() && (messageObject.type == 1 || messageObject.isSticker())) {
-                            File attach = FileLoader.getPathToMessage(messageObject.messageOwner);
-                            NotificationCompat.MessagingStyle.Message msg = new NotificationCompat.MessagingStyle.Message(message, ((long) messageObject.messageOwner.date) * 1000L, person);
-                            String mimeType = messageObject.isSticker() ? "image/webp" : "image/jpeg";
-                            final Uri uri;
-                            if (attach.exists()) {
-                                uri = FileProvider.getUriForFile(ApplicationLoader.applicationContext, BuildConfig.APPLICATION_ID + ".provider", attach);
-                            } else if (getFileLoader().isLoadingFile(attach.getName())) {
-                                Uri.Builder _uri = new Uri.Builder()
-                                        .scheme("content")
-                                        .authority(NotificationImageProvider.AUTHORITY)
-                                        .appendPath("msg_media_raw")
-                                        .appendPath(currentAccount + "")
-                                        .appendPath(attach.getName())
-                                        .appendQueryParameter("final_path", attach.getAbsolutePath());
-                                uri = _uri.build();
-                            } else {
-                                uri = null;
-                            }
-                            if (uri != null) {
-                                msg.setData(mimeType, uri);
-                                messagingStyle.addMessage(msg);
-                                ApplicationLoader.applicationContext.grantUriPermission("com.android.systemui", uri, Intent.FLAG_GRANT_READ_URI_PERMISSION);
-                                AndroidUtilities.runOnUIThread(() -> ApplicationLoader.applicationContext.revokeUriPermission(uri, Intent.FLAG_GRANT_READ_URI_PERMISSION), 20000);
-
-                                if (!TextUtils.isEmpty(messageObject.caption)) {
-                                    messagingStyle.addMessage(messageObject.caption, ((long) messageObject.messageOwner.date) * 1000, person);
-                                }
-                                setPhoto = true;
-                            }
-                        }
-                    }
-                    if (!setPhoto) {
-                        messagingStyle.addMessage(message, ((long) messageObject.messageOwner.date) * 1000, person);
-                    }
-                    if (!waitingForPasscode && messageObject.isVoice()) {
-                        List<NotificationCompat.MessagingStyle.Message> messages = messagingStyle.getMessages();
-                        if (!messages.isEmpty()) {
-                            File f = FileLoader.getPathToMessage(messageObject.messageOwner);
-                            Uri uri;
-                            if (Build.VERSION.SDK_INT >= 24) {
-                                try {
-                                    uri = FileProvider.getUriForFile(ApplicationLoader.applicationContext, BuildConfig.APPLICATION_ID + ".provider", f);
-                                } catch (Exception ignore) {
-                                    uri = null;
-                                }
-                            } else {
-                                uri = Uri.fromFile(f);
-                            }
-                            if (uri != null) {
-                                NotificationCompat.MessagingStyle.Message addedMessage = messages.get(messages.size() - 1);
-                                addedMessage.setData("audio/ogg", uri);
-                            }
-                        }
-                    }
-                } else {
-                    messagingStyle.addMessage(message, ((long) messageObject.messageOwner.date) * 1000, person);
-                }
-
-                if (serializedMsgs != null) {
-                    try {
-                        JSONObject jmsg = new JSONObject();
-                        jmsg.put("text", message);
-                        jmsg.put("date", messageObject.messageOwner.date);
-                        if (messageObject.isFromUser() && lowerId < 0) {
-                            User sender = getMessagesController().getUser(messageObject.getFromId());
-                            if (sender != null) {
-                                jmsg.put("fname", sender.first_name);
-                                jmsg.put("lname", sender.last_name);
-                            }
-                        }
-                        serializedMsgs.put(jmsg);
-                    } catch (JSONException ignore) {
-                    }
-                }
-
-                if (dialog_id == 777000 && messageObject.messageOwner.reply_markup != null) {
-                    rows = messageObject.messageOwner.reply_markup.rows;
-                    rowsMid = messageObject.getId();
-                }
-            }
-
-            Intent intent = new Intent(ApplicationLoader.applicationContext, LaunchActivity.class);
-            intent.setAction("com.tmessages.openchat" + Math.random() + Integer.MAX_VALUE);
-            intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TASK);
-            intent.addCategory(Intent.CATEGORY_LAUNCHER);
-            if (lowerId != 0) {
-                if (lowerId > 0) {
-                    intent.putExtra("userId", lowerId);
-                } else {
-                    intent.putExtra("chatId", -lowerId);
-                }
-            } else {
-                intent.putExtra("encId", highId);
-            }
-            intent.putExtra("currentAccount", currentAccount);
-            PendingIntent contentIntent = PendingIntent.getActivity(ApplicationLoader.applicationContext, 0, intent, PendingIntent.FLAG_ONE_SHOT);
-
-            NotificationCompat.WearableExtender wearableExtender = new NotificationCompat.WearableExtender();
-            if (wearReplyAction != null) {
-                wearableExtender.addAction(wearReplyAction);
-            }
-            Intent msgHeardIntent = new Intent(ApplicationLoader.applicationContext, AutoMessageHeardReceiver.class);
-            msgHeardIntent.addFlags(Intent.FLAG_INCLUDE_STOPPED_PACKAGES);
-            msgHeardIntent.setAction("org.telegram.messenger.ACTION_MESSAGE_HEARD");
-            msgHeardIntent.putExtra("dialog_id", dialog_id);
-            msgHeardIntent.putExtra("max_id", max_id);
-            msgHeardIntent.putExtra("currentAccount", currentAccount);
-            PendingIntent readPendingIntent = PendingIntent.getBroadcast(ApplicationLoader.applicationContext, internalId, msgHeardIntent, PendingIntent.FLAG_UPDATE_CURRENT);
-            NotificationCompat.Action readAction = new NotificationCompat.Action.Builder(R.drawable.menu_read, LocaleController.getString("MarkAsRead", R.string.MarkAsRead), readPendingIntent)
-                    .setSemanticAction(NotificationCompat.Action.SEMANTIC_ACTION_MARK_AS_READ)
-                    .setShowsUserInterface(false)
-                    .build();
-
-            String dismissalID;
-            if (lowerId != 0) {
-                if (lowerId > 0) {
-                    dismissalID = "tguser" + lowerId + "_" + max_id;
-                } else {
-                    dismissalID = "tgchat" + (-lowerId) + "_" + max_id;
-                }
-            } else if (dialog_id != globalSecretChatId) {
-                dismissalID = "tgenc" + highId + "_" + max_id;
-            } else {
-                dismissalID = null;
-            }
-
-            if (dismissalID != null) {
-                wearableExtender.setDismissalId(dismissalID);
-                NotificationCompat.WearableExtender summaryExtender = new NotificationCompat.WearableExtender();
-                summaryExtender.setDismissalId("summary_" + dismissalID);
-                notificationBuilder.extend(summaryExtender);
-            }
-            wearableExtender.setBridgeTag("tgaccount" + selfUserId);
-
-            long date = ((long) messageObjects.get(0).messageOwner.date) * 1000;
-
-            NotificationCompat.Builder builder = new NotificationCompat.Builder(ApplicationLoader.applicationContext)
-                    .setContentTitle(name)
-                    .setSmallIcon(R.drawable.notification)
-                    .setContentText(text.toString())
-                    .setAutoCancel(true)
-                    .setNumber(messageObjects.size())
-                    .setColor(0xff11acfa)
-                    .setGroupSummary(false)
-                    .setWhen(date)
-                    .setShowWhen(true)
-                    .setShortcutId("sdid_" + dialog_id)
-                    .setStyle(messagingStyle)
-                    .setContentIntent(contentIntent)
-                    .extend(wearableExtender)
-                    .setSortKey("" + (Long.MAX_VALUE - date))
-                    .setCategory(NotificationCompat.CATEGORY_MESSAGE);
-
-            Intent dismissIntent = new Intent(ApplicationLoader.applicationContext, NotificationDismissReceiver.class);
-            dismissIntent.putExtra("messageDate", max_date);
-            dismissIntent.putExtra("dialogId", dialog_id);
-            dismissIntent.putExtra("currentAccount", currentAccount);
-            builder.setDeleteIntent(PendingIntent.getBroadcast(ApplicationLoader.applicationContext, internalId, dismissIntent, PendingIntent.FLAG_UPDATE_CURRENT));
-
-            if (useSummaryNotification) {
-                builder.setGroup(notificationGroup);
-                builder.setGroupAlertBehavior(NotificationCompat.GROUP_ALERT_SUMMARY);
-            }
-
-            if (wearReplyAction != null) {
-                builder.addAction(wearReplyAction);
-            }
-            if (!waitingForPasscode) {
-                builder.addAction(readAction);
-            }
-            if (sortedDialogs.size() == 1 && !TextUtils.isEmpty(summary)) {
-                builder.setSubText(summary);
-            }
-            if (lowerId == 0) {
-                builder.setLocalOnly(true);
-            }
-            if (avatarBitmap != null) {
-                builder.setLargeIcon(avatarBitmap);
-            }
-
-            if (!AndroidUtilities.needShowPasscode(false) && !SharedConfig.isWaitingForPasscodeEnter && rows != null) {
-                for (int r = 0, rc = rows.size(); r < rc; r++) {
-                    TLRPC.TL_keyboardButtonRow row = rows.get(r);
-                    for (int c = 0, cc = row.buttons.size(); c < cc; c++) {
-                        TLRPC.KeyboardButton button = row.buttons.get(c);
-                        if (button instanceof TLRPC.TL_keyboardButtonCallback) {
-                            Intent callbackIntent = new Intent(ApplicationLoader.applicationContext, NotificationCallbackReceiver.class);
-                            callbackIntent.putExtra("currentAccount", currentAccount);
-                            callbackIntent.putExtra("did", dialog_id);
-                            if (button.data != null) {
-                                callbackIntent.putExtra("data", button.data);
-                            }
-                            callbackIntent.putExtra("mid", rowsMid);
-                            builder.addAction(0, button.text, PendingIntent.getBroadcast(ApplicationLoader.applicationContext, lastButtonId++, callbackIntent, PendingIntent.FLAG_UPDATE_CURRENT));
-                        }
-                    }
-                }
-            }
-
-            if (chat == null && user != null && user.phone != null && user.phone.length() > 0) {
-                builder.addPerson("tel:+" + user.phone);
-            }
-
-            if (Build.VERSION.SDK_INT >= 26) {
-                if (useSummaryNotification) {
-                    builder.setChannelId(OTHER_NOTIFICATIONS_CHANNEL);
-                } else {
-                    builder.setChannelId(mainNotification.getChannelId());
-                }
-            }
-            holders.add(new NotificationHolder(internalId, builder.build()));
-            wearNotificationsIds.put(dialog_id, internalId);
-
-            if (lowerId != 0) {
-                try {
-                    if (serializedChat != null) {
-                        serializedChat.put("reply", canReply);
-                        serializedChat.put("name", name);
-                        serializedChat.put("max_id", max_id);
-                        serializedChat.put("max_date", max_date);
-                        serializedChat.put("id", Math.abs(lowerId));
-                        if (photoPath != null) {
-                            serializedChat.put("photo", photoPath.dc_id + "_" + photoPath.volume_id + "_" + photoPath.secret);
-                        }
-                        if (serializedMsgs != null) {
-                            serializedChat.put("msgs", serializedMsgs);
-                        }
-                        if (lowerId > 0) {
-                            serializedChat.put("type", "user");
-                        } else if (lowerId < 0) {
-                            if (isChannel || isSupergroup) {
-                                serializedChat.put("type", "channel");
-                            } else {
-                                serializedChat.put("type", "group");
-                            }
-                        }
-                        serializedNotifications.put(serializedChat);
-                    }
-                } catch (JSONException ignore) {
-                }
-            }
-        }
-
-        if (useSummaryNotification) {
-            if (BuildVars.LOGS_ENABLED) {
-                FileLog.d("show summary with id " + notificationId);
-            }
-            notificationManager.notify(notificationId, mainNotification);
-        } else {
-            notificationManager.cancel(notificationId);
-        }
-        for (int a = 0, size = holders.size(); a < size; a++) {
-            holders.get(a).call();
-        }
-
-        for (int a = 0; a < oldIdsWear.size(); a++) {
-            Integer id = oldIdsWear.valueAt(a);
-            if (BuildVars.LOGS_ENABLED) {
-                FileLog.w("cancel notification id " + id);
-            }
-            notificationManager.cancel(id);
-        }
-        if (serializedNotifications != null) {
-            try {
-                JSONObject s = new JSONObject();
-                s.put("id", selfUserId);
-                s.put("n", serializedNotifications);
-                WearDataLayerListenerService.sendMessageToWatch("/notify", s.toString().getBytes(), "remote_notifications");
-            } catch (Exception ignore) {
-            }
         }
     }
 
@@ -3634,7 +2995,7 @@ public class NotificationsController extends BaseController {
     public void setDialogNotificationsSettings(long dialog_id, int setting) {
         SharedPreferences preferences = getAccountInstance().getNotificationsSettings();
         SharedPreferences.Editor editor = preferences.edit();
-        TLRPC.Dialog dialog = MessagesController.getInstance(UserConfig.selectedAccount).dialogs_dict.get(dialog_id);
+//        TLRPC.Dialog dialog = MessagesController.getInstance(UserConfig.selectedAccount).dialogs_dict.get(dialog_id);
         if (setting == SETTING_MUTE_UNMUTE) {
             boolean defaultEnabled = isGlobalNotificationsEnabled(dialog_id);
             if (defaultEnabled) {
@@ -3643,9 +3004,9 @@ public class NotificationsController extends BaseController {
                 editor.putInt("notify2_" + dialog_id, 0);
             }
             getMessagesStorage().setDialogFlags(dialog_id, 0);
-            if (dialog != null) {
-                dialog.notify_settings = new TLRPC.TL_peerNotifySettings();
-            }
+//            if (dialog != null) {
+//                dialog.notify_settings = new TLRPC.TL_peerNotifySettings();
+//            }
         } else {
             int untilTime = ConnectionsManager.getInstance(UserConfig.selectedAccount).getCurrentTime();
             if (setting == SETTING_MUTE_HOUR) {
@@ -3668,10 +3029,10 @@ public class NotificationsController extends BaseController {
             }
             NotificationsController.getInstance(UserConfig.selectedAccount).removeNotificationsForDialog(dialog_id);
             MessagesStorage.getInstance(UserConfig.selectedAccount).setDialogFlags(dialog_id, flags);
-            if (dialog != null) {
-                dialog.notify_settings = new TLRPC.TL_peerNotifySettings();
-                dialog.notify_settings.mute_until = untilTime;
-            }
+//            if (dialog != null) {
+//                dialog.notify_settings = new TLRPC.TL_peerNotifySettings();
+//                dialog.notify_settings.mute_until = untilTime;
+//            }
         }
         editor.commit();
         updateServerNotificationsSettings(dialog_id);

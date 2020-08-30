@@ -1,5 +1,7 @@
 package com.demo.chat.model.theme;
 
+import com.demo.chat.messager.AbstractSerializedData;
+import com.demo.chat.messager.NativeByteBuffer;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.WallPaper;
 
@@ -32,4 +34,27 @@ public class Skin {
     }
 
     public static abstract class BaseTheme{}
+
+    public int networkType;
+
+    public boolean disableFree = false;
+    private static final ThreadLocal<NativeByteBuffer> sizeCalculator = new ThreadLocal<NativeByteBuffer>() {
+        @Override
+        protected NativeByteBuffer initialValue() {
+            return new NativeByteBuffer(true);
+        }
+    };
+
+    public void serializeToStream(AbstractSerializedData stream) {
+
+    }
+    public void freeResources() {
+
+    }
+    public int getObjectSize() {
+        NativeByteBuffer byteBuffer = sizeCalculator.get();
+        byteBuffer.rewind();
+        serializeToStream(sizeCalculator.get());
+        return byteBuffer.length();
+    }
 }

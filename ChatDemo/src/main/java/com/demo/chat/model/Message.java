@@ -3,6 +3,7 @@ package com.demo.chat.model;
 import android.text.TextUtils;
 
 import com.demo.chat.messager.AbstractSerializedData;
+import com.demo.chat.messager.NativeByteBuffer;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.model.message.MessageAction;
 import com.demo.chat.model.message.MessageFwdHeader;
@@ -162,5 +163,28 @@ public class Message {
         if ((flags & MESSAGE_FLAG_FWD) != 0 && id < 0) {
             stream.writeInt32(fwd_msg_id);
         }
+    }
+
+    public int networkType;
+
+    public boolean disableFree = false;
+    private static final ThreadLocal<NativeByteBuffer> sizeCalculator = new ThreadLocal<NativeByteBuffer>() {
+        @Override
+        protected NativeByteBuffer initialValue() {
+            return new NativeByteBuffer(true);
+        }
+    };
+
+    public void serializeToStream(AbstractSerializedData stream) {
+
+    }
+    public void freeResources() {
+
+    }
+    public int getObjectSize() {
+        NativeByteBuffer byteBuffer = sizeCalculator.get();
+        byteBuffer.rewind();
+        serializeToStream(sizeCalculator.get());
+        return byteBuffer.length();
     }
 }

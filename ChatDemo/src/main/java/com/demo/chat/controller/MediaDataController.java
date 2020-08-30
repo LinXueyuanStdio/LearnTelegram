@@ -13,8 +13,6 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.Shader;
 import android.graphics.drawable.Drawable;
@@ -44,18 +42,19 @@ import com.demo.chat.messager.ImageLocation;
 import com.demo.chat.messager.NativeByteBuffer;
 import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SerializedData;
-import com.demo.chat.messager.SharedConfig;
 import com.demo.chat.messager.Utilities;
 import com.demo.chat.messager.support.SparseLongArray;
 import com.demo.chat.model.Chat;
 import com.demo.chat.model.Message;
-import com.demo.chat.model.action.MessageObject;
 import com.demo.chat.model.User;
-import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.action.ChatObject;
+import com.demo.chat.model.action.MessageObject;
+import com.demo.chat.model.action.UserObject;
 import com.demo.chat.model.bot.BotInfo;
+import com.demo.chat.model.message.messages_Messages;
 import com.demo.chat.model.small.Document;
 import com.demo.chat.model.small.DraftMessage;
+import com.demo.chat.model.small.FileLocation;
 import com.demo.chat.model.small.MessageEntity;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.sticker.InputStickerSet;
@@ -63,6 +62,7 @@ import com.demo.chat.model.sticker.MessagesStickerSet;
 import com.demo.chat.model.sticker.Sticker;
 import com.demo.chat.model.sticker.StickerSet;
 import com.demo.chat.model.sticker.StickerSetCovered;
+import com.demo.chat.receiver.OpenChatReceiver;
 import com.demo.chat.ui.ActionBar.BaseFragment;
 import com.demo.chat.ui.Components.AvatarDrawable;
 import com.demo.chat.ui.Components.Bulletin;
@@ -70,7 +70,6 @@ import com.demo.chat.ui.Components.StickerSetBulletinLayout;
 import com.demo.chat.ui.Components.TextStyleSpan;
 import com.demo.chat.ui.Components.URLSpanReplacement;
 import com.demo.chat.ui.Components.URLSpanUserMention;
-import com.demo.chat.ui.LaunchActivity;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -78,11 +77,12 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CountDownLatch;
+
+import static com.demo.chat.model.Message.MESSAGE_FLAG_MEGAGROUP;
 
 /**
  * @author 林学渊
@@ -240,8 +240,8 @@ public class MediaDataController extends BaseController {
 
         loading = false;
         loaded = false;
-        hints.clear();
-        inlineBots.clear();
+//        hints.clear();
+//        inlineBots.clear();
         getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
         getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
 
@@ -619,11 +619,11 @@ public class MediaDataController extends BaseController {
                 state.bindInteger(7, 0);
                 state.bindInteger(8, 0);
                 state.bindInteger(9, 0);
-                NativeByteBuffer data = new NativeByteBuffer(set.getObjectSize());
-                set.serializeToStream(data);
-                state.bindByteBuffer(10, data);
+//                NativeByteBuffer data = new NativeByteBuffer(set.getObjectSize());
+//                set.serializeToStream(data);
+//                state.bindByteBuffer(10, data);
                 state.step();
-                data.reuse();
+//                data.reuse();
                 state.dispose();
             } catch (Exception e) {
                 FileLog.e(e);
@@ -902,13 +902,13 @@ public class MediaDataController extends BaseController {
                         state.bindInteger(7, 0);
                         state.bindInteger(8, 0);
                         state.bindInteger(9, date != 0 ? date : count - a);
-                        NativeByteBuffer data = new NativeByteBuffer(document.getObjectSize());
-                        document.serializeToStream(data);
-                        state.bindByteBuffer(10, data);
+//                        NativeByteBuffer data = new NativeByteBuffer(document.getObjectSize());
+//                        document.serializeToStream(data);
+//                        state.bindByteBuffer(10, data);
                         state.step();
-                        if (data != null) {
-                            data.reuse();
-                        }
+//                        if (data != null) {
+//                            data.reuse();
+//                        }
                     }
                     state.dispose();
                     database.commitTransaction();
@@ -1137,15 +1137,15 @@ public class MediaDataController extends BaseController {
                     SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO stickers_featured VALUES(?, ?, ?, ?, ?)");
                     state.requery();
                     int size = 4;
-                    for (int a = 0; a < stickersFinal.size(); a++) {
-                        size += stickersFinal.get(a).getObjectSize();
-                    }
+//                    for (int a = 0; a < stickersFinal.size(); a++) {
+//                        size += stickersFinal.get(a).getObjectSize();
+//                    }
                     NativeByteBuffer data = new NativeByteBuffer(size);
                     NativeByteBuffer data2 = new NativeByteBuffer(4 + unreadStickers.size() * 8);
                     data.writeInt32(stickersFinal.size());
-                    for (int a = 0; a < stickersFinal.size(); a++) {
-                        stickersFinal.get(a).serializeToStream(data);
-                    }
+//                    for (int a = 0; a < stickersFinal.size(); a++) {
+//                        stickersFinal.get(a).serializeToStream(data);
+//                    }
                     data2.writeInt32(unreadStickers.size());
                     for (int a = 0; a < unreadStickers.size(); a++) {
                         data2.writeInt64(unreadStickers.get(a));
@@ -1344,55 +1344,55 @@ public class MediaDataController extends BaseController {
         }
     }
 
-    private void processLoadStickersResponse(final int type, final TL_messages_allStickers res) {
-        final ArrayList<MessagesStickerSet> newStickerArray = new ArrayList<>();
-        if (res.sets.isEmpty()) {
-            processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), res.hash);
-        } else {
-            final LongSparseArray<MessagesStickerSet> newStickerSets = new LongSparseArray<>();
-            for (int a = 0; a < res.sets.size(); a++) {
-                final StickerSet stickerSet = res.sets.get(a);
-
-                MessagesStickerSet oldSet = stickerSetsById.get(stickerSet.id);
-                if (oldSet != null && oldSet.set.hash == stickerSet.hash) {
-                    oldSet.set.archived = stickerSet.archived;
-                    oldSet.set.installed = stickerSet.installed;
-                    oldSet.set.official = stickerSet.official;
-                    newStickerSets.put(oldSet.set.id, oldSet);
-                    newStickerArray.add(oldSet);
-
-                    if (newStickerSets.size() == res.sets.size()) {
-                        processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), res.hash);
-                    }
-                    continue;
-                }
-
-                newStickerArray.add(null);
-                final int index = a;
-
-                //TODO 发起请求
-//                TL_messages_getStickerSet req = new TL_messages_getStickerSet();
-//                req.stickerset = new TL_inputStickerSetID();
-//                req.stickerset.id = stickerSet.id;
-//                req.stickerset.access_hash = stickerSet.access_hash;
+//    private void processLoadStickersResponse(final int type, final TL_messages_allStickers res) {
+//        final ArrayList<MessagesStickerSet> newStickerArray = new ArrayList<>();
+//        if (res.sets.isEmpty()) {
+//            processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), res.hash);
+//        } else {
+//            final LongSparseArray<MessagesStickerSet> newStickerSets = new LongSparseArray<>();
+//            for (int a = 0; a < res.sets.size(); a++) {
+//                final StickerSet stickerSet = res.sets.get(a);
 //
-//                getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
-//                    MessagesStickerSet res1 = (MessagesStickerSet) response;
-//                    newStickerArray.set(index, res1);
-//                    newStickerSets.put(stickerSet.id, res1);
+//                MessagesStickerSet oldSet = stickerSetsById.get(stickerSet.id);
+//                if (oldSet != null && oldSet.set.hash == stickerSet.hash) {
+//                    oldSet.set.archived = stickerSet.archived;
+//                    oldSet.set.installed = stickerSet.installed;
+//                    oldSet.set.official = stickerSet.official;
+//                    newStickerSets.put(oldSet.set.id, oldSet);
+//                    newStickerArray.add(oldSet);
+//
 //                    if (newStickerSets.size() == res.sets.size()) {
-//                        for (int a1 = 0; a1 < newStickerArray.size(); a1++) {
-//                            if (newStickerArray.get(a1) == null) {
-//                                newStickerArray.remove(a1);
-//                                a1--;
-//                            }
-//                        }
 //                        processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), res.hash);
 //                    }
-//                }));
-            }
-        }
-    }
+//                    continue;
+//                }
+//
+//                newStickerArray.add(null);
+//                final int index = a;
+//
+//                //TODO 发起请求
+////                TL_messages_getStickerSet req = new TL_messages_getStickerSet();
+////                req.stickerset = new TL_inputStickerSetID();
+////                req.stickerset.id = stickerSet.id;
+////                req.stickerset.access_hash = stickerSet.access_hash;
+////
+////                getConnectionsManager().sendRequest(req, (response, error) -> AndroidUtilities.runOnUIThread(() -> {
+////                    MessagesStickerSet res1 = (MessagesStickerSet) response;
+////                    newStickerArray.set(index, res1);
+////                    newStickerSets.put(stickerSet.id, res1);
+////                    if (newStickerSets.size() == res.sets.size()) {
+////                        for (int a1 = 0; a1 < newStickerArray.size(); a1++) {
+////                            if (newStickerArray.get(a1) == null) {
+////                                newStickerArray.remove(a1);
+////                                a1--;
+////                            }
+////                        }
+////                        processLoadedStickers(type, newStickerArray, false, (int) (System.currentTimeMillis() / 1000), res.hash);
+////                    }
+////                }));
+//            }
+//        }
+//    }
 
     public void loadDiceStickers(String emoji, boolean cache) {
         if (loadingDiceStickerSets.contains(emoji) || diceStickerSetsByEmoji.get(emoji) != null) {
@@ -1472,13 +1472,13 @@ public class MediaDataController extends BaseController {
                 if (stickers != null) {
                     SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO stickers_dice VALUES(?, ?, ?)");
                     state.requery();
-                    NativeByteBuffer data = new NativeByteBuffer(stickers.getObjectSize());
-                    stickers.serializeToStream(data);
+//                    NativeByteBuffer data = new NativeByteBuffer(stickers.getObjectSize());
+//                    stickers.serializeToStream(data);
                     state.bindString(1, emoji);
-                    state.bindByteBuffer(2, data);
+//                    state.bindByteBuffer(2, data);
                     state.bindInteger(3, date);
                     state.step();
-                    data.reuse();
+//                    data.reuse();
                     state.dispose();
                 } else {
                     SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("UPDATE stickers_dice SET date = ?");
@@ -1545,12 +1545,12 @@ public class MediaDataController extends BaseController {
             });
         } else {
             if (type == TYPE_FEATURED) {
-                TL_messages_allStickers response = new TL_messages_allStickers();
-                response.hash = loadFeaturedHash;
-                for (int a = 0, size = featuredStickerSets.size(); a < size; a++) {
-                    response.sets.add(featuredStickerSets.get(a).set);
-                }
-                processLoadStickersResponse(type, response);
+//                TL_messages_allStickers response = new TL_messages_allStickers();
+//                response.hash = loadFeaturedHash;
+//                for (int a = 0, size = featuredStickerSets.size(); a < size; a++) {
+//                    response.sets.add(featuredStickerSets.get(a).set);
+//                }
+//                processLoadStickersResponse(type, response);
             } else if (type == TYPE_EMOJI) {
                 //TODO 发起请求
 //                TL_messages_getStickerSet req = new TL_messages_getStickerSet();
@@ -1594,14 +1594,14 @@ public class MediaDataController extends BaseController {
                     SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO stickers_v2 VALUES(?, ?, ?, ?)");
                     state.requery();
                     int size = 4;
-                    for (int a = 0; a < stickersFinal.size(); a++) {
-                        size += stickersFinal.get(a).getObjectSize();
-                    }
+//                    for (int a = 0; a < stickersFinal.size(); a++) {
+//                        size += stickersFinal.get(a).getObjectSize();
+//                    }
                     NativeByteBuffer data = new NativeByteBuffer(size);
                     data.writeInt32(stickersFinal.size());
-                    for (int a = 0; a < stickersFinal.size(); a++) {
-                        stickersFinal.get(a).serializeToStream(data);
-                    }
+//                    for (int a = 0; a < stickersFinal.size(); a++) {
+//                        stickersFinal.get(a).serializeToStream(data);
+//                    }
                     state.bindInteger(1, type + 1);
                     state.bindByteBuffer(2, data);
                     state.bindInteger(3, date);
@@ -1713,14 +1713,14 @@ public class MediaDataController extends BaseController {
 
                         for (int b = 0; b < stickerSet.documents.size(); b++) {
                             Document document = stickerSet.documents.get(b);
-                            if (document == null || document instanceof TL_documentEmpty) {
+                            if (document == null || document instanceof Document) {
                                 continue;
                             }
                             stickersByIdNew.put(document.id, document);
                         }
                         if (!stickerSet.set.archived) {
                             for (int b = 0; b < stickerSet.packs.size(); b++) {
-                                TL_stickerPack stickerPack = stickerSet.packs.get(b);
+                                MessagesStickerSet.StickerPack stickerPack = stickerSet.packs.get(b);
                                 if (stickerPack == null || stickerPack.emoticon == null) {
                                     continue;
                                 }
@@ -1938,7 +1938,7 @@ public class MediaDataController extends BaseController {
 
         for (int i = 0; i < stickerSetListSize; i++) {
             final StickerSet stickerSet = stickerSetList.get(i);
-            final InputStickerSet inputStickerSet = new TL_inputStickerSetID();
+            final InputStickerSet inputStickerSet = new InputStickerSet();
             inputStickerSet.access_hash = stickerSet.access_hash;
             inputStickerSet.id = stickerSet.id;
             inputStickerSets.add(inputStickerSet);
@@ -1991,17 +1991,17 @@ public class MediaDataController extends BaseController {
 //        }));
     }
 
-    public void processStickerSetInstallResultArchive(BaseFragment baseFragment, boolean showSettings, int type, TL_messages_stickerSetInstallResultArchive response) {
-        for (int i = 0, size = response.sets.size(); i < size; i++) {
-            installedStickerSetsById.remove(response.sets.get(i).set.id);
-        }
-        loadArchivedStickersCount(type, false);
-        getNotificationCenter().postNotificationName(NotificationCenter.needAddArchivedStickers, response.sets);
-        if (baseFragment != null && baseFragment.getParentActivity() != null) {
-            final StickersArchiveAlert alert = new StickersArchiveAlert(baseFragment.getParentActivity(), showSettings ? baseFragment : null, response.sets);
-            baseFragment.showDialog(alert.create());
-        }
-    }
+//    public void processStickerSetInstallResultArchive(BaseFragment baseFragment, boolean showSettings, int type, TL_messages_stickerSetInstallResultArchive response) {
+//        for (int i = 0, size = response.sets.size(); i < size; i++) {
+//            installedStickerSetsById.remove(response.sets.get(i).set.id);
+//        }
+//        loadArchivedStickersCount(type, false);
+//        getNotificationCenter().postNotificationName(NotificationCenter.needAddArchivedStickers, response.sets);
+//        if (baseFragment != null && baseFragment.getParentActivity() != null) {
+//            final StickersArchiveAlert alert = new StickersArchiveAlert(baseFragment.getParentActivity(), showSettings ? baseFragment : null, response.sets);
+//            baseFragment.showDialog(alert.create());
+//        }
+//    }
     //endregion ---------------- STICKERS END ----------------
 
     //region ---------------- MESSAGE SEARCH ----------------
@@ -2292,7 +2292,7 @@ public class MediaDataController extends BaseController {
                     result = Message.TLdeserialize(data, data.readInt32(false), false);
                     result.readAttachPath(data, getUserConfig().clientUserId);
                     data.reuse();
-                    if (result.action instanceof TL_messageActionHistoryClear) {
+                    if (result.action.isHistoryClear()) {
                         result = null;
                     } else {
                         result.id = cursor.intValue(1);
@@ -2312,7 +2312,7 @@ public class MediaDataController extends BaseController {
                         result = Message.TLdeserialize(data, data.readInt32(false), false);
                         result.readAttachPath(data, getUserConfig().clientUserId);
                         data.reuse();
-                        if (result.id != mid || result.action instanceof TL_messageActionHistoryClear) {
+                        if (result.id != mid || result.action.isHistoryClear()) {
                             result = null;
                         } else {
                             result.dialog_id = dialogId;
@@ -2397,14 +2397,14 @@ public class MediaDataController extends BaseController {
                 }
                 getMessagesStorage().getDatabase().beginTransaction();
                 SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO chat_pinned VALUES(?, ?, ?)");
-                NativeByteBuffer data = new NativeByteBuffer(result.getObjectSize());
-                result.serializeToStream(data);
+//                NativeByteBuffer data = new NativeByteBuffer(result.getObjectSize());
+//                result.serializeToStream(data);
                 state.requery();
                 state.bindLong(1, dialogId);
                 state.bindInteger(2, result.id);
-                state.bindByteBuffer(3, data);
+//                state.bindByteBuffer(3, data);
                 state.step();
-                data.reuse();
+//                data.reuse();
                 state.dispose();
                 getMessagesStorage().getDatabase().commitTransaction();
             } catch (Exception e) {
@@ -2439,7 +2439,7 @@ public class MediaDataController extends BaseController {
     private static void removeEmptyMessages(ArrayList<Message> messages) {
         for (int a = 0; a < messages.size(); a++) {
             Message message = messages.get(a);
-            if (message == null || message instanceof TL_messageEmpty || message.action instanceof TL_messageActionHistoryClear) {
+            if (message == null || message.action.isHistoryClear()) {
                 messages.remove(a);
                 a--;
             }
@@ -2648,8 +2648,8 @@ public class MediaDataController extends BaseController {
                     Message message = result.get(a);
                     ArrayList<MessageObject> messageObjects = replyMessageOwners.get(message.id);
                     if (messageObjects != null) {
-                        NativeByteBuffer data = new NativeByteBuffer(message.getObjectSize());
-                        message.serializeToStream(data);
+//                        NativeByteBuffer data = new NativeByteBuffer(message.getObjectSize());
+//                        message.serializeToStream(data);
                         for (int b = 0; b < messageObjects.size(); b++) {
                             MessageObject messageObject = messageObjects.get(b);
                             state.requery();
@@ -2657,11 +2657,11 @@ public class MediaDataController extends BaseController {
                             if (messageObject.messageOwner.to_id != 0) {
                                 messageId |= ((long) messageObject.messageOwner.to_id) << 32;
                             }
-                            state.bindByteBuffer(1, data);
+//                            state.bindByteBuffer(1, data);
                             state.bindLong(2, messageId);
                             state.step();
                         }
-                        data.reuse();
+//                        data.reuse();
                     }
                 }
                 state.dispose();
@@ -2695,12 +2695,8 @@ public class MediaDataController extends BaseController {
                     for (int b = 0; b < arrayList.size(); b++) {
                         MessageObject m = arrayList.get(b);
                         m.replyMessageObject = messageObject;
-                        if (m.messageOwner.action instanceof TL_messageActionPinMessage) {
+                        if (m.messageOwner.action.isPinMessage()) {
                             m.generatePinMessageText(null, null);
-                        } else if (m.messageOwner.action instanceof TL_messageActionGameScore) {
-                            m.generateGameMessageText(null);
-                        } else if (m.messageOwner.action instanceof TL_messageActionPaymentSent) {
-                            m.generatePaymentSentMessageText(null);
                         }
                         if (m.isMegagroup()) {
                             m.replyMessageObject.messageOwner.flags |= MESSAGE_FLAG_MEGAGROUP;
@@ -2876,22 +2872,22 @@ public class MediaDataController extends BaseController {
             newRun.start = entity.offset;
             newRun.end = newRun.start + entity.length;
             MessageEntity urlEntity = null;
-            if (entity instanceof TL_messageEntityStrike) {
+            if (entity.isStrike()) {
                 newRun.flags = TextStyleSpan.FLAG_STYLE_STRIKE;
-            } else if (entity instanceof TL_messageEntityUnderline) {
+            } else if (entity.isUnderline()) {
                 newRun.flags = TextStyleSpan.FLAG_STYLE_UNDERLINE;
-            } else if (entity instanceof TL_messageEntityBlockquote) {
+            } else if (entity.isBlockquote()) {
                 newRun.flags = TextStyleSpan.FLAG_STYLE_QUOTE;
-            } else if (entity instanceof TL_messageEntityBold) {
+            } else if (entity.isBold()) {
                 newRun.flags = TextStyleSpan.FLAG_STYLE_BOLD;
-            } else if (entity instanceof TL_messageEntityItalic) {
+            } else if (entity.isItalic()) {
                 newRun.flags = TextStyleSpan.FLAG_STYLE_ITALIC;
-            } else if (entity instanceof TL_messageEntityCode || entity instanceof TL_messageEntityPre) {
+            } else if (entity.isCode() || entity.isPre()) {
                 newRun.flags = TextStyleSpan.FLAG_STYLE_MONO;
-            } else if (entity instanceof TL_messageEntityMentionName) {
+            } else if (entity.isMentionName()) {
                 newRun.flags = TextStyleSpan.FLAG_STYLE_MENTION;
                 newRun.urlEntity = entity;
-            } else if (entity instanceof TL_inputMessageEntityMentionName) {
+            } else if (entity.isMentionName()) {
                 newRun.flags = TextStyleSpan.FLAG_STYLE_MENTION;
                 newRun.urlEntity = entity;
             } else {
@@ -3014,7 +3010,8 @@ public class MediaDataController extends BaseController {
                     }
                     if (!TextUtils.isEmpty(content)) {
                         message[0] = AndroidUtilities.concat(startMessage, content, endMessage);
-                        TL_messageEntityPre entity = new TL_messageEntityPre();
+                        MessageEntity entity = new MessageEntity();
+                        entity.setPre(true);
                         entity.offset = start + (replacedFirst ? 0 : 1);
                         entity.length = index - start - 3 + (replacedFirst ? 0 : 1);
                         entity.language = "";
@@ -3024,7 +3021,8 @@ public class MediaDataController extends BaseController {
                 } else {
                     if (start + 1 != index) {
                         message[0] = AndroidUtilities.concat(substring(message[0], 0, start), substring(message[0], start + 1, index), substring(message[0], index + 1, message[0].length()));
-                        TL_messageEntityCode entity = new TL_messageEntityCode();
+                        MessageEntity entity = new MessageEntity();
+                        entity.setCode(true);
                         entity.offset = start;
                         entity.length = index - start - 1;
                         entities.add(entity);
@@ -3040,7 +3038,8 @@ public class MediaDataController extends BaseController {
             if (entities == null) {
                 entities = new ArrayList<>();
             }
-            TL_messageEntityCode entity = new TL_messageEntityCode();
+            MessageEntity entity = new MessageEntity();
+            entity.setCode(true);
             entity.offset = start;
             entity.length = 1;
             entities.add(entity);
@@ -3062,37 +3061,43 @@ public class MediaDataController extends BaseController {
                     }
                     int flags = span.getStyleFlags();
                     if ((flags & TextStyleSpan.FLAG_STYLE_BOLD) != 0) {
-                        MessageEntity entity = new TL_messageEntityBold();
+                        MessageEntity entity = new MessageEntity();
+                        entity.setBold(true);
                         entity.offset = spanStart;
                         entity.length = spanEnd - spanStart;
                         entities.add(entity);
                     }
                     if ((flags & TextStyleSpan.FLAG_STYLE_ITALIC) != 0) {
-                        MessageEntity entity = new TL_messageEntityItalic();
+                        MessageEntity entity = new MessageEntity();
+                        entity.setItalic(true);
                         entity.offset = spanStart;
                         entity.length = spanEnd - spanStart;
                         entities.add(entity);
                     }
                     if ((flags & TextStyleSpan.FLAG_STYLE_MONO) != 0) {
-                        MessageEntity entity = new TL_messageEntityCode();
+                        MessageEntity entity = new MessageEntity();
+                        entity.setCode(true);
                         entity.offset = spanStart;
                         entity.length = spanEnd - spanStart;
                         entities.add(entity);
                     }
                     if ((flags & TextStyleSpan.FLAG_STYLE_STRIKE) != 0) {
-                        MessageEntity entity = new TL_messageEntityStrike();
+                        MessageEntity entity = new MessageEntity();
+                        entity.setStrike(true);
                         entity.offset = spanStart;
                         entity.length = spanEnd - spanStart;
                         entities.add(entity);
                     }
                     if ((flags & TextStyleSpan.FLAG_STYLE_UNDERLINE) != 0) {
-                        MessageEntity entity = new TL_messageEntityUnderline();
+                        MessageEntity entity = new MessageEntity();
+                        entity.setUnderline(true);
                         entity.offset = spanStart;
                         entity.length = spanEnd - spanStart;
                         entities.add(entity);
                     }
                     if ((flags & TextStyleSpan.FLAG_STYLE_QUOTE) != 0) {
-                        MessageEntity entity = new TL_messageEntityBlockquote();
+                        MessageEntity entity = new MessageEntity();
+                        entity.setBlockquote(true);
                         entity.offset = spanStart;
                         entity.length = spanEnd - spanStart;
                         entities.add(entity);
@@ -3106,9 +3111,10 @@ public class MediaDataController extends BaseController {
                     entities = new ArrayList<>();
                 }
                 for (int b = 0; b < spansMentions.length; b++) {
-                    TL_inputMessageEntityMentionName entity = new TL_inputMessageEntityMentionName();
-                    entity.user_id = getMessagesController().getInputUser(Utilities.parseInt(spansMentions[b].getURL()));
-                    if (entity.user_id != null) {
+                    MessageEntity entity = new MessageEntity();
+                    entity.setMentionName(true);
+                    entity.user_id = 0;//getMessagesController().getInputUser(Utilities.parseInt(spansMentions[b].getURL()));
+                    if (entity.user_id != 0) {
                         entity.offset = spannable.getSpanStart(spansMentions[b]);
                         entity.length = Math.min(spannable.getSpanEnd(spansMentions[b]), message[0].length()) - entity.offset;
                         if (message[0].charAt(entity.offset + entity.length - 1) == ' ') {
@@ -3125,7 +3131,8 @@ public class MediaDataController extends BaseController {
                     entities = new ArrayList<>();
                 }
                 for (int b = 0; b < spansUrlReplacement.length; b++) {
-                    TL_messageEntityTextUrl entity = new TL_messageEntityTextUrl();
+                    MessageEntity entity = new MessageEntity();
+                    entity.setTextUrl(true);
                     entity.offset = spannable.getSpanStart(spansUrlReplacement[b]);
                     entity.length = Math.min(spannable.getSpanEnd(spansUrlReplacement[b]), message[0].length()) - entity.offset;
                     entity.url = spansUrlReplacement[b].getURL();
@@ -3185,13 +3192,13 @@ public class MediaDataController extends BaseController {
                             message[0] = substring(message[0], 0, start).toString() + substring(message[0], start + 2, index).toString() + substring(message[0], index + 2, message[0].length()).toString();
                         }
 
-                        MessageEntity entity;
+                        MessageEntity entity = new MessageEntity();
                         if (c == 0) {
-                            entity = new TL_messageEntityBold();
+                            entity.setBold(true);
                         } else if (c == 1) {
-                            entity = new TL_messageEntityItalic();
+                            entity.setItalic(true);
                         } else {
-                            entity = new TL_messageEntityStrike();
+                            entity.setStrike(true);
                         }
                         entity.offset = start;
                         entity.length = index - start - 2;
@@ -3268,12 +3275,7 @@ public class MediaDataController extends BaseController {
     }
 
     public void saveDraft(long did, CharSequence message, ArrayList<MessageEntity> entities, Message replyToMessage, boolean noWebpage, boolean clean) {
-        DraftMessage draftMessage;
-        if (!TextUtils.isEmpty(message) || replyToMessage != null) {
-            draftMessage = new TL_draftMessage();
-        } else {
-            draftMessage = new TL_draftMessageEmpty();
-        }
+        DraftMessage draftMessage = new DraftMessage();
         draftMessage.date = (int) (System.currentTimeMillis() / 1000);
         draftMessage.message = message == null ? "" : message.toString();
         draftMessage.no_webpage = noWebpage;
@@ -3312,26 +3314,26 @@ public class MediaDataController extends BaseController {
 //
 //            });
         }
-        getMessagesController().sortDialogs(null);
+//        getMessagesController().sortDialogs(null);
         getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
     }
 
     public void saveDraft(final long did, DraftMessage draft, Message replyToMessage, boolean fromServer) {
         SharedPreferences.Editor editor = preferences.edit();
         final MessagesController messagesController = getMessagesController();
-        if (draft == null || draft instanceof TL_draftMessageEmpty) {
+        if (draft == null || draft ==null) {
             drafts.remove(did);
             draftMessages.remove(did);
             preferences.edit().remove("" + did).remove("r_" + did).commit();
-            messagesController.removeDraftDialogIfNeed(did);
+//            messagesController.removeDraftDialogIfNeed(did);
         } else {
             drafts.put(did, draft);
-            messagesController.putDraftDialogIfNeed(did, draft);
+//            messagesController.putDraftDialogIfNeed(did, draft);
             try {
-                SerializedData serializedData = new SerializedData(draft.getObjectSize());
-                draft.serializeToStream(serializedData);
-                editor.putString("" + did, Utilities.bytesToHex(serializedData.toByteArray()));
-                serializedData.cleanup();
+//                SerializedData serializedData = new SerializedData(draft.getObjectSize());
+//                draft.serializeToStream(serializedData);
+//                editor.putString("" + did, Utilities.bytesToHex(serializedData.toByteArray()));
+//                serializedData.cleanup();
             } catch (Exception e) {
                 FileLog.e(e);
             }
@@ -3341,10 +3343,10 @@ public class MediaDataController extends BaseController {
             editor.remove("r_" + did);
         } else {
             draftMessages.put(did, replyToMessage);
-            SerializedData serializedData = new SerializedData(replyToMessage.getObjectSize());
-            replyToMessage.serializeToStream(serializedData);
-            editor.putString("r_" + did, Utilities.bytesToHex(serializedData.toByteArray()));
-            serializedData.cleanup();
+//            SerializedData serializedData = new SerializedData(replyToMessage.getObjectSize());
+//            replyToMessage.serializeToStream(serializedData);
+//            editor.putString("r_" + did, Utilities.bytesToHex(serializedData.toByteArray()));
+//            serializedData.cleanup();
         }
         editor.commit();
         if (fromServer) {
@@ -3428,11 +3430,11 @@ public class MediaDataController extends BaseController {
             DraftMessage draftMessage = drafts.get(did);
             if (draftMessage != null && draftMessage.reply_to_msg_id == message.id) {
                 draftMessages.put(did, message);
-                SerializedData serializedData = new SerializedData(message.getObjectSize());
-                message.serializeToStream(serializedData);
-                preferences.edit().putString("r_" + did, Utilities.bytesToHex(serializedData.toByteArray())).commit();
+//                SerializedData serializedData = new SerializedData(message.getObjectSize());
+//                message.serializeToStream(serializedData);
+//                preferences.edit().putString("r_" + did, Utilities.bytesToHex(serializedData.toByteArray())).commit();
                 getNotificationCenter().postNotificationName(NotificationCenter.newDraftReceived, did);
-                serializedData.cleanup();
+//                serializedData.cleanup();
             }
         });
     }
@@ -3443,7 +3445,7 @@ public class MediaDataController extends BaseController {
         draftsFolderIds.clear();
         preferences.edit().clear().commit();
         if (notify) {
-            getMessagesController().sortDialogs(null);
+//            getMessagesController().sortDialogs(null);
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
         }
     }
@@ -3457,7 +3459,7 @@ public class MediaDataController extends BaseController {
             drafts.remove(did);
             draftMessages.remove(did);
             preferences.edit().remove("" + did).remove("r_" + did).commit();
-            getMessagesController().sortDialogs(null);
+//            getMessagesController().sortDialogs(null);
             getNotificationCenter().postNotificationName(NotificationCenter.dialogsNeedReload);
         } else if (draftMessage.reply_to_msg_id != 0) {
             draftMessage.reply_to_msg_id = 0;
@@ -3566,62 +3568,62 @@ public class MediaDataController extends BaseController {
         }
     }
 
-    private void putEmojiKeywords(String lang, TL_emojiKeywordsDifference res) {
-        if (res == null) {
-            return;
-        }
-        getMessagesStorage().getStorageQueue().postRunnable(() -> {
-            try {
-                if (!res.keywords.isEmpty()) {
-                    SQLitePreparedStatement insertState = getMessagesStorage().getDatabase().executeFast("REPLACE INTO emoji_keywords_v2 VALUES(?, ?, ?)");
-                    SQLitePreparedStatement deleteState = getMessagesStorage().getDatabase().executeFast("DELETE FROM emoji_keywords_v2 WHERE lang = ? AND keyword = ? AND emoji = ?");
-                    getMessagesStorage().getDatabase().beginTransaction();
-                    for (int a = 0, N = res.keywords.size(); a < N; a++) {
-                        EmojiKeyword keyword = res.keywords.get(a);
-                        if (keyword instanceof TL_emojiKeyword) {
-                            TL_emojiKeyword emojiKeyword = (TL_emojiKeyword) keyword;
-                            String key = emojiKeyword.keyword.toLowerCase();
-                            for (int b = 0, N2 = emojiKeyword.emoticons.size(); b < N2; b++) {
-                                insertState.requery();
-                                insertState.bindString(1, res.lang_code);
-                                insertState.bindString(2, key);
-                                insertState.bindString(3, emojiKeyword.emoticons.get(b));
-                                insertState.step();
-                            }
-                        } else if (keyword instanceof TL_emojiKeywordDeleted) {
-                            TL_emojiKeywordDeleted keywordDeleted = (TL_emojiKeywordDeleted) keyword;
-                            String key = keywordDeleted.keyword.toLowerCase();
-                            for (int b = 0, N2 = keywordDeleted.emoticons.size(); b < N2; b++) {
-                                deleteState.requery();
-                                deleteState.bindString(1, res.lang_code);
-                                deleteState.bindString(2, key);
-                                deleteState.bindString(3, keywordDeleted.emoticons.get(b));
-                                deleteState.step();
-                            }
-                        }
-                    }
-                    getMessagesStorage().getDatabase().commitTransaction();
-                    insertState.dispose();
-                    deleteState.dispose();
-                }
-
-                SQLitePreparedStatement infoState = getMessagesStorage().getDatabase().executeFast("REPLACE INTO emoji_keywords_info_v2 VALUES(?, ?, ?, ?)");
-                infoState.bindString(1, lang);
-                infoState.bindString(2, res.lang_code);
-                infoState.bindInteger(3, res.version);
-                infoState.bindLong(4, System.currentTimeMillis());
-                infoState.step();
-                infoState.dispose();
-
-                AndroidUtilities.runOnUIThread(() -> {
-                    currentFetchingEmoji.remove(lang);
-                    getNotificationCenter().postNotificationName(NotificationCenter.newEmojiSuggestionsAvailable, lang);
-                });
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-        });
-    }
+//    private void putEmojiKeywords(String lang, TL_emojiKeywordsDifference res) {
+//        if (res == null) {
+//            return;
+//        }
+//        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+//            try {
+//                if (!res.keywords.isEmpty()) {
+//                    SQLitePreparedStatement insertState = getMessagesStorage().getDatabase().executeFast("REPLACE INTO emoji_keywords_v2 VALUES(?, ?, ?)");
+//                    SQLitePreparedStatement deleteState = getMessagesStorage().getDatabase().executeFast("DELETE FROM emoji_keywords_v2 WHERE lang = ? AND keyword = ? AND emoji = ?");
+//                    getMessagesStorage().getDatabase().beginTransaction();
+//                    for (int a = 0, N = res.keywords.size(); a < N; a++) {
+//                        EmojiKeyword keyword = res.keywords.get(a);
+//                        if (keyword instanceof TL_emojiKeyword) {
+//                            TL_emojiKeyword emojiKeyword = (TL_emojiKeyword) keyword;
+//                            String key = emojiKeyword.keyword.toLowerCase();
+//                            for (int b = 0, N2 = emojiKeyword.emoticons.size(); b < N2; b++) {
+//                                insertState.requery();
+//                                insertState.bindString(1, res.lang_code);
+//                                insertState.bindString(2, key);
+//                                insertState.bindString(3, emojiKeyword.emoticons.get(b));
+//                                insertState.step();
+//                            }
+//                        } else if (keyword instanceof TL_emojiKeywordDeleted) {
+//                            TL_emojiKeywordDeleted keywordDeleted = (TL_emojiKeywordDeleted) keyword;
+//                            String key = keywordDeleted.keyword.toLowerCase();
+//                            for (int b = 0, N2 = keywordDeleted.emoticons.size(); b < N2; b++) {
+//                                deleteState.requery();
+//                                deleteState.bindString(1, res.lang_code);
+//                                deleteState.bindString(2, key);
+//                                deleteState.bindString(3, keywordDeleted.emoticons.get(b));
+//                                deleteState.step();
+//                            }
+//                        }
+//                    }
+//                    getMessagesStorage().getDatabase().commitTransaction();
+//                    insertState.dispose();
+//                    deleteState.dispose();
+//                }
+//
+//                SQLitePreparedStatement infoState = getMessagesStorage().getDatabase().executeFast("REPLACE INTO emoji_keywords_info_v2 VALUES(?, ?, ?, ?)");
+//                infoState.bindString(1, lang);
+//                infoState.bindString(2, res.lang_code);
+//                infoState.bindInteger(3, res.version);
+//                infoState.bindLong(4, System.currentTimeMillis());
+//                infoState.step();
+//                infoState.dispose();
+//
+//                AndroidUtilities.runOnUIThread(() -> {
+//                    currentFetchingEmoji.remove(lang);
+//                    getNotificationCenter().postNotificationName(NotificationCenter.newEmojiSuggestionsAvailable, lang);
+//                });
+//            } catch (Exception e) {
+//                FileLog.e(e);
+//            }
+//        });
+//    }
 
     public void getEmojiSuggestions(String[] langCodes, String keyword, boolean fullMatch, KeywordResultCallback callback) {
         getEmojiSuggestions(langCodes, keyword, fullMatch, callback, null);
@@ -3962,9 +3964,9 @@ public class MediaDataController extends BaseController {
         if (message == null) {
             return -1;
         }
-        if (message.media instanceof TL_messageMediaPhoto) {
+        if (message.media.isPhoto()) {
             return MEDIA_PHOTOVIDEO;
-        } else if (message.media instanceof TL_messageMediaDocument) {
+        } else if (message.media.isDocument()) {
             if (MessageObject.isVoiceMessage(message) || MessageObject.isRoundVideoMessage(message)) {
                 return MEDIA_AUDIO;
             } else if (MessageObject.isVideoMessage(message)) {
@@ -3981,7 +3983,7 @@ public class MediaDataController extends BaseController {
         } else if (!message.entities.isEmpty()) {
             for (int a = 0; a < message.entities.size(); a++) {
                 MessageEntity entity = message.entities.get(a);
-                if (entity instanceof TL_messageEntityUrl || entity instanceof TL_messageEntityTextUrl || entity instanceof TL_messageEntityEmail) {
+                if (entity.isUrl() || entity.isTextUrl() || entity.isEmail()) {
                     return MEDIA_URL;
                 }
             }
@@ -3990,17 +3992,15 @@ public class MediaDataController extends BaseController {
     }
 
     public static boolean canAddMessageToMedia(Message message) {
-        if (message instanceof TL_message_secret && (message.media instanceof TL_messageMediaPhoto || MessageObject.isVideoMessage(message) || MessageObject.isGifMessage(message)) && message.media.ttl_seconds != 0 && message.media.ttl_seconds <= 60) {
+        if (message!=null && (message.media.isPhoto() || message.media.isDocument()) && message.media.ttl_seconds != 0) {
             return false;
-        } else if (!(message instanceof TL_message_secret) && message instanceof TL_message && (message.media instanceof TL_messageMediaPhoto || message.media instanceof TL_messageMediaDocument) && message.media.ttl_seconds != 0) {
-            return false;
-        } else if (message.media instanceof TL_messageMediaPhoto ||
-                message.media instanceof TL_messageMediaDocument && !MessageObject.isGifDocument(message.media.document)) {
+        } else if (message.media.isPhoto() ||
+                message.media.isDocument() && !MessageObject.isGifDocument(message.media.document)) {
             return true;
         } else if (!message.entities.isEmpty()) {
             for (int a = 0; a < message.entities.size(); a++) {
                 MessageEntity entity = message.entities.get(a);
-                if (entity instanceof TL_messageEntityUrl || entity instanceof TL_messageEntityTextUrl || entity instanceof TL_messageEntityEmail) {
+                if (entity.isUrl() || entity.isTextUrl() || entity.isEmail()) {
                     return true;
                 }
             }
@@ -4115,7 +4115,7 @@ public class MediaDataController extends BaseController {
             @Override
             public void run() {
                 boolean topReached = false;
-                TL_messages_messages res = new TL_messages_messages();
+                messages_Messages res = new messages_Messages();
                 try {
                     ArrayList<Integer> usersToLoad = new ArrayList<>();
                     ArrayList<Integer> chatsToLoad = new ArrayList<>();
@@ -4481,8 +4481,8 @@ public class MediaDataController extends BaseController {
 
 
     //region ---------------- SEARCH ----------------
-    public ArrayList<TLRPC.TL_topPeer> hints = new ArrayList<>();
-    public ArrayList<TLRPC.TL_topPeer> inlineBots = new ArrayList<>();
+//    public ArrayList<TLRPC.TL_topPeer> hints = new ArrayList<>();
+//    public ArrayList<TLRPC.TL_topPeer> inlineBots = new ArrayList<>();
     boolean loaded;
     boolean loading;
 
@@ -4490,359 +4490,359 @@ public class MediaDataController extends BaseController {
     private static RectF bitmapRect;
     private static Path roundPath;
 
-    public void buildShortcuts() {
-        if (Build.VERSION.SDK_INT < 25) {
-            return;
-        }
-        final ArrayList<TLRPC.TL_topPeer> hintsFinal = new ArrayList<>();
-        if (SharedConfig.passcodeHash.length() <= 0) {
-            for (int a = 0; a < hints.size(); a++) {
-                hintsFinal.add(hints.get(a));
-                if (hintsFinal.size() == 3) {
-                    break;
-                }
-            }
-        }
-        Utilities.globalQueue.postRunnable(() -> {
-            try {
-                ShortcutManager shortcutManager = ApplicationLoader.applicationContext.getSystemService(ShortcutManager.class);
-                List<ShortcutInfo> currentShortcuts = shortcutManager.getDynamicShortcuts();
-                ArrayList<String> shortcutsToUpdate = new ArrayList<>();
-                ArrayList<String> newShortcutsIds = new ArrayList<>();
-                ArrayList<String> shortcutsToDelete = new ArrayList<>();
-
-                if (currentShortcuts != null && !currentShortcuts.isEmpty()) {
-                    newShortcutsIds.add("compose");
-                    for (int a = 0; a < hintsFinal.size(); a++) {
-                        TLRPC.TL_topPeer hint = hintsFinal.get(a);
-                        long did;
-                        if (hint.peer.user_id != 0) {
-                            did = hint.peer.user_id;
-                        } else {
-                            did = -hint.peer.chat_id;
-                            if (did == 0) {
-                                did = -hint.peer.channel_id;
-                            }
-                        }
-                        newShortcutsIds.add("did" + did);
-                    }
-                    for (int a = 0; a < currentShortcuts.size(); a++) {
-                        String id = currentShortcuts.get(a).getId();
-                        if (!newShortcutsIds.remove(id)) {
-                            shortcutsToDelete.add(id);
-                        }
-                        shortcutsToUpdate.add(id);
-                    }
-                    if (newShortcutsIds.isEmpty() && shortcutsToDelete.isEmpty()) {
-                        return;
-                    }
-                }
-
-                Intent intent = new Intent(ApplicationLoader.applicationContext, LaunchActivity.class);
-                intent.setAction("new_dialog");
-                ArrayList<ShortcutInfo> arrayList = new ArrayList<>();
-                arrayList.add(new ShortcutInfo.Builder(ApplicationLoader.applicationContext, "compose")
-                        .setShortLabel(LocaleController.getString("NewConversationShortcut", R.string.NewConversationShortcut))
-                        .setLongLabel(LocaleController.getString("NewConversationShortcut", R.string.NewConversationShortcut))
-                        .setIcon(Icon.createWithResource(ApplicationLoader.applicationContext, R.drawable.shortcut_compose))
-                        .setIntent(intent)
-                        .build());
-                if (shortcutsToUpdate.contains("compose")) {
-                    shortcutManager.updateShortcuts(arrayList);
-                } else {
-                    shortcutManager.addDynamicShortcuts(arrayList);
-                }
-                arrayList.clear();
-
-                if (!shortcutsToDelete.isEmpty()) {
-                    shortcutManager.removeDynamicShortcuts(shortcutsToDelete);
-                }
-
-                for (int a = 0; a < hintsFinal.size(); a++) {
-                    Intent shortcutIntent = new Intent(ApplicationLoader.applicationContext, OpenChatReceiver.class);
-                    TLRPC.TL_topPeer hint = hintsFinal.get(a);
-
-                    User user = null;
-                    TLRPC.Chat chat = null;
-                    long did;
-                    if (hint.peer.user_id != 0) {
-                        shortcutIntent.putExtra("userId", hint.peer.user_id);
-                        user = getMessagesController().getUser(hint.peer.user_id);
-                        did = hint.peer.user_id;
-                    } else {
-                        int chat_id = hint.peer.chat_id;
-                        if (chat_id == 0) {
-                            chat_id = hint.peer.channel_id;
-                        }
-                        chat = getMessagesController().getChat(chat_id);
-                        shortcutIntent.putExtra("chatId", chat_id);
-                        did = -chat_id;
-                    }
-                    if ((user == null || UserObject.isDeleted(user)) && chat == null) {
-                        continue;
-                    }
-
-                    String name;
-                    TLRPC.FileLocation photo = null;
-
-                    if (user != null) {
-                        name = ContactsController.formatName(user.first_name, user.last_name);
-                        if (user.photo != null) {
-                            photo = user.photo.photo_small;
-                        }
-                    } else {
-                        name = chat.title;
-                        if (chat.photo != null) {
-                            photo = chat.photo.photo_small;
-                        }
-                    }
-
-                    shortcutIntent.putExtra("currentAccount", currentAccount);
-                    shortcutIntent.setAction("com.tmessages.openchat" + did);
-                    shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-
-                    Bitmap bitmap = null;
-                    if (photo != null) {
-                        try {
-                            File path = FileLoader.getPathToAttach(photo, true);
-                            bitmap = BitmapFactory.decodeFile(path.toString());
-                            if (bitmap != null) {
-                                int size = AndroidUtilities.dp(48);
-                                Bitmap result = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
-                                Canvas canvas = new Canvas(result);
-                                if (roundPaint == null) {
-                                    roundPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
-                                    bitmapRect = new RectF();
-                                    erasePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                                    erasePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-                                    roundPath = new Path();
-                                    roundPath.addCircle(size / 2, size / 2, size / 2 - AndroidUtilities.dp(2), Path.Direction.CW);
-                                    roundPath.toggleInverseFillType();
-                                }
-                                bitmapRect.set(AndroidUtilities.dp(2), AndroidUtilities.dp(2), AndroidUtilities.dp(46), AndroidUtilities.dp(46));
-                                canvas.drawBitmap(bitmap, null, bitmapRect, roundPaint);
-                                canvas.drawPath(roundPath, erasePaint);
-                                try {
-                                    canvas.setBitmap(null);
-                                } catch (Exception ignore) {
-
-                                }
-                                bitmap = result;
-                            }
-                        } catch (Throwable e) {
-                            FileLog.e(e);
-                        }
-                    }
-
-                    String id = "did" + did;
-                    if (TextUtils.isEmpty(name)) {
-                        name = " ";
-                    }
-                    ShortcutInfo.Builder builder = new ShortcutInfo.Builder(ApplicationLoader.applicationContext, id)
-                            .setShortLabel(name)
-                            .setLongLabel(name)
-                            .setIntent(shortcutIntent);
-                    if (bitmap != null) {
-                        builder.setIcon(Icon.createWithBitmap(bitmap));
-                    } else {
-                        builder.setIcon(Icon.createWithResource(ApplicationLoader.applicationContext, R.drawable.shortcut_user));
-                    }
-                    arrayList.add(builder.build());
-                    if (shortcutsToUpdate.contains(id)) {
-                        shortcutManager.updateShortcuts(arrayList);
-                    } else {
-                        shortcutManager.addDynamicShortcuts(arrayList);
-                    }
-                    arrayList.clear();
-                }
-            } catch (Throwable ignore) {
-
-            }
-        });
-    }
-
-    public void loadHints(boolean cache) {
-        if (loading || !getUserConfig().suggestContacts) {
-            return;
-        }
-        if (cache) {
-            if (loaded) {
-                return;
-            }
-            loading = true;
-            getMessagesStorage().getStorageQueue().postRunnable(() -> {
-                final ArrayList<TLRPC.TL_topPeer> hintsNew = new ArrayList<>();
-                final ArrayList<TLRPC.TL_topPeer> inlineBotsNew = new ArrayList<>();
-                final ArrayList<User> users = new ArrayList<>();
-                final ArrayList<TLRPC.Chat> chats = new ArrayList<>();
-                int selfUserId = getUserConfig().getClientUserId();
-                try {
-                    ArrayList<Integer> usersToLoad = new ArrayList<>();
-                    ArrayList<Integer> chatsToLoad = new ArrayList<>();
-                    SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized("SELECT did, type, rating FROM chat_hints WHERE 1 ORDER BY rating DESC");
-                    while (cursor.next()) {
-                        int did = cursor.intValue(0);
-                        if (did == selfUserId) {
-                            continue;
-                        }
-                        int type = cursor.intValue(1);
-                        TLRPC.TL_topPeer peer = new TLRPC.TL_topPeer();
-                        peer.rating = cursor.doubleValue(2);
-                        if (did > 0) {
-                            peer.peer = new TLRPC.TL_peerUser();
-                            peer.peer.user_id = did;
-                            usersToLoad.add(did);
-                        } else {
-                            peer.peer = new TLRPC.TL_peerChat();
-                            peer.peer.chat_id = -did;
-                            chatsToLoad.add(-did);
-                        }
-                        if (type == 0) {
-                            hintsNew.add(peer);
-                        } else if (type == 1) {
-                            inlineBotsNew.add(peer);
-                        }
-                    }
-                    cursor.dispose();
-                    if (!usersToLoad.isEmpty()) {
-                        getMessagesStorage().getUsersInternal(TextUtils.join(",", usersToLoad), users);
-                    }
-
-                    if (!chatsToLoad.isEmpty()) {
-                        getMessagesStorage().getChatsInternal(TextUtils.join(",", chatsToLoad), chats);
-                    }
-                    AndroidUtilities.runOnUIThread(() -> {
-                        getMessagesController().putUsers(users, true);
-                        getMessagesController().putChats(chats, true);
-                        loading = false;
-                        loaded = true;
-                        hints = hintsNew;
-                        inlineBots = inlineBotsNew;
-                        buildShortcuts();
-                        getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
-                        getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
-                        if (Math.abs(getUserConfig().lastHintsSyncTime - (int) (System.currentTimeMillis() / 1000)) >= 24 * 60 * 60) {
-                            loadHints(false);
-                        }
-                    });
-                } catch (Exception e) {
-                    FileLog.e(e);
-                }
-            });
-            loaded = true;
-        } else {
-            loading = true;
-            //TODO 发起请求
-//            TLRPC.TL_contacts_getTopPeers req = new TLRPC.TL_contacts_getTopPeers();
-//            req.hash = 0;
-//            req.bots_pm = false;
-//            req.correspondents = true;
-//            req.groups = false;
-//            req.channels = false;
-//            req.bots_inline = true;
-//            req.offset = 0;
-//            req.limit = 20;
-//            getConnectionsManager().sendRequest(req, (response, error) -> {
-//                if (response instanceof TLRPC.TL_contacts_topPeers) {
-//                    AndroidUtilities.runOnUIThread(() -> {
-//                        final TLRPC.TL_contacts_topPeers topPeers = (TLRPC.TL_contacts_topPeers) response;
-//                        getMessagesController().putUsers(topPeers.users, false);
-//                        getMessagesController().putChats(topPeers.chats, false);
-//                        for (int a = 0; a < topPeers.categories.size(); a++) {
-//                            TLRPC.TL_topPeerCategoryPeers category = topPeers.categories.get(a);
-//                            if (category.category instanceof TLRPC.TL_topPeerCategoryBotsInline) {
-//                                inlineBots = category.peers;
-//                                getUserConfig().botRatingLoadTime = (int) (System.currentTimeMillis() / 1000);
-//                            } else {
-//                                hints = category.peers;
-//                                int selfUserId = getUserConfig().getClientUserId();
-//                                for (int b = 0; b < hints.size(); b++) {
-//                                    TLRPC.TL_topPeer topPeer = hints.get(b);
-//                                    if (topPeer.peer.user_id == selfUserId) {
-//                                        hints.remove(b);
-//                                        break;
-//                                    }
-//                                }
-//                                getUserConfig().ratingLoadTime = (int) (System.currentTimeMillis() / 1000);
+//    public void buildShortcuts() {
+//        if (Build.VERSION.SDK_INT < 25) {
+//            return;
+//        }
+//        final ArrayList<TLRPC.TL_topPeer> hintsFinal = new ArrayList<>();
+//        if (SharedConfig.passcodeHash.length() <= 0) {
+//            for (int a = 0; a < hints.size(); a++) {
+//                hintsFinal.add(hints.get(a));
+//                if (hintsFinal.size() == 3) {
+//                    break;
+//                }
+//            }
+//        }
+//        Utilities.globalQueue.postRunnable(() -> {
+//            try {
+//                ShortcutManager shortcutManager = ApplicationLoader.applicationContext.getSystemService(ShortcutManager.class);
+//                List<ShortcutInfo> currentShortcuts = shortcutManager.getDynamicShortcuts();
+//                ArrayList<String> shortcutsToUpdate = new ArrayList<>();
+//                ArrayList<String> newShortcutsIds = new ArrayList<>();
+//                ArrayList<String> shortcutsToDelete = new ArrayList<>();
+//
+//                if (currentShortcuts != null && !currentShortcuts.isEmpty()) {
+//                    newShortcutsIds.add("compose");
+//                    for (int a = 0; a < hintsFinal.size(); a++) {
+//                        TLRPC.TL_topPeer hint = hintsFinal.get(a);
+//                        long did;
+//                        if (hint.peer.user_id != 0) {
+//                            did = hint.peer.user_id;
+//                        } else {
+//                            did = -hint.peer.chat_id;
+//                            if (did == 0) {
+//                                did = -hint.peer.channel_id;
 //                            }
 //                        }
-//                        getUserConfig().saveConfig(false);
+//                        newShortcutsIds.add("did" + did);
+//                    }
+//                    for (int a = 0; a < currentShortcuts.size(); a++) {
+//                        String id = currentShortcuts.get(a).getId();
+//                        if (!newShortcutsIds.remove(id)) {
+//                            shortcutsToDelete.add(id);
+//                        }
+//                        shortcutsToUpdate.add(id);
+//                    }
+//                    if (newShortcutsIds.isEmpty() && shortcutsToDelete.isEmpty()) {
+//                        return;
+//                    }
+//                }
+//
+//                Intent intent = new Intent(ApplicationLoader.applicationContext, LaunchActivity.class);
+//                intent.setAction("new_dialog");
+//                ArrayList<ShortcutInfo> arrayList = new ArrayList<>();
+//                arrayList.add(new ShortcutInfo.Builder(ApplicationLoader.applicationContext, "compose")
+//                        .setShortLabel(LocaleController.getString("NewConversationShortcut", R.string.NewConversationShortcut))
+//                        .setLongLabel(LocaleController.getString("NewConversationShortcut", R.string.NewConversationShortcut))
+//                        .setIcon(Icon.createWithResource(ApplicationLoader.applicationContext, R.drawable.shortcut_compose))
+//                        .setIntent(intent)
+//                        .build());
+//                if (shortcutsToUpdate.contains("compose")) {
+//                    shortcutManager.updateShortcuts(arrayList);
+//                } else {
+//                    shortcutManager.addDynamicShortcuts(arrayList);
+//                }
+//                arrayList.clear();
+//
+//                if (!shortcutsToDelete.isEmpty()) {
+//                    shortcutManager.removeDynamicShortcuts(shortcutsToDelete);
+//                }
+//
+//                for (int a = 0; a < hintsFinal.size(); a++) {
+//                    Intent shortcutIntent = new Intent(ApplicationLoader.applicationContext, OpenChatReceiver.class);
+//                    TLRPC.TL_topPeer hint = hintsFinal.get(a);
+//
+//                    User user = null;
+//                    Chat chat = null;
+//                    long did;
+//                    if (hint.peer.user_id != 0) {
+//                        shortcutIntent.putExtra("userId", hint.peer.user_id);
+//                        user = getMessagesController().getUser(hint.peer.user_id);
+//                        did = hint.peer.user_id;
+//                    } else {
+//                        int chat_id = hint.peer.chat_id;
+//                        if (chat_id == 0) {
+//                            chat_id = hint.peer.channel_id;
+//                        }
+//                        chat = getMessagesController().getChat(chat_id);
+//                        shortcutIntent.putExtra("chatId", chat_id);
+//                        did = -chat_id;
+//                    }
+//                    if ((user == null || UserObject.isDeleted(user)) && chat == null) {
+//                        continue;
+//                    }
+//
+//                    String name;
+//                    FileLocation photo = null;
+//
+//                    if (user != null) {
+//                        name = UserObject.formatName(user.first_name, user.last_name);
+//                        if (user.photo != null) {
+//                            photo = user.photo.photo_small;
+//                        }
+//                    } else {
+//                        name = chat.title;
+//                        if (chat.photo != null) {
+//                            photo = chat.photo.photo_small;
+//                        }
+//                    }
+//
+//                    shortcutIntent.putExtra("currentAccount", currentAccount);
+//                    shortcutIntent.setAction("com.tmessages.openchat" + did);
+//                    shortcutIntent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+//
+//                    Bitmap bitmap = null;
+//                    if (photo != null) {
+//                        try {
+//                            File path = FileLoader.getPathToAttach(photo, true);
+//                            bitmap = BitmapFactory.decodeFile(path.toString());
+//                            if (bitmap != null) {
+//                                int size = AndroidUtilities.dp(48);
+//                                Bitmap result = Bitmap.createBitmap(size, size, Bitmap.Config.ARGB_8888);
+//                                Canvas canvas = new Canvas(result);
+//                                if (roundPaint == null) {
+//                                    roundPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG);
+//                                    bitmapRect = new RectF();
+//                                    erasePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+//                                    erasePaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
+//                                    roundPath = new Path();
+//                                    roundPath.addCircle(size / 2, size / 2, size / 2 - AndroidUtilities.dp(2), Path.Direction.CW);
+//                                    roundPath.toggleInverseFillType();
+//                                }
+//                                bitmapRect.set(AndroidUtilities.dp(2), AndroidUtilities.dp(2), AndroidUtilities.dp(46), AndroidUtilities.dp(46));
+//                                canvas.drawBitmap(bitmap, null, bitmapRect, roundPaint);
+//                                canvas.drawPath(roundPath, erasePaint);
+//                                try {
+//                                    canvas.setBitmap(null);
+//                                } catch (Exception ignore) {
+//
+//                                }
+//                                bitmap = result;
+//                            }
+//                        } catch (Throwable e) {
+//                            FileLog.e(e);
+//                        }
+//                    }
+//
+//                    String id = "did" + did;
+//                    if (TextUtils.isEmpty(name)) {
+//                        name = " ";
+//                    }
+//                    ShortcutInfo.Builder builder = new ShortcutInfo.Builder(ApplicationLoader.applicationContext, id)
+//                            .setShortLabel(name)
+//                            .setLongLabel(name)
+//                            .setIntent(shortcutIntent);
+//                    if (bitmap != null) {
+//                        builder.setIcon(Icon.createWithBitmap(bitmap));
+//                    } else {
+//                        builder.setIcon(Icon.createWithResource(ApplicationLoader.applicationContext, R.drawable.shortcut_user));
+//                    }
+//                    arrayList.add(builder.build());
+//                    if (shortcutsToUpdate.contains(id)) {
+//                        shortcutManager.updateShortcuts(arrayList);
+//                    } else {
+//                        shortcutManager.addDynamicShortcuts(arrayList);
+//                    }
+//                    arrayList.clear();
+//                }
+//            } catch (Throwable ignore) {
+//
+//            }
+//        });
+//    }
+
+//    public void loadHints(boolean cache) {
+//        if (loading || !getUserConfig().suggestContacts) {
+//            return;
+//        }
+//        if (cache) {
+//            if (loaded) {
+//                return;
+//            }
+//            loading = true;
+//            getMessagesStorage().getStorageQueue().postRunnable(() -> {
+//                final ArrayList<TLRPC.TL_topPeer> hintsNew = new ArrayList<>();
+//                final ArrayList<TLRPC.TL_topPeer> inlineBotsNew = new ArrayList<>();
+//                final ArrayList<User> users = new ArrayList<>();
+//                final ArrayList<TLRPC.Chat> chats = new ArrayList<>();
+//                int selfUserId = getUserConfig().getClientUserId();
+//                try {
+//                    ArrayList<Integer> usersToLoad = new ArrayList<>();
+//                    ArrayList<Integer> chatsToLoad = new ArrayList<>();
+//                    SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized("SELECT did, type, rating FROM chat_hints WHERE 1 ORDER BY rating DESC");
+//                    while (cursor.next()) {
+//                        int did = cursor.intValue(0);
+//                        if (did == selfUserId) {
+//                            continue;
+//                        }
+//                        int type = cursor.intValue(1);
+//                        TLRPC.TL_topPeer peer = new TLRPC.TL_topPeer();
+//                        peer.rating = cursor.doubleValue(2);
+//                        if (did > 0) {
+//                            peer.peer = new TLRPC.TL_peerUser();
+//                            peer.peer.user_id = did;
+//                            usersToLoad.add(did);
+//                        } else {
+//                            peer.peer = new TLRPC.TL_peerChat();
+//                            peer.peer.chat_id = -did;
+//                            chatsToLoad.add(-did);
+//                        }
+//                        if (type == 0) {
+//                            hintsNew.add(peer);
+//                        } else if (type == 1) {
+//                            inlineBotsNew.add(peer);
+//                        }
+//                    }
+//                    cursor.dispose();
+//                    if (!usersToLoad.isEmpty()) {
+//                        getMessagesStorage().getUsersInternal(TextUtils.join(",", usersToLoad), users);
+//                    }
+//
+//                    if (!chatsToLoad.isEmpty()) {
+//                        getMessagesStorage().getChatsInternal(TextUtils.join(",", chatsToLoad), chats);
+//                    }
+//                    AndroidUtilities.runOnUIThread(() -> {
+//                        getMessagesController().putUsers(users, true);
+//                        getMessagesController().putChats(chats, true);
+//                        loading = false;
+//                        loaded = true;
+//                        hints = hintsNew;
+//                        inlineBots = inlineBotsNew;
 //                        buildShortcuts();
 //                        getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
 //                        getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
-//                        getMessagesStorage().getStorageQueue().postRunnable(() -> {
-//                            try {
-//                                getMessagesStorage().getDatabase().executeFast("DELETE FROM chat_hints WHERE 1").stepThis().dispose();
-//                                getMessagesStorage().getDatabase().beginTransaction();
-//                                getMessagesStorage().putUsersAndChats(topPeers.users, topPeers.chats, false, false);
-//
-//                                SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO chat_hints VALUES(?, ?, ?, ?)");
-//                                for (int a = 0; a < topPeers.categories.size(); a++) {
-//                                    int type;
-//                                    TLRPC.TL_topPeerCategoryPeers category = topPeers.categories.get(a);
-//                                    if (category.category instanceof TLRPC.TL_topPeerCategoryBotsInline) {
-//                                        type = 1;
-//                                    } else {
-//                                        type = 0;
-//                                    }
-//                                    for (int b = 0; b < category.peers.size(); b++) {
-//                                        TLRPC.TL_topPeer peer = category.peers.get(b);
-//                                        int did;
-//                                        if (peer.peer instanceof TLRPC.TL_peerUser) {
-//                                            did = peer.peer.user_id;
-//                                        } else if (peer.peer instanceof TLRPC.TL_peerChat) {
-//                                            did = -peer.peer.chat_id;
-//                                        } else {
-//                                            did = -peer.peer.channel_id;
-//                                        }
-//                                        state.requery();
-//                                        state.bindInteger(1, did);
-//                                        state.bindInteger(2, type);
-//                                        state.bindDouble(3, peer.rating);
-//                                        state.bindInteger(4, 0);
-//                                        state.step();
-//                                    }
-//                                }
-//
-//                                state.dispose();
-//
-//                                getMessagesStorage().getDatabase().commitTransaction();
-//                                AndroidUtilities.runOnUIThread(() -> {
-//                                    getUserConfig().suggestContacts = true;
-//                                    getUserConfig().lastHintsSyncTime = (int) (System.currentTimeMillis() / 1000);
-//                                    getUserConfig().saveConfig(false);
-//                                });
-//                            } catch (Exception e) {
-//                                FileLog.e(e);
-//                            }
-//                        });
+//                        if (Math.abs(getUserConfig().lastHintsSyncTime - (int) (System.currentTimeMillis() / 1000)) >= 24 * 60 * 60) {
+//                            loadHints(false);
+//                        }
 //                    });
-//                } else if (response instanceof TLRPC.TL_contacts_topPeersDisabled) {
-//                    AndroidUtilities.runOnUIThread(() -> {
-//                        getUserConfig().suggestContacts = false;
-//                        getUserConfig().lastHintsSyncTime = (int) (System.currentTimeMillis() / 1000);
-//                        getUserConfig().saveConfig(false);
-//                        clearTopPeers();
-//                    });
+//                } catch (Exception e) {
+//                    FileLog.e(e);
 //                }
 //            });
-        }
-    }
+//            loaded = true;
+//        } else {
+//            loading = true;
+//            //TODO 发起请求
+////            TLRPC.TL_contacts_getTopPeers req = new TLRPC.TL_contacts_getTopPeers();
+////            req.hash = 0;
+////            req.bots_pm = false;
+////            req.correspondents = true;
+////            req.groups = false;
+////            req.channels = false;
+////            req.bots_inline = true;
+////            req.offset = 0;
+////            req.limit = 20;
+////            getConnectionsManager().sendRequest(req, (response, error) -> {
+////                if (response instanceof TLRPC.TL_contacts_topPeers) {
+////                    AndroidUtilities.runOnUIThread(() -> {
+////                        final TLRPC.TL_contacts_topPeers topPeers = (TLRPC.TL_contacts_topPeers) response;
+////                        getMessagesController().putUsers(topPeers.users, false);
+////                        getMessagesController().putChats(topPeers.chats, false);
+////                        for (int a = 0; a < topPeers.categories.size(); a++) {
+////                            TLRPC.TL_topPeerCategoryPeers category = topPeers.categories.get(a);
+////                            if (category.category instanceof TLRPC.TL_topPeerCategoryBotsInline) {
+////                                inlineBots = category.peers;
+////                                getUserConfig().botRatingLoadTime = (int) (System.currentTimeMillis() / 1000);
+////                            } else {
+////                                hints = category.peers;
+////                                int selfUserId = getUserConfig().getClientUserId();
+////                                for (int b = 0; b < hints.size(); b++) {
+////                                    TLRPC.TL_topPeer topPeer = hints.get(b);
+////                                    if (topPeer.peer.user_id == selfUserId) {
+////                                        hints.remove(b);
+////                                        break;
+////                                    }
+////                                }
+////                                getUserConfig().ratingLoadTime = (int) (System.currentTimeMillis() / 1000);
+////                            }
+////                        }
+////                        getUserConfig().saveConfig(false);
+////                        buildShortcuts();
+////                        getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
+////                        getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
+////                        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+////                            try {
+////                                getMessagesStorage().getDatabase().executeFast("DELETE FROM chat_hints WHERE 1").stepThis().dispose();
+////                                getMessagesStorage().getDatabase().beginTransaction();
+////                                getMessagesStorage().putUsersAndChats(topPeers.users, topPeers.chats, false, false);
+////
+////                                SQLitePreparedStatement state = getMessagesStorage().getDatabase().executeFast("REPLACE INTO chat_hints VALUES(?, ?, ?, ?)");
+////                                for (int a = 0; a < topPeers.categories.size(); a++) {
+////                                    int type;
+////                                    TLRPC.TL_topPeerCategoryPeers category = topPeers.categories.get(a);
+////                                    if (category.category instanceof TLRPC.TL_topPeerCategoryBotsInline) {
+////                                        type = 1;
+////                                    } else {
+////                                        type = 0;
+////                                    }
+////                                    for (int b = 0; b < category.peers.size(); b++) {
+////                                        TLRPC.TL_topPeer peer = category.peers.get(b);
+////                                        int did;
+////                                        if (peer.peer instanceof TLRPC.TL_peerUser) {
+////                                            did = peer.peer.user_id;
+////                                        } else if (peer.peer instanceof TLRPC.TL_peerChat) {
+////                                            did = -peer.peer.chat_id;
+////                                        } else {
+////                                            did = -peer.peer.channel_id;
+////                                        }
+////                                        state.requery();
+////                                        state.bindInteger(1, did);
+////                                        state.bindInteger(2, type);
+////                                        state.bindDouble(3, peer.rating);
+////                                        state.bindInteger(4, 0);
+////                                        state.step();
+////                                    }
+////                                }
+////
+////                                state.dispose();
+////
+////                                getMessagesStorage().getDatabase().commitTransaction();
+////                                AndroidUtilities.runOnUIThread(() -> {
+////                                    getUserConfig().suggestContacts = true;
+////                                    getUserConfig().lastHintsSyncTime = (int) (System.currentTimeMillis() / 1000);
+////                                    getUserConfig().saveConfig(false);
+////                                });
+////                            } catch (Exception e) {
+////                                FileLog.e(e);
+////                            }
+////                        });
+////                    });
+////                } else if (response instanceof TLRPC.TL_contacts_topPeersDisabled) {
+////                    AndroidUtilities.runOnUIThread(() -> {
+////                        getUserConfig().suggestContacts = false;
+////                        getUserConfig().lastHintsSyncTime = (int) (System.currentTimeMillis() / 1000);
+////                        getUserConfig().saveConfig(false);
+////                        clearTopPeers();
+////                    });
+////                }
+////            });
+//        }
+//    }
 
-    public void clearTopPeers() {
-        hints.clear();
-        inlineBots.clear();
-        getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
-        getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
-        getMessagesStorage().getStorageQueue().postRunnable(() -> {
-            try {
-                getMessagesStorage().getDatabase().executeFast("DELETE FROM chat_hints WHERE 1").stepThis().dispose();
-            } catch (Exception ignore) {
-
-            }
-        });
-        buildShortcuts();
-    }
+//    public void clearTopPeers() {
+//        hints.clear();
+//        inlineBots.clear();
+//        getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
+//        getNotificationCenter().postNotificationName(NotificationCenter.reloadInlineHints);
+//        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+//            try {
+//                getMessagesStorage().getDatabase().executeFast("DELETE FROM chat_hints WHERE 1").stepThis().dispose();
+//            } catch (Exception ignore) {
+//
+//            }
+//        });
+//        buildShortcuts();
+//    }
 
     public void increaseInlineRaiting(final int uid) {
         if (!getUserConfig().suggestContacts) {
@@ -4876,92 +4876,92 @@ public class MediaDataController extends BaseController {
 //        }
     }
 
-    public void removePeer(final int uid) {
-        for (int a = 0; a < hints.size(); a++) {
-            if (hints.get(a).peer.user_id == uid) {
-                hints.remove(a);
-                getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
-                //TODO 发起请求
-//                TLRPC.TL_contacts_resetTopPeerRating req = new TLRPC.TL_contacts_resetTopPeerRating();
-//                req.category = new TLRPC.TL_topPeerCategoryCorrespondents();
-//                req.peer = getMessagesController().getInputPeer(uid);
-//                deletePeer(uid, 0);
-//                getConnectionsManager().sendRequest(req, (response, error) -> {
-//
+//    public void removePeer(final int uid) {
+//        for (int a = 0; a < hints.size(); a++) {
+//            if (hints.get(a).peer.user_id == uid) {
+//                hints.remove(a);
+//                getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
+//                //TODO 发起请求
+////                TLRPC.TL_contacts_resetTopPeerRating req = new TLRPC.TL_contacts_resetTopPeerRating();
+////                req.category = new TLRPC.TL_topPeerCategoryCorrespondents();
+////                req.peer = getMessagesController().getInputPeer(uid);
+////                deletePeer(uid, 0);
+////                getConnectionsManager().sendRequest(req, (response, error) -> {
+////
+////                });
+//                return;
+//            }
+//        }
+//    }
+
+//    public void increasePeerRaiting(final long did) {
+//        if (!getUserConfig().suggestContacts) {
+//            return;
+//        }
+//        final int lower_id = (int) did;
+//        if (lower_id <= 0) {
+//            return;
+//        }
+//        //remove chats and bots for now
+//        final User user = lower_id > 0 ? getMessagesController().getUser(lower_id) : null;
+//        //final TLRPC.Chat chat = lower_id < 0 ? MessagesController.getInstance().getChat(-lower_id) : null;
+//        if (user == null || user.bot || user.self/*&& chat == null || ChatObject.isChannel(chat) && !chat.megagroup*/) {
+//            return;
+//        }
+//        getMessagesStorage().getStorageQueue().postRunnable(() -> {
+//            double dt = 0;
+//            try {
+//                int lastTime = 0;
+//                int lastMid = 0;
+//                SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT MAX(mid), MAX(date) FROM messages WHERE uid = %d AND out = 1", did));
+//                if (cursor.next()) {
+//                    lastMid = cursor.intValue(0);
+//                    lastTime = cursor.intValue(1);
+//                }
+//                cursor.dispose();
+//                if (lastMid > 0 && getUserConfig().ratingLoadTime != 0) {
+//                    dt = (lastTime - getUserConfig().ratingLoadTime);
+//                }
+//            } catch (Exception e) {
+//                FileLog.e(e);
+//            }
+//            final double dtFinal = dt;
+//            AndroidUtilities.runOnUIThread(() -> {
+//                TLRPC.TL_topPeer peer = null;
+//                for (int a = 0; a < hints.size(); a++) {
+//                    TLRPC.TL_topPeer p = hints.get(a);
+//                    if (lower_id < 0 && (p.peer.chat_id == -lower_id || p.peer.channel_id == -lower_id) || lower_id > 0 && p.peer.user_id == lower_id) {
+//                        peer = p;
+//                        break;
+//                    }
+//                }
+//                if (peer == null) {
+//                    peer = new TLRPC.TL_topPeer();
+//                    if (lower_id > 0) {
+//                        peer.peer = new TLRPC.TL_peerUser();
+//                        peer.peer.user_id = lower_id;
+//                    } else {
+//                        peer.peer = new TLRPC.TL_peerChat();
+//                        peer.peer.chat_id = -lower_id;
+//                    }
+//                    hints.add(peer);
+//                }
+//                peer.rating += Math.exp(dtFinal / getMessagesController().ratingDecay);
+//                Collections.sort(hints, (lhs, rhs) -> {
+//                    if (lhs.rating > rhs.rating) {
+//                        return -1;
+//                    } else if (lhs.rating < rhs.rating) {
+//                        return 1;
+//                    }
+//                    return 0;
 //                });
-                return;
-            }
-        }
-    }
-
-    public void increasePeerRaiting(final long did) {
-        if (!getUserConfig().suggestContacts) {
-            return;
-        }
-        final int lower_id = (int) did;
-        if (lower_id <= 0) {
-            return;
-        }
-        //remove chats and bots for now
-        final User user = lower_id > 0 ? getMessagesController().getUser(lower_id) : null;
-        //final TLRPC.Chat chat = lower_id < 0 ? MessagesController.getInstance().getChat(-lower_id) : null;
-        if (user == null || user.bot || user.self/*&& chat == null || ChatObject.isChannel(chat) && !chat.megagroup*/) {
-            return;
-        }
-        getMessagesStorage().getStorageQueue().postRunnable(() -> {
-            double dt = 0;
-            try {
-                int lastTime = 0;
-                int lastMid = 0;
-                SQLiteCursor cursor = getMessagesStorage().getDatabase().queryFinalized(String.format(Locale.US, "SELECT MAX(mid), MAX(date) FROM messages WHERE uid = %d AND out = 1", did));
-                if (cursor.next()) {
-                    lastMid = cursor.intValue(0);
-                    lastTime = cursor.intValue(1);
-                }
-                cursor.dispose();
-                if (lastMid > 0 && getUserConfig().ratingLoadTime != 0) {
-                    dt = (lastTime - getUserConfig().ratingLoadTime);
-                }
-            } catch (Exception e) {
-                FileLog.e(e);
-            }
-            final double dtFinal = dt;
-            AndroidUtilities.runOnUIThread(() -> {
-                TLRPC.TL_topPeer peer = null;
-                for (int a = 0; a < hints.size(); a++) {
-                    TLRPC.TL_topPeer p = hints.get(a);
-                    if (lower_id < 0 && (p.peer.chat_id == -lower_id || p.peer.channel_id == -lower_id) || lower_id > 0 && p.peer.user_id == lower_id) {
-                        peer = p;
-                        break;
-                    }
-                }
-                if (peer == null) {
-                    peer = new TLRPC.TL_topPeer();
-                    if (lower_id > 0) {
-                        peer.peer = new TLRPC.TL_peerUser();
-                        peer.peer.user_id = lower_id;
-                    } else {
-                        peer.peer = new TLRPC.TL_peerChat();
-                        peer.peer.chat_id = -lower_id;
-                    }
-                    hints.add(peer);
-                }
-                peer.rating += Math.exp(dtFinal / getMessagesController().ratingDecay);
-                Collections.sort(hints, (lhs, rhs) -> {
-                    if (lhs.rating > rhs.rating) {
-                        return -1;
-                    } else if (lhs.rating < rhs.rating) {
-                        return 1;
-                    }
-                    return 0;
-                });
-
-                savePeer((int) did, 0, peer.rating);
-
-                getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
-            });
-        });
-    }
+//
+//                savePeer((int) did, 0, peer.rating);
+//
+//                getNotificationCenter().postNotificationName(NotificationCenter.reloadHints);
+//            });
+//        });
+//    }
 
     private void savePeer(final int did, final int type, final double rating) {
         getMessagesStorage().getStorageQueue().postRunnable(() -> {
@@ -4996,13 +4996,7 @@ public class MediaDataController extends BaseController {
         int lower_id = (int) did;
         int high_id = (int) (did >> 32);
 
-        if (lower_id == 0) {
-            shortcutIntent.putExtra("encId", high_id);
-            TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(high_id);
-            if (encryptedChat == null) {
-                return null;
-            }
-        } else if (lower_id > 0) {
+        if (lower_id > 0) {
             shortcutIntent.putExtra("userId", lower_id);
         } else if (lower_id < 0) {
             shortcutIntent.putExtra("chatId", -lower_id);
@@ -5024,14 +5018,8 @@ public class MediaDataController extends BaseController {
             int high_id = (int) (did >> 32);
 
             User user = null;
-            TLRPC.Chat chat = null;
-            if (lower_id == 0) {
-                TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(high_id);
-                if (encryptedChat == null) {
-                    return;
-                }
-                user = getMessagesController().getUser(encryptedChat.user_id);
-            } else if (lower_id > 0) {
+            Chat chat = null;
+            if (lower_id > 0) {
                 user = getMessagesController().getUser(lower_id);
             } else if (lower_id < 0) {
                 chat = getMessagesController().getChat(-lower_id);
@@ -5043,7 +5031,7 @@ public class MediaDataController extends BaseController {
             }
 
             String name;
-            TLRPC.FileLocation photo = null;
+            FileLocation photo = null;
 
             boolean selfUser = false;
 
@@ -5052,7 +5040,7 @@ public class MediaDataController extends BaseController {
                     name = LocaleController.getString("SavedMessages", R.string.SavedMessages);
                     selfUser = true;
                 } else {
-                    name = ContactsController.formatName(user.first_name, user.last_name);
+                    name = UserObject.formatName(user.first_name, user.last_name);
                     if (user.photo != null) {
                         photo = user.photo.photo_small;
                     }
@@ -5170,54 +5158,54 @@ public class MediaDataController extends BaseController {
         }
     }
 
-    public void uninstallShortcut(long did) {
-        try {
-            if (Build.VERSION.SDK_INT >= 26) {
-                ShortcutManager shortcutManager = ApplicationLoader.applicationContext.getSystemService(ShortcutManager.class);
-                ArrayList<String> arrayList = new ArrayList<>();
-                arrayList.add("sdid_" + did);
-                shortcutManager.removeDynamicShortcuts(arrayList);
-            } else {
-                int lower_id = (int) did;
-                int high_id = (int) (did >> 32);
-
-                User user = null;
-                TLRPC.Chat chat = null;
-                if (lower_id == 0) {
-                    TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(high_id);
-                    if (encryptedChat == null) {
-                        return;
-                    }
-                    user = getMessagesController().getUser(encryptedChat.user_id);
-                } else if (lower_id > 0) {
-                    user = getMessagesController().getUser(lower_id);
-                } else if (lower_id < 0) {
-                    chat = getMessagesController().getChat(-lower_id);
-                } else {
-                    return;
-                }
-                if (user == null && chat == null) {
-                    return;
-                }
-                String name;
-
-                if (user != null) {
-                    name = ContactsController.formatName(user.first_name, user.last_name);
-                } else {
-                    name = chat.title;
-                }
-
-                Intent addIntent = new Intent();
-                addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, createIntrnalShortcutIntent(did));
-                addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
-                addIntent.putExtra("duplicate", false);
-
-                addIntent.setAction("com.android.launcher.action.UNINSTALL_SHORTCUT");
-                ApplicationLoader.applicationContext.sendBroadcast(addIntent);
-            }
-        } catch (Exception e) {
-            FileLog.e(e);
-        }
-    }
+//    public void uninstallShortcut(long did) {
+//        try {
+//            if (Build.VERSION.SDK_INT >= 26) {
+//                ShortcutManager shortcutManager = ApplicationLoader.applicationContext.getSystemService(ShortcutManager.class);
+//                ArrayList<String> arrayList = new ArrayList<>();
+//                arrayList.add("sdid_" + did);
+//                shortcutManager.removeDynamicShortcuts(arrayList);
+//            } else {
+//                int lower_id = (int) did;
+//                int high_id = (int) (did >> 32);
+//
+//                User user = null;
+//                TLRPC.Chat chat = null;
+//                if (lower_id == 0) {
+//                    TLRPC.EncryptedChat encryptedChat = getMessagesController().getEncryptedChat(high_id);
+//                    if (encryptedChat == null) {
+//                        return;
+//                    }
+//                    user = getMessagesController().getUser(encryptedChat.user_id);
+//                } else if (lower_id > 0) {
+//                    user = getMessagesController().getUser(lower_id);
+//                } else if (lower_id < 0) {
+//                    chat = getMessagesController().getChat(-lower_id);
+//                } else {
+//                    return;
+//                }
+//                if (user == null && chat == null) {
+//                    return;
+//                }
+//                String name;
+//
+//                if (user != null) {
+//                    name = ContactsController.formatName(user.first_name, user.last_name);
+//                } else {
+//                    name = chat.title;
+//                }
+//
+//                Intent addIntent = new Intent();
+//                addIntent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, createIntrnalShortcutIntent(did));
+//                addIntent.putExtra(Intent.EXTRA_SHORTCUT_NAME, name);
+//                addIntent.putExtra("duplicate", false);
+//
+//                addIntent.setAction("com.android.launcher.action.UNINSTALL_SHORTCUT");
+//                ApplicationLoader.applicationContext.sendBroadcast(addIntent);
+//            }
+//        } catch (Exception e) {
+//            FileLog.e(e);
+//        }
+//    }
     //endregion ---------------- SEARCH END ----------------
 }

@@ -1,5 +1,6 @@
 package com.demo.chat.model.sticker;
 
+import com.demo.chat.messager.AbstractSerializedData;
 import com.demo.chat.model.small.Document;
 
 import java.util.ArrayList;
@@ -15,4 +16,10 @@ public class StickerSetCovered extends Sticker{
     public StickerSet set;
     public ArrayList<Document> covers = new ArrayList<>();
     public Document cover;
+
+
+    public static StickerSetCovered TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
+        StickerSetCovered result = new StickerSetCovered();
+        return result;
+    }
 }
