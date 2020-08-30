@@ -1,6 +1,7 @@
 package com.demo.chat.model.small;
 
 import com.demo.chat.messager.AbstractSerializedData;
+import com.demo.chat.messager.NativeByteBuffer;
 import com.demo.chat.model.text.Page;
 
 import java.util.ArrayList;
@@ -157,6 +158,28 @@ public class MessageMedia {
 //    public boolean is(){return false;}
 
 
+    public int networkType;
+
+    public boolean disableFree = false;
+    private static final ThreadLocal<NativeByteBuffer> sizeCalculator = new ThreadLocal<NativeByteBuffer>() {
+        @Override
+        protected NativeByteBuffer initialValue() {
+            return new NativeByteBuffer(true);
+        }
+    };
+
+    public void serializeToStream(AbstractSerializedData stream) {
+
+    }
+    public void freeResources() {
+
+    }
+    public int getObjectSize() {
+        NativeByteBuffer byteBuffer = sizeCalculator.get();
+        byteBuffer.rewind();
+        serializeToStream(sizeCalculator.get());
+        return byteBuffer.length();
+    }
     public static MessageMedia TLdeserialize(AbstractSerializedData stream, int constructor, boolean exception) {
         MessageMedia result = new MessageMedia();
         return result;
