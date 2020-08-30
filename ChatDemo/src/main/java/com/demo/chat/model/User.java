@@ -10,40 +10,41 @@ import com.demo.chat.model.small.FileLocation;
  * @description 登录的用户
  * @usage null
  */
-public class User extends UserChat{
-    public int id;
-    public String first_name;
-    public String last_name;
-    public String username;
+public class User extends UserChat {
+    public int id = 1;
+    public String first_name = "first";
+    public String last_name = "last";
+    public String username = "username";
     public long access_hash;
-    public String phone;
+    public String phone = "15768674243";
     public int flags;
-    public boolean self;
-    public boolean contact;
-    public boolean mutual_contact;
-    public boolean deleted;
-    public boolean bot;
-    public boolean bot_chat_history;
-    public boolean bot_nochats;
-    public boolean verified;
-    public boolean restricted;
-    public boolean min;
-    public boolean bot_inline_geo;
-    public boolean support;
-    public boolean scam;
-    public int bot_info_version;
+    public boolean self = false;
+    public boolean contact = false;
+    public boolean mutual_contact = false;
+    public boolean deleted = false;
+    public boolean bot = true;
+    public boolean bot_chat_history = false;
+    public boolean bot_nochats = false;
+    public boolean verified = false;
+    public boolean restricted = false;
+    public boolean min = false;
+    public boolean bot_inline_geo = false;
+    public boolean support = false;
+    public boolean scam = false;
+    public int bot_info_version = 1;
     public String bot_inline_placeholder;
     public String lang_code;
-    public boolean inactive;
-    public boolean explicit_content;
+    public boolean inactive = false;
+    public boolean explicit_content = false;
 
-    public UserProfilePhoto photo;
-    public UserStatus status;
-//    public ArrayList<TL_restrictionReason> restriction_reason = new ArrayList<>();TODO 可能不需要这个字段
+    public UserProfilePhoto photo = new UserProfilePhoto();
+    public UserStatus status = new UserStatus();
+    //    public ArrayList<TL_restrictionReason> restriction_reason = new ArrayList<>();TODO 可能不需要这个字段
 
     public static class UserStatus {
         public int expires;
     }
+
     public static class UserProfilePhoto {
         public long photo_id;
         public FileLocation photo_small;

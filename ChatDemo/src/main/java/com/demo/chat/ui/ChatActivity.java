@@ -11963,6 +11963,13 @@ public class ChatActivity extends BaseFragment
         }
     }
 
+    /**
+     * 点击url
+     * @param url
+     * @param longPress
+     * @param messageObject
+     * @param cell
+     */
     private void didPressMessageUrl(CharacterStyle url, boolean longPress, MessageObject messageObject, ChatMessageCell cell) {
         if (url == null || getParentActivity() == null) {
             return;
@@ -12730,1999 +12737,51 @@ public class ChatActivity extends BaseFragment
     @Override
     public void didReceivedNotification(int id, int account, final Object... args) {
         if (id == NotificationCenter.messagesDidLoad) {
-            int guid = (Integer) args[10];
-            if (guid == classGuid) {
-                int queryLoadIndex = (Integer) args[11];
-                boolean doNotRemoveLoadIndex;
-                if (queryLoadIndex < 0) {
-                    doNotRemoveLoadIndex = true;
-                    queryLoadIndex = -queryLoadIndex;
-                } else {
-                    doNotRemoveLoadIndex = false;
-                }
-                if (!doNotRemoveLoadIndex && !openAnimationEnded) {
-                    getNotificationCenter().updateAllowedNotifications(transitionAnimationIndex, new int[]{NotificationCenter.chatInfoDidLoad, NotificationCenter.dialogsNeedReload, NotificationCenter.scheduledMessagesUpdated,
-                                                                                                           NotificationCenter.closeChats, NotificationCenter.botKeyboardDidLoad, NotificationCenter.userInfoDidLoad, NotificationCenter.needDeleteDialog/*, NotificationCenter.botInfoDidLoad*/});
-                }
-                int index = waitingForLoad.indexOf(queryLoadIndex);
-                int currentUserId = getUserConfig().getClientUserId();
-                boolean schedule = (Boolean) args[14];
-                boolean isCache = (Boolean) args[3];
-                boolean postponedScroll = postponedScrollToLastMessageQueryIndex > 0 && queryLoadIndex == postponedScrollToLastMessageQueryIndex;
-
-                if (index == -1) {
-                    if (inScheduleMode && schedule && !isCache) {
-                        waitingForReplyMessageLoad = true;
-                        waitingForLoad.add(lastLoadIndex);
-                        getMessagesController().loadMessages(dialog_id, mergeDialogId, false, AndroidUtilities.isTablet() ? 30 : 20, 0, 0, true, 0, classGuid, 2, 0, ChatObject.isChannel(currentChat), inScheduleMode, lastLoadIndex++);
-                    }
-                    return;
-                } else if (!doNotRemoveLoadIndex) {
-                    waitingForLoad.remove(index);
-                }
-                ArrayList<MessageObject> messArr = (ArrayList<MessageObject>) args[2];
-                if (inScheduleMode != schedule) {
-                    if (!inScheduleMode) {
-                        scheduledMessagesCount = messArr.size();
-                        updateScheduledInterface(true);
-                    }
-                    return;
-                }
-                boolean createUnreadLoading = false;
-                boolean showDateAfter = waitingForReplyMessageLoad;
-                if (waitingForReplyMessageLoad) {
-                    if (!inScheduleMode && !createUnreadMessageAfterIdLoading) {
-                        boolean found = false;
-                        for (int a = 0; a < messArr.size(); a++) {
-                            MessageObject obj = messArr.get(a);
-                            if (obj.getId() == startLoadFromMessageId) {
-                                found = true;
-                                break;
-                            }
-                            if (a + 1 < messArr.size()) {
-                                MessageObject obj2 = messArr.get(a + 1);
-                                if (obj.getId() >= startLoadFromMessageId && obj2.getId() < startLoadFromMessageId) {
-                                    startLoadFromMessageId = obj.getId();
-                                    found = true;
-                                    break;
-                                }
-                            }
-                        }
-                        if (!found) {
-                            startLoadFromMessageId = 0;
-                            return;
-                        }
-                    }
-                    int startLoadFrom = startLoadFromMessageId;
-                    boolean needSelect = needSelectFromMessageId;
-                    int unreadAfterId = createUnreadMessageAfterId;
-                    createUnreadLoading = createUnreadMessageAfterIdLoading;
-                    clearChatData();
-                    if (!inScheduleMode) {
-                        createUnreadMessageAfterId = unreadAfterId;
-                        startLoadFromMessageId = startLoadFrom;
-                        needSelectFromMessageId = needSelect;
-                    }
-                }
-
-                loadsCount++;
-                long did = (Long) args[0];
-                int loadIndex = did == dialog_id ? 0 : 1;
-                int count = (Integer) args[1];
-                int fnid = (Integer) args[4];
-                int last_unread_date = (Integer) args[7];
-                int load_type = (Integer) args[8];
-                boolean isEnd = (Boolean) args[9];
-                int loaded_max_id = (Integer) args[12];
-                int loaded_mentions_count = (Integer) args[13];
-
-                if (loaded_mentions_count < 0) {
-                    loaded_mentions_count *= -1;
-                    hasAllMentionsLocal = false;
-                } else if (first) {
-                    hasAllMentionsLocal = true;
-                }
-                if (load_type == 4) {
-                    startLoadFromMessageId = loaded_max_id;
-
-                    for (int a = messArr.size() - 1; a > 0; a--) {
-                        MessageObject obj = messArr.get(a);
-                        if (obj.type < 0 && obj.getId() == startLoadFromMessageId) {
-                            startLoadFromMessageId = messArr.get(a - 1).getId();
-                            break;
-                        }
-                    }
-                }
-
-                if (postponedScroll) {
-                    if (load_type == 0 && isCache && messArr.size() < count) {
-                        postponedScrollToLastMessageQueryIndex = lastLoadIndex;
-                        waitingForLoad.add(lastLoadIndex);
-                        getMessagesController().loadMessages(dialog_id, mergeDialogId, false, count, 0, 0, false, 0, classGuid, 0, 0, ChatObject.isChannel(currentChat), inScheduleMode, lastLoadIndex++);
-                        return;
-                    }
-
-                    if (load_type == 4) {
-                        postponedScrollMessageId = startLoadFromMessageId;
-                    }
-
-                    progressDialog.dismiss();
-                    if (postponedScrollIsCanceled) {
-                        return;
-                    }
-                    if (postponedScrollMessageId == 0) {
-                        clearChatData();
-                    } else {
-                        if (showScrollToMessageError) {
-                            boolean found = false;
-                            for (int k = 0; k < messArr.size(); k++) {
-                                if (messArr.get(k).getId() == postponedScrollMessageId) {
-                                    found = true;
-                                    break;
-                                }
-                            }
-                            if (!found) {
-                                AlertsCreator.showSimpleToast(ChatActivity.this, LocaleController.getString("MessageNotFound", R.string.MessageNotFound));
-                                return;
-                            }
-                            showScrollToMessageError = false;
-                        }
-                        int startLoadFrom = startLoadFromMessageId;
-                        boolean needSelect = needSelectFromMessageId;
-                        int unreadAfterId = createUnreadMessageAfterId;
-                        createUnreadLoading = createUnreadMessageAfterIdLoading;
-                        clearChatData();
-                        if (!inScheduleMode) {
-                            createUnreadMessageAfterId = unreadAfterId;
-                            startLoadFromMessageId = startLoadFrom;
-                            needSelectFromMessageId = needSelect;
-                        }
-                    }
-                }
-
-                if (chatListItemAniamtor != null) {
-                    chatListItemAniamtor.setShouldAnimateEnterFromBottom(false);
-                }
-
-                int unread_to_load = 0;
-                if (fnid != 0) {
-                    last_message_id = (Integer) args[5];
-                    if (load_type == 3) {
-                        if (loadingFromOldPosition) {
-                            unread_to_load = (Integer) args[6];
-                            if (unread_to_load != 0) {
-                                createUnreadMessageAfterId = fnid;
-                            }
-                            loadingFromOldPosition = false;
-                        }
-                        first_unread_id = 0;
-                    } else {
-                        first_unread_id = fnid;
-                        unread_to_load = (Integer) args[6];
-                    }
-                } else if (startLoadFromMessageId != 0 && (load_type == 3 || load_type == 4)) {
-                    last_message_id = (Integer) args[5];
-                }
-                int newRowsCount = 0;
-
-                if (load_type != 0 && (startLoadFromMessageId != 0 || last_message_id != 0)) {
-                    forwardEndReached[loadIndex] = false;
-                }
-                if ((load_type == 1 || load_type == 3) && loadIndex == 1) {
-                    endReached[0] = cacheEndReached[0] = true;
-                    forwardEndReached[0] = false;
-                    minMessageId[0] = 0;
-                }
-                if (inScheduleMode) {
-                    endReached[0] = cacheEndReached[0] = true;
-                    forwardEndReached[0] = forwardEndReached[0] = true;
-                }
-
-                if (loadsCount == 1 && messArr.size() > 20) {
-                    loadsCount++;
-                }
-
-                if (firstLoading) {
-                    if (!forwardEndReached[loadIndex]) {
-                        messages.clear();
-                        messagesByDays.clear();
-                        groupedMessagesMap.clear();
-                        for (int a = 0; a < 2; a++) {
-                            messagesDict[a].clear();
-                            maxMessageId[a] = Integer.MAX_VALUE;
-                            minMessageId[a] = Integer.MIN_VALUE;
-                            maxDate[a] = Integer.MIN_VALUE;
-                            minDate[a] = 0;
-                        }
-                    }
-                    firstLoading = false;
-                    AndroidUtilities.runOnUIThread(() -> {
-                        if (parentLayout != null) {
-                            parentLayout.resumeDelayedFragmentAnimation();
-                        }
-                    });
-                }
-
-                if (load_type == 1) {
-                    Collections.reverse(messArr);
-                }
-                getMediaDataController().loadReplyMessagesForMessages(messArr, dialog_id, inScheduleMode, null);
-                int approximateHeightSum = 0;
-                if ((load_type == 2 || load_type == 1) && messArr.isEmpty() && !isCache) {
-                    forwardEndReached[0] = true;
-                }
-                LongSparseArray<MessageObject.GroupedMessages> newGroups = null;
-                LongSparseArray<MessageObject.GroupedMessages> changedGroups = null;
-                MediaController mediaController = MediaController.getInstance();
-                MessageAction dropPhotoAction = null;
-                boolean createdWas = false;
-                for (int a = 0, N = messArr.size(); a < N; a++) {
-                    MessageObject obj = messArr.get(N - a - 1);
-                    MessageAction action = obj.messageOwner.action;
-                    if (a == 0 && action.isChatCreate()) {
-                        createdWas = true;
-                    } else if (!createdWas) {
-                        break;
-                    } else if (a < 2 && action.isChatEditPhoto()) {
-                        dropPhotoAction = action;
-                    }
-                }
-                for (int a = 0; a < messArr.size(); a++) {
-                    MessageObject obj = messArr.get(a);
-                    int messageId = obj.getId();
-
-                    approximateHeightSum += obj.getApproximateHeight();
-                    if (currentUser != null) {
-                        if (currentUser.self) {
-                            obj.messageOwner.out = true;
-                        }
-                        if (!inScheduleMode && (currentUser.bot && obj.isOut() || currentUser.id == currentUserId)) {
-                            obj.setIsRead();
-                        }
-                    }
-                    if (messagesDict[loadIndex].indexOfKey(messageId) >= 0) {
-                        continue;
-                    }
-                    if (isSecretChat()) {
-                        checkSecretMessageForLocation(obj);
-                    }
-                    if (mediaController.isPlayingMessage(obj)) {
-                        MessageObject player = mediaController.getPlayingMessageObject();
-                        obj.audioProgress = player.audioProgress;
-                        obj.audioProgressSec = player.audioProgressSec;
-                        obj.audioPlayerDuration = player.audioPlayerDuration;
-                    }
-                    if (loadIndex == 0 && ChatObject.isChannel(currentChat) && messageId == 1) {
-                        endReached[loadIndex] = true;
-                        cacheEndReached[loadIndex] = true;
-                    }
-                    if (messageId > 0) {
-                        maxMessageId[loadIndex] = Math.min(messageId, maxMessageId[loadIndex]);
-                        minMessageId[loadIndex] = Math.max(messageId, minMessageId[loadIndex]);
-                    }
-                    if (obj.messageOwner.date != 0) {
-                        maxDate[loadIndex] = Math.max(maxDate[loadIndex], obj.messageOwner.date);
-                        if (minDate[loadIndex] == 0 || obj.messageOwner.date < minDate[loadIndex]) {
-                            minDate[loadIndex] = obj.messageOwner.date;
-                        }
-                    }
-
-                    if (messageId == last_message_id) {
-                        forwardEndReached[loadIndex] = true;
-                    }
-
-                    MessageAction action = obj.messageOwner.action;
-                    if (currentChat != null && currentChat.creator && (action.isChatCreate() || dropPhotoAction != null && action == dropPhotoAction)) {
-                        continue;
-                    }
-
-                    if (needAnimateToMessage != null && needAnimateToMessage.getId() == messageId && messageId < 0 && obj.type == MessageObject.TYPE_ROUND_VIDEO && !inScheduleMode) {
-                        obj = needAnimateToMessage;
-                        animatingMessageObjects.add(obj);
-                        needAnimateToMessage = null;
-                    }
-
-                    messagesDict[loadIndex].put(messageId, obj);
-                    ArrayList<MessageObject> dayArray = messagesByDays.get(obj.dateKey);
-
-                    if (dayArray == null) {
-                        dayArray = new ArrayList<>();
-                        messagesByDays.put(obj.dateKey, dayArray);
-                        Message dateMsg = new Message();
-                        if (inScheduleMode) {
-                            if (obj.messageOwner.date == 0x7ffffffe) {
-                                dateMsg.message = LocaleController.getString("MessageScheduledUntilOnline", R.string.MessageScheduledUntilOnline);
-                            } else {
-                                dateMsg.message = LocaleController.formatString("MessageScheduledOn", R.string.MessageScheduledOn, LocaleController.formatDateChat(obj.messageOwner.date, true));
-                            }
-                        } else {
-                            dateMsg.message = LocaleController.formatDateChat(obj.messageOwner.date);
-                        }
-                        dateMsg.id = 0;
-                        Calendar calendar = Calendar.getInstance();
-                        calendar.setTimeInMillis(((long) obj.messageOwner.date) * 1000);
-                        calendar.set(Calendar.HOUR_OF_DAY, 0);
-                        calendar.set(Calendar.MINUTE, 0);
-                        dateMsg.date = (int) (calendar.getTimeInMillis() / 1000);
-                        MessageObject dateObj = new MessageObject(currentAccount, dateMsg, false);
-                        dateObj.type = 10;
-                        dateObj.contentType = 1;
-                        dateObj.isDateObject = true;
-                        dateObj.stableId = lastStableId++;
-                        if (load_type == 1) {
-                            messages.add(0, dateObj);
-                        } else {
-                            messages.add(dateObj);
-                        }
-                        newRowsCount++;
-                    }
-
-                    if (obj.hasValidGroupId()) {
-                        MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(obj.getGroupIdForUse());
-                        if (groupedMessages != null) {
-                            if (messages.size() > 1) {
-                                MessageObject previous;
-                                if (load_type == 1) {
-                                    previous = messages.get(0);
-                                } else {
-                                    previous = messages.get(messages.size() - 2);
-                                }
-                                if (previous.getGroupIdForUse() == obj.getGroupIdForUse()) {
-                                    if (previous.localGroupId != 0) {
-                                        obj.localGroupId = previous.localGroupId;
-                                        groupedMessages = groupedMessagesMap.get(previous.localGroupId);
-                                    }
-                                } else if (previous.getGroupIdForUse() != obj.getGroupIdForUse()) {
-                                    obj.localGroupId = Utilities.random.nextLong();
-                                    groupedMessages = null;
-                                }
-                            }
-                        }
-                        if (groupedMessages == null) {
-                            groupedMessages = new MessageObject.GroupedMessages();
-                            groupedMessages.groupId = obj.getGroupId();
-                            groupedMessagesMap.put(groupedMessages.groupId, groupedMessages);
-                        } else if (newGroups == null || newGroups.indexOfKey(obj.getGroupId()) < 0) {
-                            if (changedGroups == null) {
-                                changedGroups = new LongSparseArray<>();
-                            }
-                            changedGroups.put(obj.getGroupId(), groupedMessages);
-                        }
-                        if (newGroups == null) {
-                            newGroups = new LongSparseArray<>();
-                        }
-                        newGroups.put(groupedMessages.groupId, groupedMessages);
-                        if (load_type == 1) {
-                            groupedMessages.messages.add(obj);
-                        } else {
-                            groupedMessages.messages.add(0, obj);
-                        }
-                    } else if (obj.getGroupIdForUse() != 0) {
-                        obj.messageOwner.grouped_id = 0;
-                        obj.localSentGroupId = 0;
-                    }
-
-                    newRowsCount++;
-                    dayArray.add(obj);
-                    obj.stableId = lastStableId++;
-                    if (load_type == 1) {
-                        messages.add(0, obj);
-                    } else {
-                        messages.add(messages.size() - 1, obj);
-                    }
-
-                    MessageObject prevObj;
-                    if (createUnreadMessageAfterId != 0 && load_type != 1 && a + 1 < messArr.size()) {
-                        prevObj = messArr.get(a + 1);
-                        if (obj.isOut() && !obj.messageOwner.from_scheduled || prevObj.getId() >= createUnreadMessageAfterId) {
-                            prevObj = null;
-                        }
-                    } else {
-                        prevObj = null;
-                    }
-                    if (load_type == 2 && messageId == first_unread_id) {
-                        if (approximateHeightSum > AndroidUtilities.displaySize.y / 2 || !forwardEndReached[0]) {
-                            Message dateMsg = new Message();
-                            dateMsg.message = "";
-                            dateMsg.id = 0;
-                            MessageObject dateObj = new MessageObject(currentAccount, dateMsg, false);
-                            dateObj.type = 6;
-                            dateObj.contentType = 2;
-                            dateObj.stableId = lastStableId++;
-                            messages.add(messages.size() - 1, dateObj);
-                            unreadMessageObject = dateObj;
-                            scrollToMessage = unreadMessageObject;
-                            scrollToMessagePosition = -10000;
-                            newRowsCount++;
-                        }
-                    } else if ((load_type == 3 || load_type == 4) && (startLoadFromMessageId < 0 && messageId == startLoadFromMessageId || startLoadFromMessageId > 0 && messageId > 0 && messageId <= startLoadFromMessageId)) {
-                        removeSelectedMessageHighlight();
-                        if (needSelectFromMessageId && messageId == startLoadFromMessageId) {
-                            highlightMessageId = messageId;
-                        }
-                        if (showScrollToMessageError && messageId != startLoadFromMessageId) {
-                            AlertsCreator.showSimpleToast(ChatActivity.this, LocaleController.getString("MessageNotFound", R.string.MessageNotFound));
-                        }
-                        scrollToMessage = obj;
-                        if (postponedScroll) {
-                            postponedScrollMessageId = scrollToMessage.getId();
-                        }
-                        startLoadFromMessageId = 0;
-                        if (scrollToMessagePosition == -10000) {
-                            scrollToMessagePosition = -9000;
-                        }
-                    }
-                    if (load_type != 2 && unreadMessageObject == null && createUnreadMessageAfterId != 0 && (!obj.isOut() || obj.messageOwner.from_scheduled) && messageId >= createUnreadMessageAfterId && (load_type == 1 || prevObj != null || prevObj == null && createUnreadLoading && a == messArr.size() - 1)) {
-                        Message dateMsg = new Message();
-                        dateMsg.message = "";
-                        dateMsg.id = 0;
-                        MessageObject dateObj = new MessageObject(currentAccount, dateMsg, false);
-                        dateObj.type = 6;
-                        dateObj.contentType = 2;
-                        dateObj.stableId = lastStableId++;
-                        if (load_type == 1) {
-                            messages.add(1, dateObj);
-                        } else {
-                            messages.add(messages.size() - 1, dateObj);
-                        }
-                        unreadMessageObject = dateObj;
-                        if (load_type == 3) {
-                            scrollToMessage = unreadMessageObject;
-                            startLoadFromMessageId = 0;
-                            scrollToMessagePosition = -9000;
-                        }
-                        newRowsCount++;
-                    }
-                }
-                if (createUnreadLoading) {
-                    createUnreadMessageAfterId = 0;
-                }
-                if (load_type == 0 && newRowsCount == 0) {
-                    loadsCount--;
-                }
-
-                if (forwardEndReached[loadIndex] && loadIndex != 1) {
-                    first_unread_id = 0;
-                    last_message_id = 0;
-                    createUnreadMessageAfterId = 0;
-                }
-
-                if (load_type == 1) {
-                    if (messArr.size() != count && (!isCache || forwardEndReached[loadIndex])) {
-                        forwardEndReached[loadIndex] = true;
-                        if (loadIndex != 1) {
-                            first_unread_id = 0;
-                            last_message_id = 0;
-                            createUnreadMessageAfterId = 0;
-                            chatAdapter.notifyItemRemoved(chatAdapter.loadingDownRow);
-                        }
-                        startLoadFromMessageId = 0;
-                    }
-                    if (newRowsCount > 0) {
-                        int firstVisPos = chatLayoutManager.findFirstVisibleItemPosition();
-                        int lastVisPos = chatLayoutManager.findLastVisibleItemPosition();
-                        int top = 0;
-                        MessageObject scrollToMessageObject = null;
-                        if (firstVisPos != RecyclerView.NO_POSITION) {
-                            for (int i = firstVisPos; i <= lastVisPos; i++) {
-                                View v = chatLayoutManager.findViewByPosition(i);
-                                if (v instanceof ChatMessageCell) {
-                                    scrollToMessageObject = ((ChatMessageCell) v).getMessageObject();
-                                    top = chatListView.getMeasuredHeight() - v.getBottom() - chatListView.getPaddingBottom();
-                                    break;
-                                }
-                            }
-                        }
-
-                        if (!postponedScroll) {
-                            chatAdapter.notifyItemRangeInserted(1, newRowsCount);
-                            if (scrollToMessageObject != null) {
-                                int scrollToIndex = messages.indexOf(scrollToMessageObject);
-                                if (scrollToIndex > 0) {
-                                    chatLayoutManager.scrollToPositionWithOffset(chatAdapter.messagesStartRow + scrollToIndex, top);
-                                }
-                            }
-                        }
-                    }
-                    loadingForward = false;
-                } else {
-                    if (messArr.size() < count && load_type != 3 && load_type != 4) {
-                        if (isCache) {
-                            if (loadIndex == 1 && mergeDialogId != 0 && isEnd) {
-                                endReached[loadIndex] = true;
-                            }
-                            if (load_type != 2) {
-                                cacheEndReached[loadIndex] = true;
-                            }
-                        } else if (load_type != 2 || messArr.size() == 0 && messages.isEmpty()) {
-                            endReached[loadIndex] = true;
-                        }
-                    }
-                    loading = false;
-
-                    if (chatListView != null && chatScrollHelper != null) {
-                        if (first || scrollToTopOnResume || forceScrollToTop) {
-                            forceScrollToTop = false;
-                            if (!postponedScroll) {
-                                chatAdapter.notifyDataSetChanged();
-                            }
-                            if (scrollToMessage != null) {
-                                int yOffset;
-                                boolean bottom = true;
-                                if (startLoadFromMessageOffset != Integer.MAX_VALUE) {
-                                    yOffset = -startLoadFromMessageOffset - chatListView.getPaddingBottom();
-                                    startLoadFromMessageOffset = Integer.MAX_VALUE;
-                                } else if (scrollToMessagePosition == -9000) {
-                                    yOffset = getScrollOffsetForMessage(scrollToMessage);
-                                    bottom = false;
-                                } else if (scrollToMessagePosition == -10000) {
-                                    yOffset = -AndroidUtilities.dp(11);
-                                    bottom = false;
-                                } else {
-                                    yOffset = scrollToMessagePosition;
-                                }
-                                if (!postponedScroll) {
-                                    if (!messages.isEmpty()) {
-                                        if (chatAdapter.loadingUpRow != -1 && !messages.isEmpty() && (messages.get(messages.size() - 1) == scrollToMessage || messages.get(messages.size() - 2) == scrollToMessage)) {
-                                            chatLayoutManager.scrollToPositionWithOffset(chatAdapter.loadingUpRow, yOffset, bottom);
-                                        } else {
-                                            chatLayoutManager.scrollToPositionWithOffset(chatAdapter.messagesStartRow + messages.indexOf(scrollToMessage), yOffset, bottom);
-                                        }
-                                    }
-                                }
-                                chatListView.invalidate();
-                                if (scrollToMessagePosition == -10000 || scrollToMessagePosition == -9000) {
-                                    canShowPagedownButton = true;
-                                    updatePagedownButtonVisibility(true);
-                                    if (unread_to_load != 0) {
-                                        if (pagedownButtonCounter != null) {
-                                            pagedownButtonCounter.setVisibility(View.VISIBLE);
-                                            if (prevSetUnreadCount != newUnreadMessageCount) {
-                                                pagedownButtonCounter.setText(String.format("%d", newUnreadMessageCount = unread_to_load));
-                                                prevSetUnreadCount = newUnreadMessageCount;
-                                            }
-                                        }
-                                    }
-                                }
-                                scrollToMessagePosition = -10000;
-                                scrollToMessage = null;
-                            } else {
-                                moveScrollToLastMessage();
-                            }
-                            if (loaded_mentions_count != 0) {
-                                showMentionDownButton(true, true);
-                                if (mentiondownButtonCounter != null) {
-                                    mentiondownButtonCounter.setVisibility(View.VISIBLE);
-                                    mentiondownButtonCounter.setText(String.format("%d", newMentionsCount = loaded_mentions_count));
-                                }
-                            }
-                        } else {
-                            if (newRowsCount != 0) {
-                                int firstVisPos = chatLayoutManager.findFirstVisibleItemPosition();
-                                int lastVisPos = chatLayoutManager.findLastVisibleItemPosition();
-                                int top = 0;
-                                MessageObject scrollToMessageObject = null;
-                                if (firstVisPos != RecyclerView.NO_POSITION) {
-                                    for (int i = firstVisPos; i <= lastVisPos; i++) {
-                                        View v = chatLayoutManager.findViewByPosition(i);
-                                        if (v instanceof ChatMessageCell) {
-                                            scrollToMessageObject = ((ChatMessageCell) v).getMessageObject();
-                                            top = chatListView.getMeasuredHeight() - v.getBottom() - chatListView.getPaddingBottom();
-                                            break;
-                                        }
-                                    }
-                                }
-                                int insertStart = chatAdapter.messagesEndRow;
-                                int loadingUpRow = chatAdapter.loadingUpRow;
-                                chatAdapter.updateRowsInternal();
-                                if (loadingUpRow != -1 && chatAdapter.loadingUpRow == -1) {
-                                    chatAdapter.notifyItemRemoved(loadingUpRow);
-                                }
-                                if (newRowsCount > 0) {
-                                    chatAdapter.notifyItemChanged(insertStart - 1);
-                                    chatAdapter.notifyItemRangeInserted(insertStart, newRowsCount);
-                                }
-                                if (!postponedScroll && scrollToMessageObject != null) {
-                                    int scrollToIndex = messages.indexOf(scrollToMessageObject);
-                                    if (scrollToIndex > 0) {
-                                        chatLayoutManager.scrollToPositionWithOffset(chatAdapter.messagesStartRow + scrollToIndex, top);
-                                    }
-                                }
-                            } else if (chatAdapter.loadingUpRow != -1 && endReached[loadIndex] && (loadIndex == 0 && mergeDialogId == 0 || loadIndex == 1)) {
-                                chatAdapter.notifyItemRemoved(chatAdapter.loadingUpRow);
-                            } else {
-                                chatAdapter.notifyDataSetChanged();
-                            }
-                        }
-
-                        if (paused) {
-                            scrollToTopOnResume = true;
-                            if (scrollToMessage != null) {
-                                scrollToTopUnReadOnResume = true;
-                            }
-                        }
-
-                        if (first) {
-                            if (chatListView != null) {
-                                chatListView.setEmptyView(emptyViewContainer);
-                            }
-                        }
-                    } else {
-                        scrollToTopOnResume = true;
-                        if (scrollToMessage != null) {
-                            scrollToTopUnReadOnResume = true;
-                        }
-                    }
-                }
-                if (newGroups != null) {
-                    for (int a = 0; a < newGroups.size(); a++) {
-                        MessageObject.GroupedMessages groupedMessages = newGroups.valueAt(a);
-                        groupedMessages.calculate();
-                        if (chatAdapter != null && changedGroups != null && changedGroups.indexOfKey(newGroups.keyAt(a)) >= 0) {
-                            MessageObject messageObject = groupedMessages.messages.get(groupedMessages.messages.size() - 1);
-                            int idx = messages.indexOf(messageObject);
-                            if (idx >= 0) {
-                                if (chatListItemAniamtor != null) {
-                                    chatListItemAniamtor.groupWillChanged(groupedMessages);
-                                }
-                                chatAdapter.notifyItemRangeChanged(idx + chatAdapter.messagesStartRow, groupedMessages.messages.size());
-                            }
-                        }
-                    }
-                }
-
-                if (first && messages.size() > 0) {
-                    first = false;
-                }
-                if (messages.isEmpty() && currentUser != null && currentUser.bot && botUser == null) {
-                    botUser = "";
-                    updateBottomOverlay();
-                }
-
-                if (newRowsCount == 0 && (mergeDialogId != 0 && loadIndex == 0)) {
-                    first = true;
-                    if (chatListView != null) {
-                        chatListView.setEmptyView(null);
-                    }
-                    if (emptyViewContainer != null) {
-                        emptyViewContainer.setVisibility(View.INVISIBLE);
-                    }
-                } else {
-                    if (progressView != null) {
-                        progressView.setVisibility(View.INVISIBLE);
-                    }
-                }
-                if (newRowsCount == 0 && mergeDialogId != 0 && loadIndex == 0) {
-                    getNotificationCenter().updateAllowedNotifications(transitionAnimationIndex, new int[]{NotificationCenter.chatInfoDidLoad, NotificationCenter.dialogsNeedReload, NotificationCenter.scheduledMessagesUpdated,
-                                                                                                           NotificationCenter.closeChats, NotificationCenter.messagesDidLoad, NotificationCenter.botKeyboardDidLoad, NotificationCenter.userInfoDidLoad, NotificationCenter.needDeleteDialog/*, NotificationCenter.botInfoDidLoad*/});
-                }
-                if (showDateAfter) {
-                    showFloatingDateView(false);
-                }
-                checkScrollForLoad(false);
-
-                if (postponedScroll) {
-                    chatAdapter.notifyDataSetChanged();
-                    if (progressDialog != null) {
-                        progressDialog.dismiss();
-                    }
-                    if (postponedScrollMessageId == 0) {
-                        chatScrollHelperCallback.scrollTo = null;
-                        chatScrollHelperCallback.lastBottom = true;
-                        chatScrollHelperCallback.lastItemOffset = 0;
-                        chatScrollHelper.scrollToPosition(0, 0, true, true);
-                    } else {
-                        MessageObject object = messagesDict[loadIndex].get(postponedScrollMessageId);
-                        if (object != null) {
-                            MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(object.getGroupId());
-                            if (object.getGroupId() != 0 && groupedMessages != null) {
-                                MessageObject primary = groupedMessages.findPrimaryMessageObject();
-                                if (primary != null) {
-                                    object = primary;
-                                }
-                            }
-                        }
-
-                        if (object != null) {
-                            int k = messages.indexOf(object);
-                            if (k >= 0) {
-                                removeSelectedMessageHighlight();
-                                highlightMessageId = object.getId();
-
-                                int yOffset = getScrollOffsetForMessage(object);
-                                chatScrollHelperCallback.scrollTo = object;
-                                chatScrollHelperCallback.lastBottom = false;
-                                chatScrollHelperCallback.lastItemOffset = yOffset;
-                                chatScrollHelper.scrollToPosition(chatAdapter.messagesStartRow + messages.indexOf(object), yOffset, false, true);
-                            }
-                        }
-                    }
-                }
-            }
+            onMmessagesDidLoad(id, account, args);
         } else if (id == NotificationCenter.emojiDidLoad) {
-            if (chatListView != null) {
-                chatListView.invalidateViews();
-            }
-            if (replyObjectTextView != null) {
-                replyObjectTextView.invalidate();
-            }
-            if (alertTextView != null) {
-                alertTextView.invalidate();
-            }
-            if (pinnedMessageTextView != null) {
-                pinnedMessageTextView.invalidate();
-            }
-            if (mentionListView != null) {
-                mentionListView.invalidateViews();
-            }
-            if (stickersListView != null) {
-                stickersListView.invalidateViews();
-            }
-            if (messagesSearchListView != null) {
-                messagesSearchListView.invalidateViews();
-            }
-            if (undoView != null) {
-                undoView.invalidate();
-            }
-            if (chatActivityEnterView != null) {
-                EditTextBoldCursor editText = chatActivityEnterView.getEditField();
-                int color = editText.getCurrentTextColor();
-                editText.setTextColor(0xffffffff);
-                editText.setTextColor(color);
-            }
+            onEmojiDidLoad(id, account, args);
         } else if (id == NotificationCenter.didUpdateConnectionState) {
         } else if (id == NotificationCenter.chatOnlineCountDidLoad) {
-            Integer chatId = (Integer) args[0];
-            if (currentChat == null || currentChat.id != chatId) {
-                return;
-            }
-            currentChat.online_count = (Integer) args[1];
-            if (avatarContainer != null) {
-                avatarContainer.updateOnlineCount();
-                avatarContainer.updateSubtitle();
-            }
+            onChatOnlineCountDidLoad(id, account, args);
         } else if (id == NotificationCenter.updateInterfaces) {
-            int updateMask = (Integer) args[0];
-            if ((updateMask & MessagesController.UPDATE_MASK_NAME) != 0 || (updateMask & MessagesController.UPDATE_MASK_CHAT_NAME) != 0) {
-                if (currentChat != null) {
-                    Chat chat = getMessagesController().getChat(currentChat.id);
-                    if (chat != null) {
-                        currentChat = chat;
-                    }
-                } else if (currentUser != null) {
-                    User user = getMessagesController().getUser(currentUser.id);
-                    if (user != null) {
-                        currentUser = user;
-                    }
-                }
-                updateTitle();
-            }
-            boolean updateSubtitle = false;
-            if ((updateMask & MessagesController.UPDATE_MASK_CHAT_MEMBERS) != 0 || (updateMask & MessagesController.UPDATE_MASK_STATUS) != 0) {
-                if (currentChat != null && avatarContainer != null) {
-                    avatarContainer.updateOnlineCount();
-                }
-                updateSubtitle = true;
-            }
-            if ((updateMask & MessagesController.UPDATE_MASK_AVATAR) != 0 || (updateMask & MessagesController.UPDATE_MASK_CHAT_AVATAR) != 0 || (updateMask & MessagesController.UPDATE_MASK_NAME) != 0) {
-                checkAndUpdateAvatar();
-                updateVisibleRows();
-            }
-            if ((updateMask & MessagesController.UPDATE_MASK_USER_PRINT) != 0) {
-                updateSubtitle = true;
-            }
-            if ((updateMask & MessagesController.UPDATE_MASK_CHAT) != 0 && currentChat != null) {
-                Chat chat = getMessagesController().getChat(currentChat.id);
-                if (chat == null) {
-                    return;
-                }
-                currentChat = chat;
-                updateSubtitle = true;
-                updateBottomOverlay();
-                if (chatActivityEnterView != null) {
-                    chatActivityEnterView.setDialogId(dialog_id, currentAccount);
-                }
-            }
-            if ((updateMask & MessagesController.UPDATE_MASK_READ_DIALOG_MESSAGE) != 0) {
-                if (bottomOverlayChatText2 != null && ChatObject.isChannel(currentChat) && !currentChat.megagroup && -currentChat.linked_chat_id != 0) {
-                    bottomOverlayChatText2.updateCounter();
-                }
-            }
-            if (avatarContainer != null && updateSubtitle) {
-                avatarContainer.updateSubtitle();
-            }
-            if ((updateMask & MessagesController.UPDATE_MASK_USER_PHONE) != 0) {
-                updateTopPanel(true);
-            }
+            onUpdateInterfaces(id, account, args);
         } else if (id == NotificationCenter.didReceiveNewMessages) {
-            //收到新消息
-            long did = (Long) args[0];
-            if (did == dialog_id) {
-                boolean scheduled = (Boolean) args[2];
-                if (scheduled != inScheduleMode) {
-                    if (!inScheduleMode && !isPaused && forwardingMessages == null) {
-                        ArrayList<MessageObject> arr = (ArrayList<MessageObject>) args[1];
-                        if (!arr.isEmpty() && arr.get(0).getId() < 0) {
-                            openScheduledMessages();
-                        }
-                    }
-                    return;
-                }
-                int currentUserId = getUserConfig().getClientUserId();
-                boolean updateChat = false;
-                boolean hasFromMe = false;
-                ArrayList<MessageObject> arr = (ArrayList<MessageObject>) args[1];
-
-                if (chatListItemAniamtor != null) {
-                    chatListItemAniamtor.setShouldAnimateEnterFromBottom(true);
-                }
-
-                boolean notifiedSearch = false;
-                LongSparseArray<Long> scheduledGroupReplacement = null;
-                for (int a = 0; a < arr.size(); a++) {
-                    MessageObject messageObject = arr.get(a);
-                    if (messageObject.isDice()) {
-                        messageObject.wasUnread = true;
-                    }
-                    if (inScheduleMode && messageObject.hasValidGroupId() && messagesDict[0].indexOfKey(messageObject.getId()) >= 0) {
-                        long groupId = messageObject.getGroupId();
-                        if (scheduledGroupReplacement == null) {
-                            scheduledGroupReplacement = new LongSparseArray<>();
-                        }
-                        Long localId = scheduledGroupReplacement.get(groupId);
-                        if (localId == null) {
-                            localId = Utilities.random.nextLong();
-                            scheduledGroupReplacement.put(groupId, localId);
-                        }
-                        messageObject.localGroupId = localId;
-                    }
-                    if (messageObject.isOut()) {
-                        if (!notifiedSearch) {
-                            notifiedSearch = true;
-                            NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.closeSearchByActiveAction);
-                        }
-                        if (currentChat != null && currentChat.slowmode_enabled && messageObject.isSent() && !inScheduleMode) {
-                            int date = messageObject.messageOwner.date + currentChat.slowmode_seconds;
-                            int currentTime = getConnectionsManager().getCurrentTime();
-                            if (date > getConnectionsManager().getCurrentTime()) {
-                                currentChat.slowmode_next_send_date = Math.max(currentChat.slowmode_next_send_date, Math.min(currentTime + currentChat.slowmode_seconds, date));
-                                if (chatActivityEnterView != null) {
-                                    chatActivityEnterView.setSlowModeTimer(currentChat.slowmode_next_send_date);
-                                }
-                            }
-                        }
-                    }
-                    if (currentChat != null) {
-                        if (messageObject.messageOwner.action.isChatDeleteUser() && messageObject.messageOwner.action.user_id == currentUserId ||
-                                messageObject.messageOwner.action.isChatAddUser() && messageObject.messageOwner.action.users.contains(currentUserId)) {
-                            Chat newChat = getMessagesController().getChat(currentChat.id);
-                            if (newChat != null) {
-                                currentChat = newChat;
-                                checkActionBarMenu();
-                                updateBottomOverlay();
-                                if (avatarContainer != null) {
-                                    avatarContainer.updateSubtitle();
-                                }
-                            }
-                        }
-                    } else if (inlineReturn != 0) {
-                        if (messageObject.messageOwner.reply_markup != null) {
-                            for (int b = 0; b < messageObject.messageOwner.reply_markup.rows.size(); b++) {
-                                ReplyMarkup.KeyboardButtonRow row = messageObject.messageOwner.reply_markup.rows.get(b);
-                                for (int c = 0; c < row.buttons.size(); c++) {
-                                    KeyboardButton button = row.buttons.get(c);
-                                    if (button.isSwitchInline()) {
-                                        processSwitchButton(button);
-                                        break;
-                                    }
-                                }
-                            }
-                        }
-                    }
-                    if (messageObject.messageOwner.reply_to_msg_id != 0 && messageObject.replyMessageObject == null) {
-                        messageObject.replyMessageObject = messagesDict[0].get(messageObject.messageOwner.reply_to_msg_id);
-                        if (messageObject.messageOwner.action.isPinMessage()) {
-                            messageObject.generatePinMessageText(null, null);
-                        }
-                        if (messageObject.isMegagroup() && messageObject.replyMessageObject != null && messageObject.replyMessageObject.messageOwner != null) {
-                            messageObject.replyMessageObject.messageOwner.flags |= Message.MESSAGE_FLAG_MEGAGROUP;
-                        }
-                    }
-                }
-
-                if (inScheduleMode && !arr.isEmpty()) {
-                    replaceMessageObjects(arr, 0, true);
-                }
-
-                boolean reloadMegagroup = false;
-                if (!forwardEndReached[0]) {
-                    int currentMaxDate = Integer.MIN_VALUE;
-                    int currentMinMsgId = Integer.MIN_VALUE;
-
-                    for (int a = 0; a < arr.size(); a++) {
-                        MessageObject obj = arr.get(a);
-                        int messageId = obj.getId();
-
-                        if (obj.isOut() && waitingForSendingMessageLoad) {
-                            waitingForSendingMessageLoad = false;
-                            chatActivityEnterView.hideTopView(true);
-                            if (changeBoundAnimator != null) {
-                                changeBoundAnimator.start();
-                            }
-                        }
-
-                        if (!inScheduleMode && currentUser != null && (currentUser.bot && obj.isOut() || currentUser.id == currentUserId)) {
-                            obj.setIsRead();
-                        }
-                        MessageAction action = obj.messageOwner.action;
-                        if (currentChat != null && currentChat.megagroup && (action.isChatAddUser() || action.isChatDeleteUser())) {
-                            reloadMegagroup = true;
-                        }
-                        if (a == 0 && obj.messageOwner.id < 0 && obj.type == MessageObject.TYPE_ROUND_VIDEO && !inScheduleMode) {
-                            needAnimateToMessage = obj;
-                        }
-                        if (obj.isOut() && obj.isSending()) {
-                            scrollToLastMessage(false);
-                            return;
-                        }
-                        if (obj.type < 0 || messagesDict[0].indexOfKey(messageId) >= 0) {
-                            continue;
-                        }
-                        if (currentChat != null && currentChat.creator && (action.isChatCreate() || action.isChatEditPhoto() && messages.size() < 4)) {
-                            continue;
-                        }
-                        obj.checkLayout();
-                        currentMaxDate = Math.max(currentMaxDate, obj.messageOwner.date);
-                        if (messageId > 0) {
-                            currentMinMsgId = Math.max(messageId, currentMinMsgId);
-                            last_message_id = Math.max(last_message_id, messageId);
-                        }
-
-                        if (obj.messageOwner.mentioned && obj.isContentUnread()) {
-                            newMentionsCount++;
-                        }
-                        newUnreadMessageCount++;
-                        if (obj.type == 10 || obj.type == 11) {
-                            updateChat = true;
-                        }
-                    }
-                    if (newUnreadMessageCount != 0 && pagedownButtonCounter != null) {
-                        pagedownButtonCounter.setVisibility(View.VISIBLE);
-                        if (prevSetUnreadCount != newUnreadMessageCount) {
-                            prevSetUnreadCount = newUnreadMessageCount;
-                            pagedownButtonCounter.setText(String.format("%d", newUnreadMessageCount));
-                        }
-                    }
-                    if (newMentionsCount != 0 && mentiondownButtonCounter != null) {
-                        mentiondownButtonCounter.setVisibility(View.VISIBLE);
-                        mentiondownButtonCounter.setText(String.format("%d", newMentionsCount));
-                        showMentionDownButton(true, true);
-                    }
-
-                    updateVisibleRows();
-                } else {
-                    LongSparseArray<MessageObject.GroupedMessages> newGroups = null;
-                    HashMap<String, ArrayList<MessageObject>> webpagesToReload = null;
-                    if (BuildVars.LOGS_ENABLED) {
-                        FileLog.d("received new messages " + arr.size() + " in dialog " + dialog_id);
-                    }
-                    for (int a = 0; a < arr.size(); a++) {
-                        MessageObject obj = arr.get(a);
-                        if (obj.scheduled != inScheduleMode) {
-                            continue;
-                        }
-                        int placeToPaste = -1;
-                        int messageId = obj.getId();
-                        if (inScheduleMode && messagesDict[0].indexOfKey(messageId) >= 0) {
-                            MessageObject removed = messagesDict[0].get(messageId);
-                            messagesDict[0].remove(messageId);
-                            if (removed != null) {
-                                int index = messages.indexOf(removed);
-                                messages.remove(index);
-                                ArrayList<MessageObject> dayArr = messagesByDays.get(removed.dateKey);
-                                dayArr.remove(removed);
-                                if (dayArr.isEmpty()) {
-                                    messagesByDays.remove(removed.dateKey);
-                                    if (index >= 0 && index < messages.size()) {
-                                        messages.remove(index);
-                                    }
-                                }
-                                if (removed.hasValidGroupId()) {
-                                    MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(removed.getGroupId());
-                                    groupedMessages.messages.remove(removed);
-                                    if (newGroups == null) {
-                                        newGroups = new LongSparseArray<>();
-                                    }
-                                    newGroups.put(groupedMessages.groupId, groupedMessages);
-                                }
-                                if (chatAdapter != null) {
-                                    chatAdapter.notifyDataSetChanged();
-                                }
-                            }
-                        }
-                        if (isSecretChat()) {
-                            checkSecretMessageForLocation(obj);
-                        }
-                        if (!inScheduleMode && currentUser != null && (currentUser.bot && obj.isOut() || currentUser.id == currentUserId)) {
-                            obj.setIsRead();
-                        }
-                        MessageAction action = obj.messageOwner.action;
-                        if (obj.type < 0 || messagesDict[0].indexOfKey(messageId) >= 0) {
-                            continue;
-                        }
-                        if (currentChat != null && currentChat.creator && (action.isChatCreate() || action.isChatEditPhoto() && messages.size() < 4)) {
-                            continue;
-                        }
-                        if (a == 0 && obj.messageOwner.id < 0 && obj.type == MessageObject.TYPE_ROUND_VIDEO && !inScheduleMode) {
-                            animatingMessageObjects.add(obj);
-                        }
-
-                        MessageObject.GroupedMessages groupedMessages;
-                        if (obj.hasValidGroupId()) {
-                            groupedMessages = groupedMessagesMap.get(obj.getGroupId());
-                            if (groupedMessages == null) {
-                                groupedMessages = new MessageObject.GroupedMessages();
-                                groupedMessages.groupId = obj.getGroupId();
-                                groupedMessagesMap.put(groupedMessages.groupId, groupedMessages);
-                            }
-                            if (newGroups == null) {
-                                newGroups = new LongSparseArray<>();
-                            }
-                            newGroups.put(groupedMessages.groupId, groupedMessages);
-                            groupedMessages.messages.add(obj);
-                        } else {
-                            groupedMessages = null;
-                        }
-
-                        if (groupedMessages != null) {
-                            int size = groupedMessages.messages.size();
-                            MessageObject messageObject = size > 1 ? groupedMessages.messages.get(groupedMessages.messages.size() - 2) : null;
-                            if (messageObject != null) {
-                                placeToPaste = messages.indexOf(messageObject);
-                            }
-                        }
-
-                        if (placeToPaste == -1) {
-                            if (!obj.scheduled && obj.messageOwner.id < 0 || messages.isEmpty()) {
-                                placeToPaste = 0;
-                            } else {
-                                int size = messages.size();
-                                for (int b = 0; b < size; b++) {
-                                    MessageObject lastMessage = messages.get(b);
-                                    if (lastMessage.type >= 0 && lastMessage.messageOwner.date > 0) {
-                                        if (!inScheduleMode && lastMessage.messageOwner.id > 0 && obj.messageOwner.id > 0 && lastMessage.messageOwner.id < obj.messageOwner.id || lastMessage.messageOwner.date <= obj.messageOwner.date) {
-                                            MessageObject.GroupedMessages lastGroupedMessages;
-                                            if (lastMessage.getGroupId() != 0) {
-                                                lastGroupedMessages = groupedMessagesMap.get(lastMessage.getGroupId());
-                                                if (lastGroupedMessages != null && lastGroupedMessages.messages.size() == 0) {
-                                                    lastGroupedMessages = null;
-                                                }
-                                            } else {
-                                                lastGroupedMessages = null;
-                                            }
-                                            if (lastGroupedMessages == null) {
-                                                placeToPaste = b;
-                                            } else {
-                                                placeToPaste = messages.indexOf(lastGroupedMessages.messages.get(lastGroupedMessages.messages.size() - 1));
-                                            }
-                                            break;
-                                        }
-                                    }
-                                }
-                                if (placeToPaste == -1 || placeToPaste > messages.size()) {
-                                    placeToPaste = messages.size();
-                                }
-                            }
-                        }
-                        obj.checkLayout();
-                        if (currentChat != null && currentChat.megagroup && (action.isChatAddUser() || action.isChatDeleteUser())) {
-                            reloadMegagroup = true;
-                        }
-                        if (minDate[0] == 0 || obj.messageOwner.date < minDate[0]) {
-                            minDate[0] = obj.messageOwner.date;
-                        }
-
-                        if (obj.isOut() && !obj.messageOwner.from_scheduled) {
-                            removeUnreadPlane(true);
-                            hasFromMe = true;
-                        }
-
-                        if (messageId > 0) {
-                            maxMessageId[0] = Math.min(messageId, maxMessageId[0]);
-                            minMessageId[0] = Math.max(messageId, minMessageId[0]);
-                        }
-                        maxDate[0] = Math.max(maxDate[0], obj.messageOwner.date);
-                        messagesDict[0].put(messageId, obj);
-                        ArrayList<MessageObject> dayArray = messagesByDays.get(obj.dateKey);
-                        if (placeToPaste > messages.size()) {
-                            placeToPaste = messages.size();
-                        }
-                        if (dayArray == null) {
-                            dayArray = new ArrayList<>();
-                            messagesByDays.put(obj.dateKey, dayArray);
-                            Message dateMsg = new Message();
-                            if (inScheduleMode) {
-                                if (obj.messageOwner.date == 0x7ffffffe) {
-                                    dateMsg.message = LocaleController.getString("MessageScheduledUntilOnline", R.string.MessageScheduledUntilOnline);
-                                } else {
-                                    dateMsg.message = LocaleController.formatString("MessageScheduledOn", R.string.MessageScheduledOn, LocaleController.formatDateChat(obj.messageOwner.date, true));
-                                }
-                            } else {
-                                dateMsg.message = LocaleController.formatDateChat(obj.messageOwner.date);
-                            }
-                            dateMsg.id = 0;
-                            Calendar calendar = Calendar.getInstance();
-                            calendar.setTimeInMillis(((long) obj.messageOwner.date) * 1000);
-                            calendar.set(Calendar.HOUR_OF_DAY, 0);
-                            calendar.set(Calendar.MINUTE, 0);
-                            dateMsg.date = (int) (calendar.getTimeInMillis() / 1000);
-                            MessageObject dateObj = new MessageObject(currentAccount, dateMsg, false);
-                            dateObj.type = 10;
-                            dateObj.contentType = 1;
-                            dateObj.isDateObject = true;
-                            dateObj.stableId = lastStableId++;
-                            messages.add(placeToPaste, dateObj);
-                            if (chatAdapter != null) {
-                                chatAdapter.notifyItemInserted(placeToPaste);
-                            }
-                        }
-                        if (!obj.isOut() || obj.messageOwner.from_scheduled) {
-                            if (paused && placeToPaste == 0) {
-                                if (!scrollToTopUnReadOnResume && unreadMessageObject != null) {
-                                    removeMessageObject(unreadMessageObject);
-                                    if (placeToPaste > 0) {
-                                        placeToPaste--;
-                                    }
-                                    unreadMessageObject = null;
-                                }
-                                if (unreadMessageObject == null) {
-                                    Message dateMsg = new Message();
-                                    dateMsg.message = "";
-                                    dateMsg.id = 0;
-                                    MessageObject dateObj = new MessageObject(currentAccount, dateMsg, false);
-                                    dateObj.type = 6;
-                                    dateObj.contentType = 2;
-                                    dateObj.stableId = lastStableId++;
-                                    messages.add(0, dateObj);
-                                    if (chatAdapter != null) {
-                                        chatAdapter.notifyItemInserted(0);
-                                    }
-                                    unreadMessageObject = dateObj;
-                                    scrollToMessage = unreadMessageObject;
-                                    scrollToMessagePosition = -10000;
-                                    scrollToTopUnReadOnResume = true;
-                                }
-                            }
-                        }
-
-                        dayArray.add(0, obj);
-
-                        if (chatAdapter != null && placeToPaste >= 0 && placeToPaste < messages.size()) {
-                            MessageObject prevMessage = messages.get(placeToPaste);
-                            if (prevMessage.hasValidGroupId() && prevMessage.getGroupId() != obj.getGroupId()) {
-                                MessageObject.GroupedMessages group = groupedMessagesMap.get(prevMessage.getGroupId());
-                                if (group != null && group.messages.size() > 1) {
-                                    int size = group.messages.size();
-                                    chatAdapter.notifyItemRangeChanged(1, size - 1);
-                                }
-                            }
-                        }
-                        obj.stableId = lastStableId++;
-                        messages.add(placeToPaste, obj);
-                        if (chatAdapter != null) {
-                            chatAdapter.notifyItemChanged(placeToPaste);
-                            chatAdapter.notifyItemInserted(placeToPaste);
-                        }
-                        if (obj.isOut() && waitingForSendingMessageLoad) {
-                            waitingForSendingMessageLoad = false;
-                            chatActivityEnterView.hideTopView(true);
-                            if (changeBoundAnimator != null) {
-                                changeBoundAnimator.start();
-                            }
-                        }
-                        if (!obj.isOut() && obj.messageOwner.mentioned && obj.isContentUnread()) {
-                            newMentionsCount++;
-                        }
-                        newUnreadMessageCount++;
-                        if (obj.type == 10 || obj.type == 11) {
-                            updateChat = true;
-                        }
-                    }
-                    if (webpagesToReload != null) {
-                        getMessagesController().reloadWebPages(dialog_id, webpagesToReload, inScheduleMode);
-                    }
-                    if (newGroups != null) {
-                        for (int a = 0; a < newGroups.size(); a++) {
-                            MessageObject.GroupedMessages groupedMessages = newGroups.valueAt(a);
-                            int oldCount = groupedMessages.posArray.size();
-                            groupedMessages.calculate();
-                            int newCount = groupedMessages.posArray.size();
-                            if (newCount - oldCount > 0 && chatAdapter != null) {
-                                int index = messages.indexOf(groupedMessages.messages.get(groupedMessages.messages.size() - 1));
-                                if (index >= 0) {
-                                    chatAdapter.notifyItemRangeChanged(index, newCount);
-                                }
-                            }
-                        }
-                    }
-
-                    if (progressView != null) {
-                        progressView.setVisibility(View.INVISIBLE);
-                    }
-                    if (chatAdapter == null) {
-                        scrollToTopOnResume = true;
-                    }
-
-                    if (chatListView != null && chatAdapter != null) {
-                        int lastVisible = chatLayoutManager.findFirstVisibleItemPosition();
-                        if (lastVisible == RecyclerView.NO_POSITION) {
-                            lastVisible = 0;
-                        }
-                        View child = chatLayoutManager.findViewByPosition(lastVisible);
-                        int diff;
-                        if (child != null) {
-                            diff = child.getBottom() - chatListView.getMeasuredHeight();
-                        } else {
-                            diff = 0;
-                        }
-                        if (lastVisible == 0 && diff <= AndroidUtilities.dp(5) || hasFromMe) {
-                            newUnreadMessageCount = 0;
-                            if (!firstLoading && !inScheduleMode) {
-                                if (paused) {
-                                    scrollToTopOnResume = true;
-                                } else {
-                                    forceScrollToTop = true;
-                                    moveScrollToLastMessage();
-                                }
-                            }
-                        } else {
-                            if (newUnreadMessageCount != 0 && pagedownButtonCounter != null) {
-                                pagedownButtonCounter.setVisibility(View.VISIBLE);
-                                if (prevSetUnreadCount != newUnreadMessageCount) {
-                                    prevSetUnreadCount = newUnreadMessageCount;
-                                    pagedownButtonCounter.setText(String.format("%d", newUnreadMessageCount));
-                                }
-                            }
-                            canShowPagedownButton = true;
-                            updatePagedownButtonVisibility(true);
-                        }
-                        if (newMentionsCount != 0 && mentiondownButtonCounter != null) {
-                            mentiondownButtonCounter.setVisibility(View.VISIBLE);
-                            mentiondownButtonCounter.setText(String.format("%d", newMentionsCount));
-                            showMentionDownButton(true, true);
-                        }
-                    } else {
-                        scrollToTopOnResume = true;
-                    }
-                }
-                if (inScheduleMode && !arr.isEmpty()) {
-                    int mid = arr.get(0).getId();
-                    if (mid < 0) {
-                        scrollToMessageId(mid, 0, false, 0, true);
-                    }
-                }
-                if (!messages.isEmpty() && botUser != null && botUser.length() == 0) {
-                    botUser = null;
-                    updateBottomOverlay();
-                }
-                if (updateChat) {
-                    updateTitle();
-                    checkAndUpdateAvatar();
-                }
-            }
+            onDidReceiveNewMessages(id, account, args);
         } else if (id == NotificationCenter.closeChats) {
-            if (args != null && args.length > 0) {
-                long did = (Long) args[0];
-                if (did == dialog_id) {
-                    finishFragment();
-                }
-            } else {
-                if (AndroidUtilities.isTablet() && parentLayout != null && parentLayout.fragmentsStack.size() > 1) {
-                    finishFragment();
-                } else {
-                    removeSelfFromStack();
-                }
-            }
+            onCloseChats(id, account, args);
         } else if (id == NotificationCenter.messagesRead) {
-            if (inScheduleMode) {
-                return;
-            }
-            SparseLongArray inbox = (SparseLongArray) args[0];
-            SparseLongArray outbox = (SparseLongArray) args[1];
-            boolean updated = false;
-            if (inbox != null) {
-                if (bottomOverlayChatText2 != null
-                        && ChatObject.isChannel(currentChat)
-                        && !currentChat.megagroup
-                        && -currentChat.linked_chat_id != 0) {
-                    bottomOverlayChatText2.updateCounter();
-                }
-                for (int b = 0, size = inbox.size(); b < size; b++) {
-                    int key = inbox.keyAt(b);
-                    long messageId = inbox.get(key);
-                    if (key != dialog_id) {
-                        continue;
-                    }
-                    for (int a = 0, size2 = messages.size(); a < size2; a++) {
-                        MessageObject obj = messages.get(a);
-                        if (!obj.isOut() && obj.getId() > 0 && obj.getId() <= (int) messageId) {
-                            if (!obj.isUnread()) {
-                                break;
-                            }
-                            obj.setIsRead();
-                            updated = true;
-                            newUnreadMessageCount--;
-                        }
-                    }
-                    removeUnreadPlane(false);
-                    break;
-                }
-            }
-            if (updated) {
-                if (newUnreadMessageCount < 0) {
-                    newUnreadMessageCount = 0;
-                }
-                if (pagedownButtonCounter != null) {
-                    if (prevSetUnreadCount != newUnreadMessageCount) {
-                        prevSetUnreadCount = newUnreadMessageCount;
-                        pagedownButtonCounter.setText(String.format("%d", newUnreadMessageCount));
-                    }
-                    if (newUnreadMessageCount <= 0) {
-                        if (pagedownButtonCounter.getVisibility() != View.INVISIBLE) {
-                            pagedownButtonCounter.setVisibility(View.INVISIBLE);
-                        }
-                    } else {
-                        if (pagedownButtonCounter.getVisibility() != View.VISIBLE) {
-                            pagedownButtonCounter.setVisibility(View.VISIBLE);
-                        }
-                    }
-                }
-            }
-            if (outbox != null) {
-                for (int b = 0, size = outbox.size(); b < size; b++) {
-                    int key = outbox.keyAt(b);
-                    int messageId = (int) outbox.get(key);
-                    if (key != dialog_id) {
-                        continue;
-                    }
-                    for (int a = 0, size2 = messages.size(); a < size2; a++) {
-                        MessageObject obj = messages.get(a);
-                        if (obj.isOut() && obj.getId() > 0 && obj.getId() <= messageId) {
-                            if (!obj.isUnread()) {
-                                break;
-                            }
-                            obj.setIsRead();
-                            updated = true;
-                        }
-                    }
-                    break;
-                }
-            }
-            if (updated) {
-                updateVisibleRows();
-            }
+            onMessagesRead(id, account, args);
         } else if (id == NotificationCenter.historyCleared) {
-            long did = (Long) args[0];
-            if (did != dialog_id) {
-                return;
-            }
-            int max_id = (Integer) args[1];
-            boolean updated = false;
-
-            for (int b = 0; b < messages.size(); b++) {
-                MessageObject obj = messages.get(b);
-                int mid = obj.getId();
-                if (mid <= 0 || mid > max_id) {
-                    continue;
-                }
-                if (currentChat.pinned_msg_id == mid) {
-                    pinnedMessageObject = null;
-                    currentChat.pinned_msg_id = 0;
-                    getMessagesStorage().updateChatPinnedMessage(currentChat.id, 0);
-                    updatePinnedMessageView(true);
-                }
-                messages.remove(b);
-                b--;
-                messagesDict[0].remove(mid);
-                ArrayList<MessageObject> dayArr = messagesByDays.get(obj.dateKey);
-                if (dayArr != null) {
-                    dayArr.remove(obj);
-                    if (dayArr.isEmpty()) {
-                        messagesByDays.remove(obj.dateKey);
-                        if (b >= 0 && b < messages.size()) {
-                            messages.remove(b);
-                            b--;
-                        }
-                    }
-                }
-                updated = true;
-            }
-
-            if (messages.isEmpty()) {
-                if (!endReached[0] && !loading) {
-                    if (progressView != null) {
-                        progressView.setVisibility(View.INVISIBLE);
-                    }
-                    if (chatListView != null) {
-                        chatListView.setEmptyView(null);
-                    }
-                    maxMessageId[0] = maxMessageId[1] = Integer.MAX_VALUE;
-                    minMessageId[0] = minMessageId[1] = Integer.MIN_VALUE;
-                    maxDate[0] = maxDate[1] = Integer.MIN_VALUE;
-                    minDate[0] = minDate[1] = 0;
-                    waitingForLoad.add(lastLoadIndex);
-                    getMessagesController().loadMessages(dialog_id, mergeDialogId, false, 30, 0, 0, !cacheEndReached[0], minDate[0], classGuid, 0, 0, ChatObject.isChannel(currentChat), inScheduleMode, lastLoadIndex++);
-                    loading = true;
-                } else {
-                    if (botButtons != null) {
-                        botButtons = null;
-                        if (chatActivityEnterView != null) {
-                            chatActivityEnterView.setButtons(null, false);
-                        }
-                    }
-                    if (currentUser != null && currentUser.bot && botUser == null) {
-                        botUser = "";
-                        updateBottomOverlay();
-                    }
-                }
-            }
-            canShowPagedownButton = false;
-            updatePagedownButtonVisibility(true);
-            showMentionDownButton(false, true);
-            removeUnreadPlane(true);
-            if (updated && chatAdapter != null) {
-                chatAdapter.notifyDataSetChanged();
-            }
+            onHistoryCleared(id, account, args);
         } else if (id == NotificationCenter.messagesDeleted) {
-            boolean scheduled = (Boolean) args[2];
-            if (scheduled != inScheduleMode) {
-                return;
-            }
-            ArrayList<Integer> markAsDeletedMessages = (ArrayList<Integer>) args[0];
-            ArrayList<Integer> removedIndexes = new ArrayList<>();
-
-            int channelId = (Integer) args[1];
-            int loadIndex = 0;
-            if (ChatObject.isChannel(currentChat)) {
-                if (channelId == 0 && mergeDialogId != 0) {
-                    loadIndex = 1;
-                } else if (channelId == currentChat.id) {
-                    loadIndex = 0;
-                } else {
-                    return;
-                }
-            } else if (channelId != 0) {
-                return;
-            }
-            boolean updated = false;
-            LongSparseArray<MessageObject.GroupedMessages> newGroups = null;
-            LongSparseArray<Integer> newGroupsSizes = null;
-            int size = markAsDeletedMessages.size();
-            boolean updatedSelected = false;
-            boolean updatedSelectedLast = false;
-            boolean updateScheduled = false;
-            for (int a = 0; a < size; a++) {
-                Integer ids = markAsDeletedMessages.get(a);
-                MessageObject obj = messagesDict[loadIndex].get(ids);
-                if (loadIndex == 0 && currentChat.pinned_msg_id == ids) {
-                    pinnedMessageObject = null;
-                    currentChat.pinned_msg_id = 0;
-                    getMessagesStorage().updateChatPinnedMessage(channelId, 0);
-                    updatePinnedMessageView(true);
-                }
-                if (obj != null) {
-                    obj.deleted = true;
-                    if (editingMessageObject == obj) {
-                        hideFieldPanel(true);
-                    }
-                    int index = messages.indexOf(obj);
-                    if (index != -1) {
-                        if (obj.scheduled) {
-                            scheduledMessagesCount--;
-                            updateScheduled = true;
-                        }
-                        removeUnreadPlane(false);
-                        if (selectedMessagesIds[loadIndex].indexOfKey(ids) >= 0) {
-                            updatedSelected = true;
-                            addToSelectedMessages(obj, false, updatedSelectedLast = (a == size - 1));
-                        }
-                        MessageObject removed = messages.remove(index);
-                        if (chatAdapter != null) {
-                            removedIndexes.add(chatAdapter.messagesStartRow + index);
-                        }
-                        if (removed.getGroupId() != 0) {
-                            MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(removed.getGroupId());
-                            if (groupedMessages != null) {
-                                if (newGroups == null) {
-                                    newGroups = new LongSparseArray<>();
-                                    newGroupsSizes = new LongSparseArray<>();
-                                }
-                                newGroups.put(groupedMessages.groupId, groupedMessages);
-                                if (newGroupsSizes.get(groupedMessages.groupId) == null) {
-                                    newGroupsSizes.put(groupedMessages.groupId, groupedMessages.messages.size());
-                                }
-                                groupedMessages.messages.remove(obj);
-                            }
-                        }
-                        messagesDict[loadIndex].remove(ids);
-                        ArrayList<MessageObject> dayArr = messagesByDays.get(obj.dateKey);
-                        if (dayArr != null) {
-                            dayArr.remove(obj);
-                            if (dayArr.isEmpty()) {
-                                messagesByDays.remove(obj.dateKey);
-                                if (index >= 0 && index < messages.size()) {
-                                    messages.remove(index);
-                                    if (chatAdapter != null) {
-                                        removedIndexes.add(chatAdapter.messagesStartRow + index);
-                                    }
-                                }
-                            }
-                        }
-                        updated = true;
-                    }
-                }
-            }
-            if (updatedSelected) {
-                if (!updatedSelectedLast) {
-                    addToSelectedMessages(null, false, true);
-                }
-                updateActionModeTitle();
-            }
-            if (newGroups != null) {
-                for (int a = 0; a < newGroups.size(); a++) {
-                    MessageObject.GroupedMessages groupedMessages = newGroups.valueAt(a);
-                    if (chatListItemAniamtor != null) {
-                        if (groupedMessages.messages.size() == 1) {
-                            chatListItemAniamtor.groupWillTransformToSingleMessage(groupedMessages);
-                        } else {
-                            chatListItemAniamtor.groupWillChanged(groupedMessages);
-                        }
-                    }
-
-                    if (groupedMessages.messages.isEmpty()) {
-                        groupedMessagesMap.remove(groupedMessages.groupId);
-                    } else {
-                        groupedMessages.calculate();
-                        MessageObject messageObject = groupedMessages.messages.get(groupedMessages.messages.size() - 1);
-                        int index = messages.indexOf(messageObject);
-                        if (index >= 0) {
-                            if (chatAdapter != null) {
-                                chatAdapter.notifyItemRangeChanged(index + chatAdapter.messagesStartRow, newGroupsSizes.get(groupedMessages.groupId));
-                            }
-                        }
-                    }
-                }
-            }
-            if (messages.isEmpty()) {
-                if (!endReached[0] && !loading) {
-                    if (progressView != null) {
-                        progressView.setVisibility(View.INVISIBLE);
-                    }
-                    if (chatListView != null) {
-                        chatListView.setEmptyView(null);
-                    }
-                    maxMessageId[0] = maxMessageId[1] = Integer.MAX_VALUE;
-                    minMessageId[0] = minMessageId[1] = Integer.MIN_VALUE;
-                    maxDate[0] = maxDate[1] = Integer.MIN_VALUE;
-                    minDate[0] = minDate[1] = 0;
-                    waitingForLoad.add(lastLoadIndex);
-                    getMessagesController().loadMessages(dialog_id, mergeDialogId, false, 30, 0, 0, !cacheEndReached[0], minDate[0], classGuid, 0, 0, ChatObject.isChannel(currentChat), inScheduleMode, lastLoadIndex++);
-                    loading = true;
-                } else {
-                    if (botButtons != null) {
-                        botButtons = null;
-                        if (chatActivityEnterView != null) {
-                            chatActivityEnterView.setButtons(null, false);
-                        }
-                    }
-                    if (currentUser != null && currentUser.bot && botUser == null) {
-                        botUser = "";
-                        updateBottomOverlay();
-                    }
-                }
-                canShowPagedownButton = false;
-                updatePagedownButtonVisibility(true);
-                showMentionDownButton(false, true);
-            }
-            if (updated) {
-                if (chatAdapter != null) {
-                    for (int a = 0, N = removedIndexes.size(); a < N; a++) {
-                        chatAdapter.notifyItemRemoved(removedIndexes.get(a));
-                    }
-                }
-                updateVisibleRows();
-            } else {
-                first_unread_id = 0;
-                last_message_id = 0;
-                createUnreadMessageAfterId = 0;
-                removeMessageObject(unreadMessageObject);
-                unreadMessageObject = null;
-                if (pagedownButtonCounter != null) {
-                    pagedownButtonCounter.setVisibility(View.INVISIBLE);
-                }
-            }
-            if (updateScheduled) {
-                updateScheduledInterface(true);
-            }
+            onMessagesDeleted(id, account, args);
         } else if (id == NotificationCenter.messageReceivedByServer) {
-            Boolean scheduled = (Boolean) args[6];
-            if (scheduled != inScheduleMode) {
-                return;
-            }
-            Integer msgId = (Integer) args[0];
-            MessageObject obj = messagesDict[0].get(msgId);
-            if (obj != null) {
-                if (obj.shouldRemoveVideoEditedInfo) {
-                    obj.videoEditedInfo = null;
-                    obj.shouldRemoveVideoEditedInfo = false;
-                }
-                Integer newMsgId = (Integer) args[1];
-                if (!newMsgId.equals(msgId) && messagesDict[0].indexOfKey(newMsgId) >= 0) {
-                    MessageObject removed = messagesDict[0].get(msgId);
-                    messagesDict[0].remove(msgId);
-                    if (removed != null) {
-                        int index = messages.indexOf(removed);
-                        messages.remove(index);
-                        ArrayList<MessageObject> dayArr = messagesByDays.get(removed.dateKey);
-                        dayArr.remove(obj);
-                        if (dayArr.isEmpty()) {
-                            messagesByDays.remove(obj.dateKey);
-                            if (index >= 0 && index < messages.size()) {
-                                messages.remove(index);
-                            }
-                        }
-                        if (chatAdapter != null) {
-                            chatAdapter.notifyDataSetChanged();
-                        }
-                    }
-                    return;
-                }
-                Message newMsgObj = (Message) args[2];
-                Long grouped_id;
-                if (args.length >= 4) {
-                    grouped_id = (Long) args[4];
-                } else {
-                    grouped_id = 0L;
-                }
-                boolean mediaUpdated = false;
-                boolean updatedForward = false;
-                if (newMsgObj != null) {
-                    try {
-                        updatedForward = obj.isForwarded() && (obj.messageOwner.reply_markup == null && newMsgObj.reply_markup != null || !obj.messageOwner.message.equals(newMsgObj.message));
-                        mediaUpdated = updatedForward ||
-                                obj.messageOwner.params != null && obj.messageOwner.params.containsKey("query_id") ||
-                                newMsgObj.media != null && obj.messageOwner.media != null && !newMsgObj.media.getClass().equals(obj.messageOwner.media.getClass());
-                    } catch (Exception e) {
-                        FileLog.e(e);
-                    }
-                    if (obj.getGroupId() != 0 && newMsgObj.grouped_id != 0) {
-                        MessageObject.GroupedMessages oldGroup = groupedMessagesMap.get(obj.getGroupId());
-                        if (oldGroup != null) {
-                            groupedMessagesMap.put(newMsgObj.grouped_id, oldGroup);
-                        }
-                        obj.localSentGroupId = obj.messageOwner.grouped_id;
-                        obj.messageOwner.grouped_id = grouped_id;
-                    }
-                    MessageFwdHeader fwdHeader = obj.messageOwner.fwd_from;
-                    obj.messageOwner = newMsgObj;
-                    if (fwdHeader != null && newMsgObj.fwd_from != null && !TextUtils.isEmpty(newMsgObj.fwd_from.from_name)) {
-                        obj.messageOwner.fwd_from = fwdHeader;
-                    }
-                    obj.generateThumbs(true);
-                    obj.setType();
-                }
-                if (updatedForward) {
-                    obj.measureInlineBotButtons();
-                }
-                messagesDict[0].remove(msgId);
-                messagesDict[0].put(newMsgId, obj);
-                obj.messageOwner.id = newMsgId;
-                obj.messageOwner.send_state = MessageObject.MESSAGE_SEND_STATE_SENT;
-                obj.forceUpdate = mediaUpdated;
-                if (args.length >= 6) {
-                    obj.applyMediaExistanceFlags((Integer) args[5]);
-                }
-                ArrayList<MessageObject> messArr = new ArrayList<>();
-                messArr.add(obj);
-                getMediaDataController().loadReplyMessagesForMessages(messArr, dialog_id, inScheduleMode, null);
-                if (chatAdapter != null) {
-                    chatAdapter.updateRowWithMessageObject(obj, true);
-                }
-                if (chatLayoutManager != null) {
-                    if (mediaUpdated && chatLayoutManager.findFirstVisibleItemPosition() == 0) {
-                        moveScrollToLastMessage();
-                    }
-                }
-                getNotificationsController().playOutChatSound();
-            }
+            onMessageReceivedByServer(id, account, args);
         } else if (id == NotificationCenter.messageReceivedByAck) {
-            Integer msgId = (Integer) args[0];
-            MessageObject obj = messagesDict[0].get(msgId);
-            if (obj != null) {
-                obj.messageOwner.send_state = MessageObject.MESSAGE_SEND_STATE_SENT;
-                if (chatAdapter != null) {
-                    chatAdapter.updateRowWithMessageObject(obj, true);
-                }
-            }
+            onMessageReceivedByAck(id, account, args);
         } else if (id == NotificationCenter.messageSendError) {
-            Integer msgId = (Integer) args[0];
-            MessageObject obj = messagesDict[0].get(msgId);
-            if (obj != null) {
-                obj.messageOwner.send_state = MessageObject.MESSAGE_SEND_STATE_SEND_ERROR;
-                updateVisibleRows();
-            }
+            onMessageSendError(id, account, args);
         } else if (id == NotificationCenter.chatInfoDidLoad) {
-            Chat chatFull = (Chat) args[0];
-            if (currentChat != null && chatFull.id == currentChat.id) {
-                if (currentChat.isChannel()) {
-                    if (currentChat.megagroup) {
-                        int lastDate = 0;
-                        if (chatFull.participants != null) {
-                            for (int a = 0; a < chatFull.participants.participants.size(); a++) {
-                                lastDate = Math.max(chatFull.participants.participants.get(a).date, lastDate);
-                            }
-                        }
-                        if (lastDate == 0 || Math.abs(System.currentTimeMillis() / 1000 - lastDate) > 60 * 60) {
-                            getMessagesController().loadChannelParticipants(currentChat.id);
-                        }
-                    }
-                    if (chatFull.participants == null) {
-                        chatFull.participants = currentChat.participants;
-                    }
-                }
-                if (chatActivityEnterView != null) {
-                    chatActivityEnterView.setChatInfo(currentChat);
-                }
-                if (mentionsAdapter != null) {
-                    mentionsAdapter.setChatInfo(currentChat);
-                }
-                if (args[3] instanceof MessageObject) {
-                    pinnedMessageObject = (MessageObject) args[3];
-                    updatePinnedMessageView(false);
-                } else {
-                    updatePinnedMessageView(true);
-                }
-                if (avatarContainer != null) {
-                    avatarContainer.updateOnlineCount();
-                    avatarContainer.updateSubtitle();
-                }
-                if (currentChat.isGroup()) {
-                    hasBotsCommands = false;
-                    botInfo.clear();
-                    botsCount = 0;
-                    URLSpanBotCommand.enabled = false;
-                    for (int a = 0; a < currentChat.participants.participants.size(); a++) {
-                        Chat.ChatParticipant participant = currentChat.participants.participants.get(a);
-                        User user = getMessagesController().getUser(participant.user_id);
-                        if (user != null && user.bot) {
-                            URLSpanBotCommand.enabled = true;
-                            botsCount++;
-                            hasBotsCommands = true;
-                            getMediaDataController().loadBotInfo(user.id, true, classGuid);
-                        }
-                    }
-                    if (chatListView != null) {
-                        chatListView.invalidateViews();
-                    }
-                } else if (currentChat.isChannel()) {
-                    hasBotsCommands = false;
-                    botInfo.clear();
-                    botsCount = 0;
-                    URLSpanBotCommand.enabled = !currentChat.bot_info.isEmpty() && currentChat != null && currentChat.megagroup;
-                    botsCount = currentChat.bot_info.size();
-                    for (int a = 0; a < currentChat.bot_info.size(); a++) {
-                        BotInfo bot = currentChat.bot_info.get(a);
-                        if (!bot.commands.isEmpty() && (!ChatObject.isChannel(currentChat) || currentChat != null && currentChat.megagroup)) {
-                            hasBotsCommands = true;
-                        }
-                        botInfo.put(bot.user_id, bot);
-                    }
-                    if (chatListView != null) {
-                        chatListView.invalidateViews();
-                    }
-                    if (mentionsAdapter != null && (!ChatObject.isChannel(currentChat) || currentChat != null && currentChat.megagroup)) {
-                        mentionsAdapter.setBotInfo(botInfo);
-                    }
-                    if (bottomOverlayChatText2 != null && ChatObject.isChannel(currentChat) && !currentChat.megagroup && -currentChat.linked_chat_id != 0) {
-                        bottomOverlayChatText2.updateCounter();
-                    }
-                }
-                if (chatActivityEnterView != null) {
-                    chatActivityEnterView.setBotsCount(botsCount, hasBotsCommands);
-                }
-                if (mentionsAdapter != null) {
-                    mentionsAdapter.setBotsCount(botsCount);
-                }
-                if (!inScheduleMode && ChatObject.isChannel(currentChat)
-                        && mergeDialogId == 0 && currentChat.migrated_from_chat_id != 0) {
-                    mergeDialogId = -currentChat.migrated_from_chat_id;
-                    maxMessageId[1] = currentChat.migrated_from_max_id;
-                    if (chatAdapter != null) {
-                        chatAdapter.notifyDataSetChanged();
-                    }
-                    if (mergeDialogId != 0 && endReached[0]) {
-                        checkScrollForLoad(false);
-                    }
-                }
-            }
+            onChatInfoDidLoad(id, account, args);
         } else if (id == NotificationCenter.chatInfoCantLoad) {
-            int chatId = (Integer) args[0];
-            if (currentChat != null && currentChat.id == chatId) {
-                int reason = (Integer) args[1];
-                if (getParentActivity() == null || closeChatDialog != null) {
-                    return;
-                }
-                AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
-                builder.setTitle(LocaleController.getString("AppName", R.string.AppName));
-                if (reason == 0) {
-                    builder.setMessage(LocaleController.getString("ChannelCantOpenPrivate", R.string.ChannelCantOpenPrivate));
-                } else if (reason == 1) {
-                    builder.setMessage(LocaleController.getString("ChannelCantOpenNa", R.string.ChannelCantOpenNa));
-                } else if (reason == 2) {
-                    builder.setMessage(LocaleController.getString("ChannelCantOpenBanned", R.string.ChannelCantOpenBanned));
-                }
-                builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), null);
-                showDialog(closeChatDialog = builder.create());
-
-                loading = false;
-                if (progressView != null) {
-                    progressView.setVisibility(View.INVISIBLE);
-                }
-                if (chatAdapter != null) {
-                    chatAdapter.notifyDataSetChanged();
-                }
-            }
+            onChatInfoCantLoad(id, account, args);
         } else if (id == NotificationCenter.contactsDidLoad) {
-            updateTopPanel(true);
-            if (avatarContainer != null) {
-                avatarContainer.updateSubtitle();
-            }
+            onContactsDidLoad(id, account, args);
         } else if (id == NotificationCenter.encryptedChatUpdated) {
         } else if (id == NotificationCenter.removeAllMessagesFromDialog) {
-            long did = (Long) args[0];
-            if (dialog_id == did) {
-                clearHistory((Boolean) args[1]);
-            }
+            onRemoveAllMessagesFromDialog(id, account, args);
         } else if (id == NotificationCenter.screenshotTook) {
             updateInformationForScreenshotDetector();
         } else if (id == NotificationCenter.blockedUsersDidLoad) {
-            if (currentUser != null) {
-                boolean oldValue = userBlocked;
-                userBlocked = getMessagesController().blockedUsers.indexOfKey(currentUser.id) >= 0;
-                if (oldValue != userBlocked) {
-                    updateBottomOverlay();
-                }
-            }
+            onBlockedUsersDidLoad(id, account, args);
         } else if (id == NotificationCenter.fileNewChunkAvailable) {
-            MessageObject messageObject = (MessageObject) args[0];
-            long finalSize = (Long) args[3];
-            if (finalSize != 0 && dialog_id == messageObject.getDialogId()) {
-                MessageObject currentObject = messagesDict[0].get(messageObject.getId());
-                if (currentObject != null && currentObject.messageOwner.media.document != null) {
-                    currentObject.messageOwner.media.document.size = (int) finalSize;
-                    updateVisibleRows();
-                }
-            }
+            onFileNewChunkAvailable(id, account, args);
         } else if (id == NotificationCenter.didCreatedNewDeleteTask) {
-            SparseArray<ArrayList<Long>> mids = (SparseArray<ArrayList<Long>>) args[0];
-            boolean changed = false;
-            for (int i = 0; i < mids.size(); i++) {
-                int key = mids.keyAt(i);
-                ArrayList<Long> arr = mids.get(key);
-                for (int a = 0; a < arr.size(); a++) {
-                    long mid = arr.get(a);
-                    if (a == 0) {
-                        int channelId = (int) (mid >> 32);
-                        if (channelId < 0) {
-                            channelId = 0;
-                        }
-                        if (channelId != (ChatObject.isChannel(currentChat) ? currentChat.id : 0)) {
-                            return;
-                        }
-                    }
-                    MessageObject messageObject = messagesDict[0].get((int) mid);
-                    if (messageObject != null) {
-                        messageObject.messageOwner.destroyTime = key;
-                        changed = true;
-                    }
-                }
-            }
-            if (changed) {
-                updateVisibleRows();
-            }
+            onDidCreatedNewDeleteTask(id, account, args);
         } else if (id == NotificationCenter.messagePlayingDidStart) {
-            MessageObject messageObject = (MessageObject) args[0];
-            if (messageObject.eventId != 0) {
-                return;
-            }
-            sendSecretMessageRead(messageObject);
-
-            if ((messageObject.isRoundVideo() || messageObject.isVideo()) && fragmentView != null && fragmentView.getParent() != null) {
-                MediaController.getInstance().setTextureView(createTextureView(true), aspectRatioFrameLayout, videoPlayerContainer, true);
-                updateTextureViewPosition(true);
-            }
-
-            if (chatListView != null) {
-                int count = chatListView.getChildCount();
-                for (int a = 0; a < count; a++) {
-                    View view = chatListView.getChildAt(a);
-                    if (view instanceof ChatMessageCell) {
-                        ChatMessageCell cell = (ChatMessageCell) view;
-                        MessageObject messageObject1 = cell.getMessageObject();
-                        if (messageObject1 != null) {
-                            boolean isVideo = messageObject1.isVideo();
-                            if (messageObject1.isRoundVideo() || isVideo) {
-                                cell.checkVideoPlayback(!messageObject.equals(messageObject1));
-                                if (!MediaController.getInstance().isPlayingMessage(messageObject1)) {
-                                    if (isVideo && !MediaController.getInstance().isGoingToShowMessageObject(messageObject1)) {
-                                        AnimatedFileDrawable animation = cell.getPhotoImage().getAnimation();
-                                        if (animation != null) {
-                                            animation.start();
-                                        }
-                                    }
-                                    if (messageObject1.audioProgress != 0) {
-                                        messageObject1.resetPlayingProgress();
-                                        cell.invalidate();
-                                    }
-                                } else if (isVideo) {
-                                    cell.updateButtonState(false, true, false);
-                                }
-                            } else if (messageObject1.isVoice() || messageObject1.isMusic()) {
-                                cell.updateButtonState(false, true, false);
-                            }
-                        }
-                    }
-                }
-                count = mentionListView.getChildCount();
-                for (int a = 0; a < count; a++) {
-                    View view = mentionListView.getChildAt(a);
-                    if (view instanceof ContextLinkCell) {
-                        ContextLinkCell cell = (ContextLinkCell) view;
-                        MessageObject messageObject1 = cell.getMessageObject();
-                        if (messageObject1 != null && (messageObject1.isVoice() || messageObject1.isMusic())) {
-                            cell.updateButtonState(false, true);
-                        }
-                    }
-                }
-            }
+            onMessagePlayingDidStart(id, account, args);
         } else if (id == NotificationCenter.messagePlayingGoingToStop) {
-            boolean injecting = (Boolean) args[1];
-            if (injecting) {
-                contentView.removeView(videoPlayerContainer);
-                videoPlayerContainer = null;
-                videoTextureView = null;
-                aspectRatioFrameLayout = null;
-            } else {
-                if (chatListView != null && videoPlayerContainer != null && videoPlayerContainer.getTag() != null) {
-                    MessageObject messageObject = (MessageObject) args[0];
-                    int count = chatListView.getChildCount();
-                    for (int a = 0; a < count; a++) {
-                        View view = chatListView.getChildAt(a);
-                        if (view instanceof ChatMessageCell) {
-                            ChatMessageCell cell = (ChatMessageCell) view;
-                            MessageObject messageObject1 = cell.getMessageObject();
-                            if (messageObject == messageObject1) {
-                                AnimatedFileDrawable animation = cell.getPhotoImage().getAnimation();
-                                if (animation != null) {
-                                    Bitmap bitmap = animation.getAnimatedBitmap();
-                                    if (bitmap != null) {
-                                        try {
-                                            Bitmap src = videoTextureView.getBitmap(bitmap.getWidth(), bitmap.getHeight());
-                                            Canvas canvas = new Canvas(bitmap);
-                                            canvas.drawBitmap(src, 0, 0, null);
-                                            src.recycle();
-                                        } catch (Throwable e) {
-                                            FileLog.e(e);
-                                        }
-                                    }
-                                    animation.seekTo(messageObject.audioProgressMs, !getFileLoader().isLoadingVideo(messageObject.getDocument(), true));
-                                }
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
+            onMessagePlayingGoingToStop(id, account, args);
         } else if (id == NotificationCenter.messagePlayingDidReset || id == NotificationCenter.messagePlayingPlayStateChanged) {
             if (id == NotificationCenter.messagePlayingDidReset) {
                 destroyTextureView();
@@ -14765,448 +12824,2517 @@ public class ChatActivity extends BaseFragment
                     }
                 }
             }
-        } else if (id == NotificationCenter.messagePlayingProgressDidChanged) {
-            Integer mid = (Integer) args[0];
-            if (chatListView != null) {
+        } else if (id == NotificationCenter.messagePlayingProgressDidChanged){
+            messagePlayingProgressDidChanged(id, account, args);
+        } else if (id == NotificationCenter.didUpdateReactions){
+            didUpdateReactions(id, account, args);
+        } else if (id == NotificationCenter.didVerifyMessagesStickers){
+            didVerifyMessagesStickers(id, account, args);
+        } else if (id == NotificationCenter.updateMessageMedia){
+            updateMessageMedia(id, account, args);
+        } else if (id == NotificationCenter.replaceMessagesObjects){
+            replaceMessagesObjects(id, account, args);
+        } else if (id == NotificationCenter.notificationsSettingsUpdated){
+            notificationsSettingsUpdated(id, account, args);
+        } else if (id == NotificationCenter.replyMessagesDidLoad){
+            replyMessagesDidLoad(id, account, args);
+        } else if (id == NotificationCenter.pinnedMessageDidLoad){
+            pinnedMessageDidLoad(id, account, args);
+        } else if (id == NotificationCenter.didReceivedWebpages){
+            didReceivedWebpages(id, account, args);
+        } else if (id == NotificationCenter.didReceivedWebpagesInUpdates){
+            didReceivedWebpagesInUpdates(id, account, args);
+        } else if (id == NotificationCenter.messagesReadContent){
+            messagesReadContent(id, account, args);
+        } else if (id == NotificationCenter.botInfoDidLoad){
+            botInfoDidLoad(id, account, args);
+        } else if (id == NotificationCenter.botKeyboardDidLoad){
+            botKeyboardDidLoad(id, account, args);
+        } else if (id == NotificationCenter.chatSearchResultsAvailable){
+            chatSearchResultsAvailable(id, account, args);
+        } else if (id == NotificationCenter.chatSearchResultsLoading){
+            chatSearchResultsLoading(id, account, args);
+        } else if (id == NotificationCenter.didUpdateMessagesViews){
+            didUpdateMessagesViews(id, account, args);
+        } else if (id == NotificationCenter.peerSettingsDidLoad){
+            peerSettingsDidLoad(id, account, args);
+        } else if (id == NotificationCenter.newDraftReceived){
+            newDraftReceived(id, account, args);
+        } else if (id == NotificationCenter.userInfoDidLoad){
+            userInfoDidLoad(id, account, args);
+        } else if (id == NotificationCenter.didSetNewWallpapper){
+            didSetNewWallpapper(id, account, args);
+        } else if (id == NotificationCenter.didApplyNewTheme){
+            didApplyNewTheme(id, account, args);
+        } else if (id == NotificationCenter.goingToPreviewTheme){
+            goingToPreviewTheme(id, account, args);
+        } else if (id == NotificationCenter.channelRightsUpdated){
+            channelRightsUpdated(id, account, args);
+        } else if (id == NotificationCenter.updateMentionsCount){
+            updateMentionsCount(id, account, args);
+        } else if (id == NotificationCenter.audioRecordTooShort){
+            audioRecordTooShort(id, account, args);
+        } else if (id == NotificationCenter.videoLoadingStateChanged){
+            videoLoadingStateChanged(id, account, args);
+        } else if (id == NotificationCenter.scheduledMessagesUpdated){
+            scheduledMessagesUpdated(id, account, args);
+        } else if (id == NotificationCenter.diceStickersDidLoad){
+            diceStickersDidLoad(id, account, args);
+        }
+    }
+
+    public void onMmessagesDidLoad(int id, int account, final Object... args) {
+        int guid = (Integer) args[10];
+        if (guid == classGuid) {
+            int queryLoadIndex = (Integer) args[11];
+            boolean doNotRemoveLoadIndex;
+            if (queryLoadIndex < 0) {
+                doNotRemoveLoadIndex = true;
+                queryLoadIndex = -queryLoadIndex;
+            } else {
+                doNotRemoveLoadIndex = false;
+            }
+            if (!doNotRemoveLoadIndex && !openAnimationEnded) {
+                getNotificationCenter().updateAllowedNotifications(transitionAnimationIndex, new int[]{NotificationCenter.chatInfoDidLoad, NotificationCenter.dialogsNeedReload, NotificationCenter.scheduledMessagesUpdated,
+                                                                                                       NotificationCenter.closeChats, NotificationCenter.botKeyboardDidLoad, NotificationCenter.userInfoDidLoad, NotificationCenter.needDeleteDialog/*, NotificationCenter.botInfoDidLoad*/});
+            }
+            int index = waitingForLoad.indexOf(queryLoadIndex);
+            int currentUserId = getUserConfig().getClientUserId();
+            boolean schedule = (Boolean) args[14];
+            boolean isCache = (Boolean) args[3];
+            boolean postponedScroll = postponedScrollToLastMessageQueryIndex > 0 && queryLoadIndex == postponedScrollToLastMessageQueryIndex;
+
+            if (index == -1) {
+                if (inScheduleMode && schedule && !isCache) {
+                    waitingForReplyMessageLoad = true;
+                    waitingForLoad.add(lastLoadIndex);
+                    getMessagesController().loadMessages(dialog_id, mergeDialogId, false, AndroidUtilities.isTablet() ? 30 : 20, 0, 0, true, 0, classGuid, 2, 0, ChatObject.isChannel(currentChat), inScheduleMode, lastLoadIndex++);
+                }
+                return;
+            } else if (!doNotRemoveLoadIndex) {
+                waitingForLoad.remove(index);
+            }
+            ArrayList<MessageObject> messArr = (ArrayList<MessageObject>) args[2];
+            if (inScheduleMode != schedule) {
+                if (!inScheduleMode) {
+                    scheduledMessagesCount = messArr.size();
+                    updateScheduledInterface(true);
+                }
+                return;
+            }
+            boolean createUnreadLoading = false;
+            boolean showDateAfter = waitingForReplyMessageLoad;
+            if (waitingForReplyMessageLoad) {
+                if (!inScheduleMode && !createUnreadMessageAfterIdLoading) {
+                    boolean found = false;
+                    for (int a = 0; a < messArr.size(); a++) {
+                        MessageObject obj = messArr.get(a);
+                        if (obj.getId() == startLoadFromMessageId) {
+                            found = true;
+                            break;
+                        }
+                        if (a + 1 < messArr.size()) {
+                            MessageObject obj2 = messArr.get(a + 1);
+                            if (obj.getId() >= startLoadFromMessageId && obj2.getId() < startLoadFromMessageId) {
+                                startLoadFromMessageId = obj.getId();
+                                found = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (!found) {
+                        startLoadFromMessageId = 0;
+                        return;
+                    }
+                }
+                int startLoadFrom = startLoadFromMessageId;
+                boolean needSelect = needSelectFromMessageId;
+                int unreadAfterId = createUnreadMessageAfterId;
+                createUnreadLoading = createUnreadMessageAfterIdLoading;
+                clearChatData();
+                if (!inScheduleMode) {
+                    createUnreadMessageAfterId = unreadAfterId;
+                    startLoadFromMessageId = startLoadFrom;
+                    needSelectFromMessageId = needSelect;
+                }
+            }
+
+            loadsCount++;
+            long did = (Long) args[0];
+            int loadIndex = did == dialog_id ? 0 : 1;
+            int count = (Integer) args[1];
+            int fnid = (Integer) args[4];
+            int last_unread_date = (Integer) args[7];
+            int load_type = (Integer) args[8];
+            boolean isEnd = (Boolean) args[9];
+            int loaded_max_id = (Integer) args[12];
+            int loaded_mentions_count = (Integer) args[13];
+
+            if (loaded_mentions_count < 0) {
+                loaded_mentions_count *= -1;
+                hasAllMentionsLocal = false;
+            } else if (first) {
+                hasAllMentionsLocal = true;
+            }
+            if (load_type == 4) {
+                startLoadFromMessageId = loaded_max_id;
+
+                for (int a = messArr.size() - 1; a > 0; a--) {
+                    MessageObject obj = messArr.get(a);
+                    if (obj.type < 0 && obj.getId() == startLoadFromMessageId) {
+                        startLoadFromMessageId = messArr.get(a - 1).getId();
+                        break;
+                    }
+                }
+            }
+
+            if (postponedScroll) {
+                if (load_type == 0 && isCache && messArr.size() < count) {
+                    postponedScrollToLastMessageQueryIndex = lastLoadIndex;
+                    waitingForLoad.add(lastLoadIndex);
+                    getMessagesController().loadMessages(dialog_id, mergeDialogId, false, count, 0, 0, false, 0, classGuid, 0, 0, ChatObject.isChannel(currentChat), inScheduleMode, lastLoadIndex++);
+                    return;
+                }
+
+                if (load_type == 4) {
+                    postponedScrollMessageId = startLoadFromMessageId;
+                }
+
+                progressDialog.dismiss();
+                if (postponedScrollIsCanceled) {
+                    return;
+                }
+                if (postponedScrollMessageId == 0) {
+                    clearChatData();
+                } else {
+                    if (showScrollToMessageError) {
+                        boolean found = false;
+                        for (int k = 0; k < messArr.size(); k++) {
+                            if (messArr.get(k).getId() == postponedScrollMessageId) {
+                                found = true;
+                                break;
+                            }
+                        }
+                        if (!found) {
+                            AlertsCreator.showSimpleToast(ChatActivity.this, LocaleController.getString("MessageNotFound", R.string.MessageNotFound));
+                            return;
+                        }
+                        showScrollToMessageError = false;
+                    }
+                    int startLoadFrom = startLoadFromMessageId;
+                    boolean needSelect = needSelectFromMessageId;
+                    int unreadAfterId = createUnreadMessageAfterId;
+                    createUnreadLoading = createUnreadMessageAfterIdLoading;
+                    clearChatData();
+                    if (!inScheduleMode) {
+                        createUnreadMessageAfterId = unreadAfterId;
+                        startLoadFromMessageId = startLoadFrom;
+                        needSelectFromMessageId = needSelect;
+                    }
+                }
+            }
+
+            if (chatListItemAniamtor != null) {
+                chatListItemAniamtor.setShouldAnimateEnterFromBottom(false);
+            }
+
+            int unread_to_load = 0;
+            if (fnid != 0) {
+                last_message_id = (Integer) args[5];
+                if (load_type == 3) {
+                    if (loadingFromOldPosition) {
+                        unread_to_load = (Integer) args[6];
+                        if (unread_to_load != 0) {
+                            createUnreadMessageAfterId = fnid;
+                        }
+                        loadingFromOldPosition = false;
+                    }
+                    first_unread_id = 0;
+                } else {
+                    first_unread_id = fnid;
+                    unread_to_load = (Integer) args[6];
+                }
+            } else if (startLoadFromMessageId != 0 && (load_type == 3 || load_type == 4)) {
+                last_message_id = (Integer) args[5];
+            }
+            int newRowsCount = 0;
+
+            if (load_type != 0 && (startLoadFromMessageId != 0 || last_message_id != 0)) {
+                forwardEndReached[loadIndex] = false;
+            }
+            if ((load_type == 1 || load_type == 3) && loadIndex == 1) {
+                endReached[0] = cacheEndReached[0] = true;
+                forwardEndReached[0] = false;
+                minMessageId[0] = 0;
+            }
+            if (inScheduleMode) {
+                endReached[0] = cacheEndReached[0] = true;
+                forwardEndReached[0] = forwardEndReached[0] = true;
+            }
+
+            if (loadsCount == 1 && messArr.size() > 20) {
+                loadsCount++;
+            }
+
+            if (firstLoading) {
+                if (!forwardEndReached[loadIndex]) {
+                    messages.clear();
+                    messagesByDays.clear();
+                    groupedMessagesMap.clear();
+                    for (int a = 0; a < 2; a++) {
+                        messagesDict[a].clear();
+                        maxMessageId[a] = Integer.MAX_VALUE;
+                        minMessageId[a] = Integer.MIN_VALUE;
+                        maxDate[a] = Integer.MIN_VALUE;
+                        minDate[a] = 0;
+                    }
+                }
+                firstLoading = false;
+                AndroidUtilities.runOnUIThread(() -> {
+                    if (parentLayout != null) {
+                        parentLayout.resumeDelayedFragmentAnimation();
+                    }
+                });
+            }
+
+            if (load_type == 1) {
+                Collections.reverse(messArr);
+            }
+            getMediaDataController().loadReplyMessagesForMessages(messArr, dialog_id, inScheduleMode, null);
+            int approximateHeightSum = 0;
+            if ((load_type == 2 || load_type == 1) && messArr.isEmpty() && !isCache) {
+                forwardEndReached[0] = true;
+            }
+            LongSparseArray<MessageObject.GroupedMessages> newGroups = null;
+            LongSparseArray<MessageObject.GroupedMessages> changedGroups = null;
+            MediaController mediaController = MediaController.getInstance();
+            MessageAction dropPhotoAction = null;
+            boolean createdWas = false;
+            for (int a = 0, N = messArr.size(); a < N; a++) {
+                MessageObject obj = messArr.get(N - a - 1);
+                MessageAction action = obj.messageOwner.action;
+                if (a == 0 && action.isChatCreate()) {
+                    createdWas = true;
+                } else if (!createdWas) {
+                    break;
+                } else if (a < 2 && action.isChatEditPhoto()) {
+                    dropPhotoAction = action;
+                }
+            }
+            for (int a = 0; a < messArr.size(); a++) {
+                MessageObject obj = messArr.get(a);
+                int messageId = obj.getId();
+
+                approximateHeightSum += obj.getApproximateHeight();
+                if (currentUser != null) {
+                    if (currentUser.self) {
+                        obj.messageOwner.out = true;
+                    }
+                    if (!inScheduleMode && (currentUser.bot && obj.isOut() || currentUser.id == currentUserId)) {
+                        obj.setIsRead();
+                    }
+                }
+                if (messagesDict[loadIndex].indexOfKey(messageId) >= 0) {
+                    continue;
+                }
+                if (isSecretChat()) {
+                    checkSecretMessageForLocation(obj);
+                }
+                if (mediaController.isPlayingMessage(obj)) {
+                    MessageObject player = mediaController.getPlayingMessageObject();
+                    obj.audioProgress = player.audioProgress;
+                    obj.audioProgressSec = player.audioProgressSec;
+                    obj.audioPlayerDuration = player.audioPlayerDuration;
+                }
+                if (loadIndex == 0 && ChatObject.isChannel(currentChat) && messageId == 1) {
+                    endReached[loadIndex] = true;
+                    cacheEndReached[loadIndex] = true;
+                }
+                if (messageId > 0) {
+                    maxMessageId[loadIndex] = Math.min(messageId, maxMessageId[loadIndex]);
+                    minMessageId[loadIndex] = Math.max(messageId, minMessageId[loadIndex]);
+                }
+                if (obj.messageOwner.date != 0) {
+                    maxDate[loadIndex] = Math.max(maxDate[loadIndex], obj.messageOwner.date);
+                    if (minDate[loadIndex] == 0 || obj.messageOwner.date < minDate[loadIndex]) {
+                        minDate[loadIndex] = obj.messageOwner.date;
+                    }
+                }
+
+                if (messageId == last_message_id) {
+                    forwardEndReached[loadIndex] = true;
+                }
+
+                MessageAction action = obj.messageOwner.action;
+                if (currentChat != null && currentChat.creator && (action.isChatCreate() || dropPhotoAction != null && action == dropPhotoAction)) {
+                    continue;
+                }
+
+                if (needAnimateToMessage != null && needAnimateToMessage.getId() == messageId && messageId < 0 && obj.type == MessageObject.TYPE_ROUND_VIDEO && !inScheduleMode) {
+                    obj = needAnimateToMessage;
+                    animatingMessageObjects.add(obj);
+                    needAnimateToMessage = null;
+                }
+
+                messagesDict[loadIndex].put(messageId, obj);
+                ArrayList<MessageObject> dayArray = messagesByDays.get(obj.dateKey);
+
+                if (dayArray == null) {
+                    dayArray = new ArrayList<>();
+                    messagesByDays.put(obj.dateKey, dayArray);
+                    Message dateMsg = new Message();
+                    if (inScheduleMode) {
+                        if (obj.messageOwner.date == 0x7ffffffe) {
+                            dateMsg.message = LocaleController.getString("MessageScheduledUntilOnline", R.string.MessageScheduledUntilOnline);
+                        } else {
+                            dateMsg.message = LocaleController.formatString("MessageScheduledOn", R.string.MessageScheduledOn, LocaleController.formatDateChat(obj.messageOwner.date, true));
+                        }
+                    } else {
+                        dateMsg.message = LocaleController.formatDateChat(obj.messageOwner.date);
+                    }
+                    dateMsg.id = 0;
+                    Calendar calendar = Calendar.getInstance();
+                    calendar.setTimeInMillis(((long) obj.messageOwner.date) * 1000);
+                    calendar.set(Calendar.HOUR_OF_DAY, 0);
+                    calendar.set(Calendar.MINUTE, 0);
+                    dateMsg.date = (int) (calendar.getTimeInMillis() / 1000);
+                    MessageObject dateObj = new MessageObject(currentAccount, dateMsg, false);
+                    dateObj.type = 10;
+                    dateObj.contentType = 1;
+                    dateObj.isDateObject = true;
+                    dateObj.stableId = lastStableId++;
+                    if (load_type == 1) {
+                        messages.add(0, dateObj);
+                    } else {
+                        messages.add(dateObj);
+                    }
+                    newRowsCount++;
+                }
+
+                if (obj.hasValidGroupId()) {
+                    MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(obj.getGroupIdForUse());
+                    if (groupedMessages != null) {
+                        if (messages.size() > 1) {
+                            MessageObject previous;
+                            if (load_type == 1) {
+                                previous = messages.get(0);
+                            } else {
+                                previous = messages.get(messages.size() - 2);
+                            }
+                            if (previous.getGroupIdForUse() == obj.getGroupIdForUse()) {
+                                if (previous.localGroupId != 0) {
+                                    obj.localGroupId = previous.localGroupId;
+                                    groupedMessages = groupedMessagesMap.get(previous.localGroupId);
+                                }
+                            } else if (previous.getGroupIdForUse() != obj.getGroupIdForUse()) {
+                                obj.localGroupId = Utilities.random.nextLong();
+                                groupedMessages = null;
+                            }
+                        }
+                    }
+                    if (groupedMessages == null) {
+                        groupedMessages = new MessageObject.GroupedMessages();
+                        groupedMessages.groupId = obj.getGroupId();
+                        groupedMessagesMap.put(groupedMessages.groupId, groupedMessages);
+                    } else if (newGroups == null || newGroups.indexOfKey(obj.getGroupId()) < 0) {
+                        if (changedGroups == null) {
+                            changedGroups = new LongSparseArray<>();
+                        }
+                        changedGroups.put(obj.getGroupId(), groupedMessages);
+                    }
+                    if (newGroups == null) {
+                        newGroups = new LongSparseArray<>();
+                    }
+                    newGroups.put(groupedMessages.groupId, groupedMessages);
+                    if (load_type == 1) {
+                        groupedMessages.messages.add(obj);
+                    } else {
+                        groupedMessages.messages.add(0, obj);
+                    }
+                } else if (obj.getGroupIdForUse() != 0) {
+                    obj.messageOwner.grouped_id = 0;
+                    obj.localSentGroupId = 0;
+                }
+
+                newRowsCount++;
+                dayArray.add(obj);
+                obj.stableId = lastStableId++;
+                if (load_type == 1) {
+                    messages.add(0, obj);
+                } else {
+                    messages.add(messages.size() - 1, obj);
+                }
+
+                MessageObject prevObj;
+                if (createUnreadMessageAfterId != 0 && load_type != 1 && a + 1 < messArr.size()) {
+                    prevObj = messArr.get(a + 1);
+                    if (obj.isOut() && !obj.messageOwner.from_scheduled || prevObj.getId() >= createUnreadMessageAfterId) {
+                        prevObj = null;
+                    }
+                } else {
+                    prevObj = null;
+                }
+                if (load_type == 2 && messageId == first_unread_id) {
+                    if (approximateHeightSum > AndroidUtilities.displaySize.y / 2 || !forwardEndReached[0]) {
+                        Message dateMsg = new Message();
+                        dateMsg.message = "";
+                        dateMsg.id = 0;
+                        MessageObject dateObj = new MessageObject(currentAccount, dateMsg, false);
+                        dateObj.type = 6;
+                        dateObj.contentType = 2;
+                        dateObj.stableId = lastStableId++;
+                        messages.add(messages.size() - 1, dateObj);
+                        unreadMessageObject = dateObj;
+                        scrollToMessage = unreadMessageObject;
+                        scrollToMessagePosition = -10000;
+                        newRowsCount++;
+                    }
+                } else if ((load_type == 3 || load_type == 4) && (startLoadFromMessageId < 0 && messageId == startLoadFromMessageId || startLoadFromMessageId > 0 && messageId > 0 && messageId <= startLoadFromMessageId)) {
+                    removeSelectedMessageHighlight();
+                    if (needSelectFromMessageId && messageId == startLoadFromMessageId) {
+                        highlightMessageId = messageId;
+                    }
+                    if (showScrollToMessageError && messageId != startLoadFromMessageId) {
+                        AlertsCreator.showSimpleToast(ChatActivity.this, LocaleController.getString("MessageNotFound", R.string.MessageNotFound));
+                    }
+                    scrollToMessage = obj;
+                    if (postponedScroll) {
+                        postponedScrollMessageId = scrollToMessage.getId();
+                    }
+                    startLoadFromMessageId = 0;
+                    if (scrollToMessagePosition == -10000) {
+                        scrollToMessagePosition = -9000;
+                    }
+                }
+                if (load_type != 2 && unreadMessageObject == null && createUnreadMessageAfterId != 0 && (!obj.isOut() || obj.messageOwner.from_scheduled) && messageId >= createUnreadMessageAfterId && (load_type == 1 || prevObj != null || prevObj == null && createUnreadLoading && a == messArr.size() - 1)) {
+                    Message dateMsg = new Message();
+                    dateMsg.message = "";
+                    dateMsg.id = 0;
+                    MessageObject dateObj = new MessageObject(currentAccount, dateMsg, false);
+                    dateObj.type = 6;
+                    dateObj.contentType = 2;
+                    dateObj.stableId = lastStableId++;
+                    if (load_type == 1) {
+                        messages.add(1, dateObj);
+                    } else {
+                        messages.add(messages.size() - 1, dateObj);
+                    }
+                    unreadMessageObject = dateObj;
+                    if (load_type == 3) {
+                        scrollToMessage = unreadMessageObject;
+                        startLoadFromMessageId = 0;
+                        scrollToMessagePosition = -9000;
+                    }
+                    newRowsCount++;
+                }
+            }
+            if (createUnreadLoading) {
+                createUnreadMessageAfterId = 0;
+            }
+            if (load_type == 0 && newRowsCount == 0) {
+                loadsCount--;
+            }
+
+            if (forwardEndReached[loadIndex] && loadIndex != 1) {
+                first_unread_id = 0;
+                last_message_id = 0;
+                createUnreadMessageAfterId = 0;
+            }
+
+            if (load_type == 1) {
+                if (messArr.size() != count && (!isCache || forwardEndReached[loadIndex])) {
+                    forwardEndReached[loadIndex] = true;
+                    if (loadIndex != 1) {
+                        first_unread_id = 0;
+                        last_message_id = 0;
+                        createUnreadMessageAfterId = 0;
+                        chatAdapter.notifyItemRemoved(chatAdapter.loadingDownRow);
+                    }
+                    startLoadFromMessageId = 0;
+                }
+                if (newRowsCount > 0) {
+                    int firstVisPos = chatLayoutManager.findFirstVisibleItemPosition();
+                    int lastVisPos = chatLayoutManager.findLastVisibleItemPosition();
+                    int top = 0;
+                    MessageObject scrollToMessageObject = null;
+                    if (firstVisPos != RecyclerView.NO_POSITION) {
+                        for (int i = firstVisPos; i <= lastVisPos; i++) {
+                            View v = chatLayoutManager.findViewByPosition(i);
+                            if (v instanceof ChatMessageCell) {
+                                scrollToMessageObject = ((ChatMessageCell) v).getMessageObject();
+                                top = chatListView.getMeasuredHeight() - v.getBottom() - chatListView.getPaddingBottom();
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!postponedScroll) {
+                        chatAdapter.notifyItemRangeInserted(1, newRowsCount);
+                        if (scrollToMessageObject != null) {
+                            int scrollToIndex = messages.indexOf(scrollToMessageObject);
+                            if (scrollToIndex > 0) {
+                                chatLayoutManager.scrollToPositionWithOffset(chatAdapter.messagesStartRow + scrollToIndex, top);
+                            }
+                        }
+                    }
+                }
+                loadingForward = false;
+            } else {
+                if (messArr.size() < count && load_type != 3 && load_type != 4) {
+                    if (isCache) {
+                        if (loadIndex == 1 && mergeDialogId != 0 && isEnd) {
+                            endReached[loadIndex] = true;
+                        }
+                        if (load_type != 2) {
+                            cacheEndReached[loadIndex] = true;
+                        }
+                    } else if (load_type != 2 || messArr.size() == 0 && messages.isEmpty()) {
+                        endReached[loadIndex] = true;
+                    }
+                }
+                loading = false;
+
+                if (chatListView != null && chatScrollHelper != null) {
+                    if (first || scrollToTopOnResume || forceScrollToTop) {
+                        forceScrollToTop = false;
+                        if (!postponedScroll) {
+                            chatAdapter.notifyDataSetChanged();
+                        }
+                        if (scrollToMessage != null) {
+                            int yOffset;
+                            boolean bottom = true;
+                            if (startLoadFromMessageOffset != Integer.MAX_VALUE) {
+                                yOffset = -startLoadFromMessageOffset - chatListView.getPaddingBottom();
+                                startLoadFromMessageOffset = Integer.MAX_VALUE;
+                            } else if (scrollToMessagePosition == -9000) {
+                                yOffset = getScrollOffsetForMessage(scrollToMessage);
+                                bottom = false;
+                            } else if (scrollToMessagePosition == -10000) {
+                                yOffset = -AndroidUtilities.dp(11);
+                                bottom = false;
+                            } else {
+                                yOffset = scrollToMessagePosition;
+                            }
+                            if (!postponedScroll) {
+                                if (!messages.isEmpty()) {
+                                    if (chatAdapter.loadingUpRow != -1 && !messages.isEmpty() && (messages.get(messages.size() - 1) == scrollToMessage || messages.get(messages.size() - 2) == scrollToMessage)) {
+                                        chatLayoutManager.scrollToPositionWithOffset(chatAdapter.loadingUpRow, yOffset, bottom);
+                                    } else {
+                                        chatLayoutManager.scrollToPositionWithOffset(chatAdapter.messagesStartRow + messages.indexOf(scrollToMessage), yOffset, bottom);
+                                    }
+                                }
+                            }
+                            chatListView.invalidate();
+                            if (scrollToMessagePosition == -10000 || scrollToMessagePosition == -9000) {
+                                canShowPagedownButton = true;
+                                updatePagedownButtonVisibility(true);
+                                if (unread_to_load != 0) {
+                                    if (pagedownButtonCounter != null) {
+                                        pagedownButtonCounter.setVisibility(View.VISIBLE);
+                                        if (prevSetUnreadCount != newUnreadMessageCount) {
+                                            pagedownButtonCounter.setText(String.format("%d", newUnreadMessageCount = unread_to_load));
+                                            prevSetUnreadCount = newUnreadMessageCount;
+                                        }
+                                    }
+                                }
+                            }
+                            scrollToMessagePosition = -10000;
+                            scrollToMessage = null;
+                        } else {
+                            moveScrollToLastMessage();
+                        }
+                        if (loaded_mentions_count != 0) {
+                            showMentionDownButton(true, true);
+                            if (mentiondownButtonCounter != null) {
+                                mentiondownButtonCounter.setVisibility(View.VISIBLE);
+                                mentiondownButtonCounter.setText(String.format("%d", newMentionsCount = loaded_mentions_count));
+                            }
+                        }
+                    } else {
+                        if (newRowsCount != 0) {
+                            int firstVisPos = chatLayoutManager.findFirstVisibleItemPosition();
+                            int lastVisPos = chatLayoutManager.findLastVisibleItemPosition();
+                            int top = 0;
+                            MessageObject scrollToMessageObject = null;
+                            if (firstVisPos != RecyclerView.NO_POSITION) {
+                                for (int i = firstVisPos; i <= lastVisPos; i++) {
+                                    View v = chatLayoutManager.findViewByPosition(i);
+                                    if (v instanceof ChatMessageCell) {
+                                        scrollToMessageObject = ((ChatMessageCell) v).getMessageObject();
+                                        top = chatListView.getMeasuredHeight() - v.getBottom() - chatListView.getPaddingBottom();
+                                        break;
+                                    }
+                                }
+                            }
+                            int insertStart = chatAdapter.messagesEndRow;
+                            int loadingUpRow = chatAdapter.loadingUpRow;
+                            chatAdapter.updateRowsInternal();
+                            if (loadingUpRow != -1 && chatAdapter.loadingUpRow == -1) {
+                                chatAdapter.notifyItemRemoved(loadingUpRow);
+                            }
+                            if (newRowsCount > 0) {
+                                chatAdapter.notifyItemChanged(insertStart - 1);
+                                chatAdapter.notifyItemRangeInserted(insertStart, newRowsCount);
+                            }
+                            if (!postponedScroll && scrollToMessageObject != null) {
+                                int scrollToIndex = messages.indexOf(scrollToMessageObject);
+                                if (scrollToIndex > 0) {
+                                    chatLayoutManager.scrollToPositionWithOffset(chatAdapter.messagesStartRow + scrollToIndex, top);
+                                }
+                            }
+                        } else if (chatAdapter.loadingUpRow != -1 && endReached[loadIndex] && (loadIndex == 0 && mergeDialogId == 0 || loadIndex == 1)) {
+                            chatAdapter.notifyItemRemoved(chatAdapter.loadingUpRow);
+                        } else {
+                            chatAdapter.notifyDataSetChanged();
+                        }
+                    }
+
+                    if (paused) {
+                        scrollToTopOnResume = true;
+                        if (scrollToMessage != null) {
+                            scrollToTopUnReadOnResume = true;
+                        }
+                    }
+
+                    if (first) {
+                        if (chatListView != null) {
+                            chatListView.setEmptyView(emptyViewContainer);
+                        }
+                    }
+                } else {
+                    scrollToTopOnResume = true;
+                    if (scrollToMessage != null) {
+                        scrollToTopUnReadOnResume = true;
+                    }
+                }
+            }
+            if (newGroups != null) {
+                for (int a = 0; a < newGroups.size(); a++) {
+                    MessageObject.GroupedMessages groupedMessages = newGroups.valueAt(a);
+                    groupedMessages.calculate();
+                    if (chatAdapter != null && changedGroups != null && changedGroups.indexOfKey(newGroups.keyAt(a)) >= 0) {
+                        MessageObject messageObject = groupedMessages.messages.get(groupedMessages.messages.size() - 1);
+                        int idx = messages.indexOf(messageObject);
+                        if (idx >= 0) {
+                            if (chatListItemAniamtor != null) {
+                                chatListItemAniamtor.groupWillChanged(groupedMessages);
+                            }
+                            chatAdapter.notifyItemRangeChanged(idx + chatAdapter.messagesStartRow, groupedMessages.messages.size());
+                        }
+                    }
+                }
+            }
+
+            if (first && messages.size() > 0) {
+                first = false;
+            }
+            if (messages.isEmpty() && currentUser != null && currentUser.bot && botUser == null) {
+                botUser = "";
+                updateBottomOverlay();
+            }
+
+            if (newRowsCount == 0 && (mergeDialogId != 0 && loadIndex == 0)) {
+                first = true;
+                if (chatListView != null) {
+                    chatListView.setEmptyView(null);
+                }
+                if (emptyViewContainer != null) {
+                    emptyViewContainer.setVisibility(View.INVISIBLE);
+                }
+            } else {
+                if (progressView != null) {
+                    progressView.setVisibility(View.INVISIBLE);
+                }
+            }
+            if (newRowsCount == 0 && mergeDialogId != 0 && loadIndex == 0) {
+                getNotificationCenter().updateAllowedNotifications(transitionAnimationIndex, new int[]{NotificationCenter.chatInfoDidLoad, NotificationCenter.dialogsNeedReload, NotificationCenter.scheduledMessagesUpdated,
+                                                                                                       NotificationCenter.closeChats, NotificationCenter.messagesDidLoad, NotificationCenter.botKeyboardDidLoad, NotificationCenter.userInfoDidLoad, NotificationCenter.needDeleteDialog/*, NotificationCenter.botInfoDidLoad*/});
+            }
+            if (showDateAfter) {
+                showFloatingDateView(false);
+            }
+            checkScrollForLoad(false);
+
+            if (postponedScroll) {
+                chatAdapter.notifyDataSetChanged();
+                if (progressDialog != null) {
+                    progressDialog.dismiss();
+                }
+                if (postponedScrollMessageId == 0) {
+                    chatScrollHelperCallback.scrollTo = null;
+                    chatScrollHelperCallback.lastBottom = true;
+                    chatScrollHelperCallback.lastItemOffset = 0;
+                    chatScrollHelper.scrollToPosition(0, 0, true, true);
+                } else {
+                    MessageObject object = messagesDict[loadIndex].get(postponedScrollMessageId);
+                    if (object != null) {
+                        MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(object.getGroupId());
+                        if (object.getGroupId() != 0 && groupedMessages != null) {
+                            MessageObject primary = groupedMessages.findPrimaryMessageObject();
+                            if (primary != null) {
+                                object = primary;
+                            }
+                        }
+                    }
+
+                    if (object != null) {
+                        int k = messages.indexOf(object);
+                        if (k >= 0) {
+                            removeSelectedMessageHighlight();
+                            highlightMessageId = object.getId();
+
+                            int yOffset = getScrollOffsetForMessage(object);
+                            chatScrollHelperCallback.scrollTo = object;
+                            chatScrollHelperCallback.lastBottom = false;
+                            chatScrollHelperCallback.lastItemOffset = yOffset;
+                            chatScrollHelper.scrollToPosition(chatAdapter.messagesStartRow + messages.indexOf(object), yOffset, false, true);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    public void onEmojiDidLoad(int id, int account, final Object... args) {
+        if (chatListView != null) {
+            chatListView.invalidateViews();
+        }
+        if (replyObjectTextView != null) {
+            replyObjectTextView.invalidate();
+        }
+        if (alertTextView != null) {
+            alertTextView.invalidate();
+        }
+        if (pinnedMessageTextView != null) {
+            pinnedMessageTextView.invalidate();
+        }
+        if (mentionListView != null) {
+            mentionListView.invalidateViews();
+        }
+        if (stickersListView != null) {
+            stickersListView.invalidateViews();
+        }
+        if (messagesSearchListView != null) {
+            messagesSearchListView.invalidateViews();
+        }
+        if (undoView != null) {
+            undoView.invalidate();
+        }
+        if (chatActivityEnterView != null) {
+            EditTextBoldCursor editText = chatActivityEnterView.getEditField();
+            int color = editText.getCurrentTextColor();
+            editText.setTextColor(0xffffffff);
+            editText.setTextColor(color);
+        }
+    }
+    public void onChatOnlineCountDidLoad(int id, int account, final Object... args) {
+        Integer chatId = (Integer) args[0];
+        if (currentChat == null || currentChat.id != chatId) {
+            return;
+        }
+        currentChat.online_count = (Integer) args[1];
+        if (avatarContainer != null) {
+            avatarContainer.updateOnlineCount();
+            avatarContainer.updateSubtitle();
+        }
+    }
+    public void onUpdateInterfaces(int id, int account, final Object... args) {
+        int updateMask = (Integer) args[0];
+        if ((updateMask & MessagesController.UPDATE_MASK_NAME) != 0 || (updateMask & MessagesController.UPDATE_MASK_CHAT_NAME) != 0) {
+            if (currentChat != null) {
+                Chat chat = getMessagesController().getChat(currentChat.id);
+                if (chat != null) {
+                    currentChat = chat;
+                }
+            } else if (currentUser != null) {
+                User user = getMessagesController().getUser(currentUser.id);
+                if (user != null) {
+                    currentUser = user;
+                }
+            }
+            updateTitle();
+        }
+        boolean updateSubtitle = false;
+        if ((updateMask & MessagesController.UPDATE_MASK_CHAT_MEMBERS) != 0 || (updateMask & MessagesController.UPDATE_MASK_STATUS) != 0) {
+            if (currentChat != null && avatarContainer != null) {
+                avatarContainer.updateOnlineCount();
+            }
+            updateSubtitle = true;
+        }
+        if ((updateMask & MessagesController.UPDATE_MASK_AVATAR) != 0 || (updateMask & MessagesController.UPDATE_MASK_CHAT_AVATAR) != 0 || (updateMask & MessagesController.UPDATE_MASK_NAME) != 0) {
+            checkAndUpdateAvatar();
+            updateVisibleRows();
+        }
+        if ((updateMask & MessagesController.UPDATE_MASK_USER_PRINT) != 0) {
+            updateSubtitle = true;
+        }
+        if ((updateMask & MessagesController.UPDATE_MASK_CHAT) != 0 && currentChat != null) {
+            Chat chat = getMessagesController().getChat(currentChat.id);
+            if (chat == null) {
+                return;
+            }
+            currentChat = chat;
+            updateSubtitle = true;
+            updateBottomOverlay();
+            if (chatActivityEnterView != null) {
+                chatActivityEnterView.setDialogId(dialog_id, currentAccount);
+            }
+        }
+        if ((updateMask & MessagesController.UPDATE_MASK_READ_DIALOG_MESSAGE) != 0) {
+            if (bottomOverlayChatText2 != null && ChatObject.isChannel(currentChat) && !currentChat.megagroup && -currentChat.linked_chat_id != 0) {
+                bottomOverlayChatText2.updateCounter();
+            }
+        }
+        if (avatarContainer != null && updateSubtitle) {
+            avatarContainer.updateSubtitle();
+        }
+        if ((updateMask & MessagesController.UPDATE_MASK_USER_PHONE) != 0) {
+            updateTopPanel(true);
+        }
+    }
+    public void onDidReceiveNewMessages(int id, int account, final Object... args) {
+        //收到新消息
+        long did = (Long) args[0];
+        if (did == dialog_id) {
+            boolean scheduled = (Boolean) args[2];
+            if (scheduled != inScheduleMode) {
+                if (!inScheduleMode && !isPaused && forwardingMessages == null) {
+                    ArrayList<MessageObject> arr = (ArrayList<MessageObject>) args[1];
+                    if (!arr.isEmpty() && arr.get(0).getId() < 0) {
+                        openScheduledMessages();
+                    }
+                }
+                return;
+            }
+            int currentUserId = getUserConfig().getClientUserId();
+            boolean updateChat = false;
+            boolean hasFromMe = false;
+            ArrayList<MessageObject> arr = (ArrayList<MessageObject>) args[1];
+
+            if (chatListItemAniamtor != null) {
+                chatListItemAniamtor.setShouldAnimateEnterFromBottom(true);
+            }
+
+            boolean notifiedSearch = false;
+            LongSparseArray<Long> scheduledGroupReplacement = null;
+            for (int a = 0; a < arr.size(); a++) {
+                MessageObject messageObject = arr.get(a);
+                if (messageObject.isDice()) {
+                    messageObject.wasUnread = true;
+                }
+                if (inScheduleMode && messageObject.hasValidGroupId() && messagesDict[0].indexOfKey(messageObject.getId()) >= 0) {
+                    long groupId = messageObject.getGroupId();
+                    if (scheduledGroupReplacement == null) {
+                        scheduledGroupReplacement = new LongSparseArray<>();
+                    }
+                    Long localId = scheduledGroupReplacement.get(groupId);
+                    if (localId == null) {
+                        localId = Utilities.random.nextLong();
+                        scheduledGroupReplacement.put(groupId, localId);
+                    }
+                    messageObject.localGroupId = localId;
+                }
+                if (messageObject.isOut()) {
+                    if (!notifiedSearch) {
+                        notifiedSearch = true;
+                        NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.closeSearchByActiveAction);
+                    }
+                    if (currentChat != null && currentChat.slowmode_enabled && messageObject.isSent() && !inScheduleMode) {
+                        int date = messageObject.messageOwner.date + currentChat.slowmode_seconds;
+                        int currentTime = getConnectionsManager().getCurrentTime();
+                        if (date > getConnectionsManager().getCurrentTime()) {
+                            currentChat.slowmode_next_send_date = Math.max(currentChat.slowmode_next_send_date, Math.min(currentTime + currentChat.slowmode_seconds, date));
+                            if (chatActivityEnterView != null) {
+                                chatActivityEnterView.setSlowModeTimer(currentChat.slowmode_next_send_date);
+                            }
+                        }
+                    }
+                }
+                if (currentChat != null) {
+                    if (messageObject.messageOwner.action.isChatDeleteUser() && messageObject.messageOwner.action.user_id == currentUserId ||
+                            messageObject.messageOwner.action.isChatAddUser() && messageObject.messageOwner.action.users.contains(currentUserId)) {
+                        Chat newChat = getMessagesController().getChat(currentChat.id);
+                        if (newChat != null) {
+                            currentChat = newChat;
+                            checkActionBarMenu();
+                            updateBottomOverlay();
+                            if (avatarContainer != null) {
+                                avatarContainer.updateSubtitle();
+                            }
+                        }
+                    }
+                } else if (inlineReturn != 0) {
+                    if (messageObject.messageOwner.reply_markup != null) {
+                        for (int b = 0; b < messageObject.messageOwner.reply_markup.rows.size(); b++) {
+                            ReplyMarkup.KeyboardButtonRow row = messageObject.messageOwner.reply_markup.rows.get(b);
+                            for (int c = 0; c < row.buttons.size(); c++) {
+                                KeyboardButton button = row.buttons.get(c);
+                                if (button.isSwitchInline()) {
+                                    processSwitchButton(button);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                if (messageObject.messageOwner.reply_to_msg_id != 0 && messageObject.replyMessageObject == null) {
+                    messageObject.replyMessageObject = messagesDict[0].get(messageObject.messageOwner.reply_to_msg_id);
+                    if (messageObject.messageOwner.action.isPinMessage()) {
+                        messageObject.generatePinMessageText(null, null);
+                    }
+                    if (messageObject.isMegagroup() && messageObject.replyMessageObject != null && messageObject.replyMessageObject.messageOwner != null) {
+                        messageObject.replyMessageObject.messageOwner.flags |= Message.MESSAGE_FLAG_MEGAGROUP;
+                    }
+                }
+            }
+
+            if (inScheduleMode && !arr.isEmpty()) {
+                replaceMessageObjects(arr, 0, true);
+            }
+
+            boolean reloadMegagroup = false;
+            if (!forwardEndReached[0]) {
+                int currentMaxDate = Integer.MIN_VALUE;
+                int currentMinMsgId = Integer.MIN_VALUE;
+
+                for (int a = 0; a < arr.size(); a++) {
+                    MessageObject obj = arr.get(a);
+                    int messageId = obj.getId();
+
+                    if (obj.isOut() && waitingForSendingMessageLoad) {
+                        waitingForSendingMessageLoad = false;
+                        chatActivityEnterView.hideTopView(true);
+                        if (changeBoundAnimator != null) {
+                            changeBoundAnimator.start();
+                        }
+                    }
+
+                    if (!inScheduleMode && currentUser != null && (currentUser.bot && obj.isOut() || currentUser.id == currentUserId)) {
+                        obj.setIsRead();
+                    }
+                    MessageAction action = obj.messageOwner.action;
+                    if (currentChat != null && currentChat.megagroup && (action.isChatAddUser() || action.isChatDeleteUser())) {
+                        reloadMegagroup = true;
+                    }
+                    if (a == 0 && obj.messageOwner.id < 0 && obj.type == MessageObject.TYPE_ROUND_VIDEO && !inScheduleMode) {
+                        needAnimateToMessage = obj;
+                    }
+                    if (obj.isOut() && obj.isSending()) {
+                        scrollToLastMessage(false);
+                        return;
+                    }
+                    if (obj.type < 0 || messagesDict[0].indexOfKey(messageId) >= 0) {
+                        continue;
+                    }
+                    if (currentChat != null && currentChat.creator && (action.isChatCreate() || action.isChatEditPhoto() && messages.size() < 4)) {
+                        continue;
+                    }
+                    obj.checkLayout();
+                    currentMaxDate = Math.max(currentMaxDate, obj.messageOwner.date);
+                    if (messageId > 0) {
+                        currentMinMsgId = Math.max(messageId, currentMinMsgId);
+                        last_message_id = Math.max(last_message_id, messageId);
+                    }
+
+                    if (obj.messageOwner.mentioned && obj.isContentUnread()) {
+                        newMentionsCount++;
+                    }
+                    newUnreadMessageCount++;
+                    if (obj.type == 10 || obj.type == 11) {
+                        updateChat = true;
+                    }
+                }
+                if (newUnreadMessageCount != 0 && pagedownButtonCounter != null) {
+                    pagedownButtonCounter.setVisibility(View.VISIBLE);
+                    if (prevSetUnreadCount != newUnreadMessageCount) {
+                        prevSetUnreadCount = newUnreadMessageCount;
+                        pagedownButtonCounter.setText(String.format("%d", newUnreadMessageCount));
+                    }
+                }
+                if (newMentionsCount != 0 && mentiondownButtonCounter != null) {
+                    mentiondownButtonCounter.setVisibility(View.VISIBLE);
+                    mentiondownButtonCounter.setText(String.format("%d", newMentionsCount));
+                    showMentionDownButton(true, true);
+                }
+
+                updateVisibleRows();
+            } else {
+                LongSparseArray<MessageObject.GroupedMessages> newGroups = null;
+                HashMap<String, ArrayList<MessageObject>> webpagesToReload = null;
+                if (BuildVars.LOGS_ENABLED) {
+                    FileLog.d("received new messages " + arr.size() + " in dialog " + dialog_id);
+                }
+                for (int a = 0; a < arr.size(); a++) {
+                    MessageObject obj = arr.get(a);
+                    if (obj.scheduled != inScheduleMode) {
+                        continue;
+                    }
+                    int placeToPaste = -1;
+                    int messageId = obj.getId();
+                    if (inScheduleMode && messagesDict[0].indexOfKey(messageId) >= 0) {
+                        MessageObject removed = messagesDict[0].get(messageId);
+                        messagesDict[0].remove(messageId);
+                        if (removed != null) {
+                            int index = messages.indexOf(removed);
+                            messages.remove(index);
+                            ArrayList<MessageObject> dayArr = messagesByDays.get(removed.dateKey);
+                            dayArr.remove(removed);
+                            if (dayArr.isEmpty()) {
+                                messagesByDays.remove(removed.dateKey);
+                                if (index >= 0 && index < messages.size()) {
+                                    messages.remove(index);
+                                }
+                            }
+                            if (removed.hasValidGroupId()) {
+                                MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(removed.getGroupId());
+                                groupedMessages.messages.remove(removed);
+                                if (newGroups == null) {
+                                    newGroups = new LongSparseArray<>();
+                                }
+                                newGroups.put(groupedMessages.groupId, groupedMessages);
+                            }
+                            if (chatAdapter != null) {
+                                chatAdapter.notifyDataSetChanged();
+                            }
+                        }
+                    }
+                    if (isSecretChat()) {
+                        checkSecretMessageForLocation(obj);
+                    }
+                    if (!inScheduleMode && currentUser != null && (currentUser.bot && obj.isOut() || currentUser.id == currentUserId)) {
+                        obj.setIsRead();
+                    }
+                    MessageAction action = obj.messageOwner.action;
+                    if (obj.type < 0 || messagesDict[0].indexOfKey(messageId) >= 0) {
+                        continue;
+                    }
+                    if (currentChat != null && currentChat.creator && (action.isChatCreate() || action.isChatEditPhoto() && messages.size() < 4)) {
+                        continue;
+                    }
+                    if (a == 0 && obj.messageOwner.id < 0 && obj.type == MessageObject.TYPE_ROUND_VIDEO && !inScheduleMode) {
+                        animatingMessageObjects.add(obj);
+                    }
+
+                    MessageObject.GroupedMessages groupedMessages;
+                    if (obj.hasValidGroupId()) {
+                        groupedMessages = groupedMessagesMap.get(obj.getGroupId());
+                        if (groupedMessages == null) {
+                            groupedMessages = new MessageObject.GroupedMessages();
+                            groupedMessages.groupId = obj.getGroupId();
+                            groupedMessagesMap.put(groupedMessages.groupId, groupedMessages);
+                        }
+                        if (newGroups == null) {
+                            newGroups = new LongSparseArray<>();
+                        }
+                        newGroups.put(groupedMessages.groupId, groupedMessages);
+                        groupedMessages.messages.add(obj);
+                    } else {
+                        groupedMessages = null;
+                    }
+
+                    if (groupedMessages != null) {
+                        int size = groupedMessages.messages.size();
+                        MessageObject messageObject = size > 1 ? groupedMessages.messages.get(groupedMessages.messages.size() - 2) : null;
+                        if (messageObject != null) {
+                            placeToPaste = messages.indexOf(messageObject);
+                        }
+                    }
+
+                    if (placeToPaste == -1) {
+                        if (!obj.scheduled && obj.messageOwner.id < 0 || messages.isEmpty()) {
+                            placeToPaste = 0;
+                        } else {
+                            int size = messages.size();
+                            for (int b = 0; b < size; b++) {
+                                MessageObject lastMessage = messages.get(b);
+                                if (lastMessage.type >= 0 && lastMessage.messageOwner.date > 0) {
+                                    if (!inScheduleMode && lastMessage.messageOwner.id > 0 && obj.messageOwner.id > 0 && lastMessage.messageOwner.id < obj.messageOwner.id || lastMessage.messageOwner.date <= obj.messageOwner.date) {
+                                        MessageObject.GroupedMessages lastGroupedMessages;
+                                        if (lastMessage.getGroupId() != 0) {
+                                            lastGroupedMessages = groupedMessagesMap.get(lastMessage.getGroupId());
+                                            if (lastGroupedMessages != null && lastGroupedMessages.messages.size() == 0) {
+                                                lastGroupedMessages = null;
+                                            }
+                                        } else {
+                                            lastGroupedMessages = null;
+                                        }
+                                        if (lastGroupedMessages == null) {
+                                            placeToPaste = b;
+                                        } else {
+                                            placeToPaste = messages.indexOf(lastGroupedMessages.messages.get(lastGroupedMessages.messages.size() - 1));
+                                        }
+                                        break;
+                                    }
+                                }
+                            }
+                            if (placeToPaste == -1 || placeToPaste > messages.size()) {
+                                placeToPaste = messages.size();
+                            }
+                        }
+                    }
+                    obj.checkLayout();
+                    if (currentChat != null && currentChat.megagroup && (action.isChatAddUser() || action.isChatDeleteUser())) {
+                        reloadMegagroup = true;
+                    }
+                    if (minDate[0] == 0 || obj.messageOwner.date < minDate[0]) {
+                        minDate[0] = obj.messageOwner.date;
+                    }
+
+                    if (obj.isOut() && !obj.messageOwner.from_scheduled) {
+                        removeUnreadPlane(true);
+                        hasFromMe = true;
+                    }
+
+                    if (messageId > 0) {
+                        maxMessageId[0] = Math.min(messageId, maxMessageId[0]);
+                        minMessageId[0] = Math.max(messageId, minMessageId[0]);
+                    }
+                    maxDate[0] = Math.max(maxDate[0], obj.messageOwner.date);
+                    messagesDict[0].put(messageId, obj);
+                    ArrayList<MessageObject> dayArray = messagesByDays.get(obj.dateKey);
+                    if (placeToPaste > messages.size()) {
+                        placeToPaste = messages.size();
+                    }
+                    if (dayArray == null) {
+                        dayArray = new ArrayList<>();
+                        messagesByDays.put(obj.dateKey, dayArray);
+                        Message dateMsg = new Message();
+                        if (inScheduleMode) {
+                            if (obj.messageOwner.date == 0x7ffffffe) {
+                                dateMsg.message = LocaleController.getString("MessageScheduledUntilOnline", R.string.MessageScheduledUntilOnline);
+                            } else {
+                                dateMsg.message = LocaleController.formatString("MessageScheduledOn", R.string.MessageScheduledOn, LocaleController.formatDateChat(obj.messageOwner.date, true));
+                            }
+                        } else {
+                            dateMsg.message = LocaleController.formatDateChat(obj.messageOwner.date);
+                        }
+                        dateMsg.id = 0;
+                        Calendar calendar = Calendar.getInstance();
+                        calendar.setTimeInMillis(((long) obj.messageOwner.date) * 1000);
+                        calendar.set(Calendar.HOUR_OF_DAY, 0);
+                        calendar.set(Calendar.MINUTE, 0);
+                        dateMsg.date = (int) (calendar.getTimeInMillis() / 1000);
+                        MessageObject dateObj = new MessageObject(currentAccount, dateMsg, false);
+                        dateObj.type = 10;
+                        dateObj.contentType = 1;
+                        dateObj.isDateObject = true;
+                        dateObj.stableId = lastStableId++;
+                        messages.add(placeToPaste, dateObj);
+                        if (chatAdapter != null) {
+                            chatAdapter.notifyItemInserted(placeToPaste);
+                        }
+                    }
+                    if (!obj.isOut() || obj.messageOwner.from_scheduled) {
+                        if (paused && placeToPaste == 0) {
+                            if (!scrollToTopUnReadOnResume && unreadMessageObject != null) {
+                                removeMessageObject(unreadMessageObject);
+                                if (placeToPaste > 0) {
+                                    placeToPaste--;
+                                }
+                                unreadMessageObject = null;
+                            }
+                            if (unreadMessageObject == null) {
+                                Message dateMsg = new Message();
+                                dateMsg.message = "";
+                                dateMsg.id = 0;
+                                MessageObject dateObj = new MessageObject(currentAccount, dateMsg, false);
+                                dateObj.type = 6;
+                                dateObj.contentType = 2;
+                                dateObj.stableId = lastStableId++;
+                                messages.add(0, dateObj);
+                                if (chatAdapter != null) {
+                                    chatAdapter.notifyItemInserted(0);
+                                }
+                                unreadMessageObject = dateObj;
+                                scrollToMessage = unreadMessageObject;
+                                scrollToMessagePosition = -10000;
+                                scrollToTopUnReadOnResume = true;
+                            }
+                        }
+                    }
+
+                    dayArray.add(0, obj);
+
+                    if (chatAdapter != null && placeToPaste >= 0 && placeToPaste < messages.size()) {
+                        MessageObject prevMessage = messages.get(placeToPaste);
+                        if (prevMessage.hasValidGroupId() && prevMessage.getGroupId() != obj.getGroupId()) {
+                            MessageObject.GroupedMessages group = groupedMessagesMap.get(prevMessage.getGroupId());
+                            if (group != null && group.messages.size() > 1) {
+                                int size = group.messages.size();
+                                chatAdapter.notifyItemRangeChanged(1, size - 1);
+                            }
+                        }
+                    }
+                    obj.stableId = lastStableId++;
+                    messages.add(placeToPaste, obj);
+                    if (chatAdapter != null) {
+                        chatAdapter.notifyItemChanged(placeToPaste);
+                        chatAdapter.notifyItemInserted(placeToPaste);
+                    }
+                    if (obj.isOut() && waitingForSendingMessageLoad) {
+                        waitingForSendingMessageLoad = false;
+                        chatActivityEnterView.hideTopView(true);
+                        if (changeBoundAnimator != null) {
+                            changeBoundAnimator.start();
+                        }
+                    }
+                    if (!obj.isOut() && obj.messageOwner.mentioned && obj.isContentUnread()) {
+                        newMentionsCount++;
+                    }
+                    newUnreadMessageCount++;
+                    if (obj.type == 10 || obj.type == 11) {
+                        updateChat = true;
+                    }
+                }
+                if (webpagesToReload != null) {
+                    getMessagesController().reloadWebPages(dialog_id, webpagesToReload, inScheduleMode);
+                }
+                if (newGroups != null) {
+                    for (int a = 0; a < newGroups.size(); a++) {
+                        MessageObject.GroupedMessages groupedMessages = newGroups.valueAt(a);
+                        int oldCount = groupedMessages.posArray.size();
+                        groupedMessages.calculate();
+                        int newCount = groupedMessages.posArray.size();
+                        if (newCount - oldCount > 0 && chatAdapter != null) {
+                            int index = messages.indexOf(groupedMessages.messages.get(groupedMessages.messages.size() - 1));
+                            if (index >= 0) {
+                                chatAdapter.notifyItemRangeChanged(index, newCount);
+                            }
+                        }
+                    }
+                }
+
+                if (progressView != null) {
+                    progressView.setVisibility(View.INVISIBLE);
+                }
+                if (chatAdapter == null) {
+                    scrollToTopOnResume = true;
+                }
+
+                if (chatListView != null && chatAdapter != null) {
+                    int lastVisible = chatLayoutManager.findFirstVisibleItemPosition();
+                    if (lastVisible == RecyclerView.NO_POSITION) {
+                        lastVisible = 0;
+                    }
+                    View child = chatLayoutManager.findViewByPosition(lastVisible);
+                    int diff;
+                    if (child != null) {
+                        diff = child.getBottom() - chatListView.getMeasuredHeight();
+                    } else {
+                        diff = 0;
+                    }
+                    if (lastVisible == 0 && diff <= AndroidUtilities.dp(5) || hasFromMe) {
+                        newUnreadMessageCount = 0;
+                        if (!firstLoading && !inScheduleMode) {
+                            if (paused) {
+                                scrollToTopOnResume = true;
+                            } else {
+                                forceScrollToTop = true;
+                                moveScrollToLastMessage();
+                            }
+                        }
+                    } else {
+                        if (newUnreadMessageCount != 0 && pagedownButtonCounter != null) {
+                            pagedownButtonCounter.setVisibility(View.VISIBLE);
+                            if (prevSetUnreadCount != newUnreadMessageCount) {
+                                prevSetUnreadCount = newUnreadMessageCount;
+                                pagedownButtonCounter.setText(String.format("%d", newUnreadMessageCount));
+                            }
+                        }
+                        canShowPagedownButton = true;
+                        updatePagedownButtonVisibility(true);
+                    }
+                    if (newMentionsCount != 0 && mentiondownButtonCounter != null) {
+                        mentiondownButtonCounter.setVisibility(View.VISIBLE);
+                        mentiondownButtonCounter.setText(String.format("%d", newMentionsCount));
+                        showMentionDownButton(true, true);
+                    }
+                } else {
+                    scrollToTopOnResume = true;
+                }
+            }
+            if (inScheduleMode && !arr.isEmpty()) {
+                int mid = arr.get(0).getId();
+                if (mid < 0) {
+                    scrollToMessageId(mid, 0, false, 0, true);
+                }
+            }
+            if (!messages.isEmpty() && botUser != null && botUser.length() == 0) {
+                botUser = null;
+                updateBottomOverlay();
+            }
+            if (updateChat) {
+                updateTitle();
+                checkAndUpdateAvatar();
+            }
+        }
+    }
+    public void onCloseChats(int id, int account, final Object... args) {
+        if (args != null && args.length > 0) {
+            long did = (Long) args[0];
+            if (did == dialog_id) {
+                finishFragment();
+            }
+        } else {
+            if (AndroidUtilities.isTablet() && parentLayout != null && parentLayout.fragmentsStack.size() > 1) {
+                finishFragment();
+            } else {
+                removeSelfFromStack();
+            }
+        }
+    }
+    public void onMessagesRead(int id, int account, final Object... args) {
+        if (inScheduleMode) {
+            return;
+        }
+        SparseLongArray inbox = (SparseLongArray) args[0];
+        SparseLongArray outbox = (SparseLongArray) args[1];
+        boolean updated = false;
+        if (inbox != null) {
+            if (bottomOverlayChatText2 != null
+                    && ChatObject.isChannel(currentChat)
+                    && !currentChat.megagroup
+                    && -currentChat.linked_chat_id != 0) {
+                bottomOverlayChatText2.updateCounter();
+            }
+            for (int b = 0, size = inbox.size(); b < size; b++) {
+                int key = inbox.keyAt(b);
+                long messageId = inbox.get(key);
+                if (key != dialog_id) {
+                    continue;
+                }
+                for (int a = 0, size2 = messages.size(); a < size2; a++) {
+                    MessageObject obj = messages.get(a);
+                    if (!obj.isOut() && obj.getId() > 0 && obj.getId() <= (int) messageId) {
+                        if (!obj.isUnread()) {
+                            break;
+                        }
+                        obj.setIsRead();
+                        updated = true;
+                        newUnreadMessageCount--;
+                    }
+                }
+                removeUnreadPlane(false);
+                break;
+            }
+        }
+        if (updated) {
+            if (newUnreadMessageCount < 0) {
+                newUnreadMessageCount = 0;
+            }
+            if (pagedownButtonCounter != null) {
+                if (prevSetUnreadCount != newUnreadMessageCount) {
+                    prevSetUnreadCount = newUnreadMessageCount;
+                    pagedownButtonCounter.setText(String.format("%d", newUnreadMessageCount));
+                }
+                if (newUnreadMessageCount <= 0) {
+                    if (pagedownButtonCounter.getVisibility() != View.INVISIBLE) {
+                        pagedownButtonCounter.setVisibility(View.INVISIBLE);
+                    }
+                } else {
+                    if (pagedownButtonCounter.getVisibility() != View.VISIBLE) {
+                        pagedownButtonCounter.setVisibility(View.VISIBLE);
+                    }
+                }
+            }
+        }
+        if (outbox != null) {
+            for (int b = 0, size = outbox.size(); b < size; b++) {
+                int key = outbox.keyAt(b);
+                int messageId = (int) outbox.get(key);
+                if (key != dialog_id) {
+                    continue;
+                }
+                for (int a = 0, size2 = messages.size(); a < size2; a++) {
+                    MessageObject obj = messages.get(a);
+                    if (obj.isOut() && obj.getId() > 0 && obj.getId() <= messageId) {
+                        if (!obj.isUnread()) {
+                            break;
+                        }
+                        obj.setIsRead();
+                        updated = true;
+                    }
+                }
+                break;
+            }
+        }
+        if (updated) {
+            updateVisibleRows();
+        }
+    }
+    public void onHistoryCleared(int id, int account, final Object... args) {
+        long did = (Long) args[0];
+        if (did != dialog_id) {
+            return;
+        }
+        int max_id = (Integer) args[1];
+        boolean updated = false;
+
+        for (int b = 0; b < messages.size(); b++) {
+            MessageObject obj = messages.get(b);
+            int mid = obj.getId();
+            if (mid <= 0 || mid > max_id) {
+                continue;
+            }
+            if (currentChat.pinned_msg_id == mid) {
+                pinnedMessageObject = null;
+                currentChat.pinned_msg_id = 0;
+                getMessagesStorage().updateChatPinnedMessage(currentChat.id, 0);
+                updatePinnedMessageView(true);
+            }
+            messages.remove(b);
+            b--;
+            messagesDict[0].remove(mid);
+            ArrayList<MessageObject> dayArr = messagesByDays.get(obj.dateKey);
+            if (dayArr != null) {
+                dayArr.remove(obj);
+                if (dayArr.isEmpty()) {
+                    messagesByDays.remove(obj.dateKey);
+                    if (b >= 0 && b < messages.size()) {
+                        messages.remove(b);
+                        b--;
+                    }
+                }
+            }
+            updated = true;
+        }
+
+        if (messages.isEmpty()) {
+            if (!endReached[0] && !loading) {
+                if (progressView != null) {
+                    progressView.setVisibility(View.INVISIBLE);
+                }
+                if (chatListView != null) {
+                    chatListView.setEmptyView(null);
+                }
+                maxMessageId[0] = maxMessageId[1] = Integer.MAX_VALUE;
+                minMessageId[0] = minMessageId[1] = Integer.MIN_VALUE;
+                maxDate[0] = maxDate[1] = Integer.MIN_VALUE;
+                minDate[0] = minDate[1] = 0;
+                waitingForLoad.add(lastLoadIndex);
+                getMessagesController().loadMessages(dialog_id, mergeDialogId, false, 30, 0, 0, !cacheEndReached[0], minDate[0], classGuid, 0, 0, ChatObject.isChannel(currentChat), inScheduleMode, lastLoadIndex++);
+                loading = true;
+            } else {
+                if (botButtons != null) {
+                    botButtons = null;
+                    if (chatActivityEnterView != null) {
+                        chatActivityEnterView.setButtons(null, false);
+                    }
+                }
+                if (currentUser != null && currentUser.bot && botUser == null) {
+                    botUser = "";
+                    updateBottomOverlay();
+                }
+            }
+        }
+        canShowPagedownButton = false;
+        updatePagedownButtonVisibility(true);
+        showMentionDownButton(false, true);
+        removeUnreadPlane(true);
+        if (updated && chatAdapter != null) {
+            chatAdapter.notifyDataSetChanged();
+        }
+    }
+    public void onMessagesDeleted(int id, int account, final Object... args) {
+        boolean scheduled = (Boolean) args[2];
+        if (scheduled != inScheduleMode) {
+            return;
+        }
+        ArrayList<Integer> markAsDeletedMessages = (ArrayList<Integer>) args[0];
+        ArrayList<Integer> removedIndexes = new ArrayList<>();
+
+        int channelId = (Integer) args[1];
+        int loadIndex = 0;
+        if (ChatObject.isChannel(currentChat)) {
+            if (channelId == 0 && mergeDialogId != 0) {
+                loadIndex = 1;
+            } else if (channelId == currentChat.id) {
+                loadIndex = 0;
+            } else {
+                return;
+            }
+        } else if (channelId != 0) {
+            return;
+        }
+        boolean updated = false;
+        LongSparseArray<MessageObject.GroupedMessages> newGroups = null;
+        LongSparseArray<Integer> newGroupsSizes = null;
+        int size = markAsDeletedMessages.size();
+        boolean updatedSelected = false;
+        boolean updatedSelectedLast = false;
+        boolean updateScheduled = false;
+        for (int a = 0; a < size; a++) {
+            Integer ids = markAsDeletedMessages.get(a);
+            MessageObject obj = messagesDict[loadIndex].get(ids);
+            if (loadIndex == 0 && currentChat.pinned_msg_id == ids) {
+                pinnedMessageObject = null;
+                currentChat.pinned_msg_id = 0;
+                getMessagesStorage().updateChatPinnedMessage(channelId, 0);
+                updatePinnedMessageView(true);
+            }
+            if (obj != null) {
+                obj.deleted = true;
+                if (editingMessageObject == obj) {
+                    hideFieldPanel(true);
+                }
+                int index = messages.indexOf(obj);
+                if (index != -1) {
+                    if (obj.scheduled) {
+                        scheduledMessagesCount--;
+                        updateScheduled = true;
+                    }
+                    removeUnreadPlane(false);
+                    if (selectedMessagesIds[loadIndex].indexOfKey(ids) >= 0) {
+                        updatedSelected = true;
+                        addToSelectedMessages(obj, false, updatedSelectedLast = (a == size - 1));
+                    }
+                    MessageObject removed = messages.remove(index);
+                    if (chatAdapter != null) {
+                        removedIndexes.add(chatAdapter.messagesStartRow + index);
+                    }
+                    if (removed.getGroupId() != 0) {
+                        MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(removed.getGroupId());
+                        if (groupedMessages != null) {
+                            if (newGroups == null) {
+                                newGroups = new LongSparseArray<>();
+                                newGroupsSizes = new LongSparseArray<>();
+                            }
+                            newGroups.put(groupedMessages.groupId, groupedMessages);
+                            if (newGroupsSizes.get(groupedMessages.groupId) == null) {
+                                newGroupsSizes.put(groupedMessages.groupId, groupedMessages.messages.size());
+                            }
+                            groupedMessages.messages.remove(obj);
+                        }
+                    }
+                    messagesDict[loadIndex].remove(ids);
+                    ArrayList<MessageObject> dayArr = messagesByDays.get(obj.dateKey);
+                    if (dayArr != null) {
+                        dayArr.remove(obj);
+                        if (dayArr.isEmpty()) {
+                            messagesByDays.remove(obj.dateKey);
+                            if (index >= 0 && index < messages.size()) {
+                                messages.remove(index);
+                                if (chatAdapter != null) {
+                                    removedIndexes.add(chatAdapter.messagesStartRow + index);
+                                }
+                            }
+                        }
+                    }
+                    updated = true;
+                }
+            }
+        }
+        if (updatedSelected) {
+            if (!updatedSelectedLast) {
+                addToSelectedMessages(null, false, true);
+            }
+            updateActionModeTitle();
+        }
+        if (newGroups != null) {
+            for (int a = 0; a < newGroups.size(); a++) {
+                MessageObject.GroupedMessages groupedMessages = newGroups.valueAt(a);
+                if (chatListItemAniamtor != null) {
+                    if (groupedMessages.messages.size() == 1) {
+                        chatListItemAniamtor.groupWillTransformToSingleMessage(groupedMessages);
+                    } else {
+                        chatListItemAniamtor.groupWillChanged(groupedMessages);
+                    }
+                }
+
+                if (groupedMessages.messages.isEmpty()) {
+                    groupedMessagesMap.remove(groupedMessages.groupId);
+                } else {
+                    groupedMessages.calculate();
+                    MessageObject messageObject = groupedMessages.messages.get(groupedMessages.messages.size() - 1);
+                    int index = messages.indexOf(messageObject);
+                    if (index >= 0) {
+                        if (chatAdapter != null) {
+                            chatAdapter.notifyItemRangeChanged(index + chatAdapter.messagesStartRow, newGroupsSizes.get(groupedMessages.groupId));
+                        }
+                    }
+                }
+            }
+        }
+        if (messages.isEmpty()) {
+            if (!endReached[0] && !loading) {
+                if (progressView != null) {
+                    progressView.setVisibility(View.INVISIBLE);
+                }
+                if (chatListView != null) {
+                    chatListView.setEmptyView(null);
+                }
+                maxMessageId[0] = maxMessageId[1] = Integer.MAX_VALUE;
+                minMessageId[0] = minMessageId[1] = Integer.MIN_VALUE;
+                maxDate[0] = maxDate[1] = Integer.MIN_VALUE;
+                minDate[0] = minDate[1] = 0;
+                waitingForLoad.add(lastLoadIndex);
+                getMessagesController().loadMessages(dialog_id, mergeDialogId, false, 30, 0, 0, !cacheEndReached[0], minDate[0], classGuid, 0, 0, ChatObject.isChannel(currentChat), inScheduleMode, lastLoadIndex++);
+                loading = true;
+            } else {
+                if (botButtons != null) {
+                    botButtons = null;
+                    if (chatActivityEnterView != null) {
+                        chatActivityEnterView.setButtons(null, false);
+                    }
+                }
+                if (currentUser != null && currentUser.bot && botUser == null) {
+                    botUser = "";
+                    updateBottomOverlay();
+                }
+            }
+            canShowPagedownButton = false;
+            updatePagedownButtonVisibility(true);
+            showMentionDownButton(false, true);
+        }
+        if (updated) {
+            if (chatAdapter != null) {
+                for (int a = 0, N = removedIndexes.size(); a < N; a++) {
+                    chatAdapter.notifyItemRemoved(removedIndexes.get(a));
+                }
+            }
+            updateVisibleRows();
+        } else {
+            first_unread_id = 0;
+            last_message_id = 0;
+            createUnreadMessageAfterId = 0;
+            removeMessageObject(unreadMessageObject);
+            unreadMessageObject = null;
+            if (pagedownButtonCounter != null) {
+                pagedownButtonCounter.setVisibility(View.INVISIBLE);
+            }
+        }
+        if (updateScheduled) {
+            updateScheduledInterface(true);
+        }
+    }
+    public void onMessageReceivedByServer(int id, int account, final Object... args) {
+        Boolean scheduled = (Boolean) args[6];
+        if (scheduled != inScheduleMode) {
+            return;
+        }
+        Integer msgId = (Integer) args[0];
+        MessageObject obj = messagesDict[0].get(msgId);
+        if (obj != null) {
+            if (obj.shouldRemoveVideoEditedInfo) {
+                obj.videoEditedInfo = null;
+                obj.shouldRemoveVideoEditedInfo = false;
+            }
+            Integer newMsgId = (Integer) args[1];
+            if (!newMsgId.equals(msgId) && messagesDict[0].indexOfKey(newMsgId) >= 0) {
+                MessageObject removed = messagesDict[0].get(msgId);
+                messagesDict[0].remove(msgId);
+                if (removed != null) {
+                    int index = messages.indexOf(removed);
+                    messages.remove(index);
+                    ArrayList<MessageObject> dayArr = messagesByDays.get(removed.dateKey);
+                    dayArr.remove(obj);
+                    if (dayArr.isEmpty()) {
+                        messagesByDays.remove(obj.dateKey);
+                        if (index >= 0 && index < messages.size()) {
+                            messages.remove(index);
+                        }
+                    }
+                    if (chatAdapter != null) {
+                        chatAdapter.notifyDataSetChanged();
+                    }
+                }
+                return;
+            }
+            Message newMsgObj = (Message) args[2];
+            Long grouped_id;
+            if (args.length >= 4) {
+                grouped_id = (Long) args[4];
+            } else {
+                grouped_id = 0L;
+            }
+            boolean mediaUpdated = false;
+            boolean updatedForward = false;
+            if (newMsgObj != null) {
+                try {
+                    updatedForward = obj.isForwarded() && (obj.messageOwner.reply_markup == null && newMsgObj.reply_markup != null || !obj.messageOwner.message.equals(newMsgObj.message));
+                    mediaUpdated = updatedForward ||
+                            obj.messageOwner.params != null && obj.messageOwner.params.containsKey("query_id") ||
+                            newMsgObj.media != null && obj.messageOwner.media != null && !newMsgObj.media.getClass().equals(obj.messageOwner.media.getClass());
+                } catch (Exception e) {
+                    FileLog.e(e);
+                }
+                if (obj.getGroupId() != 0 && newMsgObj.grouped_id != 0) {
+                    MessageObject.GroupedMessages oldGroup = groupedMessagesMap.get(obj.getGroupId());
+                    if (oldGroup != null) {
+                        groupedMessagesMap.put(newMsgObj.grouped_id, oldGroup);
+                    }
+                    obj.localSentGroupId = obj.messageOwner.grouped_id;
+                    obj.messageOwner.grouped_id = grouped_id;
+                }
+                MessageFwdHeader fwdHeader = obj.messageOwner.fwd_from;
+                obj.messageOwner = newMsgObj;
+                if (fwdHeader != null && newMsgObj.fwd_from != null && !TextUtils.isEmpty(newMsgObj.fwd_from.from_name)) {
+                    obj.messageOwner.fwd_from = fwdHeader;
+                }
+                obj.generateThumbs(true);
+                obj.setType();
+            }
+            if (updatedForward) {
+                obj.measureInlineBotButtons();
+            }
+            messagesDict[0].remove(msgId);
+            messagesDict[0].put(newMsgId, obj);
+            obj.messageOwner.id = newMsgId;
+            obj.messageOwner.send_state = MessageObject.MESSAGE_SEND_STATE_SENT;
+            obj.forceUpdate = mediaUpdated;
+            if (args.length >= 6) {
+                obj.applyMediaExistanceFlags((Integer) args[5]);
+            }
+            ArrayList<MessageObject> messArr = new ArrayList<>();
+            messArr.add(obj);
+            getMediaDataController().loadReplyMessagesForMessages(messArr, dialog_id, inScheduleMode, null);
+            if (chatAdapter != null) {
+                chatAdapter.updateRowWithMessageObject(obj, true);
+            }
+            if (chatLayoutManager != null) {
+                if (mediaUpdated && chatLayoutManager.findFirstVisibleItemPosition() == 0) {
+                    moveScrollToLastMessage();
+                }
+            }
+            getNotificationsController().playOutChatSound();
+        }
+    }
+    public void onMessageReceivedByAck(int id, int account, final Object... args) {
+        Integer msgId = (Integer) args[0];
+        MessageObject obj = messagesDict[0].get(msgId);
+        if (obj != null) {
+            obj.messageOwner.send_state = MessageObject.MESSAGE_SEND_STATE_SENT;
+            if (chatAdapter != null) {
+                chatAdapter.updateRowWithMessageObject(obj, true);
+            }
+        }
+    }
+    public void onMessageSendError(int id, int account, final Object... args) {
+        Integer msgId = (Integer) args[0];
+        MessageObject obj = messagesDict[0].get(msgId);
+        if (obj != null) {
+            obj.messageOwner.send_state = MessageObject.MESSAGE_SEND_STATE_SEND_ERROR;
+            updateVisibleRows();
+        }
+    }
+    public void onChatInfoDidLoad(int id, int account, final Object... args) {
+        Chat chatFull = (Chat) args[0];
+        if (currentChat != null && chatFull.id == currentChat.id) {
+            if (currentChat.isChannel()) {
+                if (currentChat.megagroup) {
+                    int lastDate = 0;
+                    if (chatFull.participants != null) {
+                        for (int a = 0; a < chatFull.participants.participants.size(); a++) {
+                            lastDate = Math.max(chatFull.participants.participants.get(a).date, lastDate);
+                        }
+                    }
+                    if (lastDate == 0 || Math.abs(System.currentTimeMillis() / 1000 - lastDate) > 60 * 60) {
+                        getMessagesController().loadChannelParticipants(currentChat.id);
+                    }
+                }
+                if (chatFull.participants == null) {
+                    chatFull.participants = currentChat.participants;
+                }
+            }
+            if (chatActivityEnterView != null) {
+                chatActivityEnterView.setChatInfo(currentChat);
+            }
+            if (mentionsAdapter != null) {
+                mentionsAdapter.setChatInfo(currentChat);
+            }
+            if (args[3] instanceof MessageObject) {
+                pinnedMessageObject = (MessageObject) args[3];
+                updatePinnedMessageView(false);
+            } else {
+                updatePinnedMessageView(true);
+            }
+            if (avatarContainer != null) {
+                avatarContainer.updateOnlineCount();
+                avatarContainer.updateSubtitle();
+            }
+            if (currentChat.isGroup()) {
+                hasBotsCommands = false;
+                botInfo.clear();
+                botsCount = 0;
+                URLSpanBotCommand.enabled = false;
+                for (int a = 0; a < currentChat.participants.participants.size(); a++) {
+                    Chat.ChatParticipant participant = currentChat.participants.participants.get(a);
+                    User user = getMessagesController().getUser(participant.user_id);
+                    if (user != null && user.bot) {
+                        URLSpanBotCommand.enabled = true;
+                        botsCount++;
+                        hasBotsCommands = true;
+                        getMediaDataController().loadBotInfo(user.id, true, classGuid);
+                    }
+                }
+                if (chatListView != null) {
+                    chatListView.invalidateViews();
+                }
+            } else if (currentChat.isChannel()) {
+                hasBotsCommands = false;
+                botInfo.clear();
+                botsCount = 0;
+                URLSpanBotCommand.enabled = !currentChat.bot_info.isEmpty() && currentChat != null && currentChat.megagroup;
+                botsCount = currentChat.bot_info.size();
+                for (int a = 0; a < currentChat.bot_info.size(); a++) {
+                    BotInfo bot = currentChat.bot_info.get(a);
+                    if (!bot.commands.isEmpty() && (!ChatObject.isChannel(currentChat) || currentChat != null && currentChat.megagroup)) {
+                        hasBotsCommands = true;
+                    }
+                    botInfo.put(bot.user_id, bot);
+                }
+                if (chatListView != null) {
+                    chatListView.invalidateViews();
+                }
+                if (mentionsAdapter != null && (!ChatObject.isChannel(currentChat) || currentChat != null && currentChat.megagroup)) {
+                    mentionsAdapter.setBotInfo(botInfo);
+                }
+                if (bottomOverlayChatText2 != null && ChatObject.isChannel(currentChat) && !currentChat.megagroup && -currentChat.linked_chat_id != 0) {
+                    bottomOverlayChatText2.updateCounter();
+                }
+            }
+            if (chatActivityEnterView != null) {
+                chatActivityEnterView.setBotsCount(botsCount, hasBotsCommands);
+            }
+            if (mentionsAdapter != null) {
+                mentionsAdapter.setBotsCount(botsCount);
+            }
+            if (!inScheduleMode && ChatObject.isChannel(currentChat)
+                    && mergeDialogId == 0 && currentChat.migrated_from_chat_id != 0) {
+                mergeDialogId = -currentChat.migrated_from_chat_id;
+                maxMessageId[1] = currentChat.migrated_from_max_id;
+                if (chatAdapter != null) {
+                    chatAdapter.notifyDataSetChanged();
+                }
+                if (mergeDialogId != 0 && endReached[0]) {
+                    checkScrollForLoad(false);
+                }
+            }
+        }
+    }
+    public void onChatInfoCantLoad(int id, int account, final Object... args) {
+        int chatId = (Integer) args[0];
+        if (currentChat != null && currentChat.id == chatId) {
+            int reason = (Integer) args[1];
+            if (getParentActivity() == null || closeChatDialog != null) {
+                return;
+            }
+            AlertDialog.Builder builder = new AlertDialog.Builder(getParentActivity());
+            builder.setTitle(LocaleController.getString("AppName", R.string.AppName));
+            if (reason == 0) {
+                builder.setMessage(LocaleController.getString("ChannelCantOpenPrivate", R.string.ChannelCantOpenPrivate));
+            } else if (reason == 1) {
+                builder.setMessage(LocaleController.getString("ChannelCantOpenNa", R.string.ChannelCantOpenNa));
+            } else if (reason == 2) {
+                builder.setMessage(LocaleController.getString("ChannelCantOpenBanned", R.string.ChannelCantOpenBanned));
+            }
+            builder.setPositiveButton(LocaleController.getString("OK", R.string.OK), null);
+            showDialog(closeChatDialog = builder.create());
+
+            loading = false;
+            if (progressView != null) {
+                progressView.setVisibility(View.INVISIBLE);
+            }
+            if (chatAdapter != null) {
+                chatAdapter.notifyDataSetChanged();
+            }
+        }
+    }
+    public void onContactsDidLoad(int id, int account, final Object... args) {
+        updateTopPanel(true);
+        if (avatarContainer != null) {
+            avatarContainer.updateSubtitle();
+        }
+    }
+    public void onRemoveAllMessagesFromDialog(int id, int account, final Object... args) {
+        long did = (Long) args[0];
+        if (dialog_id == did) {
+            clearHistory((Boolean) args[1]);
+        }
+    }
+    public void onBlockedUsersDidLoad(int id, int account, final Object... args) {
+        if (currentUser != null) {
+            boolean oldValue = userBlocked;
+            userBlocked = getMessagesController().blockedUsers.indexOfKey(currentUser.id) >= 0;
+            if (oldValue != userBlocked) {
+                updateBottomOverlay();
+            }
+        }
+    }
+    public void onFileNewChunkAvailable(int id, int account, final Object... args) {
+        MessageObject messageObject = (MessageObject) args[0];
+        long finalSize = (Long) args[3];
+        if (finalSize != 0 && dialog_id == messageObject.getDialogId()) {
+            MessageObject currentObject = messagesDict[0].get(messageObject.getId());
+            if (currentObject != null && currentObject.messageOwner.media.document != null) {
+                currentObject.messageOwner.media.document.size = (int) finalSize;
+                updateVisibleRows();
+            }
+        }
+    }
+    public void onDidCreatedNewDeleteTask(int id, int account, final Object... args) {
+        SparseArray<ArrayList<Long>> mids = (SparseArray<ArrayList<Long>>) args[0];
+        boolean changed = false;
+        for (int i = 0; i < mids.size(); i++) {
+            int key = mids.keyAt(i);
+            ArrayList<Long> arr = mids.get(key);
+            for (int a = 0; a < arr.size(); a++) {
+                long mid = arr.get(a);
+                if (a == 0) {
+                    int channelId = (int) (mid >> 32);
+                    if (channelId < 0) {
+                        channelId = 0;
+                    }
+                    if (channelId != (ChatObject.isChannel(currentChat) ? currentChat.id : 0)) {
+                        return;
+                    }
+                }
+                MessageObject messageObject = messagesDict[0].get((int) mid);
+                if (messageObject != null) {
+                    messageObject.messageOwner.destroyTime = key;
+                    changed = true;
+                }
+            }
+        }
+        if (changed) {
+            updateVisibleRows();
+        }
+    }
+    public void onMessagePlayingDidStart(int id, int account, final Object... args) {
+        MessageObject messageObject = (MessageObject) args[0];
+        if (messageObject.eventId != 0) {
+            return;
+        }
+        sendSecretMessageRead(messageObject);
+
+        if ((messageObject.isRoundVideo() || messageObject.isVideo()) && fragmentView != null && fragmentView.getParent() != null) {
+            MediaController.getInstance().setTextureView(createTextureView(true), aspectRatioFrameLayout, videoPlayerContainer, true);
+            updateTextureViewPosition(true);
+        }
+
+        if (chatListView != null) {
+            int count = chatListView.getChildCount();
+            for (int a = 0; a < count; a++) {
+                View view = chatListView.getChildAt(a);
+                if (view instanceof ChatMessageCell) {
+                    ChatMessageCell cell = (ChatMessageCell) view;
+                    MessageObject messageObject1 = cell.getMessageObject();
+                    if (messageObject1 != null) {
+                        boolean isVideo = messageObject1.isVideo();
+                        if (messageObject1.isRoundVideo() || isVideo) {
+                            cell.checkVideoPlayback(!messageObject.equals(messageObject1));
+                            if (!MediaController.getInstance().isPlayingMessage(messageObject1)) {
+                                if (isVideo && !MediaController.getInstance().isGoingToShowMessageObject(messageObject1)) {
+                                    AnimatedFileDrawable animation = cell.getPhotoImage().getAnimation();
+                                    if (animation != null) {
+                                        animation.start();
+                                    }
+                                }
+                                if (messageObject1.audioProgress != 0) {
+                                    messageObject1.resetPlayingProgress();
+                                    cell.invalidate();
+                                }
+                            } else if (isVideo) {
+                                cell.updateButtonState(false, true, false);
+                            }
+                        } else if (messageObject1.isVoice() || messageObject1.isMusic()) {
+                            cell.updateButtonState(false, true, false);
+                        }
+                    }
+                }
+            }
+            count = mentionListView.getChildCount();
+            for (int a = 0; a < count; a++) {
+                View view = mentionListView.getChildAt(a);
+                if (view instanceof ContextLinkCell) {
+                    ContextLinkCell cell = (ContextLinkCell) view;
+                    MessageObject messageObject1 = cell.getMessageObject();
+                    if (messageObject1 != null && (messageObject1.isVoice() || messageObject1.isMusic())) {
+                        cell.updateButtonState(false, true);
+                    }
+                }
+            }
+        }
+    }
+    public void onMessagePlayingGoingToStop(int id, int account, final Object... args) {
+        boolean injecting = (Boolean) args[1];
+        if (injecting) {
+            contentView.removeView(videoPlayerContainer);
+            videoPlayerContainer = null;
+            videoTextureView = null;
+            aspectRatioFrameLayout = null;
+        } else {
+            if (chatListView != null && videoPlayerContainer != null && videoPlayerContainer.getTag() != null) {
+                MessageObject messageObject = (MessageObject) args[0];
                 int count = chatListView.getChildCount();
                 for (int a = 0; a < count; a++) {
                     View view = chatListView.getChildAt(a);
                     if (view instanceof ChatMessageCell) {
                         ChatMessageCell cell = (ChatMessageCell) view;
-                        MessageObject playing = cell.getMessageObject();
-                        if (playing != null && playing.getId() == mid) {
-                            MessageObject player = MediaController.getInstance().getPlayingMessageObject();
-                            if (player != null) {
-                                playing.audioProgress = player.audioProgress;
-                                playing.audioProgressSec = player.audioProgressSec;
-                                playing.audioPlayerDuration = player.audioPlayerDuration;
-                                cell.updatePlayingMessageProgress();
-                                if (drawLaterRoundProgressCell == cell) {
-                                    fragmentView.invalidate();
+                        MessageObject messageObject1 = cell.getMessageObject();
+                        if (messageObject == messageObject1) {
+                            AnimatedFileDrawable animation = cell.getPhotoImage().getAnimation();
+                            if (animation != null) {
+                                Bitmap bitmap = animation.getAnimatedBitmap();
+                                if (bitmap != null) {
+                                    try {
+                                        Bitmap src = videoTextureView.getBitmap(bitmap.getWidth(), bitmap.getHeight());
+                                        Canvas canvas = new Canvas(bitmap);
+                                        canvas.drawBitmap(src, 0, 0, null);
+                                        src.recycle();
+                                    } catch (Throwable e) {
+                                        FileLog.e(e);
+                                    }
                                 }
+                                animation.seekTo(messageObject.audioProgressMs, !getFileLoader().isLoadingVideo(messageObject.getDocument(), true));
                             }
                             break;
                         }
                     }
                 }
             }
-        } else if (id == NotificationCenter.didUpdateReactions) {
-            long did = (Long) args[0];
-            if (did == dialog_id || did == mergeDialogId) {
-                int msgId = (Integer) args[1];
-                MessageObject messageObject = messagesDict[did == dialog_id ? 0 : 1].get(msgId);
-                if (messageObject != null) {
-                    MessageObject.updateReactions(messageObject.messageOwner, (MessageReactions) args[2]);
-                    messageObject.measureInlineBotButtons();
-                    chatAdapter.updateRowWithMessageObject(messageObject, true);
-                }
-            }
-        } else if (id == NotificationCenter.didVerifyMessagesStickers) {
-            ArrayList<Message> messages = (ArrayList<Message>) args[0];
-            for (int a = 0, N = messages.size(); a < N; a++) {
-                Message message = messages.get(a);
-                MessageObject existMessageObject = messagesDict[0].get(message.id);
-                if (existMessageObject != null) {
-                    existMessageObject.messageOwner.stickerVerified = message.stickerVerified;
-                    existMessageObject.setType();
-                    if (chatAdapter != null) {
-                        chatAdapter.updateRowWithMessageObject(existMessageObject, false);
-                    }
-                }
-            }
-        } else if (id == NotificationCenter.updateMessageMedia) {
-            Message message = (Message) args[0];
-            MessageObject existMessageObject = messagesDict[0].get(message.id);
-            if (existMessageObject != null) {
-                existMessageObject.messageOwner.media = message.media;
-                existMessageObject.messageOwner.attachPath = message.attachPath;
-                existMessageObject.generateThumbs(false);
-                if (existMessageObject.getGroupId() != 0 && (existMessageObject.photoThumbs == null || existMessageObject.photoThumbs.isEmpty())) {
-                    MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(existMessageObject.getGroupId());
-                    if (groupedMessages != null) {
-                        int idx = groupedMessages.messages.indexOf(existMessageObject);
-                        if (idx >= 0) {
-                            int updateCount = groupedMessages.messages.size();
-                            MessageObject messageObject = null;
-                            if (idx > 0 && idx < groupedMessages.messages.size() - 1) {
-                                MessageObject.GroupedMessages slicedGroup = new MessageObject.GroupedMessages();
-                                slicedGroup.groupId = Utilities.random.nextLong();
-                                slicedGroup.messages.addAll(groupedMessages.messages.subList(idx + 1, groupedMessages.messages.size()));
-                                for (int b = 0; b < slicedGroup.messages.size(); b++) {
-                                    slicedGroup.messages.get(b).localGroupId = slicedGroup.groupId;
-                                    groupedMessages.messages.remove(idx + 1);
-                                }
-                                groupedMessagesMap.put(slicedGroup.groupId, slicedGroup);
-                                messageObject = slicedGroup.messages.get(slicedGroup.messages.size() - 1);
-                                slicedGroup.calculate();
-                            }
-                            groupedMessages.messages.remove(idx);
-                            if (groupedMessages.messages.isEmpty()) {
-                                groupedMessagesMap.remove(groupedMessages.groupId);
-                            } else {
-                                if (messageObject == null) {
-                                    messageObject = groupedMessages.messages.get(groupedMessages.messages.size() - 1);
-                                }
-                                groupedMessages.calculate();
-                                int index = messages.indexOf(messageObject);
-                                if (index >= 0) {
-                                    if (chatAdapter != null) {
-                                        chatAdapter.notifyItemRangeChanged(index + chatAdapter.messagesStartRow, updateCount);
-                                    }
-                                }
+        }
+    }
+    public void messagePlayingProgressDidChanged(int id, int account, final Object... args) {
+        Integer mid = (Integer) args[0];
+        if (chatListView != null) {
+            int count = chatListView.getChildCount();
+            for (int a = 0; a < count; a++) {
+                View view = chatListView.getChildAt(a);
+                if (view instanceof ChatMessageCell) {
+                    ChatMessageCell cell = (ChatMessageCell) view;
+                    MessageObject playing = cell.getMessageObject();
+                    if (playing != null && playing.getId() == mid) {
+                        MessageObject player = MediaController.getInstance().getPlayingMessageObject();
+                        if (player != null) {
+                            playing.audioProgress = player.audioProgress;
+                            playing.audioProgressSec = player.audioProgressSec;
+                            playing.audioPlayerDuration = player.audioPlayerDuration;
+                            cell.updatePlayingMessageProgress();
+                            if (drawLaterRoundProgressCell == cell) {
+                                fragmentView.invalidate();
                             }
                         }
-                    }
-                }
-                if (message.media.ttl_seconds != 0) {
-                    existMessageObject.setType();
-                    if (chatAdapter != null) {
-                        chatAdapter.updateRowWithMessageObject(existMessageObject, false);
-                    }
-                } else {
-                    updateVisibleRows();
-                }
-            }
-        } else if (id == NotificationCenter.replaceMessagesObjects) {
-            long did = (long) args[0];
-            if (did != dialog_id && did != mergeDialogId) {
-                return;
-            }
-            int loadIndex = did == dialog_id ? 0 : 1;
-            ArrayList<MessageObject> messageObjects = (ArrayList<MessageObject>) args[1];
-            replaceMessageObjects(messageObjects, loadIndex, false);
-        } else if (id == NotificationCenter.notificationsSettingsUpdated) {
-            updateTitleIcons();
-            if (ChatObject.isChannel(currentChat)) {
-                updateBottomOverlay();
-            }
-        } else if (id == NotificationCenter.replyMessagesDidLoad) {
-            long did = (Long) args[0];
-            if (did == dialog_id) {
-                updateVisibleRows();
-            }
-        } else if (id == NotificationCenter.pinnedMessageDidLoad) {
-            MessageObject message = (MessageObject) args[0];
-            if (message.getDialogId() == dialog_id && currentChat.pinned_msg_id == message.getId()) {
-                pinnedMessageObject = message;
-                loadingPinnedMessage = 0;
-                updatePinnedMessageView(true);
-            }
-        } else if (id == NotificationCenter.didReceivedWebpages) {
-            ArrayList<Message> arrayList = (ArrayList<Message>) args[0];
-            boolean updated = false;
-            for (int a = 0; a < arrayList.size(); a++) {
-                Message message = arrayList.get(a);
-                long did = MessageObject.getDialogId(message);
-                if (did != dialog_id && did != mergeDialogId) {
-                    continue;
-                }
-                MessageObject currentMessage = messagesDict[did == dialog_id ? 0 : 1].get(message.id);
-                if (currentMessage != null) {
-                    currentMessage.messageOwner.media = new MessageMedia().setWebPage(true);
-                    currentMessage.messageOwner.media.webpage = message.media.webpage;
-                    currentMessage.generateThumbs(true);
-                    updated = true;
-                }
-            }
-            if (updated) {
-                updateVisibleRows();
-                /*if (chatLayoutManager != null && chatLayoutManager.findFirstVisibleItemPosition() == 0) {
-                    moveScrollToLastMessage();
-                }*/
-            }
-        } else if (id == NotificationCenter.didReceivedWebpagesInUpdates) {
-            if (foundWebPage != null) {
-                LongSparseArray<MessageMedia.WebPage> hashMap = (LongSparseArray<MessageMedia.WebPage>) args[0];
-                for (int a = 0; a < hashMap.size(); a++) {
-                    MessageMedia.WebPage webPage = hashMap.valueAt(a);
-                    if (webPage.id == foundWebPage.id) {
-                        showFieldPanelForWebPage(true, webPage, false);
                         break;
                     }
                 }
             }
-        } else if (id == NotificationCenter.messagesReadContent) {
-            ArrayList<Long> arrayList = (ArrayList<Long>) args[0];
-            boolean updated = false;
-            int currentChannelId = ChatObject.isChannel(currentChat) ? currentChat.id : 0;
-            for (int a = 0; a < arrayList.size(); a++) {
-                long mid = arrayList.get(a);
-                int channelId = (int) (mid >> 32);
-                if (channelId < 0) {
-                    channelId = 0;
-                }
-                if (channelId != currentChannelId) {
-                    continue;
-                }
-                MessageObject currentMessage = messagesDict[0].get((int) mid);
-                if (currentMessage != null) {
-                    currentMessage.setContentIsRead();
-                    updated = true;
-                    if (currentMessage.messageOwner.mentioned) {
-                        newMentionsCount--;
-                        if (newMentionsCount <= 0) {
-                            newMentionsCount = 0;
-                            hasAllMentionsLocal = true;
-                            showMentionDownButton(false, true);
-                        } else {
-                            if (mentiondownButtonCounter != null) {
-                                mentiondownButtonCounter.setText(String.format("%d", newMentionsCount));
-                            }
-                        }
-                    }
-                }
+        }
+    }
+    public void didUpdateReactions(int id, int account, final Object... args) {
+        long did = (Long) args[0];
+        if (did == dialog_id || did == mergeDialogId) {
+            int msgId = (Integer) args[1];
+            MessageObject messageObject = messagesDict[did == dialog_id ? 0 : 1].get(msgId);
+            if (messageObject != null) {
+                MessageObject.updateReactions(messageObject.messageOwner, (MessageReactions) args[2]);
+                messageObject.measureInlineBotButtons();
+                chatAdapter.updateRowWithMessageObject(messageObject, true);
             }
-            if (updated) {
-                updateVisibleRows();
-            }
-        } else if (id == NotificationCenter.botInfoDidLoad) {
-            int guid = (Integer) args[1];
-            if (classGuid == guid) {
-                BotInfo info = (BotInfo) args[0];
-                if (!info.commands.isEmpty() && !ChatObject.isChannel(currentChat)) {
-                    hasBotsCommands = true;
-                }
-                botInfo.put(info.user_id, info);
+        }
+    }
+    public void didVerifyMessagesStickers(int id, int account, final Object... args) {
+        ArrayList<Message> messages = (ArrayList<Message>) args[0];
+        for (int a = 0, N = messages.size(); a < N; a++) {
+            Message message = messages.get(a);
+            MessageObject existMessageObject = messagesDict[0].get(message.id);
+            if (existMessageObject != null) {
+                existMessageObject.messageOwner.stickerVerified = message.stickerVerified;
+                existMessageObject.setType();
                 if (chatAdapter != null) {
-                    int prevRow = chatAdapter.botInfoRow;
-                    chatAdapter.updateRowsInternal();
-                    if (prevRow == -1 && chatAdapter.botInfoRow != -1) {
-                        chatAdapter.notifyItemInserted(chatAdapter.botInfoRow);
-                    } else if (prevRow != -1 && chatAdapter.botInfoRow == -1) {
-                        chatAdapter.notifyItemRemoved(prevRow);
-                    } else if (prevRow != -1 && chatAdapter.botInfoRow != -1) {
-                        chatAdapter.notifyItemChanged(chatAdapter.botInfoRow);
-                    }
-                }
-                if (mentionsAdapter != null && (!ChatObject.isChannel(currentChat) || currentChat != null && currentChat.megagroup)) {
-                    mentionsAdapter.setBotInfo(botInfo);
-                }
-                if (chatActivityEnterView != null) {
-                    chatActivityEnterView.setBotsCount(botsCount, hasBotsCommands);
-                }
-                updateBotButtons();
-            }
-        } else if (id == NotificationCenter.botKeyboardDidLoad) {
-            if (dialog_id == (Long) args[1]) {
-                Message message = (Message) args[0];
-                if (message != null && !userBlocked) {
-                    botButtons = new MessageObject(currentAccount, message, false);
-                    checkBotKeyboard();
-                } else {
-                    botButtons = null;
-                    if (chatActivityEnterView != null) {
-                        if (replyingMessageObject != null && botReplyButtons == replyingMessageObject) {
-                            botReplyButtons = null;
-                            hideFieldPanel(true);
-                        }
-                        chatActivityEnterView.setButtons(botButtons);
-                    }
+                    chatAdapter.updateRowWithMessageObject(existMessageObject, false);
                 }
             }
-        } else if (id == NotificationCenter.chatSearchResultsAvailable) {
-            if (classGuid == (Integer) args[0]) {
-                boolean jumpToMessage = (Boolean) args[6];
-                if (jumpToMessage) {
-                    int messageId = (Integer) args[1];
-                    long did = (Long) args[3];
-                    if (messageId != 0) {
-                        scrollToMessageId(messageId, 0, true, did == dialog_id ? 0 : 1, true);
-                    } else {
-                        updateVisibleRows();
-                    }
-                    updateSearchButtons((Integer) args[2], (Integer) args[4], (Integer) args[5]);
-                    if (searchItem != null) {
-                        searchItem.setShowSearchProgress(false);
-                    }
-                }
-                if (messagesSearchAdapter != null) {
-                    messagesSearchAdapter.notifyDataSetChanged();
-                }
-            }
-        } else if (id == NotificationCenter.chatSearchResultsLoading) {
-            if (classGuid == (Integer) args[0]) {
-                if (searchItem != null) {
-                    searchItem.setShowSearchProgress(true);
-                }
-                if (messagesSearchAdapter != null) {
-                    messagesSearchAdapter.notifyDataSetChanged();
-                }
-            }
-        } else if (id == NotificationCenter.didUpdateMessagesViews) {
-            SparseArray<SparseIntArray> channelViews = (SparseArray<SparseIntArray>) args[0];
-            SparseIntArray array = channelViews.get((int) dialog_id);
-            if (array != null) {
-                boolean updated = false;
-                LongSparseArray<MessageObject.GroupedMessages> newGroups = null;
-                for (int a = 0; a < array.size(); a++) {
-                    int messageId = array.keyAt(a);
-                    MessageObject messageObject = messagesDict[0].get(messageId);
-                    if (messageObject != null) {
-                        int newValue = array.get(messageId);
-                        if (newValue > messageObject.messageOwner.views) {
-                            messageObject.messageOwner.views = newValue;
-                            if (messageObject.hasValidGroupId()) {
-                                MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(messageObject.getGroupId());
-                                if (groupedMessages != null) {
-                                    if (newGroups == null) {
-                                        newGroups = new LongSparseArray<>();
-                                    }
-                                    newGroups.put(groupedMessages.groupId, groupedMessages);
-                                }
+        }
+    }
+    public void updateMessageMedia(int id, int account, final Object... args) {
+        Message message = (Message) args[0];
+        MessageObject existMessageObject = messagesDict[0].get(message.id);
+        if (existMessageObject != null) {
+            existMessageObject.messageOwner.media = message.media;
+            existMessageObject.messageOwner.attachPath = message.attachPath;
+            existMessageObject.generateThumbs(false);
+            if (existMessageObject.getGroupId() != 0 && (existMessageObject.photoThumbs == null || existMessageObject.photoThumbs.isEmpty())) {
+                MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(existMessageObject.getGroupId());
+                if (groupedMessages != null) {
+                    int idx = groupedMessages.messages.indexOf(existMessageObject);
+                    if (idx >= 0) {
+                        int updateCount = groupedMessages.messages.size();
+                        MessageObject messageObject = null;
+                        if (idx > 0 && idx < groupedMessages.messages.size() - 1) {
+                            MessageObject.GroupedMessages slicedGroup = new MessageObject.GroupedMessages();
+                            slicedGroup.groupId = Utilities.random.nextLong();
+                            slicedGroup.messages.addAll(groupedMessages.messages.subList(idx + 1, groupedMessages.messages.size()));
+                            for (int b = 0; b < slicedGroup.messages.size(); b++) {
+                                slicedGroup.messages.get(b).localGroupId = slicedGroup.groupId;
+                                groupedMessages.messages.remove(idx + 1);
                             }
-                            updated = true;
+                            groupedMessagesMap.put(slicedGroup.groupId, slicedGroup);
+                            messageObject = slicedGroup.messages.get(slicedGroup.messages.size() - 1);
+                            slicedGroup.calculate();
                         }
-                    }
-                }
-                if (updated) {
-                    if (newGroups != null) {
-                        for (int b = 0; b < newGroups.size(); b++) {
-                            MessageObject.GroupedMessages groupedMessages = newGroups.valueAt(b);
-                            MessageObject messageObject = groupedMessages.messages.get(groupedMessages.messages.size() - 1);
+                        groupedMessages.messages.remove(idx);
+                        if (groupedMessages.messages.isEmpty()) {
+                            groupedMessagesMap.remove(groupedMessages.groupId);
+                        } else {
+                            if (messageObject == null) {
+                                messageObject = groupedMessages.messages.get(groupedMessages.messages.size() - 1);
+                            }
+                            groupedMessages.calculate();
                             int index = messages.indexOf(messageObject);
                             if (index >= 0) {
                                 if (chatAdapter != null) {
-                                    chatAdapter.notifyItemRangeChanged(index + chatAdapter.messagesStartRow, groupedMessages.messages.size());
+                                    chatAdapter.notifyItemRangeChanged(index + chatAdapter.messagesStartRow, updateCount);
                                 }
                             }
                         }
                     }
-
-                    updateVisibleRows();
                 }
             }
-        } else if (id == NotificationCenter.peerSettingsDidLoad) {
-            long did = (Long) args[0];
-            if (did == dialog_id || currentUser != null && currentUser.id == did) {
-                updateTopPanel(!paused);
-            }
-        } else if (id == NotificationCenter.newDraftReceived) {
-            long did = (Long) args[0];
-            if (did == dialog_id) {
-                applyDraftMaybe(true);
-            }
-        } else if (id == NotificationCenter.userInfoDidLoad) {
-            Integer uid = (Integer) args[0];
-            if (currentUser != null && currentUser.id == uid) {
-                if (headerItem != null) {
-                    headerItem.hideSubItem(call);
+            if (message.media.ttl_seconds != 0) {
+                existMessageObject.setType();
+                if (chatAdapter != null) {
+                    chatAdapter.updateRowWithMessageObject(existMessageObject, false);
                 }
-                if (args[2] instanceof MessageObject) {
-                    pinnedMessageObject = (MessageObject) args[2];
-                    updatePinnedMessageView(false);
-                } else {
-                    updatePinnedMessageView(true);
+            } else {
+                updateVisibleRows();
+            }
+        }
+    }
+    public void replaceMessagesObjects(int id, int account, final Object... args) {
+        long did = (long) args[0];
+        if (did != dialog_id && did != mergeDialogId) {
+            return;
+        }
+        int loadIndex = did == dialog_id ? 0 : 1;
+        ArrayList<MessageObject> messageObjects = (ArrayList<MessageObject>) args[1];
+        replaceMessageObjects(messageObjects, loadIndex, false);
+    }
+    public void notificationsSettingsUpdated(int id, int account, final Object... args) {
+        updateTitleIcons();
+        if (ChatObject.isChannel(currentChat)) {
+            updateBottomOverlay();
+        }
+    }
+    public void replyMessagesDidLoad(int id, int account, final Object... args) {
+        long did = (Long) args[0];
+        if (did == dialog_id) {
+            updateVisibleRows();
+        }
+    }
+    public void pinnedMessageDidLoad(int id, int account, final Object... args) {
+        MessageObject message = (MessageObject) args[0];
+        if (message.getDialogId() == dialog_id && currentChat.pinned_msg_id == message.getId()) {
+            pinnedMessageObject = message;
+            loadingPinnedMessage = 0;
+            updatePinnedMessageView(true);
+        }
+    }
+    public void didReceivedWebpages(int id, int account, final Object... args) {
+        ArrayList<Message> arrayList = (ArrayList<Message>) args[0];
+        boolean updated = false;
+        for (int a = 0; a < arrayList.size(); a++) {
+            Message message = arrayList.get(a);
+            long did = MessageObject.getDialogId(message);
+            if (did != dialog_id && did != mergeDialogId) {
+                continue;
+            }
+            MessageObject currentMessage = messagesDict[did == dialog_id ? 0 : 1].get(message.id);
+            if (currentMessage != null) {
+                currentMessage.messageOwner.media = new MessageMedia().setWebPage(true);
+                currentMessage.messageOwner.media.webpage = message.media.webpage;
+                currentMessage.generateThumbs(true);
+                updated = true;
+            }
+        }
+        if (updated) {
+            updateVisibleRows();
+                /*if (chatLayoutManager != null && chatLayoutManager.findFirstVisibleItemPosition() == 0) {
+                    moveScrollToLastMessage();
+                }*/
+        }
+    }
+    public void didReceivedWebpagesInUpdates(int id, int account, final Object... args) {
+        if (foundWebPage != null) {
+            LongSparseArray<MessageMedia.WebPage> hashMap = (LongSparseArray<MessageMedia.WebPage>) args[0];
+            for (int a = 0; a < hashMap.size(); a++) {
+                MessageMedia.WebPage webPage = hashMap.valueAt(a);
+                if (webPage.id == foundWebPage.id) {
+                    showFieldPanelForWebPage(true, webPage, false);
+                    break;
                 }
             }
-        } else if (id == NotificationCenter.didSetNewWallpapper) {
-            if (fragmentView != null) {
-                contentView.setBackgroundImage(Theme.getCachedWallpaper(), Theme.isWallpaperMotion());
-                progressView2.getBackground().setColorFilter(Theme.colorFilter);
-                if (emptyView != null) {
-                    emptyView.getBackground().setColorFilter(Theme.colorFilter);
-                }
-                if (bigEmptyView != null) {
-                    bigEmptyView.getBackground().setColorFilter(Theme.colorFilter);
-                }
-                chatListView.invalidateViews();
+        }
+    }
+    public void messagesReadContent(int id, int account, final Object... args) {
+        ArrayList<Long> arrayList = (ArrayList<Long>) args[0];
+        boolean updated = false;
+        int currentChannelId = ChatObject.isChannel(currentChat) ? currentChat.id : 0;
+        for (int a = 0; a < arrayList.size(); a++) {
+            long mid = arrayList.get(a);
+            int channelId = (int) (mid >> 32);
+            if (channelId < 0) {
+                channelId = 0;
             }
-        } else if (id == NotificationCenter.didApplyNewTheme) {
-            if (undoView == null || paused) {
-                return;
+            if (channelId != currentChannelId) {
+                continue;
             }
-            Theme.ThemeInfo themeInfo = (Theme.ThemeInfo) args[0];
-            Theme.ThemeAccent themeAccent = (Theme.ThemeAccent) args[1];
-            if (!themeInfo.firstAccentIsDefault || themeAccent == null || themeAccent.id != Theme.DEFALT_THEME_ACCENT_ID) {
-                return;
-            }
-            SharedPreferences preferences = MessagesController.getGlobalMainSettings();
-            if (preferences.getBoolean("themehint", false)) {
-                return;
-            }
-            preferences.edit().putBoolean("themehint", true).commit();
-            boolean deleteTheme = (Boolean) args[2];
-            undoView.showWithAction(0, UndoView.ACTION_THEME_CHANGED, null, () -> {
-                if (themeAccent != null) {
-                    Theme.ThemeAccent prevAccent = themeInfo.getAccent(false);
-                    NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needSetDayNightTheme, themeInfo, false, null, themeAccent.id);
-                    if (deleteTheme) {
-                        Theme.deleteThemeAccent(themeInfo, prevAccent, true);
-                    }
-                } else {
-                    NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needSetDayNightTheme, themeInfo, false, null, -1);
-                }
-            });
-        } else if (id == NotificationCenter.goingToPreviewTheme) {
-            if (chatLayoutManager != null) {
-                scrollToPositionOnRecreate = chatLayoutManager.findFirstVisibleItemPosition();
-                RecyclerListView.Holder holder = (RecyclerListView.Holder) chatListView.findViewHolderForAdapterPosition(scrollToPositionOnRecreate);
-                if (holder != null) {
-                    scrollToOffsetOnRecreate = chatListView.getMeasuredHeight() - holder.itemView.getBottom() - chatListView.getPaddingBottom();
-                } else {
-                    scrollToPositionOnRecreate = -1;
-                }
-            }
-        } else if (id == NotificationCenter.channelRightsUpdated) {
-            Chat chat = (Chat) args[0];
-            if (currentChat != null && chat.id == currentChat.id && chatActivityEnterView != null) {
-                currentChat = chat;
-                chatActivityEnterView.checkChannelRights();
-                checkRaiseSensors();
-                updateSecretStatus();
-            }
-        } else if (id == NotificationCenter.updateMentionsCount) {
-            if (dialog_id == (Long) args[0]) {
-                int count = (int) args[1];
-                if (newMentionsCount > count) {
-                    newMentionsCount = count;
+            MessageObject currentMessage = messagesDict[0].get((int) mid);
+            if (currentMessage != null) {
+                currentMessage.setContentIsRead();
+                updated = true;
+                if (currentMessage.messageOwner.mentioned) {
+                    newMentionsCount--;
                     if (newMentionsCount <= 0) {
                         newMentionsCount = 0;
                         hasAllMentionsLocal = true;
                         showMentionDownButton(false, true);
                     } else {
-                        mentiondownButtonCounter.setText(String.format("%d", newMentionsCount));
+                        if (mentiondownButtonCounter != null) {
+                            mentiondownButtonCounter.setText(String.format("%d", newMentionsCount));
+                        }
                     }
                 }
             }
-        } else if (id == NotificationCenter.audioRecordTooShort) {
-            int guid = (Integer) args[0];
-            if (guid != classGuid) {
-                return;
+        }
+        if (updated) {
+            updateVisibleRows();
+        }
+    }
+    public void botInfoDidLoad(int id, int account, final Object... args) {
+        int guid = (Integer) args[1];
+        if (classGuid == guid) {
+            BotInfo info = (BotInfo) args[0];
+            if (!info.commands.isEmpty() && !ChatObject.isChannel(currentChat)) {
+                hasBotsCommands = true;
             }
-            int time = (Integer) args[2];
-            if (time < 100) {
-                showVoiceHint(false, (Boolean) args[1]);
+            botInfo.put(info.user_id, info);
+            if (chatAdapter != null) {
+                int prevRow = chatAdapter.botInfoRow;
+                chatAdapter.updateRowsInternal();
+                if (prevRow == -1 && chatAdapter.botInfoRow != -1) {
+                    chatAdapter.notifyItemInserted(chatAdapter.botInfoRow);
+                } else if (prevRow != -1 && chatAdapter.botInfoRow == -1) {
+                    chatAdapter.notifyItemRemoved(prevRow);
+                } else if (prevRow != -1 && chatAdapter.botInfoRow != -1) {
+                    chatAdapter.notifyItemChanged(chatAdapter.botInfoRow);
+                }
             }
-        } else if (id == NotificationCenter.videoLoadingStateChanged) {
-            if (chatListView != null) {
-                String fileName = (String) args[0];
-                int count = chatListView.getChildCount();
-                for (int a = 0; a < count; a++) {
-                    View child = chatListView.getChildAt(a);
-                    if (!(child instanceof ChatMessageCell)) {
-                        continue;
+            if (mentionsAdapter != null && (!ChatObject.isChannel(currentChat) || currentChat != null && currentChat.megagroup)) {
+                mentionsAdapter.setBotInfo(botInfo);
+            }
+            if (chatActivityEnterView != null) {
+                chatActivityEnterView.setBotsCount(botsCount, hasBotsCommands);
+            }
+            updateBotButtons();
+        }
+    }
+    public void botKeyboardDidLoad(int id, int account, final Object... args) {
+        if (dialog_id == (Long) args[1]) {
+            Message message = (Message) args[0];
+            if (message != null && !userBlocked) {
+                botButtons = new MessageObject(currentAccount, message, false);
+                checkBotKeyboard();
+            } else {
+                botButtons = null;
+                if (chatActivityEnterView != null) {
+                    if (replyingMessageObject != null && botReplyButtons == replyingMessageObject) {
+                        botReplyButtons = null;
+                        hideFieldPanel(true);
                     }
-                    ChatMessageCell cell = (ChatMessageCell) child;
-                    Document document = cell.getStreamingMedia();
-                    if (document == null) {
-                        continue;
-                    }
-                    if (FileLoader.getAttachFileName(document).equals(fileName)) {
-                        cell.updateButtonState(false, true, false);
+                    chatActivityEnterView.setButtons(botButtons);
+                }
+            }
+        }
+    }
+    public void chatSearchResultsAvailable(int id, int account, final Object... args) {
+        if (classGuid == (Integer) args[0]) {
+            boolean jumpToMessage = (Boolean) args[6];
+            if (jumpToMessage) {
+                int messageId = (Integer) args[1];
+                long did = (Long) args[3];
+                if (messageId != 0) {
+                    scrollToMessageId(messageId, 0, true, did == dialog_id ? 0 : 1, true);
+                } else {
+                    updateVisibleRows();
+                }
+                updateSearchButtons((Integer) args[2], (Integer) args[4], (Integer) args[5]);
+                if (searchItem != null) {
+                    searchItem.setShowSearchProgress(false);
+                }
+            }
+            if (messagesSearchAdapter != null) {
+                messagesSearchAdapter.notifyDataSetChanged();
+            }
+        }
+    }
+    public void chatSearchResultsLoading(int id, int account, final Object... args) {
+        if (classGuid == (Integer) args[0]) {
+            if (searchItem != null) {
+                searchItem.setShowSearchProgress(true);
+            }
+            if (messagesSearchAdapter != null) {
+                messagesSearchAdapter.notifyDataSetChanged();
+            }
+        }
+    }
+    public void didUpdateMessagesViews(int id, int account, final Object... args) {
+        SparseArray<SparseIntArray> channelViews = (SparseArray<SparseIntArray>) args[0];
+        SparseIntArray array = channelViews.get((int) dialog_id);
+        if (array != null) {
+            boolean updated = false;
+            LongSparseArray<MessageObject.GroupedMessages> newGroups = null;
+            for (int a = 0; a < array.size(); a++) {
+                int messageId = array.keyAt(a);
+                MessageObject messageObject = messagesDict[0].get(messageId);
+                if (messageObject != null) {
+                    int newValue = array.get(messageId);
+                    if (newValue > messageObject.messageOwner.views) {
+                        messageObject.messageOwner.views = newValue;
+                        if (messageObject.hasValidGroupId()) {
+                            MessageObject.GroupedMessages groupedMessages = groupedMessagesMap.get(messageObject.getGroupId());
+                            if (groupedMessages != null) {
+                                if (newGroups == null) {
+                                    newGroups = new LongSparseArray<>();
+                                }
+                                newGroups.put(groupedMessages.groupId, groupedMessages);
+                            }
+                        }
+                        updated = true;
                     }
                 }
             }
-        } else if (id == NotificationCenter.scheduledMessagesUpdated) {
-            long did = (Long) args[0];
-            if (dialog_id == did) {
-                scheduledMessagesCount = (Integer) args[1];
-                updateScheduledInterface(openAnimationEnded);
+            if (updated) {
+                if (newGroups != null) {
+                    for (int b = 0; b < newGroups.size(); b++) {
+                        MessageObject.GroupedMessages groupedMessages = newGroups.valueAt(b);
+                        MessageObject messageObject = groupedMessages.messages.get(groupedMessages.messages.size() - 1);
+                        int index = messages.indexOf(messageObject);
+                        if (index >= 0) {
+                            if (chatAdapter != null) {
+                                chatAdapter.notifyItemRangeChanged(index + chatAdapter.messagesStartRow, groupedMessages.messages.size());
+                            }
+                        }
+                    }
+                }
+
+                updateVisibleRows();
             }
-        } else if (id == NotificationCenter.diceStickersDidLoad) {
-            if (chatListView == null) {
-                return;
+        }
+    }
+    public void peerSettingsDidLoad(int id, int account, final Object... args) {
+        long did = (Long) args[0];
+        if (did == dialog_id || currentUser != null && currentUser.id == did) {
+            updateTopPanel(!paused);
+        }
+    }
+    public void newDraftReceived(int id, int account, final Object... args) {
+        long did = (Long) args[0];
+        if (did == dialog_id) {
+            applyDraftMaybe(true);
+        }
+    }
+    public void userInfoDidLoad(int id, int account, final Object... args) {
+        Integer uid = (Integer) args[0];
+        if (currentUser != null && currentUser.id == uid) {
+            if (headerItem != null) {
+                headerItem.hideSubItem(call);
             }
+            if (args[2] instanceof MessageObject) {
+                pinnedMessageObject = (MessageObject) args[2];
+                updatePinnedMessageView(false);
+            } else {
+                updatePinnedMessageView(true);
+            }
+        }
+    }
+    public void didSetNewWallpapper(int id, int account, final Object... args) {
+        if (fragmentView != null) {
+            contentView.setBackgroundImage(Theme.getCachedWallpaper(), Theme.isWallpaperMotion());
+            progressView2.getBackground().setColorFilter(Theme.colorFilter);
+            if (emptyView != null) {
+                emptyView.getBackground().setColorFilter(Theme.colorFilter);
+            }
+            if (bigEmptyView != null) {
+                bigEmptyView.getBackground().setColorFilter(Theme.colorFilter);
+            }
+            chatListView.invalidateViews();
+        }
+    }
+    public void didApplyNewTheme(int id, int account, final Object... args) {
+        if (undoView == null || paused) {
+            return;
+        }
+        Theme.ThemeInfo themeInfo = (Theme.ThemeInfo) args[0];
+        Theme.ThemeAccent themeAccent = (Theme.ThemeAccent) args[1];
+        if (!themeInfo.firstAccentIsDefault || themeAccent == null || themeAccent.id != Theme.DEFALT_THEME_ACCENT_ID) {
+            return;
+        }
+        SharedPreferences preferences = MessagesController.getGlobalMainSettings();
+        if (preferences.getBoolean("themehint", false)) {
+            return;
+        }
+        preferences.edit().putBoolean("themehint", true).commit();
+        boolean deleteTheme = (Boolean) args[2];
+        undoView.showWithAction(0, UndoView.ACTION_THEME_CHANGED, null, () -> {
+            if (themeAccent != null) {
+                Theme.ThemeAccent prevAccent = themeInfo.getAccent(false);
+                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needSetDayNightTheme, themeInfo, false, null, themeAccent.id);
+                if (deleteTheme) {
+                    Theme.deleteThemeAccent(themeInfo, prevAccent, true);
+                }
+            } else {
+                NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needSetDayNightTheme, themeInfo, false, null, -1);
+            }
+        });
+    }
+    public void goingToPreviewTheme(int id, int account, final Object... args) {
+        if (chatLayoutManager != null) {
+            scrollToPositionOnRecreate = chatLayoutManager.findFirstVisibleItemPosition();
+            RecyclerListView.Holder holder = (RecyclerListView.Holder) chatListView.findViewHolderForAdapterPosition(scrollToPositionOnRecreate);
+            if (holder != null) {
+                scrollToOffsetOnRecreate = chatListView.getMeasuredHeight() - holder.itemView.getBottom() - chatListView.getPaddingBottom();
+            } else {
+                scrollToPositionOnRecreate = -1;
+            }
+        }
+    }
+    public void channelRightsUpdated(int id, int account, final Object... args) {
+        Chat chat = (Chat) args[0];
+        if (currentChat != null && chat.id == currentChat.id && chatActivityEnterView != null) {
+            currentChat = chat;
+            chatActivityEnterView.checkChannelRights();
+            checkRaiseSensors();
+            updateSecretStatus();
+        }
+    }
+    public void updateMentionsCount(int id, int account, final Object... args) {
+        if (dialog_id == (Long) args[0]) {
+            int count = (int) args[1];
+            if (newMentionsCount > count) {
+                newMentionsCount = count;
+                if (newMentionsCount <= 0) {
+                    newMentionsCount = 0;
+                    hasAllMentionsLocal = true;
+                    showMentionDownButton(false, true);
+                } else {
+                    mentiondownButtonCounter.setText(String.format("%d", newMentionsCount));
+                }
+            }
+        }
+    }
+    public void audioRecordTooShort(int id, int account, final Object... args) {
+        int guid = (Integer) args[0];
+        if (guid != classGuid) {
+            return;
+        }
+        int time = (Integer) args[2];
+        if (time < 100) {
+            showVoiceHint(false, (Boolean) args[1]);
+        }
+    }
+    public void videoLoadingStateChanged(int id, int account, final Object... args) {
+        if (chatListView != null) {
+            String fileName = (String) args[0];
             int count = chatListView.getChildCount();
             for (int a = 0; a < count; a++) {
                 View child = chatListView.getChildAt(a);
@@ -15214,9 +15342,36 @@ public class ChatActivity extends BaseFragment
                     continue;
                 }
                 ChatMessageCell cell = (ChatMessageCell) child;
-                if (cell.getMessageObject().isDice()) {
-                    cell.setCurrentDiceValue(true);
+                Document document = cell.getStreamingMedia();
+                if (document == null) {
+                    continue;
                 }
+                if (FileLoader.getAttachFileName(document).equals(fileName)) {
+                    cell.updateButtonState(false, true, false);
+                }
+            }
+        }
+    }
+    public void scheduledMessagesUpdated(int id, int account, final Object... args) {
+        long did = (Long) args[0];
+        if (dialog_id == did) {
+            scheduledMessagesCount = (Integer) args[1];
+            updateScheduledInterface(openAnimationEnded);
+        }
+    }
+    public void diceStickersDidLoad(int id, int account, final Object... args) {
+        if (chatListView == null) {
+            return;
+        }
+        int count = chatListView.getChildCount();
+        for (int a = 0; a < count; a++) {
+            View child = chatListView.getChildAt(a);
+            if (!(child instanceof ChatMessageCell)) {
+                continue;
+            }
+            ChatMessageCell cell = (ChatMessageCell) child;
+            if (cell.getMessageObject().isDice()) {
+                cell.setCurrentDiceValue(true);
             }
         }
     }
@@ -15617,7 +15772,7 @@ public class ChatActivity extends BaseFragment
     public class ChatActivityAdapter extends RecyclerAnimationScrollHelper.AnimatableAdapter {
 
         private Context mContext;
-        private boolean isBot;
+        private boolean isBot = true;
         private int rowCount;
         private int botInfoRow = -1;
         private int loadingUpRow;

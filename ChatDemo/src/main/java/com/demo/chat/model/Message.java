@@ -38,51 +38,51 @@ public class Message {
     public static final int MESSAGE_FLAG_EDITED             = 0x00008000;
     public static final int MESSAGE_FLAG_MEGAGROUP          = 0x80000000;
 
-    public int id;
-    public int from_id;
-    public int to_id;
-    public int date;
-    public MessageAction action;
-    public int reply_to_msg_id;
-    public long reply_to_random_id;
-    public String message;
-    public MessageMedia media;
+    public int id = 1;
+    public int from_id = 1;
+    public int to_id = 1;
+    public int date = 1;
+    public MessageAction action= new MessageAction();
+    public int reply_to_msg_id = 1;
+    public long reply_to_random_id = 1;
+    public String message = "message...";
+    public MessageMedia media = new MessageMedia();
     public int flags;
-    public boolean mentioned;
-    public boolean media_unread;
-    public boolean out;
-    public boolean unread;
+    public boolean mentioned = false;
+    public boolean media_unread = false;
+    public boolean out = false;
+    public boolean unread = false;
     public ArrayList<MessageEntity> entities = new ArrayList<>();
-    public String via_bot_name;
-    public ReplyMarkup reply_markup;
-    public int views;
-    public int edit_date;
-    public boolean silent;
-    public boolean post;
-    public boolean from_scheduled;
-    public boolean legacy;
-    public boolean edit_hide;
-    public MessageFwdHeader fwd_from;
-    public int via_bot_id;
-    public String post_author;
-    public long grouped_id;
-    public MessageReactions reactions;
+    public String via_bot_name = "";
+    public ReplyMarkup reply_markup = new ReplyMarkup();
+    public int views = 1;
+    public int edit_date = 1;
+    public boolean silent = false;
+    public boolean post = false;
+    public boolean from_scheduled = false;
+    public boolean legacy = false;
+    public boolean edit_hide = false;
+    public MessageFwdHeader fwd_from = new MessageFwdHeader();
+    public int via_bot_id = 1;
+    public String post_author = "author";
+    public long grouped_id = 1;
+    public MessageReactions reactions = new MessageReactions();
     public int send_state = 0; //custom
     public int fwd_msg_id = 0; //custom
     public String attachPath = ""; //custom
-    public HashMap<String, String> params; //custom
-    public long random_id; //custom
+    public HashMap<String, String> params = new HashMap<>(); //custom
+    public long random_id = 1; //custom
     public int local_id = 0; //custom
-    public long dialog_id; //custom
-    public int ttl; //custom
-    public int destroyTime; //custom
-    public int layer; //custom
-    public int seq_in; //custom
-    public int seq_out; //custom
-    public boolean with_my_score;
-    public Message replyMessage; //custom
-    public int reqId; //custom
-    public int realId; //custom
+    public long dialog_id = 1; //custom
+    public int ttl = 1; //custom
+    public int destroyTime = 1; //custom
+    public int layer = 1; //custom
+    public int seq_in = 1; //custom
+    public int seq_out = 1; //custom
+    public boolean with_my_score = true;
+    public Message replyMessage = null; //custom
+    public int reqId = 1; //custom
+    public int realId = 1; //custom
     public int stickerVerified = 1; //custom
     public void readParams(AbstractSerializedData stream, boolean exception) {
 

@@ -43,9 +43,19 @@ public class LoginActivity extends BaseFragment {
             }
         });
 
+        Button button3 = new Button(context);
+        button3.setText("WallpapersList");
+        button3.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                presentFragment(new WallpapersListActivity(WallpapersListActivity.TYPE_ALL));
+            }
+        });
+
         con.addView(textView);
         con.addView(button);
         con.addView(button2);
+        con.addView(button3);
 
         return con;
     }

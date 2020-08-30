@@ -13,14 +13,14 @@ import java.util.ArrayList;
  * @usage null
  */
 public class MessageAction {
-    public String title;
-    public String address;
-    public String message;
+    public String title = "message action";
+    public String address = "message action";
+    public String message = "message action";
     public ArrayList<Integer> users = new ArrayList<>();
-    public int channel_id;
-    public MessageMedia.Photo photo;
-    public int chat_id;
-    public int user_id;
+    public int channel_id = 1;
+    public MessageMedia.Photo photo = new MessageMedia.Photo();
+    public int chat_id = 1;
+    public int user_id = 1;
     public User.UserProfilePhoto newUserPhoto;
     public int inviter_id;
     public int ttl;
