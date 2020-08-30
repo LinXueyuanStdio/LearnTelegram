@@ -5,6 +5,7 @@
 #include "tgnet/ConnectionsManager.h"
 #include "tgnet/MTProtoScheme.h"
 #include "tgnet/ConnectionSocket.h"
+#include "tgnet/FileLog.h"
 
 JavaVM *java;
 jclass jclass_RequestDelegateInternal;
@@ -422,7 +423,7 @@ static JNINativeMethod ConnectionsManagerMethods[] = {
         {"native_getCurrentTime", "(I)I", (void *) getCurrentTime},
         {"native_isTestBackend", "(I)I", (void *) isTestBackend},
         {"native_getTimeDifference", "(I)I", (void *) getTimeDifference},
-        {"native_sendRequest", "(IJLorg/telegram/tgnet/RequestDelegateInternal;Lorg/telegram/tgnet/QuickAckDelegate;Lorg/telegram/tgnet/WriteToSocketDelegate;IIIZI)V", (void *) sendRequest},
+        {"native_sendRequest", "(IJLcom/demo/chat/tgnet/RequestDelegateInternal;Lcom/demo/chat/tgnet/QuickAckDelegate;Lcom/demo/chat/tgnet/WriteToSocketDelegate;IIIZI)V", (void *) sendRequest},
         {"native_cancelRequest", "(IIZ)V", (void *) cancelRequest},
         {"native_cleanUp", "(IZ)V", (void *) cleanUp},
         {"native_cancelRequestsForGuid", "(II)V", (void *) cancelRequestsForGuid},
@@ -444,7 +445,7 @@ static JNINativeMethod ConnectionsManagerMethods[] = {
         {"native_setPushConnectionEnabled", "(IZ)V", (void *) setPushConnectionEnabled},
         {"native_setJava", "(Z)V", (void *) setJava},
         {"native_applyDnsConfig", "(IJLjava/lang/String;I)V", (void *) applyDnsConfig},
-        {"native_checkProxy", "(ILjava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lorg/telegram/tgnet/RequestTimeDelegate;)J", (void *) checkProxy},
+        {"native_checkProxy", "(ILjava/lang/String;ILjava/lang/String;Ljava/lang/String;Ljava/lang/String;Lcom/demo/chat/tgnet/RequestTimeDelegate;)J", (void *) checkProxy},
         {"native_onHostNameResolved", "(Ljava/lang/String;JLjava/lang/String;)V", (void *) onHostNameResolved}
 };
 
@@ -462,107 +463,134 @@ inline int registerNativeMethods(JNIEnv *env, const char *className, JNINativeMe
 
 extern "C" int registerNativeTgNetFunctions(JavaVM *vm, JNIEnv *env) {
     java = vm;
-    
+    DEBUG_E("java = vm;");
     if (!registerNativeMethods(env, NativeByteBufferClassPathName, NativeByteBufferMethods, sizeof(NativeByteBufferMethods) / sizeof(NativeByteBufferMethods[0]))) {
+        DEBUG_E(NativeByteBufferClassPathName);
         return JNI_FALSE;
     }
-    
+    DEBUG_E("registerNativeMethods NativeByteBufferClassPathName");
+
     if (!registerNativeMethods(env, ConnectionsManagerClassPathName, ConnectionsManagerMethods, sizeof(ConnectionsManagerMethods) / sizeof(ConnectionsManagerMethods[0]))) {
+        DEBUG_E(ConnectionsManagerClassPathName);
         return JNI_FALSE;
     }
-    
-    jclass_RequestDelegateInternal = (jclass) env->NewGlobalRef(env->FindClass("org/telegram/tgnet/RequestDelegateInternal"));
+    DEBUG_E("registerNativeMethods ConnectionsManagerClassPathName");
+
+    jclass_RequestDelegateInternal = (jclass) env->NewGlobalRef(env->FindClass("com/demo/chat/tgnet/RequestDelegateInternal"));
     if (jclass_RequestDelegateInternal == 0) {
+        DEBUG_E("jclass_RequestDelegateInternal");
         return JNI_FALSE;
     }
     jclass_RequestDelegateInternal_run = env->GetMethodID(jclass_RequestDelegateInternal, "run", "(JILjava/lang/String;I)V");
     if (jclass_RequestDelegateInternal_run == 0) {
+        DEBUG_E("jclass_RequestDelegateInternal_run");
         return JNI_FALSE;
     }
 
-    jclass_RequestTimeDelegate = (jclass) env->NewGlobalRef(env->FindClass("org/telegram/tgnet/RequestTimeDelegate"));
+    jclass_RequestTimeDelegate = (jclass) env->NewGlobalRef(env->FindClass("com/demo/chat/tgnet/RequestTimeDelegate"));
     if (jclass_RequestTimeDelegate == 0) {
+        DEBUG_E("jclass_RequestTimeDelegate");
         return JNI_FALSE;
     }
     jclass_RequestTimeDelegate_run = env->GetMethodID(jclass_RequestTimeDelegate, "run", "(J)V");
     if (jclass_RequestTimeDelegate_run == 0) {
+        DEBUG_E("jclass_RequestTimeDelegate_run");
         return JNI_FALSE;
     }
 
-    jclass_QuickAckDelegate = (jclass) env->NewGlobalRef(env->FindClass("org/telegram/tgnet/QuickAckDelegate"));
+    jclass_QuickAckDelegate = (jclass) env->NewGlobalRef(env->FindClass("com/demo/chat/tgnet/QuickAckDelegate"));
     if (jclass_RequestDelegateInternal == 0) {
+        DEBUG_E("jclass_QuickAckDelegate");
         return JNI_FALSE;
     }
     jclass_QuickAckDelegate_run = env->GetMethodID(jclass_QuickAckDelegate, "run", "()V");
     if (jclass_QuickAckDelegate_run == 0) {
+        DEBUG_E("jclass_QuickAckDelegate_run");
         return JNI_FALSE;
     }
 
-    jclass_WriteToSocketDelegate = (jclass) env->NewGlobalRef(env->FindClass("org/telegram/tgnet/WriteToSocketDelegate"));
+    jclass_WriteToSocketDelegate = (jclass) env->NewGlobalRef(env->FindClass("com/demo/chat/tgnet/WriteToSocketDelegate"));
     if (jclass_WriteToSocketDelegate == 0) {
+        DEBUG_E("jclass_WriteToSocketDelegate");
         return JNI_FALSE;
     }
     jclass_WriteToSocketDelegate_run = env->GetMethodID(jclass_WriteToSocketDelegate, "run", "()V");
     if (jclass_WriteToSocketDelegate_run == 0) {
+        DEBUG_E("jclass_WriteToSocketDelegate_run");
         return JNI_FALSE;
     }
     jclass_ConnectionsManager = (jclass) env->NewGlobalRef(env->FindClass("com/demo/chat/controller/ConnectionsManager"));
     if (jclass_ConnectionsManager == 0) {
+        DEBUG_E("jclass_ConnectionsManager");
         return JNI_FALSE;
     }
     jclass_ConnectionsManager_onUnparsedMessageReceived = env->GetStaticMethodID(jclass_ConnectionsManager, "onUnparsedMessageReceived", "(JI)V");
     if (jclass_ConnectionsManager_onUnparsedMessageReceived == 0) {
+        DEBUG_E("jclass_ConnectionsManager_onUnparsedMessageReceived");
         return JNI_FALSE;
     }
     jclass_ConnectionsManager_onUpdate = env->GetStaticMethodID(jclass_ConnectionsManager, "onUpdate", "(I)V");
     if (jclass_ConnectionsManager_onUpdate == 0) {
+        DEBUG_E("jclass_ConnectionsManager_onUpdate");
         return JNI_FALSE;
     }
     jclass_ConnectionsManager_onSessionCreated = env->GetStaticMethodID(jclass_ConnectionsManager, "onSessionCreated", "(I)V");
     if (jclass_ConnectionsManager_onSessionCreated == 0) {
+        DEBUG_E("jclass_ConnectionsManager_onSessionCreated");
         return JNI_FALSE;
     }
     jclass_ConnectionsManager_onLogout = env->GetStaticMethodID(jclass_ConnectionsManager, "onLogout", "(I)V");
     if (jclass_ConnectionsManager_onLogout == 0) {
+        DEBUG_E("jclass_ConnectionsManager_onLogout");
         return JNI_FALSE;
     }
     jclass_ConnectionsManager_onConnectionStateChanged = env->GetStaticMethodID(jclass_ConnectionsManager, "onConnectionStateChanged", "(II)V");
     if (jclass_ConnectionsManager_onConnectionStateChanged == 0) {
+        DEBUG_E("jclass_ConnectionsManager_onConnectionStateChanged");
         return JNI_FALSE;
     }
     jclass_ConnectionsManager_onInternalPushReceived = env->GetStaticMethodID(jclass_ConnectionsManager, "onInternalPushReceived", "(I)V");
     if (jclass_ConnectionsManager_onInternalPushReceived == 0) {
+        DEBUG_E("jclass_ConnectionsManager_onInternalPushReceived");
         return JNI_FALSE;
     }
     jclass_ConnectionsManager_onUpdateConfig = env->GetStaticMethodID(jclass_ConnectionsManager, "onUpdateConfig", "(JI)V");
     if (jclass_ConnectionsManager_onUpdateConfig == 0) {
+        DEBUG_E("jclass_ConnectionsManager_onUpdateConfig");
         return JNI_FALSE;
     }
     jclass_ConnectionsManager_onBytesSent = env->GetStaticMethodID(jclass_ConnectionsManager, "onBytesSent", "(III)V");
     if (jclass_ConnectionsManager_onBytesSent == 0) {
+        DEBUG_E("jclass_ConnectionsManager_onBytesSent");
         return JNI_FALSE;
     }
     jclass_ConnectionsManager_onBytesReceived = env->GetStaticMethodID(jclass_ConnectionsManager, "onBytesReceived", "(III)V");
     if (jclass_ConnectionsManager_onBytesReceived == 0) {
+        DEBUG_E("jclass_ConnectionsManager_onBytesReceived");
         return JNI_FALSE;
     }
     jclass_ConnectionsManager_onRequestNewServerIpAndPort = env->GetStaticMethodID(jclass_ConnectionsManager, "onRequestNewServerIpAndPort", "(II)V");
     if (jclass_ConnectionsManager_onRequestNewServerIpAndPort == 0) {
+        DEBUG_E("jclass_ConnectionsManager_onRequestNewServerIpAndPort");
         return JNI_FALSE;
     }
     jclass_ConnectionsManager_onProxyError = env->GetStaticMethodID(jclass_ConnectionsManager, "onProxyError", "()V");
     if (jclass_ConnectionsManager_onProxyError == 0) {
+        DEBUG_E("jclass_ConnectionsManager_onProxyError");
         return JNI_FALSE;
     }
     jclass_ConnectionsManager_getHostByName = env->GetStaticMethodID(jclass_ConnectionsManager, "getHostByName", "(Ljava/lang/String;J)V");
     if (jclass_ConnectionsManager_getHostByName == 0) {
+        DEBUG_E("jclass_ConnectionsManager_getHostByName");
         return JNI_FALSE;
     }
     jclass_ConnectionsManager_getInitFlags = env->GetStaticMethodID(jclass_ConnectionsManager, "getInitFlags", "()I");
     if (jclass_ConnectionsManager_getInitFlags == 0) {
+        DEBUG_E("jclass_ConnectionsManager_getInitFlags");
         return JNI_FALSE;
     }
 
+    DEBUG_E("!!!SUCCESS!!!");
     return JNI_TRUE;
 }
 

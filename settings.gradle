@@ -1,1 +1,1 @@
-include /*':TMessagesProj', */':Demo',':ChatDemo'
+include /*':TMessagesProj', *//*':Demo',*/':ChatDemo'

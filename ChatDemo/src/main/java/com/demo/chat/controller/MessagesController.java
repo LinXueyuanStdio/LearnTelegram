@@ -691,8 +691,9 @@ public class MessagesController extends BaseController implements NotificationCe
         final ArrayList<Integer> messagesToReload = new ArrayList<>();
         final HashMap<String, ArrayList<MessageObject>> webpagesToReload = new HashMap<>();
 //        InputChannel inputChannel = null;
+        size = 50;
         for (int a = 0; a < size; a++) {
-            Message message = messagesRes.messages.get(a);
+            Message message = new Message();//messagesRes.messages.get(a);
             message.dialog_id = dialogId;
             MessageObject messageObject = new MessageObject(currentAccount, message, usersDict, chatsDict, true);
             messageObject.scheduled = scheduled;

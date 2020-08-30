@@ -7,7 +7,14 @@ import android.text.TextUtils;
 import com.demo.chat.ApplicationLoader;
 import com.demo.chat.messager.AndroidUtilities;
 import com.demo.chat.messager.BuildVars;
+import com.demo.chat.messager.EmuDetector;
+import com.demo.chat.messager.NotificationCenter;
 import com.demo.chat.messager.SharedConfig;
+import com.demo.chat.service.KeepAliveJob;
+import com.demo.chat.tgnet.QuickAckDelegate;
+import com.demo.chat.tgnet.RequestDelegateInternal;
+import com.demo.chat.tgnet.RequestTimeDelegate;
+import com.demo.chat.tgnet.WriteToSocketDelegate;
 
 import java.io.File;
 import java.util.TimeZone;
@@ -118,4 +125,113 @@ public class ConnectionsManager extends BaseController {
     public int getCurrentTime() {
         return (int) (getCurrentTimeMillis() / 1000);
     }
+
+
+    public static void onUnparsedMessageReceived(long address, final int currentAccount) {
+
+    }
+
+    public static void onUpdate(final int currentAccount) {
+    }
+
+    public static void onSessionCreated(final int currentAccount) {
+    }
+
+    public static void onConnectionStateChanged(final int state, final int currentAccount) {
+        AndroidUtilities.runOnUIThread(() -> {
+        });
+    }
+
+    public static void onLogout(final int currentAccount) {
+        AndroidUtilities.runOnUIThread(() -> {
+            AccountInstance accountInstance = AccountInstance.getInstance(currentAccount);
+            if (accountInstance.getUserConfig().getClientUserId() != 0) {
+                accountInstance.getUserConfig().clearConfig();
+                accountInstance.getMessagesController().performLogout(0);
+            }
+        });
+    }
+
+    public static int getInitFlags() {
+        int flags = 0;
+        EmuDetector detector = EmuDetector.with(ApplicationLoader.applicationContext);
+        if (detector.detect()) {
+            flags |= 1024;
+        }
+        try {
+            String installer = ApplicationLoader.applicationContext.getPackageManager().getInstallerPackageName(ApplicationLoader.applicationContext.getPackageName());
+            if ("com.android.vending".equals(installer)) {
+                flags |= 2048;
+            }
+        } catch (Throwable ignore) {
+
+        }
+        return flags;
+    }
+
+    public static void onBytesSent(int amount, int networkType, final int currentAccount) {
+
+    }
+
+    public static void onRequestNewServerIpAndPort(final int second, final int currentAccount) {
+    }
+
+    public static void onProxyError() {
+        AndroidUtilities.runOnUIThread(() -> NotificationCenter.getGlobalInstance().postNotificationName(NotificationCenter.needShowAlert, 3));
+    }
+
+    public static void getHostByName(String hostName, long address) {
+    }
+
+    public static void onBytesReceived(int amount, int networkType, final int currentAccount) {
+    }
+
+    public static void onUpdateConfig(long address, final int currentAccount) {
+    }
+    public static void onInternalPushReceived(final int currentAccount) {
+        KeepAliveJob.startJob();
+    }
+    public static void setProxySettings(boolean enabled, String address, int port, String username, String password, String secret) {
+        if (address == null) {
+            address = "";
+        }
+        if (username == null) {
+            username = "";
+        }
+        if (password == null) {
+            password = "";
+        }
+        if (secret == null) {
+            secret = "";
+        }
+    }
+    public static native void native_switchBackend(int currentAccount);
+    public static native int native_isTestBackend(int currentAccount);
+    public static native void native_pauseNetwork(int currentAccount);
+    public static native void native_setUseIpv6(int currentAccount, boolean value);
+    public static native void native_updateDcSettings(int currentAccount);
+    public static native void native_setNetworkAvailable(int currentAccount, boolean value, int networkType, boolean slow);
+    public static native void native_resumeNetwork(int currentAccount, boolean partial);
+    public static native long native_getCurrentTimeMillis(int currentAccount);
+    public static native int native_getCurrentTime(int currentAccount);
+    public static native int native_getTimeDifference(int currentAccount);
+    public static native void native_sendRequest(int currentAccount, long object, RequestDelegateInternal onComplete, QuickAckDelegate onQuickAck, WriteToSocketDelegate onWriteToSocket, int flags, int datacenterId, int connetionType, boolean immediate, int requestToken);
+    public static native void native_cancelRequest(int currentAccount, int token, boolean notifyServer);
+    public static native void native_cleanUp(int currentAccount, boolean resetKeys);
+    public static native void native_cancelRequestsForGuid(int currentAccount, int guid);
+    public static native void native_bindRequestToGuid(int currentAccount, int requestToken, int guid);
+    public static native void native_applyDatacenterAddress(int currentAccount, int datacenterId, String ipAddress, int port);
+    public static native int native_getConnectionState(int currentAccount);
+    public static native void native_setUserId(int currentAccount, int id);
+    public static native void native_init(int currentAccount, int version, int layer, int apiId, String deviceModel, String systemVersion, String appVersion, String langCode, String systemLangCode, String configPath, String logPath, String regId, String cFingerprint, int timezoneOffset, int userId, boolean enablePushConnection, boolean hasNetwork, int networkType);
+    public static native void native_setProxySettings(int currentAccount, String address, int port, String username, String password, String secret);
+    public static native void native_setLangCode(int currentAccount, String langCode);
+    public static native void native_setRegId(int currentAccount, String regId);
+    public static native void native_setSystemLangCode(int currentAccount, String langCode);
+    public static native void native_seSystemLangCode(int currentAccount, String langCode);
+    public static native void native_setJava(boolean useJavaByteBuffers);
+    public static native void native_setPushConnectionEnabled(int currentAccount, boolean value);
+    public static native void native_applyDnsConfig(int currentAccount, long address, String phone, int date);
+    public static native long native_checkProxy(int currentAccount, String address, int port, String username, String password, String secret, RequestTimeDelegate requestTimeDelegate);
+    public static native void native_onHostNameResolved(String host, long address, String ip);
 }

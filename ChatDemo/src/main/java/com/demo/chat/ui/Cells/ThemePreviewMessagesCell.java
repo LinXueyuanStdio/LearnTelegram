@@ -86,7 +86,7 @@ public class ThemePreviewMessagesCell extends LinearLayout {
                 entityUrl.setTextUrl(true);
                 entityUrl.offset = index1;
                 entityUrl.length = index2 - index1 - 1;
-                entityUrl.url = "https://telegram.org";
+                entityUrl.url = "https://www.baidu.com";
                 message.entities.add(entityUrl);
             }
             message.message = builder.toString();
@@ -112,7 +112,7 @@ public class ThemePreviewMessagesCell extends LinearLayout {
         message.date = date + 60;
         message.dialog_id = 1;
         message.flags = 257 + 8;
-        message.from_id = 0;
+        message.from_id = 1;
         message.id = 1;
         message.reply_to_msg_id = 5;
         message.media = new MessageMedia();

@@ -51,7 +51,7 @@ void JNI_OnUnload(JavaVM *vm, void *reserved) {
 
 }
 
-JNIEXPORT void Java_org_telegram_messager_Utilities_aesIgeEncryption(JNIEnv *env, jclass class, jobject buffer, jbyteArray key, jbyteArray iv, jboolean encrypt, jint offset, jint length) {
+JNIEXPORT void Java_com_demo_chat_messager_Utilities_aesIgeEncryption(JNIEnv *env, jclass class, jobject buffer, jbyteArray key, jbyteArray iv, jboolean encrypt, jint offset, jint length) {
     jbyte *what = (*env)->GetDirectBufferAddress(env, buffer) + offset;
     unsigned char *keyBuff = (unsigned char *)(*env)->GetByteArrayElements(env, key, NULL);
     unsigned char *ivBuff = (unsigned char *)(*env)->GetByteArrayElements(env, iv, NULL);

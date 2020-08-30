@@ -16,89 +16,91 @@ public class MessageEntity {
     public String language;
     public int user_id;//TODO isMentionName
 
-    public void setMentionName(boolean isMentionName) {}
+    private int statusType = 0;
 
-    public void setCode(boolean isCode) {}
+    public void setMentionName(boolean isMentionName) {statusType=1;}
 
-    public void setPre(boolean isPre) {}
+    public void setCode(boolean isCode) {statusType=2;}
 
-    public void setBold(boolean isBold) {}
+    public void setPre(boolean isPre) {statusType=3;}
 
-    public void setItalic(boolean isItalic) {}
+    public void setBold(boolean isBold) {statusType=4;}
 
-    public void setStrike(boolean isStrike) {}
+    public void setItalic(boolean isItalic) {statusType=5;}
 
-    public void setUnderline(boolean isUnderline) {}
+    public void setStrike(boolean isStrike) {statusType=6;}
 
-    public void setTextUrl(boolean isTextUrl) {}
-    public void setBlockquote(boolean isTextUrl) {}
+    public void setUnderline(boolean isUnderline) {statusType=7;}
+
+    public void setTextUrl(boolean isTextUrl) {statusType=8;}
+    public void setBlockquote(boolean isTextUrl) {statusType=11;}
 
     public boolean isMentionName() {
-        return false;
+        return statusType==1;
     }
 
     public boolean isCode() {
-        return false;
+        return statusType==2;
     }
 
     public boolean isPre() {
-        return false;
+        return statusType==3;
     }
 
     public boolean isBold() {
-        return false;
+        return statusType==4;
     }
 
     public boolean isItalic() {
-        return false;
+        return statusType==5;
     }
 
     public boolean isStrike() {
-        return false;
+        return statusType==6;
     }
 
     public boolean isUnderline() {
-        return false;
+        return statusType==7;
     }
 
     public boolean isTextUrl() {
-        return false;
+        return statusType==8;
     }
 
     public boolean isUrl() {
-        return false;
+        return statusType==9;
     }
 
     public boolean isEmail() {
-        return false;
+        return statusType==10;
     }
 
     public boolean isBlockquote() {
-        return false;
+        return statusType==11;
     }
 
     public boolean isMention() {
-        return false;
+        return statusType==12;
     }
 
     public boolean isHashtag() {
-        return false;
+        return statusType==13;
     }
 
     public boolean isBotCommand() {
-        return false;
+        return statusType==14;
     }
 
     public boolean isPhone() {
-        return false;
+        return statusType==15;
     }
 
     public boolean isBankCard() {
-        return false;
+        return statusType==16;
     }
 
     public boolean isCashtag() {
-        return false;
+        return statusType==17;
     }
 
 
