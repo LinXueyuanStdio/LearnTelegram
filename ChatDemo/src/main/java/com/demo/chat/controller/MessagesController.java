@@ -694,6 +694,7 @@ public class MessagesController extends BaseController implements NotificationCe
         size = 50;
         for (int a = 0; a < size; a++) {
             Message message = new Message();//messagesRes.messages.get(a);
+            message.id = a;
             message.dialog_id = dialogId;
             MessageObject messageObject = new MessageObject(currentAccount, message, usersDict, chatsDict, true);
             messageObject.scheduled = scheduled;
@@ -725,39 +726,39 @@ public class MessagesController extends BaseController implements NotificationCe
             putChats(messagesRes.chats, isCache);
             int first_unread_final = 0;
             getNotificationCenter().postNotificationName(NotificationCenter.messagesDidLoad, dialogId, count, objects, isCache, first_unread_final, last_message_id, unread_count, last_date, load_type, isEnd, classGuid, loadIndex, max_id, mentionsCount, scheduled);
-//            if (scheduled) {
-//                first_unread_final = 0;
-//            } else {
-//                first_unread_final = Integer.MAX_VALUE;
-//                if (queryFromServer && load_type == 2) {
-//                    for (int a = 0; a < messagesRes.messages.size(); a++) {
-//                        Message message = messagesRes.messages.get(a);
-//                        if ((!message.out || message.from_scheduled) && message.id > first_unread && message.id < first_unread_final) {
-//                            first_unread_final = message.id;
-//                        }
-//                    }
-//                }
-//                if (first_unread_final == Integer.MAX_VALUE) {
-//                    first_unread_final = first_unread;
-//                }
-//            }
-//            if (scheduled && count == 1) {
-//                getNotificationCenter().postNotificationName(NotificationCenter.scheduledMessagesUpdated, dialogId, objects.size());
-//            }
-//
-//            if ((int) dialogId != 0) {
-//                int finalFirst_unread_final = first_unread_final;
-//                getMediaDataController().loadReplyMessagesForMessages(objects, dialogId, scheduled, () -> getNotificationCenter().postNotificationName(NotificationCenter.messagesDidLoad, dialogId, count, objects, isCache, finalFirst_unread_final, last_message_id, unread_count, last_date, load_type, isEnd, classGuid, loadIndex, max_id, mentionsCount, scheduled));
-//            } else {
-//                getNotificationCenter().postNotificationName(NotificationCenter.messagesDidLoad, dialogId, count, objects, isCache, first_unread_final, last_message_id, unread_count, last_date, load_type, isEnd, classGuid, loadIndex, max_id, mentionsCount, scheduled);
-//            }
-//
+            if (scheduled) {
+                first_unread_final = 0;
+            } else {
+                first_unread_final = Integer.MAX_VALUE;
+                if (queryFromServer && load_type == 2) {
+                    for (int a = 0; a < messagesRes.messages.size(); a++) {
+                        Message message = messagesRes.messages.get(a);
+                        if ((!message.out || message.from_scheduled) && message.id > first_unread && message.id < first_unread_final) {
+                            first_unread_final = message.id;
+                        }
+                    }
+                }
+                if (first_unread_final == Integer.MAX_VALUE) {
+                    first_unread_final = first_unread;
+                }
+            }
+            if (scheduled && count == 1) {
+                getNotificationCenter().postNotificationName(NotificationCenter.scheduledMessagesUpdated, dialogId, objects.size());
+            }
+
+            if ((int) dialogId != 0) {
+                int finalFirst_unread_final = first_unread_final;
+                getMediaDataController().loadReplyMessagesForMessages(objects, dialogId, scheduled, () -> getNotificationCenter().postNotificationName(NotificationCenter.messagesDidLoad, dialogId, count, objects, isCache, finalFirst_unread_final, last_message_id, unread_count, last_date, load_type, isEnd, classGuid, loadIndex, max_id, mentionsCount, scheduled));
+            } else {
+                getNotificationCenter().postNotificationName(NotificationCenter.messagesDidLoad, dialogId, count, objects, isCache, first_unread_final, last_message_id, unread_count, last_date, load_type, isEnd, classGuid, loadIndex, max_id, mentionsCount, scheduled);
+            }
+
 //            if (!messagesToReload.isEmpty()) {
 //                reloadMessages(messagesToReload, dialogId, scheduled);
 //            }
-//            if (!webpagesToReload.isEmpty()) {
-//                reloadWebPages(dialogId, webpagesToReload, scheduled);
-//            }
+            if (!webpagesToReload.isEmpty()) {
+                reloadWebPages(dialogId, webpagesToReload, scheduled);
+            }
         });
     }
 

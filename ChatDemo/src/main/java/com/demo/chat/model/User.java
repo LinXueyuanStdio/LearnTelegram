@@ -12,9 +12,9 @@ import com.demo.chat.model.small.FileLocation;
  */
 public class User extends UserChat {
     public int id = 1;
-    public String first_name = "first";
-    public String last_name = "last";
-    public String username = "username";
+    public String first_name = "罗";
+    public String last_name = "青丝";
+    public String username = "兮尘";
     public long access_hash;
     public String phone = "15768674243";
     public int flags;
@@ -22,7 +22,7 @@ public class User extends UserChat {
     public boolean contact = false;
     public boolean mutual_contact = false;
     public boolean deleted = false;
-    public boolean bot = true;
+    public boolean bot = false;
     public boolean bot_chat_history = false;
     public boolean bot_nochats = false;
     public boolean verified = false;

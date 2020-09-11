@@ -13113,6 +13113,7 @@ public class ChatActivity extends BaseFragment
             for (int a = 0, N = messArr.size(); a < N; a++) {
                 MessageObject obj = messArr.get(N - a - 1);
                 MessageAction action = obj.messageOwner.action;
+                if (action == null) continue;
                 if (a == 0 && action.isChatCreate()) {
                     createdWas = true;
                 } else if (!createdWas) {

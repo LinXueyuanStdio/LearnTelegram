@@ -91,7 +91,6 @@ import com.demo.chat.model.small.Media;
 import com.demo.chat.model.small.MessageMedia;
 import com.demo.chat.model.small.PhotoSize;
 import com.demo.chat.model.small.VideoSize;
-import com.demo.chat.model.small.WebDocument;
 import com.demo.chat.model.small.WebFile;
 import com.demo.chat.model.sticker.MessagesStickerSet;
 import com.demo.chat.model.text.Block;
@@ -127,7 +126,6 @@ import com.demo.chat.ui.Components.URLSpanMono;
 import com.demo.chat.ui.Components.URLSpanNoUnderline;
 import com.demo.chat.ui.Viewer.PhotoViewer;
 import com.demo.chat.ui.Viewer.SecretMediaViewer;
-import com.google.android.gms.auth.api.Auth;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -235,6 +233,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     }
 
+    //region field
     private final static int DOCUMENT_ATTACH_TYPE_NONE = 0;
     private final static int DOCUMENT_ATTACH_TYPE_DOCUMENT = 1;
     private final static int DOCUMENT_ATTACH_TYPE_GIF = 2;
@@ -647,6 +646,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
     };
     private SparseArray<Rect> accessibilityVirtualViewBounds = new SparseArray<>();
     private int currentFocusedVirtualView = -1;
+    //endregion
 
     public ChatMessageCell(Context context) {
         super(context);
@@ -2319,15 +2319,28 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
         }
     }
 
+    /**
+     * 根据消息渲染UI
+     * @param messageObject
+     * @param groupedMessages
+     * @param bottomNear
+     * @param topNear
+     */
     private void setMessageContent(MessageObject messageObject, MessageObject.GroupedMessages groupedMessages, boolean bottomNear, boolean topNear) {
         if (messageObject.checkLayout() || currentPosition != null && lastHeight != AndroidUtilities.displaySize.y) {
             currentMessageObject = null;
         }
         lastHeight = AndroidUtilities.displaySize.y;
-        boolean messageIdChanged = currentMessageObject == null || currentMessageObject.getId() != messageObject.getId();
-        boolean messageChanged = currentMessageObject != messageObject || messageObject.forceUpdate;
-        boolean dataChanged = currentMessageObject != null && currentMessageObject.getId() == messageObject.getId() && lastSendState == MessageObject.MESSAGE_SEND_STATE_EDITING && messageObject.isSent()
-                || currentMessageObject == messageObject && (isUserDataChanged() || photoNotSet);
+        boolean messageIdChanged = currentMessageObject == null
+                || currentMessageObject.getId() != messageObject.getId();
+        boolean messageChanged = currentMessageObject != messageObject
+                || messageObject.forceUpdate;
+        boolean dataChanged = currentMessageObject != null
+                && currentMessageObject.getId() == messageObject.getId()
+                && lastSendState == MessageObject.MESSAGE_SEND_STATE_EDITING
+                && messageObject.isSent()
+                || currentMessageObject == messageObject
+                && (isUserDataChanged() || photoNotSet);
         boolean groupChanged = groupedMessages != currentMessagesGroup;
         if (!messageChanged && messageObject.isDice()) {
             setCurrentDiceValue(false);
@@ -2341,7 +2354,9 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
             }
             groupChanged = newPosition != currentPosition;
         }
-        if (messageChanged || dataChanged || groupChanged || isPhotoDataChanged(messageObject) || pinnedBottom != bottomNear || pinnedTop != topNear) {
+        if (messageChanged || dataChanged || groupChanged || isPhotoDataChanged(messageObject)
+                || pinnedBottom != bottomNear || pinnedTop != topNear) {
+            //region 初始化
             pinnedBottom = bottomNear;
             pinnedTop = topNear;
             currentMessageObject = messageObject;
@@ -2493,6 +2508,7 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                 }
 
             }
+            //endregion
 
             if (messageObject.type == 0) {
                 drawForwardedName = true;
@@ -3127,8 +3143,13 @@ public class ChatMessageCell extends BaseCell implements SeekBar.SeekBarDelegate
                         drawImageButton = false;
                     }
 
-                    if (documentAttachType != DOCUMENT_ATTACH_TYPE_MUSIC && documentAttachType != DOCUMENT_ATTACH_TYPE_AUDIO && documentAttachType != DOCUMENT_ATTACH_TYPE_DOCUMENT) {
-                        if (currentPhotoObject != null || webDocument != null || documentAttachType == DOCUMENT_ATTACH_TYPE_WALLPAPER || documentAttachType == DOCUMENT_ATTACH_TYPE_THEME) {
+                    if (documentAttachType != DOCUMENT_ATTACH_TYPE_MUSIC
+                            && documentAttachType != DOCUMENT_ATTACH_TYPE_AUDIO
+                            && documentAttachType != DOCUMENT_ATTACH_TYPE_DOCUMENT) {
+                        if (currentPhotoObject != null
+                                || webDocument != null
+                                || documentAttachType == DOCUMENT_ATTACH_TYPE_WALLPAPER
+                                || documentAttachType == DOCUMENT_ATTACH_TYPE_THEME) {
                             drawImageButton = photo != null && !smallImage || type != null && (type.equals("photo") || type.equals("document") && documentAttachType != DOCUMENT_ATTACH_TYPE_STICKER || type.equals("gif") || documentAttachType == DOCUMENT_ATTACH_TYPE_VIDEO || documentAttachType == DOCUMENT_ATTACH_TYPE_WALLPAPER);
                             if (linkPreviewHeight != 0) {
                                 linkPreviewHeight += AndroidUtilities.dp(2);

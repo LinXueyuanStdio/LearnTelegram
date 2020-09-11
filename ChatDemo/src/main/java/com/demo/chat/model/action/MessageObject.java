@@ -67,6 +67,9 @@ import com.demo.chat.ui.Components.URLSpanUserMention;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.StringReader;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 import java.net.URLEncoder;
 import java.util.AbstractMap;
 import java.util.ArrayList;
@@ -76,6 +79,15 @@ import java.util.GregorianCalendar;
 import java.util.HashMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import androidx.annotation.IntDef;
+
+import static java.lang.annotation.ElementType.CONSTRUCTOR;
+import static java.lang.annotation.ElementType.FIELD;
+import static java.lang.annotation.ElementType.LOCAL_VARIABLE;
+import static java.lang.annotation.ElementType.METHOD;
+import static java.lang.annotation.ElementType.PARAMETER;
+import static java.lang.annotation.ElementType.TYPE;
 
 /**
  * @author 林学渊
@@ -1403,6 +1415,9 @@ public class MessageObject {
         }
     }
 
+    /**
+     * 计算展示的类型
+     */
     public void setType() {
         int oldType = type;
         type = 1000;
@@ -2764,7 +2779,8 @@ public class MessageObject {
     }
 
     public boolean needDrawAvatar() {
-        return isFromUser() || eventId != 0 || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_chat_id != 0;
+        return isFromUser() || eventId != 0
+                || messageOwner.fwd_from != null && messageOwner.fwd_from.saved_from_chat_id != 0;
     }
 
     private boolean needDrawAvatarInternal() {
@@ -3151,14 +3167,14 @@ public class MessageObject {
     }
 
     public static Document getDocument(Message message) {
-        if (message.media.isWebPage()) {
+        if (message.media != null && message.media.isWebPage()) {
             return message.media.webpage.document;
         }
         return message.media != null ? message.media.document : null;
     }
 
     public static MessageMedia.Photo getPhoto(Message message) {
-        if (message.media.isWebPage()) {
+        if (message.media != null && message.media.isWebPage()) {
             return message.media.webpage.photo;
         }
         return message.media != null ? message.media.photo : null;
@@ -3176,7 +3192,7 @@ public class MessageObject {
     }
 
     public static boolean isLocationMessage(Message message) {
-        return message.media.isGeo() || message.media.isGeoLive() || message.media.isVenue();
+        return message.media != null && (message.media.isGeo() || message.media.isGeoLive() || message.media.isVenue());
     }
 
     public static boolean isMaskMessage(Message message) {
@@ -3184,53 +3200,53 @@ public class MessageObject {
     }
 
     public static boolean isMusicMessage(Message message) {
-        if (message.media.isWebPage()) {
+        if (message.media != null && message.media.isWebPage()) {
             return isMusicDocument(message.media.webpage.document);
         }
         return message.media != null && isMusicDocument(message.media.document);
     }
 
     public static boolean isGifMessage(Message message) {
-        if (message.media.isWebPage()) {
+        if (message.media != null && message.media.isWebPage()) {
             return isGifDocument(message.media.webpage.document);
         }
         return message.media != null && isGifDocument(message.media.document);
     }
 
     public static boolean isRoundVideoMessage(Message message) {
-        if (message.media.isWebPage()) {
+        if (message.media != null && message.media.isWebPage()) {
             return isRoundVideoDocument(message.media.webpage.document);
         }
         return message.media != null && isRoundVideoDocument(message.media.document);
     }
 
     public static boolean isPhoto(Message message) {
-        if (message.media.isWebPage()) {
+        if (message.media != null && message.media.isWebPage()) {
             return message.media.webpage.photo!=null && !(message.media.webpage.document !=null);
         }
-        return message.media.isPhoto();
+        return message.media != null && message.media.isPhoto();
     }
 
     public static boolean isVoiceMessage(Message message) {
-        if (message.media.isWebPage()) {
+        if (message.media != null && message.media.isWebPage()) {
             return isVoiceDocument(message.media.webpage.document);
         }
         return message.media != null && isVoiceDocument(message.media.document);
     }
 
     public static boolean isNewGifMessage(Message message) {
-        if (message.media.isWebPage()) {
+        if (message.media != null && message.media.isWebPage()) {
             return isNewGifDocument(message.media.webpage.document);
         }
         return message.media != null && isNewGifDocument(message.media.document);
     }
 
     public static boolean isLiveLocationMessage(Message message) {
-        return message.media.isGeoLive();
+        return message.media != null && message.media.isGeoLive();
     }
 
     public static boolean isVideoMessage(Message message) {
-        if (message.media.isWebPage()) {
+        if (message.media != null && message.media.isWebPage()) {
             return isVideoDocument(message.media.webpage.document);
         }
         return message.media != null && isVideoDocument(message.media.document);
@@ -3241,7 +3257,7 @@ public class MessageObject {
     }
 
     public static boolean isInvoiceMessage(Message message) {
-        return message.media.isInvoice();
+        return message.media != null && message.media.isInvoice();
     }
 
     public static InputStickerSet getInputStickerSet(Message message) {
