@@ -1049,7 +1049,9 @@ public class MessageObject {
     }
 
     public boolean hasValidReplyMessageObject() {
-        return !(replyMessageObject == null || replyMessageObject.messageOwner == null || replyMessageObject.messageOwner.action.isHistoryClear());
+        return !(replyMessageObject == null
+                || replyMessageObject.messageOwner == null
+                || replyMessageObject.messageOwner.action.isHistoryClear());
     }
 
     public void generatePinMessageText(User fromUser, Chat chat) {

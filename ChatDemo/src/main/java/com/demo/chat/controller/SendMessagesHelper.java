@@ -1139,6 +1139,14 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 //        }
     }
 
+    /**
+     * 发送一组消息
+     * @param messages
+     * @param peer
+     * @param notify
+     * @param scheduleDate
+     * @return
+     */
     public int sendMessage(ArrayList<MessageObject> messages, final long peer, boolean notify, int scheduleDate) {
         if (messages == null || messages.isEmpty()) {
             return 0;
@@ -2188,30 +2196,134 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         return waitingForCallback.containsKey(key);
     }
 
+    //region 发送一个消息
+
+    /**
+     * 发送重试消息
+     * @param retryMessageObject
+     */
     public void sendMessage(MessageObject retryMessageObject) {
-        sendMessage(null, null, null, null, null, null, null, retryMessageObject.getDialogId(), retryMessageObject.messageOwner.attachPath, null, null, true, retryMessageObject, null, retryMessageObject.messageOwner.reply_markup, retryMessageObject.messageOwner.params, !retryMessageObject.messageOwner.silent, retryMessageObject.scheduled ? retryMessageObject.messageOwner.date : 0, 0, null);
+        sendMessage(null, null, null, null, null,
+                null, null, retryMessageObject.getDialogId(),
+                retryMessageObject.messageOwner.attachPath, null, null,
+                true, retryMessageObject, null,
+                retryMessageObject.messageOwner.reply_markup,
+                retryMessageObject.messageOwner.params,
+                !retryMessageObject.messageOwner.silent,
+                retryMessageObject.scheduled ? retryMessageObject.messageOwner.date : 0,
+                0, null);
     }
 
+    /**
+     * 发送 ReplyMarkup
+     * @param user
+     * @param peer
+     * @param reply_to_msg
+     * @param replyMarkup
+     * @param params
+     * @param notify
+     * @param scheduleDate
+     */
     public void sendMessage(User user, long peer, MessageObject reply_to_msg, ReplyMarkup replyMarkup, HashMap<String, String> params, boolean notify, int scheduleDate) {
-        sendMessage(null, null, null, null, null, user, null, peer, null, reply_to_msg, null, true, null, null, replyMarkup, params, notify, scheduleDate, 0, null);
+        sendMessage(null, null, null, null, null,
+                user, null, peer,
+                null, reply_to_msg, null,
+                true, null, null,
+                replyMarkup, params, notify, scheduleDate, 0, null);
     }
 
+    /**
+     * 发送视频
+     * @param document
+     * @param videoEditedInfo
+     * @param path
+     * @param peer
+     * @param reply_to_msg
+     * @param caption
+     * @param entities
+     * @param replyMarkup
+     * @param params
+     * @param notify
+     * @param scheduleDate
+     * @param ttl
+     * @param parentObject
+     */
     public void sendMessage(Document document, VideoEditedInfo videoEditedInfo, String path, long peer, MessageObject reply_to_msg, String caption, ArrayList<MessageEntity> entities, ReplyMarkup replyMarkup, HashMap<String, String> params, boolean notify, int scheduleDate, int ttl, Object parentObject) {
         sendMessage(null, caption, null, null, videoEditedInfo, null, document, peer, path, reply_to_msg, null, true, null, entities, replyMarkup, params, notify, scheduleDate, ttl, parentObject);
     }
 
+    /**
+     * 发送网页
+     * @param message
+     * @param peer
+     * @param reply_to_msg
+     * @param webPage
+     * @param searchLinks
+     * @param entities
+     * @param replyMarkup
+     * @param params
+     * @param notify
+     * @param scheduleDate
+     */
     public void sendMessage(String message, long peer, MessageObject reply_to_msg, MessageMedia.WebPage webPage, boolean searchLinks, ArrayList<MessageEntity> entities, ReplyMarkup replyMarkup, HashMap<String, String> params, boolean notify, int scheduleDate) {
-        sendMessage(message, null, null, null, null, null, null, peer, null, reply_to_msg, webPage, searchLinks, null, entities, replyMarkup, params, notify, scheduleDate, 0, null);
+        sendMessage(message, null, null, null, null,
+                null, null, peer,
+                null, reply_to_msg, webPage, searchLinks,
+                null, entities, replyMarkup, params, notify, scheduleDate,
+                0, null);
     }
 
     public void sendMessage(MessageMedia location, long peer, MessageObject reply_to_msg, ReplyMarkup replyMarkup, HashMap<String, String> params, boolean notify, int scheduleDate) {
         sendMessage(null, null, location, null, null, null, null,  peer, null, reply_to_msg, null, true, null, null, replyMarkup, params, notify, scheduleDate, 0, null);
     }
 
+    /**
+     * 发送图片
+     * @param photo
+     * @param path
+     * @param peer
+     * @param reply_to_msg
+     * @param caption
+     * @param entities
+     * @param replyMarkup
+     * @param params
+     * @param notify
+     * @param scheduleDate
+     * @param ttl
+     * @param parentObject
+     */
     public void sendMessage(MessageMedia.Photo photo, String path, long peer, MessageObject reply_to_msg, String caption, ArrayList<MessageEntity> entities, ReplyMarkup replyMarkup, HashMap<String, String> params, boolean notify, int scheduleDate, int ttl, Object parentObject) {
-        sendMessage(null, caption, null, photo, null, null, null, peer, path, reply_to_msg, null, true, null, entities, replyMarkup, params, notify, scheduleDate, ttl, parentObject);
+        sendMessage(null, caption, null, photo, null,
+                null, null, peer,
+                path, reply_to_msg, null,
+                true, null, entities,
+                replyMarkup, params, notify, scheduleDate,
+                ttl, parentObject);
     }
 
+    /**
+     * 最终耦合的发送消息方法
+     * @param message
+     * @param caption
+     * @param location
+     * @param photo
+     * @param videoEditedInfo
+     * @param user
+     * @param document
+     * @param peer
+     * @param path
+     * @param reply_to_msg
+     * @param webPage
+     * @param searchLinks
+     * @param retryMessageObject
+     * @param entities
+     * @param replyMarkup
+     * @param params
+     * @param notify
+     * @param scheduleDate
+     * @param ttl
+     * @param parentObject
+     */
     private void sendMessage(String message, String caption, MessageMedia location,
             MessageMedia.Photo photo, VideoEditedInfo videoEditedInfo,
             User user, Document document, long peer,
@@ -2238,6 +2350,19 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
         Message newMsg = new Message();
         MessageObject newMsgObj = null;
         DelayedMessage delayedMessage = null;
+        /**
+         * 0 纯文本 message String
+         * 1 媒体 Media
+         * 2 图片 Photo
+         * 3 文档 Document 主要是视频
+         * 4 转发
+         * 5
+         * 6 用户 User
+         * 7 表情包
+         * 8 Document 未知？
+         * 9 query_id
+         * 11 骰子 Dice emoji
+         */
         int type = -1;
         int lower_id = (int) peer;
         int high_id = (int) (peer >> 32);
@@ -2262,12 +2387,15 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     } else if (retryMessageObject.type == 0 || retryMessageObject.isAnimatedEmoji()) {
                         message = newMsg.message;
                         type = 0;
+                        //纯文本
                     } else if (retryMessageObject.type == 4) {
                         location = newMsg.media;
                         type = 1;
+                        //媒体
                     } else if (retryMessageObject.type == 1) {
                         photo = (MessageMedia.Photo) newMsg.media.photo;
                         type = 2;
+                        //图片
                     } else if (retryMessageObject.type == 3 || retryMessageObject.type == 5 || retryMessageObject.videoEditedInfo != null) {
                         type = 3;
                         document = (Document) newMsg.media.document;
@@ -2294,8 +2422,15 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                 }
             } else {
                 if (message != null) {
+                    //有message的
+                    //0
+                    //9
+                    //11
                     newMsg = new Message();
-                    if (webPage == null && (entities == null || entities.isEmpty()) && getMessagesController().diceEmojies.contains(message)  && scheduleDate == 0) {
+                    if (webPage == null &&
+                            (entities == null || entities.isEmpty())
+                            && getMessagesController().diceEmojies.contains(message)
+                            && scheduleDate == 0) {
                         MessageMedia mediaDice = new MessageMedia();
 //                        mediaDice.emoticon = message;
 //                        mediaDice.value = -1;
@@ -2317,6 +2452,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         newMsg.message = message;
                     }
                 } else if (location != null) {
+                    //有media location的
+                    //1
+                    //9
                     newMsg = new Message();
                     newMsg.media = location;
                     if (params != null && params.containsKey("query_id")) {
@@ -2325,6 +2463,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         type = 1;
                     }
                 } else if (photo != null) {
+                    //有 photo 的
+                    //2
+                    //9
                     newMsg = new Message();
                     newMsg.media = new MessageMedia().setPhoto(true);
                     newMsg.media.flags |= 3;
@@ -2348,6 +2489,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         newMsg.attachPath = FileLoader.getPathToAttach(location1, true).toString();
                     }
                 } else if (user != null) {
+                    //有 user 的
+                    //6
+                    //9
                     newMsg = new Message();
                     newMsg.media = new MessageMedia().setContact(true);
                     newMsg.media.phone_number = user.phone;
@@ -2367,6 +2511,11 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                         type = 6;
                     }
                 } else if (document != null) {
+                    //有 document 的
+                    //3
+                    //7
+                    //8
+                    //9
                     newMsg = new Message();
                     if (lower_id < 0) {
                         chat = getMessagesController().getChat(-lower_id);
@@ -2389,7 +2538,9 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
                     newMsg.media.document = document;
                     if (params != null && params.containsKey("query_id")) {
                         type = 9;
-                    } else if (MessageObject.isVideoDocument(document) || MessageObject.isRoundVideoDocument(document) || videoEditedInfo != null) {
+                    } else if (MessageObject.isVideoDocument(document)
+                            || MessageObject.isRoundVideoDocument(document)
+                            || videoEditedInfo != null) {
                         type = 3;
                     } else if (MessageObject.isVoiceDocument(document)) {
                         type = 8;
@@ -2491,6 +2642,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             }
 
             newMsg.send_state = MessageObject.MESSAGE_SEND_STATE_SENDING;
+            //组装成为 MessageObject
             newMsgObj = new MessageObject(currentAccount, newMsg, reply_to_msg, true);
             newMsgObj.scheduled = scheduleDate != 0;
             if (!newMsgObj.isForwarded() && (newMsgObj.type == 3 || videoEditedInfo != null || newMsgObj.type == 2) && !TextUtils.isEmpty(newMsg.attachPath)) {
@@ -3269,6 +3421,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
             processSentMessage(newMsg.id);
         }
     }
+    //endregion
 
     private void performSendDelayedMessage(final DelayedMessage message) {
         performSendDelayedMessage(message, -1);
@@ -4191,7 +4344,7 @@ public class SendMessagesHelper extends BaseController implements NotificationCe
 //                            getLocationController().addSharingLocation(newMsgObj.dialog_id, newMsgObj.id, newMsgObj.media.period, newMsgObj);
 //                        }
 //
-//                        if (!isSentError) {
+//                        if (!isSentError) {//TODO 发送消息成功的回调
 ////                            getStatsController().incrementSentItemsCount(ApplicationLoader.getCurrentNetworkType(), StatsController.TYPE_MESSAGES, 1);
 //                            newMsgObj.send_state = MessageObject.MESSAGE_SEND_STATE_SENT;
 //                            if (scheduled && !currentSchedule) {
