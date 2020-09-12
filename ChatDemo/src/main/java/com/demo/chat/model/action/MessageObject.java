@@ -124,6 +124,19 @@ public class MessageObject {
     public CharSequence linkDescription;
     public CharSequence caption;
     public MessageObject replyMessageObject;
+    /**
+     * 图片 TYPE_PHOTO = 1;<br>
+     *
+     * 视频 TYPE_VIDEO = 3;<br>
+     *
+     * 圆形视频 TYPE_ROUND_VIDEO = 5;<br>
+     *
+     * 表情包 TYPE_STICKER = 13;<br>
+     *
+     * 表情包 TYPE_ANIMATED_STICKER = 15;<br>
+     *
+     * 投票 TYPE_POLL = 17;<br>
+     */
     public int type = 1000;
     private int isRoundVideoCached;
     public long eventId;
