@@ -14507,6 +14507,13 @@ public class ChatActivity extends BaseFragment
             updateScheduledInterface(true);
         }
     }
+
+    /**
+     * 收到消息
+     * @param id
+     * @param account
+     * @param args
+     */
     public void onMessageReceivedByServer(int id, int account, final Object... args) {
         Boolean scheduled = (Boolean) args[6];
         if (scheduled != inScheduleMode) {
@@ -14599,6 +14606,13 @@ public class ChatActivity extends BaseFragment
             getNotificationsController().playOutChatSound();
         }
     }
+
+    /**
+     * 收到消息
+     * @param id
+     * @param account
+     * @param args
+     */
     public void onMessageReceivedByAck(int id, int account, final Object... args) {
         Integer msgId = (Integer) args[0];
         MessageObject obj = messagesDict[0].get(msgId);
@@ -16625,6 +16639,10 @@ public class ChatActivity extends BaseFragment
             }
         }
 
+        /**
+         * 按 index 更新已有的行
+         * @param index
+         */
         public void updateRowAtPosition(int index) {
             if (chatLayoutManager == null) {
                 return;
@@ -16651,6 +16669,12 @@ public class ChatActivity extends BaseFragment
             }
         }
 
+        /**
+         * 按 MessageObject 更新已有的行
+         * @param messageObject
+         * @param allowInPlace
+         * @return MessageObject 对应的 ChatMessageCell，可为 null
+         */
         public View updateRowWithMessageObject(MessageObject messageObject, boolean allowInPlace) {
             if (allowInPlace) {
                 int count = chatListView.getChildCount();
