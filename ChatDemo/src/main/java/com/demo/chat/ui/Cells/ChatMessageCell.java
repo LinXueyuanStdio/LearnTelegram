@@ -2018,73 +2018,6 @@ public class ChatMessageCell extends BaseCell implements
         return StaticLayoutEx.createStaticLayout(stringBuilder, paint, maxWidth, Layout.Alignment.ALIGN_NORMAL, 1.0f, AndroidUtilities.dp(1), false, TextUtils.TruncateAt.END, maxWidth, maxLines, true);
     }
 
-    private void didClickedImage() {
-        if (currentMessageObject.type == MessageObject.TYPE_PHOTO || currentMessageObject.isAnyKindOfSticker()) {
-            if (buttonState == -1) {
-                delegate.didPressImage(this, lastTouchX, lastTouchY);
-            } else if (buttonState == 0) {
-                didPressButton(true, false);
-            }
-        } else if (currentMessageObject.type == 12) {
-            User user = MessagesController.getInstance(currentAccount).getUser(currentMessageObject.messageOwner.media.user_id);
-            delegate.didPressUserAvatar(this, user, lastTouchX, lastTouchY);
-        } else if (currentMessageObject.type == MessageObject.TYPE_ROUND_VIDEO) {
-            if (buttonState != -1) {
-                didPressButton(true, false);
-            } else {
-                if (!MediaController.getInstance().isPlayingMessage(currentMessageObject) || MediaController.getInstance().isMessagePaused()) {
-                    delegate.needPlayMessage(currentMessageObject);
-                } else {
-                    MediaController.getInstance().pauseMessage(currentMessageObject);
-                }
-            }
-        } else if (currentMessageObject.type == 8) {
-            if (buttonState == -1 || buttonState == 1 && canStreamVideo && autoPlayingMedia) {
-                //if (SharedConfig.autoplayGifs) {
-                delegate.didPressImage(this, lastTouchX, lastTouchY);
-                /*} else {
-                    buttonState = 2;
-                    currentMessageObject.gifState = 1;
-                    photoImage.setAllowStartAnimation(false);
-                    photoImage.stopAnimation();
-                    radialProgress.setIcon(getIconForCurrentState(), false, true);
-                    invalidate();
-                }*/
-            } else if (buttonState == 2 || buttonState == 0) {
-                didPressButton(true, false);
-            }
-        } else if (documentAttachType == DOCUMENT_ATTACH_TYPE_VIDEO) {
-            if (buttonState == -1 || drawVideoImageButton && (autoPlayingMedia || SharedConfig.streamMedia && canStreamVideo)) {
-                delegate.didPressImage(this, lastTouchX, lastTouchY);
-            } else if (drawVideoImageButton) {
-                didPressButton(true, true);
-            } else if (buttonState == 0 || buttonState == 3) {
-                didPressButton(true, false);
-            }
-        } else if (currentMessageObject.type == 4) {
-            delegate.didPressImage(this, lastTouchX, lastTouchY);
-        } else if (documentAttachType == DOCUMENT_ATTACH_TYPE_DOCUMENT) {
-            if (buttonState == -1) {
-                delegate.didPressImage(this, lastTouchX, lastTouchY);
-            }
-        } else if (documentAttachType == DOCUMENT_ATTACH_TYPE_GIF) {
-            if (buttonState == -1) {
-                MessageMedia.WebPage webPage = currentMessageObject.messageOwner.media.webpage;
-                if (webPage != null) {
-                    if (webPage.embed_url != null && webPage.embed_url.length() != 0) {
-                        delegate.needOpenWebView(webPage.embed_url, webPage.site_name, webPage.description, webPage.url, webPage.embed_width, webPage.embed_height);
-                    } else {
-                        Browser.openUrl(getContext(), webPage.url);
-                    }
-                }
-            }
-        } else if (hasInvoicePreview) {
-            if (buttonState == -1) {
-                delegate.didPressImage(this, lastTouchX, lastTouchY);
-            }
-        }
-    }
-
     private void updateSecretTimeText(MessageObject messageObject) {
         if (messageObject == null || !messageObject.needDrawBluredPreview()) {
             return;
@@ -8666,6 +8599,73 @@ public class ChatMessageCell extends BaseCell implements
                     radialProgress.setIcon(getIconForCurrentState(), false, animated);
                     invalidate();
                 }
+            }
+        }
+    }
+
+    private void didClickedImage() {
+        if (currentMessageObject.type == MessageObject.TYPE_PHOTO || currentMessageObject.isAnyKindOfSticker()) {
+            if (buttonState == -1) {
+                delegate.didPressImage(this, lastTouchX, lastTouchY);
+            } else if (buttonState == 0) {
+                didPressButton(true, false);
+            }
+        } else if (currentMessageObject.type == 12) {
+            User user = MessagesController.getInstance(currentAccount).getUser(currentMessageObject.messageOwner.media.user_id);
+            delegate.didPressUserAvatar(this, user, lastTouchX, lastTouchY);
+        } else if (currentMessageObject.type == MessageObject.TYPE_ROUND_VIDEO) {
+            if (buttonState != -1) {
+                didPressButton(true, false);
+            } else {
+                if (!MediaController.getInstance().isPlayingMessage(currentMessageObject) || MediaController.getInstance().isMessagePaused()) {
+                    delegate.needPlayMessage(currentMessageObject);
+                } else {
+                    MediaController.getInstance().pauseMessage(currentMessageObject);
+                }
+            }
+        } else if (currentMessageObject.type == 8) {
+            if (buttonState == -1 || buttonState == 1 && canStreamVideo && autoPlayingMedia) {
+                //if (SharedConfig.autoplayGifs) {
+                delegate.didPressImage(this, lastTouchX, lastTouchY);
+                /*} else {
+                    buttonState = 2;
+                    currentMessageObject.gifState = 1;
+                    photoImage.setAllowStartAnimation(false);
+                    photoImage.stopAnimation();
+                    radialProgress.setIcon(getIconForCurrentState(), false, true);
+                    invalidate();
+                }*/
+            } else if (buttonState == 2 || buttonState == 0) {
+                didPressButton(true, false);
+            }
+        } else if (documentAttachType == DOCUMENT_ATTACH_TYPE_VIDEO) {
+            if (buttonState == -1 || drawVideoImageButton && (autoPlayingMedia || SharedConfig.streamMedia && canStreamVideo)) {
+                delegate.didPressImage(this, lastTouchX, lastTouchY);
+            } else if (drawVideoImageButton) {
+                didPressButton(true, true);
+            } else if (buttonState == 0 || buttonState == 3) {
+                didPressButton(true, false);
+            }
+        } else if (currentMessageObject.type == 4) {
+            delegate.didPressImage(this, lastTouchX, lastTouchY);
+        } else if (documentAttachType == DOCUMENT_ATTACH_TYPE_DOCUMENT) {
+            if (buttonState == -1) {
+                delegate.didPressImage(this, lastTouchX, lastTouchY);
+            }
+        } else if (documentAttachType == DOCUMENT_ATTACH_TYPE_GIF) {
+            if (buttonState == -1) {
+                MessageMedia.WebPage webPage = currentMessageObject.messageOwner.media.webpage;
+                if (webPage != null) {
+                    if (webPage.embed_url != null && webPage.embed_url.length() != 0) {
+                        delegate.needOpenWebView(webPage.embed_url, webPage.site_name, webPage.description, webPage.url, webPage.embed_width, webPage.embed_height);
+                    } else {
+                        Browser.openUrl(getContext(), webPage.url);
+                    }
+                }
+            }
+        } else if (hasInvoicePreview) {
+            if (buttonState == -1) {
+                delegate.didPressImage(this, lastTouchX, lastTouchY);
             }
         }
     }
